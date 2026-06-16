@@ -9,8 +9,32 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TeamsRouteImport } from './routes/teams'
+import { Route as NetqloudRouteImport } from './routes/netqloud'
+import { Route as AiColumbusRouteImport } from './routes/ai-columbus'
+import { Route as AdministratieRouteImport } from './routes/administratie'
 import { Route as IndexRouteImport } from './routes/index'
 
+const TeamsRoute = TeamsRouteImport.update({
+  id: '/teams',
+  path: '/teams',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NetqloudRoute = NetqloudRouteImport.update({
+  id: '/netqloud',
+  path: '/netqloud',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiColumbusRoute = AiColumbusRouteImport.update({
+  id: '/ai-columbus',
+  path: '/ai-columbus',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdministratieRoute = AdministratieRouteImport.update({
+  id: '/administratie',
+  path: '/administratie',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +43,78 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/administratie': typeof AdministratieRoute
+  '/ai-columbus': typeof AiColumbusRoute
+  '/netqloud': typeof NetqloudRoute
+  '/teams': typeof TeamsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/administratie': typeof AdministratieRoute
+  '/ai-columbus': typeof AiColumbusRoute
+  '/netqloud': typeof NetqloudRoute
+  '/teams': typeof TeamsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/administratie': typeof AdministratieRoute
+  '/ai-columbus': typeof AiColumbusRoute
+  '/netqloud': typeof NetqloudRoute
+  '/teams': typeof TeamsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/administratie' | '/ai-columbus' | '/netqloud' | '/teams'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/administratie' | '/ai-columbus' | '/netqloud' | '/teams'
+  id:
+    | '__root__'
+    | '/'
+    | '/administratie'
+    | '/ai-columbus'
+    | '/netqloud'
+    | '/teams'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdministratieRoute: typeof AdministratieRoute
+  AiColumbusRoute: typeof AiColumbusRoute
+  NetqloudRoute: typeof NetqloudRoute
+  TeamsRoute: typeof TeamsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/teams': {
+      id: '/teams'
+      path: '/teams'
+      fullPath: '/teams'
+      preLoaderRoute: typeof TeamsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/netqloud': {
+      id: '/netqloud'
+      path: '/netqloud'
+      fullPath: '/netqloud'
+      preLoaderRoute: typeof NetqloudRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai-columbus': {
+      id: '/ai-columbus'
+      path: '/ai-columbus'
+      fullPath: '/ai-columbus'
+      preLoaderRoute: typeof AiColumbusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administratie': {
+      id: '/administratie'
+      path: '/administratie'
+      fullPath: '/administratie'
+      preLoaderRoute: typeof AdministratieRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,17 +127,11 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdministratieRoute: AdministratieRoute,
+  AiColumbusRoute: AiColumbusRoute,
+  NetqloudRoute: NetqloudRoute,
+  TeamsRoute: TeamsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
