@@ -2,13 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Cloud, Server, Activity, Shield } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export const Route = createFileRoute("/netqloud")({
-  head: () => ({
-    meta: [
-      { title: "Netqloud — Columbus AI Portaal" },
-      { name: "description", content: "Cloud-infrastructuur en beheer van Netqloud." },
-    ],
-  }),
+export const Route = createFileRoute("/_authenticated/netqloud")({
+  head: () => ({ meta: [{ title: "Netqloud — Columbus AI Portaal" }] }),
   component: NetqloudPage,
 });
 
@@ -30,7 +25,6 @@ function NetqloudPage() {
           <p className="text-sm text-muted-foreground">Cloud-infrastructuur en operationeel beheer.</p>
         </div>
       </div>
-
       <div className="grid gap-4 md:grid-cols-3">
         {sections.map((s) => (
           <Card key={s.title}>

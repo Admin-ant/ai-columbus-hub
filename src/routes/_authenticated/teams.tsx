@@ -3,13 +3,8 @@ import { Users } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
-export const Route = createFileRoute("/teams")({
-  head: () => ({
-    meta: [
-      { title: "Teams — Columbus AI Portaal" },
-      { name: "description", content: "Teamoverzicht en samenwerking binnen Columbus." },
-    ],
-  }),
+export const Route = createFileRoute("/_authenticated/teams")({
+  head: () => ({ meta: [{ title: "Teams — Columbus AI Portaal" }] }),
   component: TeamsPage,
 });
 
@@ -32,7 +27,6 @@ function TeamsPage() {
           <p className="text-sm text-muted-foreground">Overzicht van alle teams binnen Columbus.</p>
         </div>
       </div>
-
       <div className="grid gap-4 md:grid-cols-2">
         {teams.map((t) => (
           <Card key={t.name}>

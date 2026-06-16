@@ -9,128 +9,179 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TeamsRouteImport } from './routes/teams'
-import { Route as NetqloudRouteImport } from './routes/netqloud'
-import { Route as AiColumbusRouteImport } from './routes/ai-columbus'
-import { Route as AdministratieRouteImport } from './routes/administratie'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated/teams'
+import { Route as AuthenticatedNetqloudRouteImport } from './routes/_authenticated/netqloud'
+import { Route as AuthenticatedAiColumbusRouteImport } from './routes/_authenticated/ai-columbus'
+import { Route as AuthenticatedAdministratieRouteImport } from './routes/_authenticated/administratie'
 
-const TeamsRoute = TeamsRouteImport.update({
-  id: '/teams',
-  path: '/teams',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const NetqloudRoute = NetqloudRouteImport.update({
-  id: '/netqloud',
-  path: '/netqloud',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AiColumbusRoute = AiColumbusRouteImport.update({
-  id: '/ai-columbus',
-  path: '/ai-columbus',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdministratieRoute = AdministratieRouteImport.update({
-  id: '/administratie',
-  path: '/administratie',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTeamsRoute = AuthenticatedTeamsRouteImport.update({
+  id: '/teams',
+  path: '/teams',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedNetqloudRoute = AuthenticatedNetqloudRouteImport.update({
+  id: '/netqloud',
+  path: '/netqloud',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAiColumbusRoute = AuthenticatedAiColumbusRouteImport.update({
+  id: '/ai-columbus',
+  path: '/ai-columbus',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdministratieRoute =
+  AuthenticatedAdministratieRouteImport.update({
+    id: '/administratie',
+    path: '/administratie',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/administratie': typeof AdministratieRoute
-  '/ai-columbus': typeof AiColumbusRoute
-  '/netqloud': typeof NetqloudRoute
-  '/teams': typeof TeamsRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/auth': typeof AuthRoute
+  '/administratie': typeof AuthenticatedAdministratieRoute
+  '/ai-columbus': typeof AuthenticatedAiColumbusRoute
+  '/netqloud': typeof AuthenticatedNetqloudRoute
+  '/teams': typeof AuthenticatedTeamsRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/administratie': typeof AdministratieRoute
-  '/ai-columbus': typeof AiColumbusRoute
-  '/netqloud': typeof NetqloudRoute
-  '/teams': typeof TeamsRoute
+  '/auth': typeof AuthRoute
+  '/administratie': typeof AuthenticatedAdministratieRoute
+  '/ai-columbus': typeof AuthenticatedAiColumbusRoute
+  '/netqloud': typeof AuthenticatedNetqloudRoute
+  '/teams': typeof AuthenticatedTeamsRoute
+  '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/administratie': typeof AdministratieRoute
-  '/ai-columbus': typeof AiColumbusRoute
-  '/netqloud': typeof NetqloudRoute
-  '/teams': typeof TeamsRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/administratie': typeof AuthenticatedAdministratieRoute
+  '/_authenticated/ai-columbus': typeof AuthenticatedAiColumbusRoute
+  '/_authenticated/netqloud': typeof AuthenticatedNetqloudRoute
+  '/_authenticated/teams': typeof AuthenticatedTeamsRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/administratie' | '/ai-columbus' | '/netqloud' | '/teams'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/administratie' | '/ai-columbus' | '/netqloud' | '/teams'
-  id:
-    | '__root__'
+  fullPaths:
     | '/'
+    | '/auth'
     | '/administratie'
     | '/ai-columbus'
     | '/netqloud'
     | '/teams'
+  fileRoutesByTo: FileRoutesByTo
+  to: '/auth' | '/administratie' | '/ai-columbus' | '/netqloud' | '/teams' | '/'
+  id:
+    | '__root__'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/administratie'
+    | '/_authenticated/ai-columbus'
+    | '/_authenticated/netqloud'
+    | '/_authenticated/teams'
+    | '/_authenticated/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AdministratieRoute: typeof AdministratieRoute
-  AiColumbusRoute: typeof AiColumbusRoute
-  NetqloudRoute: typeof NetqloudRoute
-  TeamsRoute: typeof TeamsRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/teams': {
-      id: '/teams'
-      path: '/teams'
-      fullPath: '/teams'
-      preLoaderRoute: typeof TeamsRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/netqloud': {
-      id: '/netqloud'
-      path: '/netqloud'
-      fullPath: '/netqloud'
-      preLoaderRoute: typeof NetqloudRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/ai-columbus': {
-      id: '/ai-columbus'
-      path: '/ai-columbus'
-      fullPath: '/ai-columbus'
-      preLoaderRoute: typeof AiColumbusRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/administratie': {
-      id: '/administratie'
-      path: '/administratie'
-      fullPath: '/administratie'
-      preLoaderRoute: typeof AdministratieRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/teams': {
+      id: '/_authenticated/teams'
+      path: '/teams'
+      fullPath: '/teams'
+      preLoaderRoute: typeof AuthenticatedTeamsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/netqloud': {
+      id: '/_authenticated/netqloud'
+      path: '/netqloud'
+      fullPath: '/netqloud'
+      preLoaderRoute: typeof AuthenticatedNetqloudRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ai-columbus': {
+      id: '/_authenticated/ai-columbus'
+      path: '/ai-columbus'
+      fullPath: '/ai-columbus'
+      preLoaderRoute: typeof AuthenticatedAiColumbusRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/administratie': {
+      id: '/_authenticated/administratie'
+      path: '/administratie'
+      fullPath: '/administratie'
+      preLoaderRoute: typeof AuthenticatedAdministratieRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdministratieRoute: typeof AuthenticatedAdministratieRoute
+  AuthenticatedAiColumbusRoute: typeof AuthenticatedAiColumbusRoute
+  AuthenticatedNetqloudRoute: typeof AuthenticatedNetqloudRoute
+  AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdministratieRoute: AuthenticatedAdministratieRoute,
+  AuthenticatedAiColumbusRoute: AuthenticatedAiColumbusRoute,
+  AuthenticatedNetqloudRoute: AuthenticatedNetqloudRoute,
+  AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  AdministratieRoute: AdministratieRoute,
-  AiColumbusRoute: AiColumbusRoute,
-  NetqloudRoute: NetqloudRoute,
-  TeamsRoute: TeamsRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

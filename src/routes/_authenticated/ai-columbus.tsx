@@ -2,13 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Sparkles, Bot, Brain, MessageSquare } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export const Route = createFileRoute("/ai-columbus")({
-  head: () => ({
-    meta: [
-      { title: "AI van Columbus — Portaal" },
-      { name: "description", content: "AI-tools en modellen van Columbus." },
-    ],
-  }),
+export const Route = createFileRoute("/_authenticated/ai-columbus")({
+  head: () => ({ meta: [{ title: "AI van Columbus — Portaal" }] }),
   component: AIColumbusPage,
 });
 
@@ -30,7 +25,6 @@ function AIColumbusPage() {
           <p className="text-sm text-muted-foreground">AI-oplossingen ontwikkeld binnen Columbus.</p>
         </div>
       </div>
-
       <div className="grid gap-4 md:grid-cols-3">
         {tools.map((t) => (
           <Card key={t.title}>

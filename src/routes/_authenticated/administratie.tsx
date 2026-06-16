@@ -1,14 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { FileText, Receipt, FolderArchive, ClipboardList } from "lucide-react";
+import { FileText, Receipt, FolderArchive, ClipboardList, ShieldAlert } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/use-auth";
 
-export const Route = createFileRoute("/administratie")({
-  head: () => ({
-    meta: [
-      { title: "Administratie — Columbus AI Portaal" },
-      { name: "description", content: "Administratieve processen en documenten." },
-    ],
-  }),
+export const Route = createFileRoute("/_authenticated/administratie")({
+  head: () => ({ meta: [{ title: "Administratie — Columbus AI Portaal" }] }),
   component: AdministratiePage,
 });
 
@@ -19,6 +15,31 @@ const items = [
 ];
 
 function AdministratiePage() {
+  const { hasRole, loading } = useAuth();
+  if (loading) return null;
+  if (!hasRole("admin")) {
+    return (
+      <div className="mx-auto max-w-xl">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
+                <ShieldAlert className="h-5 w-5" />
+              </div>
+              <CardTitle>Geen toegang</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <CardDescription>
+              Administratie is alleen beschikbaar voor admins. Neem contact op met een beheerder als
+              je toegang nodig hebt.
+            </CardDescription>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex items-center gap-3">
@@ -30,7 +51,6 @@ function AdministratiePage() {
           <p className="text-sm text-muted-foreground">Documenten, facturen en processen.</p>
         </div>
       </div>
-
       <div className="grid gap-4 md:grid-cols-3">
         {items.map((i) => (
           <Card key={i.title}>

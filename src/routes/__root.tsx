@@ -11,8 +11,9 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AuthProvider } from "@/hooks/use-auth";
+import { Toaster } from "@/components/ui/sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
   return (
@@ -49,9 +50,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
           Deze pagina kon niet geladen worden
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Er is iets misgegaan. Probeer het opnieuw of ga terug naar het overzicht.
-        </p>
+        <p className="mt-2 text-sm text-muted-foreground">Er is iets misgegaan. Probeer het opnieuw.</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
@@ -106,26 +105,23 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      router.invalidate();
+      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [router, queryClient]);
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SidebarProvider>
-        <div className="flex min-h-screen w-full">
-          <AppSidebar />
-          <div className="flex flex-1 flex-col">
-            <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur">
-              <SidebarTrigger />
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold">Columbus AI Portaal</span>
-                <span className="text-xs text-muted-foreground">Intern overzicht</span>
-              </div>
-            </header>
-            <main className="flex-1 p-6">
-              <Outlet />
-            </main>
-          </div>
-        </div>
-      </SidebarProvider>
+      <AuthProvider>
+        <Outlet />
+        <Toaster />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
