@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Cloud, Sparkles, FileText, Users, ArrowRight, Lock } from "lucide-react";
+import { Sparkles, FileText, Users, ArrowRight, Lock, LayoutDashboard } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated/")({
-  head: () => ({ meta: [{ title: "Overzicht — Columbus AI Portaal" }] }),
+  head: () => ({ meta: [{ title: "Overzicht — AI van Columbus" }] }),
   component: Index,
 });
 
@@ -12,22 +12,16 @@ type Tile = {
   title: string;
   description: string;
   url: string;
-  icon: typeof Cloud;
+  icon: typeof LayoutDashboard;
   requiredRole?: AppRole;
 };
 
 const tiles: Tile[] = [
   {
     title: "AI van Columbus",
-    description: "AI-tools, modellen en assistenten van Columbus.",
+    description: "Leads funnel, AI-tools en assistenten van Columbus.",
     url: "/ai-columbus",
     icon: Sparkles,
-  },
-  {
-    title: "Netqloud",
-    description: "Cloud-infrastructuur en beheer van Netqloud.",
-    url: "/netqloud",
-    icon: Cloud,
   },
   {
     title: "Teams",
@@ -37,7 +31,7 @@ const tiles: Tile[] = [
   },
   {
     title: "Administratie",
-    description: "Documenten, facturen en administratieve processen.",
+    description: "Klanten, contracten en administratieve processen.",
     url: "/administratie",
     icon: FileText,
     requiredRole: "admin",
@@ -51,7 +45,7 @@ function Index() {
   return (
     <div className="mx-auto max-w-6xl space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Welkom, {name}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Welkom bij AI van Columbus, {name}</h1>
         <p className="mt-2 text-muted-foreground">
           Kies hieronder een onderdeel. Sommige onderdelen zijn alleen toegankelijk voor admins.
         </p>
