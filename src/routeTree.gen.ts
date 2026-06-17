@@ -13,7 +13,6 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated/teams'
-import { Route as AuthenticatedNetqloudRouteImport } from './routes/_authenticated/netqloud'
 import { Route as AuthenticatedAiColumbusRouteImport } from './routes/_authenticated/ai-columbus'
 import { Route as AuthenticatedAdministratieRouteImport } from './routes/_authenticated/administratie'
 
@@ -36,11 +35,6 @@ const AuthenticatedTeamsRoute = AuthenticatedTeamsRouteImport.update({
   path: '/teams',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedNetqloudRoute = AuthenticatedNetqloudRouteImport.update({
-  id: '/netqloud',
-  path: '/netqloud',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedAiColumbusRoute = AuthenticatedAiColumbusRouteImport.update({
   id: '/ai-columbus',
   path: '/ai-columbus',
@@ -58,14 +52,12 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/administratie': typeof AuthenticatedAdministratieRoute
   '/ai-columbus': typeof AuthenticatedAiColumbusRoute
-  '/netqloud': typeof AuthenticatedNetqloudRoute
   '/teams': typeof AuthenticatedTeamsRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/administratie': typeof AuthenticatedAdministratieRoute
   '/ai-columbus': typeof AuthenticatedAiColumbusRoute
-  '/netqloud': typeof AuthenticatedNetqloudRoute
   '/teams': typeof AuthenticatedTeamsRoute
   '/': typeof AuthenticatedIndexRoute
 }
@@ -75,28 +67,20 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/administratie': typeof AuthenticatedAdministratieRoute
   '/_authenticated/ai-columbus': typeof AuthenticatedAiColumbusRoute
-  '/_authenticated/netqloud': typeof AuthenticatedNetqloudRoute
   '/_authenticated/teams': typeof AuthenticatedTeamsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/auth'
-    | '/administratie'
-    | '/ai-columbus'
-    | '/netqloud'
-    | '/teams'
+  fullPaths: '/' | '/auth' | '/administratie' | '/ai-columbus' | '/teams'
   fileRoutesByTo: FileRoutesByTo
-  to: '/auth' | '/administratie' | '/ai-columbus' | '/netqloud' | '/teams' | '/'
+  to: '/auth' | '/administratie' | '/ai-columbus' | '/teams' | '/'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/administratie'
     | '/_authenticated/ai-columbus'
-    | '/_authenticated/netqloud'
     | '/_authenticated/teams'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
@@ -136,13 +120,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTeamsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/netqloud': {
-      id: '/_authenticated/netqloud'
-      path: '/netqloud'
-      fullPath: '/netqloud'
-      preLoaderRoute: typeof AuthenticatedNetqloudRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/ai-columbus': {
       id: '/_authenticated/ai-columbus'
       path: '/ai-columbus'
@@ -163,7 +140,6 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdministratieRoute: typeof AuthenticatedAdministratieRoute
   AuthenticatedAiColumbusRoute: typeof AuthenticatedAiColumbusRoute
-  AuthenticatedNetqloudRoute: typeof AuthenticatedNetqloudRoute
   AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
@@ -171,7 +147,6 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdministratieRoute: AuthenticatedAdministratieRoute,
   AuthenticatedAiColumbusRoute: AuthenticatedAiColumbusRoute,
-  AuthenticatedNetqloudRoute: AuthenticatedNetqloudRoute,
   AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
