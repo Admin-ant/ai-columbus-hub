@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Cloud, Sparkles, FileText, Users, LogOut } from "lucide-react";
+import { LayoutDashboard, Sparkles, FileText, Users, LogOut } from "lucide-react";
 
 import {
   Sidebar,
@@ -26,7 +26,6 @@ type NavItem = {
 const items: NavItem[] = [
   { title: "Overzicht", url: "/", icon: LayoutDashboard },
   { title: "AI van Columbus", url: "/ai-columbus", icon: Sparkles },
-  { title: "Netqloud", url: "/netqloud", icon: Cloud },
   { title: "Teams", url: "/teams", icon: Users },
   { title: "Administratie", url: "/administratie", icon: FileText, requiredRole: "admin" },
 ];
@@ -53,7 +52,7 @@ export function AppSidebar() {
             <Sparkles className="h-5 w-5" />
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-semibold leading-none">Columbus AI</span>
+            <span className="text-sm font-semibold leading-none">AI van Columbus</span>
             <span className="text-xs text-muted-foreground">Portaal</span>
           </div>
         </div>
