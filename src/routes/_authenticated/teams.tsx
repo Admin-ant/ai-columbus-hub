@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export const Route = createFileRoute("/_authenticated/teams")({
-  head: () => ({ meta: [{ title: "Teams — Columbus AI Portaal" }] }),
+  head: () => ({ meta: [{ title: "Teams — AI van Columbus Portaal" }] }),
   component: TeamsPage,
 });
 

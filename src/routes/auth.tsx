@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "Inloggen — Columbus AI Portaal" }] }),
+  head: () => ({ meta: [{ title: "Inloggen — AI van Columbus Portaal" }] }),
   component: AuthPage,
 });
 
@@ -112,7 +112,7 @@ function AuthPage() {
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Sparkles className="h-6 w-6" />
           </div>
-          <h1 className="mt-4 text-2xl font-bold">Columbus AI Portaal</h1>
+          <h1 className="mt-4 text-2xl font-bold">AI van Columbus Portaal</h1>
           <p className="text-sm text-muted-foreground">Log in om toegang te krijgen.</p>
         </div>
 

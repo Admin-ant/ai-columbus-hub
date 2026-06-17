@@ -78,7 +78,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Columbus AI Portaal" },
+      { title: "AI van Columbus Portaal" },
       { name: "description", content: "Centraal overzichtsportaal voor AI van Columbus" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],

@@ -28,7 +28,7 @@ function AuthenticatedLayout() {
           <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur">
             <SidebarTrigger />
             <div className="flex flex-col">
-              <span className="text-sm font-semibold">Columbus AI Portaal</span>
+              <span className="text-sm font-semibold">AI van Columbus Portaal</span>
               <span className="text-xs text-muted-foreground">Intern overzicht</span>
             </div>
           </header>
