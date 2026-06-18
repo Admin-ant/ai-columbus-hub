@@ -244,6 +244,15 @@ function AuthPage() {
             </CardContent>
           </Tabs>
         </Card>
+
+        <button
+          type="button"
+          onClick={handleBootstrap}
+          disabled={busy}
+          className="block w-full text-center text-xs text-muted-foreground underline-offset-2 hover:underline disabled:opacity-50"
+        >
+          Eerste admin aanmaken (eenmalig)
+        </button>
       </div>
     </div>
   );
