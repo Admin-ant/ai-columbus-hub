@@ -33,6 +33,7 @@ function AuthPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
+  const callBootstrap = useServerFn(bootstrapAdmin);
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
