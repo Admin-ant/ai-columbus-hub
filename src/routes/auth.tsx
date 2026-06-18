@@ -108,6 +108,22 @@ function AuthPage() {
     navigate({ to: "/" });
   }
 
+  async function handleBootstrap() {
+    setBusy(true);
+    try {
+      const res = await callBootstrap();
+      if ((res as any).ok) {
+        toast.success("Admin aangemaakt. Log in met ah.hogervorst@gmail.com / TelkpN1020304!");
+      } else {
+        toast.error((res as any).message ?? "Bootstrap niet mogelijk");
+      }
+    } catch (e: any) {
+      toast.error("Bootstrap mislukt: " + e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-12">
       <div className="w-full max-w-md space-y-6">
