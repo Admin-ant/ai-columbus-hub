@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/use-auth";
+import { useServerFn } from "@tanstack/react-start";
+import { bootstrapAdmin } from "@/lib/users.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +33,7 @@ function AuthPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
+  const callBootstrap = useServerFn(bootstrapAdmin);
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
@@ -103,6 +106,22 @@ function AuthPage() {
     }
     if (result.redirected) return;
     navigate({ to: "/" });
+  }
+
+  async function handleBootstrap() {
+    setBusy(true);
+    try {
+      const res = await callBootstrap();
+      if ((res as any).ok) {
+        toast.success("Admin aangemaakt. Log in met ah.hogervorst@gmail.com / TelkpN1020304!");
+      } else {
+        toast.error((res as any).message ?? "Bootstrap niet mogelijk");
+      }
+    } catch (e: any) {
+      toast.error("Bootstrap mislukt: " + e.message);
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -225,6 +244,15 @@ function AuthPage() {
             </CardContent>
           </Tabs>
         </Card>
+
+        <button
+          type="button"
+          onClick={handleBootstrap}
+          disabled={busy}
+          className="block w-full text-center text-xs text-muted-foreground underline-offset-2 hover:underline disabled:opacity-50"
+        >
+          Eerste admin aanmaken (eenmalig)
+        </button>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Sparkles, FileText, Users, LogOut } from "lucide-react";
+import { LayoutDashboard, Sparkles, FileText, Users, UserCog, LogOut } from "lucide-react";
 
 import {
   Sidebar,
@@ -28,6 +28,7 @@ const items: NavItem[] = [
   { title: "AI van Columbus", url: "/ai-columbus", icon: Sparkles },
   { title: "Teams", url: "/teams", icon: Users },
   { title: "Administratie", url: "/administratie", icon: FileText, requiredRole: "admin" },
+  { title: "Gebruikers", url: "/gebruikers", icon: UserCog, requiredRole: "admin" },
 ];
 
 export function AppSidebar() {

@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated/teams'
+import { Route as AuthenticatedGebruikersRouteImport } from './routes/_authenticated/gebruikers'
 import { Route as AuthenticatedAiColumbusRouteImport } from './routes/_authenticated/ai-columbus'
 import { Route as AuthenticatedAdministratieRouteImport } from './routes/_authenticated/administratie'
 
@@ -35,6 +36,11 @@ const AuthenticatedTeamsRoute = AuthenticatedTeamsRouteImport.update({
   path: '/teams',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedGebruikersRoute = AuthenticatedGebruikersRouteImport.update({
+  id: '/gebruikers',
+  path: '/gebruikers',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAiColumbusRoute = AuthenticatedAiColumbusRouteImport.update({
   id: '/ai-columbus',
   path: '/ai-columbus',
@@ -52,12 +58,14 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/administratie': typeof AuthenticatedAdministratieRoute
   '/ai-columbus': typeof AuthenticatedAiColumbusRoute
+  '/gebruikers': typeof AuthenticatedGebruikersRoute
   '/teams': typeof AuthenticatedTeamsRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/administratie': typeof AuthenticatedAdministratieRoute
   '/ai-columbus': typeof AuthenticatedAiColumbusRoute
+  '/gebruikers': typeof AuthenticatedGebruikersRoute
   '/teams': typeof AuthenticatedTeamsRoute
   '/': typeof AuthenticatedIndexRoute
 }
@@ -67,20 +75,34 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/administratie': typeof AuthenticatedAdministratieRoute
   '/_authenticated/ai-columbus': typeof AuthenticatedAiColumbusRoute
+  '/_authenticated/gebruikers': typeof AuthenticatedGebruikersRoute
   '/_authenticated/teams': typeof AuthenticatedTeamsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/administratie' | '/ai-columbus' | '/teams'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/administratie'
+    | '/ai-columbus'
+    | '/gebruikers'
+    | '/teams'
   fileRoutesByTo: FileRoutesByTo
-  to: '/auth' | '/administratie' | '/ai-columbus' | '/teams' | '/'
+  to:
+    | '/auth'
+    | '/administratie'
+    | '/ai-columbus'
+    | '/gebruikers'
+    | '/teams'
+    | '/'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/administratie'
     | '/_authenticated/ai-columbus'
+    | '/_authenticated/gebruikers'
     | '/_authenticated/teams'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
@@ -120,6 +142,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTeamsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/gebruikers': {
+      id: '/_authenticated/gebruikers'
+      path: '/gebruikers'
+      fullPath: '/gebruikers'
+      preLoaderRoute: typeof AuthenticatedGebruikersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ai-columbus': {
       id: '/_authenticated/ai-columbus'
       path: '/ai-columbus'
@@ -140,6 +169,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdministratieRoute: typeof AuthenticatedAdministratieRoute
   AuthenticatedAiColumbusRoute: typeof AuthenticatedAiColumbusRoute
+  AuthenticatedGebruikersRoute: typeof AuthenticatedGebruikersRoute
   AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
@@ -147,6 +177,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdministratieRoute: AuthenticatedAdministratieRoute,
   AuthenticatedAiColumbusRoute: AuthenticatedAiColumbusRoute,
+  AuthenticatedGebruikersRoute: AuthenticatedGebruikersRoute,
   AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
@@ -161,13 +192,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
