@@ -2,7 +2,10 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, FileText, Receipt, ScrollText } from "lucide-react";
+import { ArrowLeft, Loader2, FileText, Receipt, ScrollText, Download } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -126,23 +129,114 @@ function JournalDetailPage() {
   const sourceQuote = entry.quotes ?? null;
   const sourceInvoice = entry.invoices ?? null;
 
+  function exportPdf() {
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const fmt = (c: number) => centsFmt(c, lang);
+    let y = 48;
+    doc.setFontSize(16);
+    doc.text("Journaalpost", 40, y);
+    y += 22;
+    doc.setFontSize(10);
+    doc.setTextColor(80);
+    doc.text(entry!.description, 40, y);
+    y += 14;
+    doc.text(`Datum: ${new Date(entry!.entry_date).toLocaleDateString(lang)}`, 40, y);
+    y += 12;
+    doc.text(`Bron: ${entry!.source ?? "—"}`, 40, y);
+    y += 12;
+    doc.text(`ID: ${entry!.id}`, 40, y);
+    y += 18;
+
+    if (sourceInvoice) {
+      doc.setTextColor(0);
+      doc.setFontSize(11);
+      doc.text("Bronfactuur", 40, y);
+      y += 14;
+      doc.setFontSize(9);
+      doc.setTextColor(60);
+      doc.text(
+        `${sourceInvoice.invoice_number} — ${sourceInvoice.client_name ?? "—"} — status: ${sourceInvoice.status}`,
+        40,
+        y,
+      );
+      y += 12;
+      doc.text(
+        `Subtotaal ${fmt(sourceInvoice.subtotal_cents)} · BTW ${fmt(sourceInvoice.vat_cents)} · Totaal ${fmt(sourceInvoice.total_cents)}`,
+        40,
+        y,
+      );
+      y += 16;
+    }
+    if (sourceQuote) {
+      doc.setTextColor(0);
+      doc.setFontSize(11);
+      doc.text("Bronofferte", 40, y);
+      y += 14;
+      doc.setFontSize(9);
+      doc.setTextColor(60);
+      doc.text(
+        `${sourceQuote.quote_number} — ${sourceQuote.client_name ?? "—"} — status: ${sourceQuote.status}`,
+        40,
+        y,
+      );
+      y += 16;
+    }
+
+    autoTable(doc, {
+      startY: y + 6,
+      head: [["Code", "Rekening", "Omschrijving", "Debet", "Credit"]],
+      body: entry!.journal_lines.map((l) => [
+        l.chart_of_accounts?.code ?? "—",
+        l.chart_of_accounts?.name ?? "—",
+        l.description ?? "—",
+        l.debit_cents > 0 ? fmt(l.debit_cents) : "",
+        l.credit_cents > 0 ? fmt(l.credit_cents) : "",
+      ]),
+      foot: [["", "", "Totaal", fmt(totalDebit), fmt(totalCredit)]],
+      styles: { fontSize: 9, cellPadding: 5 },
+      headStyles: { fillColor: [30, 41, 59] },
+      footStyles: { fillColor: [241, 245, 249], textColor: 20, fontStyle: "bold" },
+      columnStyles: {
+        0: { cellWidth: 50 },
+        3: { halign: "right" },
+        4: { halign: "right" },
+      },
+    });
+
+    const finalY = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? y;
+    doc.setFontSize(9);
+    doc.setTextColor(balanced ? 16 : 180, balanced ? 122 : 30, balanced ? 87 : 30);
+    doc.text(
+      balanced ? "✓ Journaalpost in balans" : "✗ Journaalpost NIET in balans",
+      40,
+      finalY + 24,
+    );
+
+    const ref = sourceInvoice?.invoice_number ?? entry!.id.slice(0, 8);
+    doc.save(`journaalpost-${ref}.pdf`);
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
+        <Button variant="ghost" size="sm" asChild>
+          <Link to="/boekhouding">
+            <ArrowLeft className="mr-1.5 h-4 w-4" /> Boekhouding
+          </Link>
+        </Button>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/boekhouding">
-              <ArrowLeft className="mr-1.5 h-4 w-4" /> Boekhouding
-            </Link>
+          <Badge
+            variant={balanced ? "outline" : "destructive"}
+            className={balanced ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : ""}
+          >
+            {balanced ? "In balans" : "Niet in balans"}
+          </Badge>
+          <Button size="sm" onClick={exportPdf}>
+            <Download className="mr-1.5 h-4 w-4" /> Exporteer PDF
           </Button>
         </div>
-        <Badge
-          variant={balanced ? "outline" : "destructive"}
-          className={balanced ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : ""}
-        >
-          {balanced ? "In balans" : "Niet in balans"}
-        </Badge>
       </div>
+
 
       <div className="rounded-lg border bg-card p-5">
         <div className="flex items-start gap-3">
