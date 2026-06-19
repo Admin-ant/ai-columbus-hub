@@ -161,7 +161,11 @@ export function AppSidebar() {
                 <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={isActive(section.rootUrl)}>
-                      <Link to={section.rootUrl} className="flex items-center gap-2">
+                      <Link
+                        to={section.rootUrl}
+                        onClick={() => switchToOrg(section.orgSlug)}
+                        className="flex items-center gap-2"
+                      >
                         <section.icon className="h-4 w-4" />
                         <span>Open omgeving</span>
                       </Link>
