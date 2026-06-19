@@ -86,6 +86,13 @@ interface LineForm {
   unit_price_cents: number;
   vat_rate: number;
   product_id: string | null;
+  base_unit_price_cents: number;
+  discount_percent: number;
+  discount_type: "none" | "one_time" | "recurring";
+  contract_months: number | null;
+  pricing_type: "one_time" | "monthly_recurring" | "per_credit" | null;
+  product_name: string | null;
+  is_setup_fee: boolean;
 }
 
 interface ProductOption {
