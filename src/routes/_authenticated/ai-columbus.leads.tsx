@@ -123,8 +123,14 @@ function AiColumbusPage() {
       toast.error("Naam is verplicht");
       return;
     }
+    if (!orgId) {
+      toast.error("Organisatie niet gevonden");
+      setSaving(false);
+      return;
+    }
     setSaving(true);
     const { error } = await supabase.from("leads").insert({
+      organization_id: orgId,
       name: form.name.trim(),
       stage: form.stage,
       value: Number(form.value) || 0,
