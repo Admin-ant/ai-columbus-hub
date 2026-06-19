@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Navigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Navigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { Sparkles } from "lucide-react";
@@ -7,8 +7,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/use-auth";
-import { useServerFn } from "@tanstack/react-start";
-import { bootstrapAdmin } from "@/lib/users.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,20 +27,22 @@ const signupSchema = credentialsSchema.extend({
   displayName: z.string().trim().min(1, "Naam is verplicht").max(100),
 });
 
+const emailSchema = z.string().trim().email("Ongeldig e-mailadres").max(255);
+
 function AuthPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
-  const callBootstrap = useServerFn(bootstrapAdmin);
 
-  // Login state
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
 
-  // Signup state
   const [signupName, setSignupName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
+
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
 
   if (loading) return null;
   if (user) return <Navigate to="/" />;
@@ -108,20 +108,25 @@ function AuthPage() {
     navigate({ to: "/" });
   }
 
-  async function handleBootstrap() {
-    setBusy(true);
-    try {
-      const res = await callBootstrap();
-      if ((res as any).ok) {
-        toast.success("Admin aangemaakt. Log in met ah.hogervorst@gmail.com / TelkpN1020304!");
-      } else {
-        toast.error((res as any).message ?? "Bootstrap niet mogelijk");
-      }
-    } catch (e: any) {
-      toast.error("Bootstrap mislukt: " + e.message);
-    } finally {
-      setBusy(false);
+  async function handleForgot(e: React.FormEvent) {
+    e.preventDefault();
+    const parsed = emailSchema.safeParse(forgotEmail);
+    if (!parsed.success) {
+      toast.error(parsed.error.errors[0].message);
+      return;
     }
+    setBusy(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(parsed.data, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setBusy(false);
+    if (error) {
+      toast.error("Versturen mislukt: " + error.message);
+      return;
+    }
+    toast.success("Als het adres bekend is, ontvang je een mail met reset-link.");
+    setForgotOpen(false);
+    setForgotEmail("");
   }
 
   return (
@@ -147,33 +152,74 @@ function AuthPage() {
               <TabsContent value="login" className="space-y-4">
                 <CardTitle className="text-base">Welkom terug</CardTitle>
                 <CardDescription>Vul je gegevens in om verder te gaan.</CardDescription>
-                <form onSubmit={handleLogin} className="space-y-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="login-email">E-mail</Label>
-                    <Input
-                      id="login-email"
-                      type="email"
-                      autoComplete="email"
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="login-password">Wachtwoord</Label>
-                    <Input
-                      id="login-password"
-                      type="password"
-                      autoComplete="current-password"
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={busy}>
-                    Inloggen
-                  </Button>
-                </form>
+                {!forgotOpen ? (
+                  <form onSubmit={handleLogin} className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="login-email">E-mail</Label>
+                      <Input
+                        id="login-email"
+                        type="email"
+                        autoComplete="email"
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="login-password">Wachtwoord</Label>
+                        <button
+                          type="button"
+                          onClick={() => { setForgotEmail(loginEmail); setForgotOpen(true); }}
+                          className="text-xs text-muted-foreground hover:underline"
+                        >
+                          Wachtwoord vergeten?
+                        </button>
+                      </div>
+                      <Input
+                        id="login-password"
+                        type="password"
+                        autoComplete="current-password"
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={busy}>
+                      Inloggen
+                    </Button>
+                  </form>
+                ) : (
+                  <form onSubmit={handleForgot} className="space-y-3">
+                    <CardDescription>
+                      Vul je e-mailadres in. We sturen een link waarmee je een nieuw wachtwoord kunt instellen.
+                    </CardDescription>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="forgot-email">E-mail</Label>
+                      <Input
+                        id="forgot-email"
+                        type="email"
+                        autoComplete="email"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button type="submit" className="flex-1" disabled={busy}>
+                        Reset-link versturen
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setForgotOpen(false)}
+                        disabled={busy}
+                      >
+                        Annuleren
+                      </Button>
+                    </div>
+                  </form>
+                )}
               </TabsContent>
 
               <TabsContent value="signup" className="space-y-4">
@@ -244,15 +290,6 @@ function AuthPage() {
             </CardContent>
           </Tabs>
         </Card>
-
-        <button
-          type="button"
-          onClick={handleBootstrap}
-          disabled={busy}
-          className="block w-full text-center text-xs text-muted-foreground underline-offset-2 hover:underline disabled:opacity-50"
-        >
-          Eerste admin aanmaken (eenmalig)
-        </button>
       </div>
     </div>
   );
