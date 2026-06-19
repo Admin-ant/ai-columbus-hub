@@ -1,0 +1,380 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { Plus, Loader2, Trash2, FileText, Sparkles } from "lucide-react";
+
+import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useAuth } from "@/hooks/use-auth";
+import { useWorkspace } from "@/hooks/use-workspace";
+
+export const Route = createFileRoute("/_authenticated/quotes")({
+  head: () => ({ meta: [{ title: "Offertes" }] }),
+  component: QuotesPage,
+});
+
+type Quote = Database["public"]["Tables"]["quotes"]["Row"];
+type QuoteStatus = Database["public"]["Enums"]["quote_status"];
+
+interface LineItem {
+  description: string;
+  quantity: number;
+  unit_price: number;
+}
+
+const STATUS: QuoteStatus[] = ["draft", "sent", "viewed", "signed", "approved_paid", "declined"];
+
+const STATUS_COLOR: Record<QuoteStatus, string> = {
+  draft: "bg-muted text-foreground",
+  sent: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+  viewed: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300",
+  signed: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  approved_paid: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  declined: "bg-red-500/15 text-red-700 dark:text-red-300",
+};
+
+function QuotesPage() {
+  const { t, i18n } = useTranslation();
+  const { user } = useAuth();
+  const { currentOrganizationId, currentOrganization, loading: wsLoading } = useWorkspace();
+  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [lines, setLines] = useState<LineItem[]>([{ description: "", quantity: 1, unit_price: 0 }]);
+
+  const eur = useMemo(
+    () =>
+      new Intl.NumberFormat(i18n.resolvedLanguage === "en" ? "en-IE" : "nl-NL", {
+        style: "currency",
+        currency: "EUR",
+      }),
+    [i18n.resolvedLanguage],
+  );
+
+  const total = useMemo(
+    () => lines.reduce((s, l) => s + Number(l.quantity || 0) * Number(l.unit_price || 0), 0),
+    [lines],
+  );
+
+  async function load() {
+    if (!currentOrganizationId) {
+      setQuotes([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("quotes")
+      .select("*")
+      .eq("organization_id", currentOrganizationId)
+      .order("created_at", { ascending: false });
+    if (error) toast.error(error.message);
+    setQuotes((data ?? []) as Quote[]);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    if (!wsLoading) load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentOrganizationId, wsLoading]);
+
+  async function createQuote(e: React.FormEvent) {
+    e.preventDefault();
+    if (!title.trim()) return toast.error(t("quotes.title_required"));
+    if (!currentOrganizationId) return toast.error(t("leads.no_organization"));
+    setSaving(true);
+    const { error } = await supabase.from("quotes").insert({
+      organization_id: currentOrganizationId,
+      title: title.trim(),
+      content_json: { lines } as never,
+      total_amount: total,
+      status: "draft",
+      created_by: user?.id ?? null,
+    });
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success(t("quotes.created"));
+    setOpen(false);
+    setTitle("");
+    setLines([{ description: "", quantity: 1, unit_price: 0 }]);
+    load();
+  }
+
+  async function updateStatus(id: string, status: QuoteStatus) {
+    const prev = quotes;
+    setQuotes((qs) => qs.map((q) => (q.id === id ? { ...q, status } : q)));
+    const { error } = await supabase.from("quotes").update({ status }).eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      setQuotes(prev);
+    }
+  }
+
+  async function convertToInvoice(q: Quote) {
+    if (!currentOrganizationId) return;
+    const { data: numData, error: numErr } = await supabase.rpc("next_invoice_number", {
+      org_id: currentOrganizationId,
+    });
+    if (numErr || !numData) return toast.error(numErr?.message ?? "RPC error");
+    const due = new Date();
+    due.setDate(due.getDate() + 30);
+    const { error } = await supabase.from("invoices").insert({
+      organization_id: currentOrganizationId,
+      quote_id: q.id,
+      invoice_number: String(numData),
+      amount: q.total_amount,
+      status: "draft",
+      due_date: due.toISOString().slice(0, 10),
+    });
+    if (error) return toast.error(error.message);
+    toast.success(t("invoices.created", { number: String(numData) }));
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {currentOrganization?.name ?? ""} — {t("quotes.title")}
+          </h1>
+          <p className="text-sm text-muted-foreground">{t("quotes.subtitle")}</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setAiOpen(true)}>
+            <Sparkles className="mr-2 h-4 w-4" />
+            {t("ai_assistant.title")}
+          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                {t("quotes.new_quote")}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>{t("quotes.new_quote")}</DialogTitle>
+                <DialogDescription>{currentOrganization?.name}</DialogDescription>
+              </DialogHeader>
+              <form onSubmit={createQuote} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="q-title">{t("quotes.field_title")}</Label>
+                  <Input id="q-title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>{t("quotes.line_items")}</Label>
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>{t("quotes.description")}</TableHead>
+                          <TableHead className="w-20 text-right">{t("quotes.qty")}</TableHead>
+                          <TableHead className="w-32 text-right">{t("quotes.unit_price")}</TableHead>
+                          <TableHead className="w-32 text-right">{t("quotes.total")}</TableHead>
+                          <TableHead className="w-12"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {lines.map((l, i) => (
+                          <TableRow key={i}>
+                            <TableCell>
+                              <Input
+                                value={l.description}
+                                onChange={(e) => {
+                                  const next = [...lines];
+                                  next[i] = { ...l, description: e.target.value };
+                                  setLines(next);
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                min={0}
+                                step="1"
+                                className="text-right"
+                                value={l.quantity}
+                                onChange={(e) => {
+                                  const next = [...lines];
+                                  next[i] = { ...l, quantity: Number(e.target.value) };
+                                  setLines(next);
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                min={0}
+                                step="0.01"
+                                className="text-right"
+                                value={l.unit_price}
+                                onChange={(e) => {
+                                  const next = [...lines];
+                                  next[i] = { ...l, unit_price: Number(e.target.value) };
+                                  setLines(next);
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell className="text-right text-sm tabular-nums">
+                              {eur.format(Number(l.quantity || 0) * Number(l.unit_price || 0))}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setLines(lines.filter((_, j) => j !== i))}
+                                disabled={lines.length === 1}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setLines([...lines, { description: "", quantity: 1, unit_price: 0 }])}
+                    >
+                      <Plus className="mr-1 h-3 w-3" />
+                      {t("quotes.add_line")}
+                    </Button>
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">{t("quotes.total")}: </span>
+                      <span className="font-semibold tabular-nums">{eur.format(total)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button type="submit" disabled={saving}>
+                    {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {t("common.save")}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-20 text-muted-foreground">
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("common.loading")}
+        </div>
+      ) : quotes.length === 0 ? (
+        <div className="rounded-lg border border-dashed py-16 text-center text-sm text-muted-foreground">
+          {t("quotes.empty")}
+        </div>
+      ) : (
+        <div className="rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("quotes.field_title")}</TableHead>
+                <TableHead>{t("quotes.created")}</TableHead>
+                <TableHead className="text-right">{t("quotes.total")}</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">{t("quotes.actions")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {quotes.map((q) => (
+                <TableRow key={q.id}>
+                  <TableCell className="font-medium">{q.title}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {new Date(q.created_at).toLocaleDateString(i18n.resolvedLanguage ?? "nl")}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">{eur.format(Number(q.total_amount))}</TableCell>
+                  <TableCell>
+                    <Select value={q.status} onValueChange={(v) => updateStatus(q.id, v as QuoteStatus)}>
+                      <SelectTrigger className="h-7 w-[170px]">
+                        <Badge variant="outline" className={STATUS_COLOR[q.status]}>
+                          {t(`quotes.status.${q.status}`)}
+                        </Badge>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {STATUS.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {t(`quotes.status.${s}`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button size="sm" variant="outline" onClick={() => convertToInvoice(q)}>
+                      <FileText className="mr-1 h-3.5 w-3.5" />
+                      {t("quotes.to_invoice")}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      <Dialog open={aiOpen} onOpenChange={setAiOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              <Sparkles className="mr-2 inline h-4 w-4" />
+              {t("ai_assistant.title")}
+            </DialogTitle>
+            <DialogDescription>{t("ai_assistant.placeholder")}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Button variant="outline" className="w-full justify-start" disabled>
+              {t("ai_assistant.suggest_quote")}
+            </Button>
+            <Button variant="outline" className="w-full justify-start" disabled>
+              {t("ai_assistant.verify_invoice")}
+            </Button>
+            <Button variant="outline" className="w-full justify-start" disabled>
+              {t("ai_assistant.summarize_lead")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
