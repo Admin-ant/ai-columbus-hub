@@ -228,18 +228,18 @@ function ProductsPage() {
             Beheer diensten, maandtarieven en credittarieven voor de actieve organisatie.
           </p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setForm(emptyForm); } }}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={openCreate}>
               <Plus className="mr-2 h-4 w-4" />
               Nieuw product
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Nieuw product</DialogTitle>
+              <DialogTitle>{editingId ? "Product bewerken" : "Nieuw product"}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={createProduct} className="space-y-3">
+            <form onSubmit={saveProduct} className="space-y-3">
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="p-sku">Artikelnr. *</Label>
@@ -279,10 +279,43 @@ function ProductsPage() {
                   </Select>
                 </div>
               </div>
+
+              <div className="rounded-md border border-dashed p-3 space-y-3">
+                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Korting</div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="p-disc">Korting %</Label>
+                    <Input id="p-disc" type="number" min={0} max={100} step="0.01" value={form.discount_percent}
+                      onChange={(e) => setForm({ ...form, discount_percent: e.target.value })} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Type korting</Label>
+                    <Select
+                      value={form.discount_type}
+                      onValueChange={(v) => setForm({ ...form, discount_type: v as "none" | "one_time" | "recurring" })}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Geen</SelectItem>
+                        <SelectItem value="one_time">Eenmalig</SelectItem>
+                        <SelectItem value="recurring">Per maand</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="p-months">Contractduur (mnd)</Label>
+                    <Input id="p-months" type="number" min={1} placeholder="optioneel"
+                      value={form.contract_months}
+                      onChange={(e) => setForm({ ...form, contract_months: e.target.value })}
+                      disabled={form.discount_type !== "recurring"} />
+                  </div>
+                </div>
+              </div>
+
               <DialogFooter>
                 <Button type="submit" disabled={saving}>
                   {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Opslaan
+                  {editingId ? "Bijwerken" : "Opslaan"}
                 </Button>
               </DialogFooter>
             </form>
