@@ -50,6 +50,7 @@ type NavSection = {
 
 const topItems: NavItem[] = [
   { title: "Overzicht", url: "/", icon: LayoutDashboard },
+  { title: "Boekhouding", url: "/boekhouding", icon: Receipt },
   { title: "Teams", url: "/teams", icon: Users },
 ];
 

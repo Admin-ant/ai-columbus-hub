@@ -118,5 +118,61 @@
     "sign_and_pay": "Tekenen & betalen",
     "clear_signature": "Wis handtekening",
     "thanks": "Bedankt! De offerte is getekend en de aanbetaling is geïnitieerd."
+  },
+  "acc": {
+    "title": "Boekhouding",
+    "subtitle": "Offertes, facturen, grootboek en dubbele journaalposten — klaar voor je accountant.",
+    "tabs": {
+      "dashboard": "Dashboard",
+      "invoices": "Facturen",
+      "ledger": "Grootboek",
+      "journal": "Journaalposten",
+      "sync": "Accountant Sync"
+    },
+    "dash": {
+      "revenue": "Omzet (ex. BTW)",
+      "revenue_hint": "Verzonden + betaalde facturen",
+      "outstanding": "Openstaand",
+      "paid": "Betaald",
+      "invoice_count": "Aantal facturen",
+      "recent_invoices": "Recente facturen",
+      "recent_sync": "Recente sync events"
+    },
+    "ledger": {
+      "code": "Code",
+      "name": "Naam",
+      "type": "Type",
+      "vat": "BTW %"
+    },
+    "inv": {
+      "client": "Klant",
+      "client_required": "Klantnaam is verplicht",
+      "line_required": "Vul alle regelomschrijvingen in",
+      "unit_eur": "Prijs (€)",
+      "subtotal": "Subtotaal",
+      "dialog_desc": "Bedragen worden in centen opgeslagen om afrondingsfouten te voorkomen.",
+      "posted": "Journaalpost automatisch geboekt"
+    },
+    "journal": {
+      "empty": "Nog geen journaalposten — zet een factuur op 'Verzonden' of 'Betaald' om er één te genereren.",
+      "balanced": "In balans",
+      "unbalanced": "Niet in balans",
+      "debit": "Debet",
+      "credit": "Credit"
+    },
+    "sync": {
+      "target": "Doelsysteem",
+      "export_all": "Exporteer JSON",
+      "ready_to_push": "Klaar voor verzending",
+      "no_ready": "Geen verzonden/betaalde facturen om te syncen",
+      "payload_preview": "Payload preview",
+      "select_invoice": "Selecteer een factuur om de payload te bekijken",
+      "event_log": "Logboek",
+      "when": "Tijdstip",
+      "response": "Antwoord",
+      "pushed": "Verstuurd naar accountant",
+      "failed": "Versturen mislukt",
+      "empty": "Nog geen sync events"
+    }
   }
 }
