@@ -41,11 +41,23 @@
     "new_lead": "New lead",
     "stages": {
       "nieuwe": "New",
+      "op_afspraak": "Appointment",
+      "in_afwachting": "Awaiting",
+      "even_on_hold": "On hold",
+      "in_contact": "In contact",
+      "klant": "Customer",
+      "verloren": "Lost",
+      "ai_columbus": "AI van Columbus",
       "contact_opgenomen": "Contacted",
       "offerte_verzonden": "Quote sent",
-      "gewonnen": "Won",
-      "verloren": "Lost"
-    }
+      "gewonnen": "Won"
+    },
+    "drag_hint": "Drag a lead to another column to change its stage.",
+    "empty": "No leads",
+    "rep": "Rep",
+    "name_required": "Name is required",
+    "no_organization": "Select an organization first",
+    "created": "Lead created"
   },
   "quotes": {
     "title": "Quotes",
