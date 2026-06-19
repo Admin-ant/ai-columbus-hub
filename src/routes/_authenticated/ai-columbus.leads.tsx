@@ -72,6 +72,8 @@ function LeadsKanbanPage() {
     phone: "",
     email: "",
     notes: "",
+    potential_monthly_value: "0",
+    target_start_date: "",
   });
 
   const eur = useMemo(
