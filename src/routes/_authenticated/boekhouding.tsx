@@ -559,7 +559,7 @@ function InvoicesTab({
     toast.success(t("invoices.created", { number: String(numData) }));
     setOpen(false);
     setClientName("");
-    setLines([{ description: "", quantity: 1, unit_price_cents: 0, vat_rate: 21 }]);
+    setLines([emptyLine()]);
     void reload();
     void userId;
   }
