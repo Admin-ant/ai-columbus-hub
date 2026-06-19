@@ -350,12 +350,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      has_org_access: {
-        Args: { _org_id: string; _user_id: string }
-        Returns: boolean
-      }
-      is_holding_admin: { Args: { _user_id: string }; Returns: boolean }
-      next_invoice_number: { Args: { _org_id: string }; Returns: string }
+      [_ in never]: never
     }
     Enums: {
       app_role: "admin" | "medewerker"
