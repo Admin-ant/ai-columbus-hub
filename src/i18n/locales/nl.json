@@ -61,7 +61,20 @@
   },
   "quotes": {
     "title": "Offertes",
+    "subtitle": "Stel offertes samen, volg status en maak er facturen van.",
     "new_quote": "Nieuwe offerte",
+    "field_title": "Titel",
+    "line_items": "Regels",
+    "description": "Omschrijving",
+    "qty": "Aantal",
+    "unit_price": "Prijs",
+    "total": "Totaal",
+    "add_line": "Regel toevoegen",
+    "title_required": "Titel is verplicht",
+    "created": "Offerte aangemaakt",
+    "empty": "Nog geen offertes",
+    "actions": "Acties",
+    "to_invoice": "Naar factuur",
     "status": {
       "draft": "Concept",
       "sent": "Verzonden",
@@ -73,7 +86,17 @@
   },
   "invoices": {
     "title": "Facturen",
+    "subtitle": "Overzicht van facturen per organisatie.",
     "new_invoice": "Nieuwe factuur",
+    "number": "Nummer",
+    "issue_date": "Factuurdatum",
+    "due_date": "Vervaldatum",
+    "amount": "Bedrag",
+    "total": "Totaal",
+    "paid": "Betaald",
+    "open": "Openstaand",
+    "empty": "Nog geen facturen",
+    "created": "Factuur {{number}} aangemaakt",
     "status": {
       "draft": "Concept",
       "sent": "Verzonden",
@@ -84,6 +107,7 @@
   },
   "ai_assistant": {
     "title": "AI Assistent",
+    "placeholder": "Klaar voor integratie met Lovable AI / OpenAI / Anthropic.",
     "suggest_quote": "Genereer offerte-concept op basis van lead-notities",
     "verify_invoice": "Controleer factuurregels",
     "summarize_lead": "Vat lead samen"
