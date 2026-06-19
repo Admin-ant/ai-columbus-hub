@@ -85,6 +85,16 @@ interface LineForm {
   quantity: number;
   unit_price_cents: number;
   vat_rate: number;
+  product_id: string | null;
+}
+
+interface ProductOption {
+  id: string;
+  name: string;
+  unit_price_cents: number;
+  vat_rate: number;
+  pricing_type: "one_time" | "monthly_recurring" | "per_credit";
+  description: string | null;
 }
 
 interface JournalLine {
@@ -439,9 +449,46 @@ function InvoicesTab({
     d.setDate(d.getDate() + 30);
     return d.toISOString().slice(0, 10);
   });
-  const [lines, setLines] = useState<LineForm[]>([
-    { description: "", quantity: 1, unit_price_cents: 0, vat_rate: 21 },
-  ]);
+  const emptyLine = (): LineForm => ({
+    description: "",
+    quantity: 1,
+    unit_price_cents: 0,
+    vat_rate: 21,
+    product_id: null,
+  });
+  const [lines, setLines] = useState<LineForm[]>([emptyLine()]);
+  const [products, setProducts] = useState<ProductOption[]>([]);
+
+  useEffect(() => {
+    if (!orgId) return;
+    void supabase
+      .from("products")
+      .select("id, name, unit_price_cents, vat_rate, pricing_type, description")
+      .eq("organization_id", orgId)
+      .eq("active", true)
+      .order("name")
+      .then(({ data, error }) => {
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+        setProducts((data ?? []) as ProductOption[]);
+      });
+  }, [orgId]);
+
+  function applyProduct(i: number, productId: string) {
+    const p = products.find((pp) => pp.id === productId);
+    if (!p) return;
+    const n = [...lines];
+    n[i] = {
+      ...n[i],
+      product_id: p.id,
+      description: n[i].description.trim() ? n[i].description : p.description || p.name,
+      unit_price_cents: p.unit_price_cents,
+      vat_rate: Number(p.vat_rate ?? 21),
+    };
+    setLines(n);
+  }
 
   const revenueAccount = accounts.find((a) => a.code === "8000");
 
@@ -505,6 +552,7 @@ function InvoicesTab({
         vat_cents: Math.round(l.quantity * l.unit_price_cents * (l.vat_rate / 100)),
         total_cents: Math.round(l.quantity * l.unit_price_cents * (1 + l.vat_rate / 100)),
         revenue_account_id: revenueAccount?.id ?? null,
+        product_id: l.product_id,
       })),
     );
     setSaving(false);
@@ -512,7 +560,7 @@ function InvoicesTab({
     toast.success(t("invoices.created", { number: String(numData) }));
     setOpen(false);
     setClientName("");
-    setLines([{ description: "", quantity: 1, unit_price_cents: 0, vat_rate: 21 }]);
+    setLines([emptyLine()]);
     void reload();
     void userId;
   }
@@ -579,6 +627,7 @@ function InvoicesTab({
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-44">Product</TableHead>
                       <TableHead>{t("quotes.description")}</TableHead>
                       <TableHead className="w-20 text-right">{t("quotes.qty")}</TableHead>
                       <TableHead className="w-32 text-right">{t("acc.inv.unit_eur")}</TableHead>
@@ -593,6 +642,24 @@ function InvoicesTab({
                       const lineTot = Math.round(lineSub * (1 + l.vat_rate / 100));
                       return (
                         <TableRow key={i}>
+                          <TableCell>
+                            <Select
+                              value={l.product_id ?? ""}
+                              onValueChange={(v) => applyProduct(i, v)}
+                            >
+                              <SelectTrigger className="h-9">
+                                <SelectValue placeholder={products.length ? "— kies —" : "Geen producten"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {products.map((p) => (
+                                  <SelectItem key={p.id} value={p.id}>
+                                    {p.name} · {centsFmt(p.unit_price_cents, lang)}
+                                    {p.pricing_type === "monthly_recurring" ? " /mnd" : ""}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
                           <TableCell>
                             <Input
                               value={l.description}
@@ -675,7 +742,7 @@ function InvoicesTab({
                   variant="outline"
                   size="sm"
                   onClick={() =>
-                    setLines([...lines, { description: "", quantity: 1, unit_price_cents: 0, vat_rate: 21 }])
+                    setLines([...lines, emptyLine()])
                   }
                 >
                   <Plus className="mr-1 h-3 w-3" />
