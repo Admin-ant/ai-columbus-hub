@@ -104,9 +104,11 @@ function ProductsPage() {
     setSaving(true);
     const { error } = await supabase.from("products").insert({
       organization_id: currentOrganizationId,
+      sku: form.sku.trim() || null,
       name: form.name.trim(),
       description: form.description.trim() || null,
       unit_price_cents: Math.round(Number(form.unit_price) * 100),
+      setup_fee_cents: Math.round(Number(form.setup_fee) * 100),
       pricing_type: form.pricing_type,
       vat_rate: Number(form.vat_rate) || 0,
       created_by: user?.id ?? null,
@@ -115,7 +117,7 @@ function ProductsPage() {
     if (error) return toast.error(error.message);
     toast.success("Product aangemaakt");
     setOpen(false);
-    setForm({ name: "", description: "", unit_price: "0", pricing_type: "one_time", vat_rate: "21" });
+    setForm({ sku: "", name: "", description: "", unit_price: "0", setup_fee: "0", pricing_type: "one_time", vat_rate: "21" });
     load();
   }
 
