@@ -627,6 +627,7 @@ function InvoicesTab({
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-44">Product</TableHead>
                       <TableHead>{t("quotes.description")}</TableHead>
                       <TableHead className="w-20 text-right">{t("quotes.qty")}</TableHead>
                       <TableHead className="w-32 text-right">{t("acc.inv.unit_eur")}</TableHead>
