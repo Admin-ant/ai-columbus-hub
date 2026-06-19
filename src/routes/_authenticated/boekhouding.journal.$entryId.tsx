@@ -267,6 +267,24 @@ function JournalDetailPage() {
         </div>
       </div>
 
+      {showPreview && (
+        <div className="rounded-lg border bg-card overflow-hidden">
+          <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-2 text-sm font-medium">
+            <span>Concept-PDF preview</span>
+            <span className="text-xs text-muted-foreground">Wijzig de template om live te zien hoe de export eruit ziet.</span>
+          </div>
+          <div className="h-[640px] bg-muted/10">
+            {previewUrl ? (
+              <iframe key={previewUrl} src={previewUrl} title="Concept PDF" className="h-full w-full" />
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Preview wordt gegenereerd…
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {(sourceInvoice || sourceQuote) && (
         <div className="grid gap-4 md:grid-cols-2">
           {sourceInvoice && (
