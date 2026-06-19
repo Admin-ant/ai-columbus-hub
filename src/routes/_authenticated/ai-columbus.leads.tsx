@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Plus, Loader2 } from "lucide-react";
 
@@ -27,24 +28,25 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
+import { useWorkspace } from "@/hooks/use-workspace";
 
 export const Route = createFileRoute("/_authenticated/ai-columbus/leads")({
-  head: () => ({ meta: [{ title: "AI van Columbus — Leads funnel" }] }),
-  component: AiColumbusPage,
+  head: () => ({ meta: [{ title: "Leads funnel" }] }),
+  component: LeadsKanbanPage,
 });
 
 type LeadStage = Database["public"]["Enums"]["lead_stage"];
 type Lead = Database["public"]["Tables"]["leads"]["Row"];
 
-const STAGES: { key: LeadStage; label: string; color: string }[] = [
-  { key: "nieuwe", label: "Nieuwe", color: "bg-orange-500" },
-  { key: "op_afspraak", label: "Op afspraak", color: "bg-green-500" },
-  { key: "in_afwachting", label: "In afwachting", color: "bg-emerald-600" },
-  { key: "even_on_hold", label: "Even on hold", color: "bg-yellow-500" },
-  { key: "in_contact", label: "In contact", color: "bg-lime-600" },
-  { key: "klant", label: "Klant", color: "bg-teal-600" },
-  { key: "verloren", label: "Verloren", color: "bg-red-500" },
-  { key: "ai_columbus", label: "AI van Columbus", color: "bg-slate-600" },
+const STAGES: { key: LeadStage; color: string }[] = [
+  { key: "nieuwe", color: "bg-orange-500" },
+  { key: "op_afspraak", color: "bg-green-500" },
+  { key: "in_afwachting", color: "bg-emerald-600" },
+  { key: "even_on_hold", color: "bg-yellow-500" },
+  { key: "in_contact", color: "bg-lime-600" },
+  { key: "klant", color: "bg-teal-600" },
+  { key: "verloren", color: "bg-red-500" },
+  { key: "ai_columbus", color: "bg-slate-600" },
 ];
 
 const EUR = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
