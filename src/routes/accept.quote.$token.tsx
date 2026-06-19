@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { CheckCircle2, Loader2, ShieldCheck, FileSignature, CreditCard } from "lucide-react";
+import { CheckCircle2, Loader2, ShieldCheck, FileSignature, CreditCard, Eye, Receipt, ScrollText, Clock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -100,11 +100,18 @@ function AcceptQuotePage() {
     );
   }
 
-  const { quote, organization } = data;
+  const { quote, organization, events, journal_entry_id } = data;
   const lines = ((quote.content_json as { lines?: LineItem[] } | null)?.lines ?? []) as LineItem[];
   const isPaid = quote.status === "approved_paid";
   const isSigned = quote.status === "signed" || isPaid;
   const brand = organization?.brand_color ?? "#0f172a";
+
+  const eventMeta: Record<string, { label: string; icon: typeof Eye; tone: string }> = {
+    viewed: { label: t("accept.event.viewed") || "Bekeken", icon: Eye, tone: "text-muted-foreground" },
+    signed: { label: t("accept.event.signed") || "Ondertekend", icon: FileSignature, tone: "text-blue-600" },
+    paid: { label: t("accept.event.paid") || "Betaald", icon: CheckCircle2, tone: "text-emerald-600" },
+    invoice_created: { label: t("accept.event.invoice_created") || "Factuur aangemaakt", icon: Receipt, tone: "text-indigo-600" },
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
@@ -254,6 +261,49 @@ function AcceptQuotePage() {
             )}
           </>
         )}
+
+        {(events.length > 0 || journal_entry_id) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Clock className="h-4 w-4" /> {t("accept.history") || "Statushistorie"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {events.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t("accept.no_events") || "Nog geen activiteit."}</p>
+              ) : (
+                <ol className="space-y-2">
+                  {events.map((ev) => {
+                    const m = eventMeta[ev.event_type] ?? { label: ev.event_type, icon: Clock, tone: "text-muted-foreground" };
+                    const Icon = m.icon;
+                    return (
+                      <li key={ev.id} className="flex items-center justify-between gap-3 rounded-md border bg-muted/20 px-3 py-2 text-sm">
+                        <span className={`flex items-center gap-2 font-medium ${m.tone}`}>
+                          <Icon className="h-4 w-4" /> {m.label}
+                        </span>
+                        <span className="text-xs text-muted-foreground tabular-nums">
+                          {new Date(ev.occurred_at).toLocaleString(i18n.resolvedLanguage ?? "nl")}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+              {journal_entry_id && (
+                <a
+                  href={`/boekhouding/journal/${journal_entry_id}`}
+                  className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+                >
+                  <ScrollText className="h-4 w-4" />
+                  {t("accept.view_journal") || "Bekijk geboekte post"}
+                </a>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+
 
         <footer className="pt-6 text-center text-xs text-muted-foreground">
           {organization?.name} · {t("accept.secured")}

@@ -26,7 +26,47 @@ export const getPublicQuote = createServerFn({ method: "GET" })
       .select("name, logo_url, brand_color, invoice_prefix")
       .eq("id", q.organization_id)
       .maybeSingle();
-    return { quote: q, organization: org };
+
+    // Log a "viewed" event at most once per hour to avoid noise.
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { data: recentView } = await sb
+      .from("quote_status_events")
+      .select("id")
+      .eq("quote_id", q.id)
+      .eq("event_type", "viewed")
+      .gte("occurred_at", oneHourAgo)
+      .maybeSingle();
+    if (!recentView) {
+      await sb.from("quote_status_events").insert({
+        quote_id: q.id,
+        organization_id: q.organization_id,
+        event_type: "viewed",
+      });
+    }
+
+    const { data: events } = await sb
+      .from("quote_status_events")
+      .select("id, event_type, occurred_at, metadata")
+      .eq("quote_id", q.id)
+      .order("occurred_at", { ascending: false });
+
+    // Resolve linked journal entry (via the invoice spawned by this quote, if any).
+    let journal_entry_id: string | null = null;
+    const { data: inv } = await sb
+      .from("invoices")
+      .select("id")
+      .eq("quote_id", q.id)
+      .maybeSingle();
+    if (inv) {
+      const { data: je } = await sb
+        .from("journal_entries")
+        .select("id")
+        .eq("invoice_id", inv.id)
+        .maybeSingle();
+      if (je) journal_entry_id = je.id;
+    }
+
+    return { quote: q, organization: org, events: events ?? [], journal_entry_id };
   });
 
 export const signPublicQuote = createServerFn({ method: "POST" })
@@ -42,7 +82,7 @@ export const signPublicQuote = createServerFn({ method: "POST" })
     const sb = await loadAdmin();
     const { data: q, error: e1 } = await sb
       .from("quotes")
-      .select("id, status")
+      .select("id, organization_id, status")
       .eq("public_token", data.token)
       .maybeSingle();
     if (e1) throw new Error(e1.message);
@@ -59,6 +99,13 @@ export const signPublicQuote = createServerFn({ method: "POST" })
       })
       .eq("id", q.id);
     if (error) throw new Error(error.message);
+
+    await sb.from("quote_status_events").insert({
+      quote_id: q.id,
+      organization_id: q.organization_id,
+      event_type: "signed",
+    });
+
     return { ok: true };
   });
 
@@ -126,6 +173,21 @@ export const payPublicQuote = createServerFn({ method: "POST" })
       .update({ status: "approved_paid", mollie_payment_id: payment_id })
       .eq("id", q.id);
     if (uErr) throw new Error(uErr.message);
+
+    await sb.from("quote_status_events").insert([
+      {
+        quote_id: q.id,
+        organization_id: q.organization_id,
+        event_type: "paid",
+        metadata: { payment_id, amount: total },
+      },
+      {
+        quote_id: q.id,
+        organization_id: q.organization_id,
+        event_type: "invoice_created",
+        metadata: { invoice_id: inv.id, invoice_number: inv.invoice_number },
+      },
+    ]);
 
     return { ok: true, mock: true, payment_id, invoice_number: inv.invoice_number };
   });
