@@ -9,6 +9,9 @@ import {
   Cloud,
   Server,
   Settings,
+  Cpu,
+  BarChart3,
+  ScrollText,
 } from "lucide-react";
 
 import {
@@ -56,6 +59,9 @@ const sections: NavSection[] = [
     items: [
       { title: "Dashboard", url: "/ai-columbus", icon: LayoutDashboard },
       { title: "Leads funnel", url: "/ai-columbus/leads", icon: Sparkles },
+      { title: "Modellen & gebruik", url: "/ai-columbus/modellen", icon: Cpu },
+      { title: "Rapportages", url: "/ai-columbus/rapportages", icon: BarChart3 },
+      { title: "Logs", url: "/ai-columbus/logs", icon: ScrollText },
       { title: "Instellingen", url: "/ai-columbus/instellingen", icon: Settings },
     ],
   },
