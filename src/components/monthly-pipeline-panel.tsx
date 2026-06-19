@@ -1,8 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Lead = Database["public"]["Tables"]["leads"]["Row"];
 
@@ -15,9 +24,29 @@ function monthKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
+const STAGE_OPTIONS = [
+  { value: "all", label: "Alle stadia" },
+  { value: "nieuw", label: "Nieuw" },
+  { value: "gekwalificeerd", label: "Gekwalificeerd" },
+  { value: "voorstel", label: "Voorstel" },
+  { value: "onderhandeling", label: "Onderhandeling" },
+  { value: "klant", label: "Klant" },
+];
+
+const TIMING_OPTIONS = [
+  { value: "all", label: "Alle periodes" },
+  { value: "running", label: "Lopend" },
+  { value: "upcoming", label: "Toekomstig" },
+  { value: "this-quarter", label: "Komend kwartaal" },
+  { value: "no-date", label: "Zonder datum" },
+];
+
 export function MonthlyPipelinePanel({ organizationId }: { organizationId: string | null }) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [stageFilter, setStageFilter] = useState("all");
+  const [timingFilter, setTimingFilter] = useState("all");
 
   useEffect(() => {
     if (!organizationId) {
@@ -37,6 +66,30 @@ export function MonthlyPipelinePanel({ organizationId }: { organizationId: strin
       });
   }, [organizationId]);
 
+  const filteredLeads = useMemo(() => {
+    const now = new Date();
+    const currentKey = monthKey(now);
+    const quarterEnd = new Date(now.getFullYear(), now.getMonth() + 3, 0);
+    const q = search.trim().toLowerCase();
+    return leads.filter((l) => {
+      if (l.stage === "verloren") return false;
+      if (stageFilter !== "all" && l.stage !== stageFilter) return false;
+      if (q) {
+        const hay = `${l.name ?? ""} ${l.company ?? ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      const start = l.target_start_date ? new Date(l.target_start_date) : null;
+      const isRunning = l.stage === "klant" || (start && monthKey(start) <= currentKey);
+      if (timingFilter === "running" && !isRunning) return false;
+      if (timingFilter === "upcoming" && (isRunning || !start)) return false;
+      if (timingFilter === "no-date" && start) return false;
+      if (timingFilter === "this-quarter") {
+        if (!start || start > quarterEnd || start < now) return false;
+      }
+      return true;
+    });
+  }, [leads, search, stageFilter, timingFilter]);
+
   const { running, upcoming, totalRunning, totalUpcoming } = useMemo(() => {
     const now = new Date();
     const currentKey = monthKey(now);
@@ -44,8 +97,7 @@ export function MonthlyPipelinePanel({ organizationId }: { organizationId: strin
     const upcoming: Lead[] = [];
     let totalRunning = 0;
     let totalUpcoming = 0;
-    for (const l of leads) {
-      if (l.stage === "verloren") continue;
+    for (const l of filteredLeads) {
       const val = Number(l.potential_monthly_value ?? 0);
       const start = l.target_start_date ? new Date(l.target_start_date) : null;
       const isRunning = l.stage === "klant" || (start && monthKey(start) <= currentKey);
@@ -64,7 +116,9 @@ export function MonthlyPipelinePanel({ organizationId }: { organizationId: strin
     });
     running.sort((a, b) => (a.target_start_date ?? "0").localeCompare(b.target_start_date ?? "0"));
     return { running, upcoming, totalRunning, totalUpcoming };
-  }, [leads]);
+  }, [filteredLeads]);
+
+  const filtersActive = search !== "" || stageFilter !== "all" || timingFilter !== "all";
 
   if (loading) {
     return (
@@ -85,10 +139,61 @@ export function MonthlyPipelinePanel({ organizationId }: { organizationId: strin
   return (
     <div className="rounded-lg border bg-card">
       <div className="border-b px-4 py-3">
-        <h2 className="text-base font-semibold">Maandelijkse omzetpijplijn</h2>
-        <p className="text-xs text-muted-foreground">
-          Klant · pot. waarde/maand · ingangsdatum
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold">Maandelijkse omzetpijplijn</h2>
+            <p className="text-xs text-muted-foreground">
+              Klant · pot. waarde/maand · ingangsdatum
+            </p>
+          </div>
+          {filtersActive && (
+            <Badge variant="secondary" className="text-[10px]">
+              {filteredLeads.length} van {leads.filter((l) => l.stage !== "verloren").length} getoond
+            </Badge>
+          )}
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="relative min-w-[180px] flex-1">
+            <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Zoek klant of bedrijf…"
+              className="h-8 pl-7 text-sm"
+            />
+          </div>
+          <Select value={stageFilter} onValueChange={setStageFilter}>
+            <SelectTrigger className="h-8 w-[150px] text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STAGE_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={timingFilter} onValueChange={setTimingFilter}>
+            <SelectTrigger className="h-8 w-[160px] text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TIMING_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {filtersActive && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-xs"
+              onClick={() => { setSearch(""); setStageFilter("all"); setTimingFilter("all"); }}
+            >
+              <X className="mr-1 h-3 w-3" /> Wis filters
+            </Button>
+          )}
+        </div>
       </div>
 
       <Section
@@ -96,14 +201,14 @@ export function MonthlyPipelinePanel({ organizationId }: { organizationId: strin
         accent="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
         rows={running}
         total={totalRunning}
-        emptyText="Nog geen lopende contracten met maandwaarde."
+        emptyText="Geen lopende contracten met deze filters."
       />
       <Section
         title="Wat er aan komt"
         accent="bg-blue-500/10 text-blue-700 dark:text-blue-300"
         rows={upcoming}
         total={totalUpcoming}
-        emptyText="Geen geplande pijplijn."
+        emptyText="Geen geplande pijplijn met deze filters."
       />
 
       <div className="flex items-center justify-between border-t bg-muted/30 px-4 py-3">
