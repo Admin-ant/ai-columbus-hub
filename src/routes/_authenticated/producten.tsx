@@ -203,8 +203,8 @@ function ProductsPage() {
             <form onSubmit={createProduct} className="space-y-3">
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="p-sku">Artikelnr.</Label>
-                  <Input id="p-sku" placeholder="bv. ART-001" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
+                  <Label htmlFor="p-sku">Artikelnr. *</Label>
+                  <Input id="p-sku" placeholder="bv. ART-001" required maxLength={32} value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
                 </div>
                 <div className="col-span-2 space-y-1.5">
                   <Label htmlFor="p-name">Naam *</Label>
