@@ -14,7 +14,9 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated/teams'
+import { Route as AuthenticatedQuotesRouteImport } from './routes/_authenticated/quotes'
 import { Route as AuthenticatedNetqloudRouteImport } from './routes/_authenticated/netqloud'
+import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
 import { Route as AuthenticatedGebruikersRouteImport } from './routes/_authenticated/gebruikers'
 import { Route as AuthenticatedAiColumbusRouteImport } from './routes/_authenticated/ai-columbus'
 import { Route as AuthenticatedAdministratieRouteImport } from './routes/_authenticated/administratie'
@@ -53,9 +55,19 @@ const AuthenticatedTeamsRoute = AuthenticatedTeamsRouteImport.update({
   path: '/teams',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedQuotesRoute = AuthenticatedQuotesRouteImport.update({
+  id: '/quotes',
+  path: '/quotes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedNetqloudRoute = AuthenticatedNetqloudRouteImport.update({
   id: '/netqloud',
   path: '/netqloud',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedInvoicesRoute = AuthenticatedInvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedGebruikersRoute = AuthenticatedGebruikersRouteImport.update({
@@ -142,7 +154,9 @@ export interface FileRoutesByFullPath {
   '/administratie': typeof AuthenticatedAdministratieRoute
   '/ai-columbus': typeof AuthenticatedAiColumbusRouteWithChildren
   '/gebruikers': typeof AuthenticatedGebruikersRoute
+  '/invoices': typeof AuthenticatedInvoicesRoute
   '/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
+  '/quotes': typeof AuthenticatedQuotesRoute
   '/teams': typeof AuthenticatedTeamsRoute
   '/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
   '/ai-columbus/leads': typeof AuthenticatedAiColumbusLeadsRoute
@@ -160,6 +174,8 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/administratie': typeof AuthenticatedAdministratieRoute
   '/gebruikers': typeof AuthenticatedGebruikersRoute
+  '/invoices': typeof AuthenticatedInvoicesRoute
+  '/quotes': typeof AuthenticatedQuotesRoute
   '/teams': typeof AuthenticatedTeamsRoute
   '/': typeof AuthenticatedIndexRoute
   '/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
@@ -181,7 +197,9 @@ export interface FileRoutesById {
   '/_authenticated/administratie': typeof AuthenticatedAdministratieRoute
   '/_authenticated/ai-columbus': typeof AuthenticatedAiColumbusRouteWithChildren
   '/_authenticated/gebruikers': typeof AuthenticatedGebruikersRoute
+  '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
   '/_authenticated/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
+  '/_authenticated/quotes': typeof AuthenticatedQuotesRoute
   '/_authenticated/teams': typeof AuthenticatedTeamsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
@@ -204,7 +222,9 @@ export interface FileRouteTypes {
     | '/administratie'
     | '/ai-columbus'
     | '/gebruikers'
+    | '/invoices'
     | '/netqloud'
+    | '/quotes'
     | '/teams'
     | '/ai-columbus/instellingen'
     | '/ai-columbus/leads'
@@ -222,6 +242,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/administratie'
     | '/gebruikers'
+    | '/invoices'
+    | '/quotes'
     | '/teams'
     | '/'
     | '/ai-columbus/instellingen'
@@ -242,7 +264,9 @@ export interface FileRouteTypes {
     | '/_authenticated/administratie'
     | '/_authenticated/ai-columbus'
     | '/_authenticated/gebruikers'
+    | '/_authenticated/invoices'
     | '/_authenticated/netqloud'
+    | '/_authenticated/quotes'
     | '/_authenticated/teams'
     | '/_authenticated/'
     | '/_authenticated/ai-columbus/instellingen'
@@ -300,11 +324,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTeamsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/quotes': {
+      id: '/_authenticated/quotes'
+      path: '/quotes'
+      fullPath: '/quotes'
+      preLoaderRoute: typeof AuthenticatedQuotesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/netqloud': {
       id: '/_authenticated/netqloud'
       path: '/netqloud'
       fullPath: '/netqloud'
       preLoaderRoute: typeof AuthenticatedNetqloudRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/invoices': {
+      id: '/_authenticated/invoices'
+      path: '/invoices'
+      fullPath: '/invoices'
+      preLoaderRoute: typeof AuthenticatedInvoicesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/gebruikers': {
@@ -451,7 +489,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdministratieRoute: typeof AuthenticatedAdministratieRoute
   AuthenticatedAiColumbusRoute: typeof AuthenticatedAiColumbusRouteWithChildren
   AuthenticatedGebruikersRoute: typeof AuthenticatedGebruikersRoute
+  AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
   AuthenticatedNetqloudRoute: typeof AuthenticatedNetqloudRouteWithChildren
+  AuthenticatedQuotesRoute: typeof AuthenticatedQuotesRoute
   AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
@@ -460,7 +500,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdministratieRoute: AuthenticatedAdministratieRoute,
   AuthenticatedAiColumbusRoute: AuthenticatedAiColumbusRouteWithChildren,
   AuthenticatedGebruikersRoute: AuthenticatedGebruikersRoute,
+  AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
   AuthenticatedNetqloudRoute: AuthenticatedNetqloudRouteWithChildren,
+  AuthenticatedQuotesRoute: AuthenticatedQuotesRoute,
   AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
