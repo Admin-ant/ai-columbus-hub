@@ -539,9 +539,12 @@ export type Database = {
       products: {
         Row: {
           active: boolean
+          contract_months: number | null
           created_at: string
           created_by: string | null
           description: string | null
+          discount_percent: number
+          discount_type: Database["public"]["Enums"]["discount_type"]
           id: string
           name: string
           organization_id: string
@@ -554,9 +557,12 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          contract_months?: number | null
           created_at?: string
           created_by?: string | null
           description?: string | null
+          discount_percent?: number
+          discount_type?: Database["public"]["Enums"]["discount_type"]
           id?: string
           name: string
           organization_id: string
@@ -569,9 +575,12 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          contract_months?: number | null
           created_at?: string
           created_by?: string | null
           description?: string | null
+          discount_percent?: number
+          discount_type?: Database["public"]["Enums"]["discount_type"]
           id?: string
           name?: string
           organization_id?: string
@@ -724,6 +733,7 @@ export type Database = {
         | "expense"
         | "vat"
       app_role: "admin" | "medewerker"
+      discount_type: "none" | "one_time" | "recurring"
       invoice_status: "draft" | "sent" | "paid" | "overdue" | "cancelled"
       lead_stage:
         | "nieuwe"
@@ -883,6 +893,7 @@ export const Constants = {
         "vat",
       ],
       app_role: ["admin", "medewerker"],
+      discount_type: ["none", "one_time", "recurring"],
       invoice_status: ["draft", "sent", "paid", "overdue", "cancelled"],
       lead_stage: [
         "nieuwe",
