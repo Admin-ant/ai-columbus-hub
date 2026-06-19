@@ -97,6 +97,9 @@ interface ProductOption {
   vat_rate: number;
   pricing_type: "one_time" | "monthly_recurring" | "per_credit";
   description: string | null;
+  discount_percent: number | null;
+  discount_type: "none" | "one_time" | "recurring" | null;
+  contract_months: number | null;
 }
 
 interface JournalLine {
