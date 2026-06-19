@@ -28,7 +28,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 
-export const Route = createFileRoute("/_authenticated/ai-columbus")({
+export const Route = createFileRoute("/_authenticated/ai-columbus/leads")({
   head: () => ({ meta: [{ title: "AI van Columbus — Leads funnel" }] }),
   component: AiColumbusPage,
 });
