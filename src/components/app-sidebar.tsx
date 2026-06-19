@@ -60,6 +60,7 @@ const sections: NavSection[] = [
   {
     label: "AI van Columbus",
     rootUrl: "/ai-columbus",
+    orgSlug: "ai-columbus",
     icon: Sparkles,
     items: [
       { title: "Dashboard", url: "/ai-columbus", icon: LayoutDashboard },
