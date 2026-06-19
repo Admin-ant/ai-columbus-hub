@@ -518,7 +518,7 @@ function InvoicesTab({
   }
 
   async function changeStatus(id: string, status: InvoiceRow["status"]) {
-    const patch: Record<string, unknown> = { status };
+    const patch: { status: InvoiceRow["status"]; sent_at?: string; paid_at?: string } = { status };
     if (status === "sent") patch.sent_at = new Date().toISOString();
     if (status === "paid") patch.paid_at = new Date().toISOString();
     const { error } = await supabase.from("invoices").update(patch).eq("id", id);
