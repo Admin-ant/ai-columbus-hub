@@ -2,6 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Sparkles, FileText, Users, ArrowRight, Lock, LayoutDashboard, Cloud } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
+import { useWorkspace } from "@/hooks/use-workspace";
+import { FinancialKpiCards } from "@/components/financial-kpi-cards";
+import { MonthlyPipelinePanel } from "@/components/monthly-pipeline-panel";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Overzicht — AI van Columbus" }] }),
