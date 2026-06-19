@@ -80,15 +80,15 @@ export const payPublicQuote = createServerFn({ method: "POST" })
     // Mock Mollie payment
     const payment_id = `tr_mock_${Math.random().toString(36).slice(2, 12)}`;
 
-    // Numbers (cast result; keep call bound to sb)
-    const { data: num, error: nErr } = (await (sb.rpc as (
+    // next_invoice_number is missing from the generated rpc overload union; cast via unknown.
+    type RpcFn = (
       name: "next_invoice_number",
       args: { _org_id: string },
-    ) => Promise<{ data: string | null; error: { message: string } | null }>).call(
-      sb,
-      "next_invoice_number",
-      { _org_id: q.organization_id },
-    )) as { data: string | null; error: { message: string } | null };
+    ) => Promise<{ data: string | null; error: { message: string } | null }>;
+    const rpcCall = (sb.rpc as unknown as RpcFn).bind(sb);
+    const { data: num, error: nErr } = await rpcCall("next_invoice_number", {
+      _org_id: q.organization_id,
+    });
     if (nErr) throw new Error(nErr.message);
     if (!num) throw new Error("Kon factuurnummer niet genereren");
 
