@@ -643,6 +643,24 @@ function InvoicesTab({
                       return (
                         <TableRow key={i}>
                           <TableCell>
+                            <Select
+                              value={l.product_id ?? ""}
+                              onValueChange={(v) => applyProduct(i, v)}
+                            >
+                              <SelectTrigger className="h-9">
+                                <SelectValue placeholder={products.length ? "— kies —" : "Geen producten"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {products.map((p) => (
+                                  <SelectItem key={p.id} value={p.id}>
+                                    {p.name} · {centsFmt(p.unit_price_cents, lang)}
+                                    {p.pricing_type === "monthly_recurring" ? " /mnd" : ""}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
                             <Input
                               value={l.description}
                               onChange={(e) => {
