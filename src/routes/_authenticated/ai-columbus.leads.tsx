@@ -56,6 +56,7 @@ function AiColumbusPage() {
   const [dragId, setDragId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [orgId, setOrgId] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "",
     stage: "nieuwe" as LeadStage,
@@ -69,6 +70,12 @@ function AiColumbusPage() {
 
   async function load() {
     setLoading(true);
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("id")
+      .eq("slug", "ai-columbus")
+      .maybeSingle();
+    setOrgId(org?.id ?? null);
     const { data, error } = await supabase
       .from("leads")
       .select("*")
@@ -116,8 +123,14 @@ function AiColumbusPage() {
       toast.error("Naam is verplicht");
       return;
     }
+    if (!orgId) {
+      toast.error("Organisatie niet gevonden");
+      setSaving(false);
+      return;
+    }
     setSaving(true);
     const { error } = await supabase.from("leads").insert({
+      organization_id: orgId,
       name: form.name.trim(),
       stage: form.stage,
       value: Number(form.value) || 0,

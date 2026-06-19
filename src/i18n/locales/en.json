@@ -1,0 +1,85 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "loading": "Loading…",
+    "search": "Search",
+    "back": "Back",
+    "language": "Language",
+    "dutch": "Dutch",
+    "english": "English",
+    "all_organizations": "All organizations",
+    "switch_organization": "Switch organization",
+    "active_organization": "Active organization"
+  },
+  "header": {
+    "portal_title": "Holding Portal",
+    "portal_subtitle": "Internal overview"
+  },
+  "nav": {
+    "overview": "Overview",
+    "ai_columbus": "AI van Columbus",
+    "netqloud": "Netqloud",
+    "leads": "Leads",
+    "quotes": "Quotes",
+    "invoices": "Invoices",
+    "clients": "Clients",
+    "servers": "Servers",
+    "settings": "Settings",
+    "users": "Users",
+    "teams": "Teams",
+    "models_usage": "Models & usage",
+    "reports": "Reports",
+    "logs": "Logs",
+    "administration": "Administration"
+  },
+  "leads": {
+    "title": "Lead funnel",
+    "new_lead": "New lead",
+    "stages": {
+      "nieuwe": "New",
+      "contact_opgenomen": "Contacted",
+      "offerte_verzonden": "Quote sent",
+      "gewonnen": "Won",
+      "verloren": "Lost"
+    }
+  },
+  "quotes": {
+    "title": "Quotes",
+    "new_quote": "New quote",
+    "status": {
+      "draft": "Draft",
+      "sent": "Sent",
+      "viewed": "Viewed",
+      "signed": "Signed",
+      "approved_paid": "Approved & paid",
+      "declined": "Declined"
+    }
+  },
+  "invoices": {
+    "title": "Invoices",
+    "new_invoice": "New invoice",
+    "status": {
+      "draft": "Draft",
+      "sent": "Sent",
+      "paid": "Paid",
+      "overdue": "Overdue",
+      "cancelled": "Cancelled"
+    }
+  },
+  "ai_assistant": {
+    "title": "AI Assistant",
+    "suggest_quote": "Draft a quote from the lead's notes",
+    "verify_invoice": "Verify invoice line items",
+    "summarize_lead": "Summarize this lead"
+  },
+  "accept": {
+    "title": "Accept quote",
+    "sign_and_pay": "Sign & pay",
+    "clear_signature": "Clear signature",
+    "thanks": "Thank you! The quote has been signed and the down-payment has been initiated."
+  }
+}

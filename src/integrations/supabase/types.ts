@@ -41,8 +41,63 @@ export type Database = {
         }
         Relationships: []
       }
+      invoices: {
+        Row: {
+          amount: number
+          created_at: string
+          due_date: string
+          id: string
+          invoice_number: string
+          issue_date: string
+          organization_id: string
+          quote_id: string | null
+          status: Database["public"]["Enums"]["invoice_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          due_date?: string
+          id?: string
+          invoice_number: string
+          issue_date?: string
+          organization_id: string
+          quote_id?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          due_date?: string
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          organization_id?: string
+          quote_id?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
+          company: string | null
           created_at: string
           created_by: string | null
           email: string | null
@@ -50,6 +105,7 @@ export type Database = {
           last_contact_at: string | null
           name: string
           notes: string | null
+          organization_id: string
           phone: string | null
           position: number
           rep: string | null
@@ -59,6 +115,7 @@ export type Database = {
           value: number
         }
         Insert: {
+          company?: string | null
           created_at?: string
           created_by?: string | null
           email?: string | null
@@ -66,6 +123,7 @@ export type Database = {
           last_contact_at?: string | null
           name: string
           notes?: string | null
+          organization_id: string
           phone?: string | null
           position?: number
           rep?: string | null
@@ -75,6 +133,7 @@ export type Database = {
           value?: number
         }
         Update: {
+          company?: string | null
           created_at?: string
           created_by?: string | null
           email?: string | null
@@ -82,6 +141,7 @@ export type Database = {
           last_contact_at?: string | null
           name?: string
           notes?: string | null
+          organization_id?: string
           phone?: string | null
           position?: number
           rep?: string | null
@@ -89,6 +149,85 @@ export type Database = {
           stage?: Database["public"]["Enums"]["lead_stage"]
           updated_at?: string
           value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_members: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          role: Database["public"]["Enums"]["org_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          role?: Database["public"]["Enums"]["org_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          role?: Database["public"]["Enums"]["org_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          brand_color: string | null
+          created_at: string
+          id: string
+          invoice_prefix: string
+          logo_url: string | null
+          name: string
+          next_invoice_seq: number
+          slug: string
+          tax_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          brand_color?: string | null
+          created_at?: string
+          id?: string
+          invoice_prefix: string
+          logo_url?: string | null
+          name: string
+          next_invoice_seq?: number
+          slug: string
+          tax_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          brand_color?: string | null
+          created_at?: string
+          id?: string
+          invoice_prefix?: string
+          logo_url?: string | null
+          name?: string
+          next_invoice_seq?: number
+          slug?: string
+          tax_number?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -118,6 +257,72 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      quotes: {
+        Row: {
+          content_json: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          lead_id: string | null
+          mollie_payment_id: string | null
+          organization_id: string
+          public_token: string
+          signature_svg: string | null
+          signed_at: string | null
+          status: Database["public"]["Enums"]["quote_status"]
+          title: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          content_json?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lead_id?: string | null
+          mollie_payment_id?: string | null
+          organization_id: string
+          public_token?: string
+          signature_svg?: string | null
+          signed_at?: string | null
+          status?: Database["public"]["Enums"]["quote_status"]
+          title: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          content_json?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lead_id?: string | null
+          mollie_payment_id?: string | null
+          organization_id?: string
+          public_token?: string
+          signature_svg?: string | null
+          signed_at?: string | null
+          status?: Database["public"]["Enums"]["quote_status"]
+          title?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -149,6 +354,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "medewerker"
+      invoice_status: "draft" | "sent" | "paid" | "overdue" | "cancelled"
       lead_stage:
         | "nieuwe"
         | "op_afspraak"
@@ -158,6 +364,17 @@ export type Database = {
         | "klant"
         | "verloren"
         | "ai_columbus"
+        | "contact_opgenomen"
+        | "offerte_verzonden"
+        | "gewonnen"
+      org_role: "holding_admin" | "company_staff"
+      quote_status:
+        | "draft"
+        | "sent"
+        | "viewed"
+        | "signed"
+        | "approved_paid"
+        | "declined"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -286,6 +503,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "medewerker"],
+      invoice_status: ["draft", "sent", "paid", "overdue", "cancelled"],
       lead_stage: [
         "nieuwe",
         "op_afspraak",
@@ -295,6 +513,18 @@ export const Constants = {
         "klant",
         "verloren",
         "ai_columbus",
+        "contact_opgenomen",
+        "offerte_verzonden",
+        "gewonnen",
+      ],
+      org_role: ["holding_admin", "company_staff"],
+      quote_status: [
+        "draft",
+        "sent",
+        "viewed",
+        "signed",
+        "approved_paid",
+        "declined",
       ],
     },
   },
