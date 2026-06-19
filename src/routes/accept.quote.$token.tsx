@@ -262,6 +262,49 @@ function AcceptQuotePage() {
           </>
         )}
 
+        {(events.length > 0 || journal_entry_id) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Clock className="h-4 w-4" /> {t("accept.history") || "Statushistorie"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {events.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t("accept.no_events") || "Nog geen activiteit."}</p>
+              ) : (
+                <ol className="space-y-2">
+                  {events.map((ev) => {
+                    const m = eventMeta[ev.event_type] ?? { label: ev.event_type, icon: Clock, tone: "text-muted-foreground" };
+                    const Icon = m.icon;
+                    return (
+                      <li key={ev.id} className="flex items-center justify-between gap-3 rounded-md border bg-muted/20 px-3 py-2 text-sm">
+                        <span className={`flex items-center gap-2 font-medium ${m.tone}`}>
+                          <Icon className="h-4 w-4" /> {m.label}
+                        </span>
+                        <span className="text-xs text-muted-foreground tabular-nums">
+                          {new Date(ev.occurred_at).toLocaleString(i18n.resolvedLanguage ?? "nl")}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+              {journal_entry_id && (
+                <a
+                  href={`/boekhouding/journal/${journal_entry_id}`}
+                  className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+                >
+                  <ScrollText className="h-4 w-4" />
+                  {t("accept.view_journal") || "Bekijk geboekte post"}
+                </a>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+
+
         <footer className="pt-6 text-center text-xs text-muted-foreground">
           {organization?.name} · {t("accept.secured")}
         </footer>
