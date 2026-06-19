@@ -146,6 +146,7 @@ export type Database = {
           id: string
           invoice_id: string
           position: number
+          product_id: string | null
           quantity: number
           revenue_account_id: string | null
           subtotal_cents: number
@@ -160,6 +161,7 @@ export type Database = {
           id?: string
           invoice_id: string
           position?: number
+          product_id?: string | null
           quantity?: number
           revenue_account_id?: string | null
           subtotal_cents?: number
@@ -174,6 +176,7 @@ export type Database = {
           id?: string
           invoice_id?: string
           position?: number
+          product_id?: string | null
           quantity?: number
           revenue_account_id?: string | null
           subtotal_cents?: number
@@ -188,6 +191,13 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
           {
@@ -397,9 +407,11 @@ export type Database = {
           organization_id: string
           phone: string | null
           position: number
+          potential_monthly_value: number
           rep: string | null
           source: string | null
           stage: Database["public"]["Enums"]["lead_stage"]
+          target_start_date: string | null
           updated_at: string
           value: number
         }
@@ -415,9 +427,11 @@ export type Database = {
           organization_id: string
           phone?: string | null
           position?: number
+          potential_monthly_value?: number
           rep?: string | null
           source?: string | null
           stage?: Database["public"]["Enums"]["lead_stage"]
+          target_start_date?: string | null
           updated_at?: string
           value?: number
         }
@@ -433,9 +447,11 @@ export type Database = {
           organization_id?: string
           phone?: string | null
           position?: number
+          potential_monthly_value?: number
           rep?: string | null
           source?: string | null
           stage?: Database["public"]["Enums"]["lead_stage"]
+          target_start_date?: string | null
           updated_at?: string
           value?: number
         }
@@ -519,6 +535,56 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      products: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          organization_id: string
+          pricing_type: Database["public"]["Enums"]["pricing_type"]
+          unit_price_cents: number
+          updated_at: string
+          vat_rate: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          pricing_type?: Database["public"]["Enums"]["pricing_type"]
+          unit_price_cents?: number
+          updated_at?: string
+          vat_rate?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          pricing_type?: Database["public"]["Enums"]["pricing_type"]
+          unit_price_cents?: number
+          updated_at?: string
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -666,6 +732,7 @@ export type Database = {
         | "offerte_verzonden"
         | "gewonnen"
       org_role: "holding_admin" | "company_staff"
+      pricing_type: "one_time" | "monthly_recurring" | "per_credit"
       quote_status:
         | "draft"
         | "sent"
@@ -825,6 +892,7 @@ export const Constants = {
         "gewonnen",
       ],
       org_role: ["holding_admin", "company_staff"],
+      pricing_type: ["one_time", "monthly_recurring", "per_credit"],
       quote_status: [
         "draft",
         "sent",
