@@ -176,9 +176,15 @@ function ProductsPage() {
               <DialogTitle>Nieuw product</DialogTitle>
             </DialogHeader>
             <form onSubmit={createProduct} className="space-y-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="p-name">Naam *</Label>
-                <Input id="p-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="p-sku">Artikelnr.</Label>
+                  <Input id="p-sku" placeholder="bv. ART-001" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
+                </div>
+                <div className="col-span-2 space-y-1.5">
+                  <Label htmlFor="p-name">Naam *</Label>
+                  <Input id="p-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="p-desc">Omschrijving</Label>
@@ -190,10 +196,14 @@ function ProductsPage() {
                   <Input id="p-price" type="number" step="0.01" value={form.unit_price} onChange={(e) => setForm({ ...form, unit_price: e.target.value })} />
                 </div>
                 <div className="space-y-1.5">
+                  <Label htmlFor="p-setup">Eenmalige opstartkosten (€)</Label>
+                  <Input id="p-setup" type="number" step="0.01" value={form.setup_fee} onChange={(e) => setForm({ ...form, setup_fee: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
                   <Label htmlFor="p-vat">BTW %</Label>
                   <Input id="p-vat" type="number" step="0.01" value={form.vat_rate} onChange={(e) => setForm({ ...form, vat_rate: e.target.value })} />
                 </div>
-                <div className="col-span-2 space-y-1.5">
+                <div className="space-y-1.5">
                   <Label>Prijstype</Label>
                   <Select value={form.pricing_type} onValueChange={(v) => setForm({ ...form, pricing_type: v as PricingType })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
