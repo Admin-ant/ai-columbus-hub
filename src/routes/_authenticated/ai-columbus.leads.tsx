@@ -284,7 +284,31 @@ function LeadsKanbanPage() {
           })}
         </div>
       )}
+
+      <AIAssistantPanel
+        title={t("ai_assistant.title")}
+        task="summarize_lead"
+        suggestions={[
+          {
+            label: t("ai_assistant.summarize_lead"),
+            task: "summarize_lead",
+            context: leads
+              .slice(0, 5)
+              .map((l) => `- ${l.name} (${l.stage}) €${l.value ?? 0} — ${l.notes ?? ""}`)
+              .join("\n") || "Geen leads beschikbaar.",
+          },
+          {
+            label: t("ai_assistant.suggest_quote"),
+            task: "lead_to_quote",
+            context:
+              leads[0]
+                ? `Lead: ${leads[0].name}, waarde €${leads[0].value ?? 0}, notities: ${leads[0].notes ?? "-"}`
+                : "Geen lead geselecteerd.",
+          },
+        ]}
+      />
     </div>
   );
 }
+
 
