@@ -671,8 +671,9 @@ function InvoicesTab({
                               <SelectContent>
                                 {products.map((p) => (
                                   <SelectItem key={p.id} value={p.id}>
-                                    {p.name} · {centsFmt(p.unit_price_cents, lang)}
+                                    {p.sku ? `[${p.sku}] ` : ""}{p.name} · {centsFmt(p.unit_price_cents, lang)}
                                     {p.pricing_type === "monthly_recurring" ? " /mnd" : ""}
+                                    {Number(p.setup_fee_cents ?? 0) > 0 ? ` (+${centsFmt(p.setup_fee_cents, lang)} setup)` : ""}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
