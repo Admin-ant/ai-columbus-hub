@@ -374,6 +374,7 @@ function ProductsPage() {
                 <TableHead className="text-right">Prijs</TableHead>
                 <TableHead className="text-right">Opstart</TableHead>
                 <TableHead className="text-right">BTW</TableHead>
+                <TableHead className="text-right">Korting</TableHead>
                 <TableHead>Actief</TableHead>
                 <TableHead></TableHead>
               </TableRow>
@@ -394,12 +395,27 @@ function ProductsPage() {
                   <TableCell className="text-right tabular-nums">{EUR.format(Number(p.unit_price_cents ?? 0) / 100)}</TableCell>
                   <TableCell className="text-right tabular-nums">{EUR.format(Number(p.setup_fee_cents ?? 0) / 100)}</TableCell>
                   <TableCell className="text-right tabular-nums">{Number(p.vat_rate)}%</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {Number(p.discount_percent ?? 0) > 0 ? (
+                      <span>
+                        {Number(p.discount_percent)}%
+                        <span className="ml-1 text-[10px] uppercase text-muted-foreground">
+                          {p.discount_type === "recurring"
+                            ? `/mnd${p.contract_months ? ` · ${p.contract_months}m` : ""}`
+                            : "eenmalig"}
+                        </span>
+                      </span>
+                    ) : "—"}
+                  </TableCell>
                   <TableCell>
                     <Button size="sm" variant={p.active ? "default" : "outline"} onClick={() => toggleActive(p.id, !p.active)}>
                       {p.active ? "Actief" : "Inactief"}
                     </Button>
                   </TableCell>
                   <TableCell className="text-right">
+                    <Button size="icon" variant="ghost" onClick={() => openEdit(p)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
                     <Button size="icon" variant="ghost" onClick={() => removeProduct(p.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
