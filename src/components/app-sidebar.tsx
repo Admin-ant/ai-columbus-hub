@@ -14,6 +14,7 @@ import {
   ScrollText,
   Receipt,
   FileSignature,
+  Package,
 } from "lucide-react";
 
 import {
