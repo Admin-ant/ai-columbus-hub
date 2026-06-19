@@ -282,7 +282,7 @@ function ProductsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products.map((p) => (
+              {filteredProducts.map((p) => (
                 <TableRow key={p.id} className={!p.active ? "opacity-50" : ""}>
                   <TableCell className="font-mono text-xs text-muted-foreground">{p.sku ?? "—"}</TableCell>
                   <TableCell>
