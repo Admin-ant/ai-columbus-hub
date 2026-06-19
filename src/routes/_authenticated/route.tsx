@@ -7,6 +7,7 @@ import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { LanguageSwitcher } from "@/components/language-switcher";
 
 export const Route = createFileRoute("/_authenticated")({
+  ssr: false,
   component: AuthenticatedLayout,
 });
 

@@ -41,11 +41,23 @@
     "new_lead": "Nieuwe lead",
     "stages": {
       "nieuwe": "Nieuw",
+      "op_afspraak": "Op afspraak",
+      "in_afwachting": "In afwachting",
+      "even_on_hold": "Even on hold",
+      "in_contact": "In contact",
+      "klant": "Klant",
+      "verloren": "Verloren",
+      "ai_columbus": "AI van Columbus",
       "contact_opgenomen": "Contact opgenomen",
       "offerte_verzonden": "Offerte verzonden",
-      "gewonnen": "Gewonnen",
-      "verloren": "Verloren"
-    }
+      "gewonnen": "Gewonnen"
+    },
+    "drag_hint": "Sleep een lead naar een andere kolom om de fase te wijzigen.",
+    "empty": "Geen leads",
+    "rep": "Vertegenwoordiger",
+    "name_required": "Naam is verplicht",
+    "no_organization": "Selecteer eerst een organisatie",
+    "created": "Lead aangemaakt"
   },
   "quotes": {
     "title": "Offertes",
