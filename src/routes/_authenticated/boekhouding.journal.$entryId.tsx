@@ -133,12 +133,30 @@ function JournalDetailPage() {
   const sourceInvoice = entry.invoices ?? null;
 
   function exportPdf() {
+    const tpl: PdfTemplate = loadTemplate(entry!.organization_id);
+    const theme = THEMES[tpl.theme];
     const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
     const fmt = (c: number) => centsFmt(c, lang);
     let y = 48;
-    doc.setFontSize(16);
-    doc.text("Journaalpost", 40, y);
+
+    if (tpl.logoDataUrl) {
+      try {
+        const mime = tpl.logoDataUrl.startsWith("data:image/png") ? "PNG" : "JPEG";
+        doc.addImage(tpl.logoDataUrl, mime, pageW - 40 - 80, 32, 80, 40, undefined, "FAST");
+      } catch {
+        /* ignore */
+      }
+    }
+
+    doc.setFillColor(theme.accent[0], theme.accent[1], theme.accent[2]);
+    doc.rect(40, y - 14, 3, 22, "F");
+    doc.setTextColor(theme.head[0], theme.head[1], theme.head[2]);
+    doc.setFontSize(18);
+    doc.text(tpl.title || "Journaalpost", 50, y);
     y += 22;
+
     doc.setFontSize(10);
     doc.setTextColor(80);
     doc.text(entry!.description, 40, y);
@@ -197,13 +215,14 @@ function JournalDetailPage() {
       ]),
       foot: [["", "", "Totaal", fmt(totalDebit), fmt(totalCredit)]],
       styles: { fontSize: 9, cellPadding: 5 },
-      headStyles: { fillColor: [30, 41, 59] },
+      headStyles: { fillColor: theme.head, textColor: 255 },
       footStyles: { fillColor: [241, 245, 249], textColor: 20, fontStyle: "bold" },
       columnStyles: {
         0: { cellWidth: 50 },
         3: { halign: "right" },
         4: { halign: "right" },
       },
+      margin: { bottom: 60 },
     });
 
     const finalY = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? y;
@@ -215,9 +234,24 @@ function JournalDetailPage() {
       finalY + 24,
     );
 
+    const pages = doc.getNumberOfPages();
+    for (let i = 1; i <= pages; i++) {
+      doc.setPage(i);
+      doc.setDrawColor(theme.accent[0], theme.accent[1], theme.accent[2]);
+      doc.setLineWidth(0.5);
+      doc.line(40, pageH - 36, pageW - 40, pageH - 36);
+      doc.setFontSize(8);
+      doc.setTextColor(120);
+      if (tpl.footerText) doc.text(tpl.footerText, 40, pageH - 22);
+      if (tpl.showPageNumbers) {
+        doc.text(`Pagina ${i} van ${pages}`, pageW - 40, pageH - 22, { align: "right" });
+      }
+    }
+
     const ref = sourceInvoice?.invoice_number ?? entry!.id.slice(0, 8);
     doc.save(`journaalpost-${ref}.pdf`);
   }
+
 
   return (
     <div className="space-y-6">
