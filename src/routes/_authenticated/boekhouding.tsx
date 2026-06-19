@@ -880,6 +880,11 @@ function InvoicesTab({
                     <span className="text-muted-foreground">{t("quotes.total")}: </span>
                     <span className="tabular-nums">{centsFmt(totalCents, lang)}</span>
                   </div>
+                  {contractTotalCents > 0 && (
+                    <div className="text-xs text-muted-foreground">
+                      Contractwaarde (incl. btw): <span className="tabular-nums">{centsFmt(contractTotalCents, lang)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
