@@ -2,10 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const BOOTSTRAP_EMAIL = "ah.hogervorst@gmail.com";
-const BOOTSTRAP_PASSWORD = "TelkpN1020304!";
-const BOOTSTRAP_NAME = "Admin";
-
 async function assertAdmin(context: { supabase: any; userId: string }) {
   const { data, error } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
@@ -14,54 +10,6 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Forbidden: alleen admins");
 }
-
-/** Bootstraps the very first admin account. Idempotent: only works as long as no admin exists. */
-export const bootstrapAdmin = createServerFn({ method: "POST" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-  const { count, error: countErr } = await supabaseAdmin
-    .from("user_roles")
-    .select("id", { count: "exact", head: true })
-    .eq("role", "admin");
-  if (countErr) throw new Error(countErr.message);
-  if ((count ?? 0) > 0) {
-    return { ok: false, message: "Er bestaat al een admin." };
-  }
-
-  // Try to find existing auth user
-  let userId: string | null = null;
-  const list = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
-  if (list.error) throw new Error(list.error.message);
-  const existing = list.data.users.find(
-    (u) => (u.email ?? "").toLowerCase() === BOOTSTRAP_EMAIL.toLowerCase(),
-  );
-  if (existing) {
-    userId = existing.id;
-    const upd = await supabaseAdmin.auth.admin.updateUserById(existing.id, {
-      password: BOOTSTRAP_PASSWORD,
-      email_confirm: true,
-      user_metadata: { full_name: BOOTSTRAP_NAME },
-    });
-    if (upd.error) throw new Error(upd.error.message);
-  } else {
-    const created = await supabaseAdmin.auth.admin.createUser({
-      email: BOOTSTRAP_EMAIL,
-      password: BOOTSTRAP_PASSWORD,
-      email_confirm: true,
-      user_metadata: { full_name: BOOTSTRAP_NAME },
-    });
-    if (created.error) throw new Error(created.error.message);
-    userId = created.data.user!.id;
-  }
-
-  // Ensure admin role
-  const { error: roleErr } = await supabaseAdmin
-    .from("user_roles")
-    .upsert({ user_id: userId!, role: "admin" }, { onConflict: "user_id,role" });
-  if (roleErr) throw new Error(roleErr.message);
-
-  return { ok: true, email: BOOTSTRAP_EMAIL };
-});
 
 export const listUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
