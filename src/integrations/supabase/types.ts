@@ -628,6 +628,51 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_status_events: {
+        Row: {
+          created_at: string
+          event_type: Database["public"]["Enums"]["quote_event_type"]
+          id: string
+          metadata: Json
+          occurred_at: string
+          organization_id: string
+          quote_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: Database["public"]["Enums"]["quote_event_type"]
+          id?: string
+          metadata?: Json
+          occurred_at?: string
+          organization_id: string
+          quote_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: Database["public"]["Enums"]["quote_event_type"]
+          id?: string
+          metadata?: Json
+          occurred_at?: string
+          organization_id?: string
+          quote_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_status_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_status_events_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quotes: {
         Row: {
           content_json: Json
@@ -749,6 +794,7 @@ export type Database = {
         | "gewonnen"
       org_role: "holding_admin" | "company_staff"
       pricing_type: "one_time" | "monthly_recurring" | "per_credit"
+      quote_event_type: "viewed" | "signed" | "paid" | "invoice_created"
       quote_status:
         | "draft"
         | "sent"
@@ -910,6 +956,7 @@ export const Constants = {
       ],
       org_role: ["holding_admin", "company_staff"],
       pricing_type: ["one_time", "monthly_recurring", "per_credit"],
+      quote_event_type: ["viewed", "signed", "paid", "invoice_created"],
       quote_status: [
         "draft",
         "sent",
