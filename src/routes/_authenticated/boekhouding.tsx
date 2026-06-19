@@ -722,7 +722,7 @@ function InvoicesTab({
                   variant="outline"
                   size="sm"
                   onClick={() =>
-                    setLines([...lines, { description: "", quantity: 1, unit_price_cents: 0, vat_rate: 21 }])
+                    setLines([...lines, emptyLine()])
                   }
                 >
                   <Plus className="mr-1 h-3 w-3" />
