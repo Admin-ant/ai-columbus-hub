@@ -76,6 +76,7 @@ const sections: NavSection[] = [
   {
     label: "Netqloud",
     rootUrl: "/netqloud",
+    orgSlug: "netqloud",
     icon: Cloud,
     items: [
       { title: "Dashboard", url: "/netqloud", icon: LayoutDashboard },
