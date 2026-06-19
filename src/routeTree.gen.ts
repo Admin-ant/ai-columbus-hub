@@ -14,9 +14,17 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated/teams'
+import { Route as AuthenticatedNetqloudRouteImport } from './routes/_authenticated/netqloud'
 import { Route as AuthenticatedGebruikersRouteImport } from './routes/_authenticated/gebruikers'
 import { Route as AuthenticatedAiColumbusRouteImport } from './routes/_authenticated/ai-columbus'
 import { Route as AuthenticatedAdministratieRouteImport } from './routes/_authenticated/administratie'
+import { Route as AuthenticatedNetqloudIndexRouteImport } from './routes/_authenticated/netqloud.index'
+import { Route as AuthenticatedAiColumbusIndexRouteImport } from './routes/_authenticated/ai-columbus.index'
+import { Route as AuthenticatedNetqloudServersRouteImport } from './routes/_authenticated/netqloud.servers'
+import { Route as AuthenticatedNetqloudKlantenRouteImport } from './routes/_authenticated/netqloud.klanten'
+import { Route as AuthenticatedNetqloudInstellingenRouteImport } from './routes/_authenticated/netqloud.instellingen'
+import { Route as AuthenticatedAiColumbusLeadsRouteImport } from './routes/_authenticated/ai-columbus.leads'
+import { Route as AuthenticatedAiColumbusInstellingenRouteImport } from './routes/_authenticated/ai-columbus.instellingen'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -42,6 +50,11 @@ const AuthenticatedTeamsRoute = AuthenticatedTeamsRouteImport.update({
   path: '/teams',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedNetqloudRoute = AuthenticatedNetqloudRouteImport.update({
+  id: '/netqloud',
+  path: '/netqloud',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedGebruikersRoute = AuthenticatedGebruikersRouteImport.update({
   id: '/gebruikers',
   path: '/gebruikers',
@@ -58,24 +71,80 @@ const AuthenticatedAdministratieRoute =
     path: '/administratie',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedNetqloudIndexRoute =
+  AuthenticatedNetqloudIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedNetqloudRoute,
+  } as any)
+const AuthenticatedAiColumbusIndexRoute =
+  AuthenticatedAiColumbusIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAiColumbusRoute,
+  } as any)
+const AuthenticatedNetqloudServersRoute =
+  AuthenticatedNetqloudServersRouteImport.update({
+    id: '/servers',
+    path: '/servers',
+    getParentRoute: () => AuthenticatedNetqloudRoute,
+  } as any)
+const AuthenticatedNetqloudKlantenRoute =
+  AuthenticatedNetqloudKlantenRouteImport.update({
+    id: '/klanten',
+    path: '/klanten',
+    getParentRoute: () => AuthenticatedNetqloudRoute,
+  } as any)
+const AuthenticatedNetqloudInstellingenRoute =
+  AuthenticatedNetqloudInstellingenRouteImport.update({
+    id: '/instellingen',
+    path: '/instellingen',
+    getParentRoute: () => AuthenticatedNetqloudRoute,
+  } as any)
+const AuthenticatedAiColumbusLeadsRoute =
+  AuthenticatedAiColumbusLeadsRouteImport.update({
+    id: '/leads',
+    path: '/leads',
+    getParentRoute: () => AuthenticatedAiColumbusRoute,
+  } as any)
+const AuthenticatedAiColumbusInstellingenRoute =
+  AuthenticatedAiColumbusInstellingenRouteImport.update({
+    id: '/instellingen',
+    path: '/instellingen',
+    getParentRoute: () => AuthenticatedAiColumbusRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/administratie': typeof AuthenticatedAdministratieRoute
-  '/ai-columbus': typeof AuthenticatedAiColumbusRoute
+  '/ai-columbus': typeof AuthenticatedAiColumbusRouteWithChildren
   '/gebruikers': typeof AuthenticatedGebruikersRoute
+  '/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
   '/teams': typeof AuthenticatedTeamsRoute
+  '/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
+  '/ai-columbus/leads': typeof AuthenticatedAiColumbusLeadsRoute
+  '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
+  '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
+  '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
+  '/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
+  '/netqloud/': typeof AuthenticatedNetqloudIndexRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/administratie': typeof AuthenticatedAdministratieRoute
-  '/ai-columbus': typeof AuthenticatedAiColumbusRoute
   '/gebruikers': typeof AuthenticatedGebruikersRoute
   '/teams': typeof AuthenticatedTeamsRoute
   '/': typeof AuthenticatedIndexRoute
+  '/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
+  '/ai-columbus/leads': typeof AuthenticatedAiColumbusLeadsRoute
+  '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
+  '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
+  '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
+  '/ai-columbus': typeof AuthenticatedAiColumbusIndexRoute
+  '/netqloud': typeof AuthenticatedNetqloudIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -83,10 +152,18 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/administratie': typeof AuthenticatedAdministratieRoute
-  '/_authenticated/ai-columbus': typeof AuthenticatedAiColumbusRoute
+  '/_authenticated/ai-columbus': typeof AuthenticatedAiColumbusRouteWithChildren
   '/_authenticated/gebruikers': typeof AuthenticatedGebruikersRoute
+  '/_authenticated/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
   '/_authenticated/teams': typeof AuthenticatedTeamsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
+  '/_authenticated/ai-columbus/leads': typeof AuthenticatedAiColumbusLeadsRoute
+  '/_authenticated/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
+  '/_authenticated/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
+  '/_authenticated/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
+  '/_authenticated/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
+  '/_authenticated/netqloud/': typeof AuthenticatedNetqloudIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,16 +174,30 @@ export interface FileRouteTypes {
     | '/administratie'
     | '/ai-columbus'
     | '/gebruikers'
+    | '/netqloud'
     | '/teams'
+    | '/ai-columbus/instellingen'
+    | '/ai-columbus/leads'
+    | '/netqloud/instellingen'
+    | '/netqloud/klanten'
+    | '/netqloud/servers'
+    | '/ai-columbus/'
+    | '/netqloud/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
     | '/reset-password'
     | '/administratie'
-    | '/ai-columbus'
     | '/gebruikers'
     | '/teams'
     | '/'
+    | '/ai-columbus/instellingen'
+    | '/ai-columbus/leads'
+    | '/netqloud/instellingen'
+    | '/netqloud/klanten'
+    | '/netqloud/servers'
+    | '/ai-columbus'
+    | '/netqloud'
   id:
     | '__root__'
     | '/_authenticated'
@@ -115,8 +206,16 @@ export interface FileRouteTypes {
     | '/_authenticated/administratie'
     | '/_authenticated/ai-columbus'
     | '/_authenticated/gebruikers'
+    | '/_authenticated/netqloud'
     | '/_authenticated/teams'
     | '/_authenticated/'
+    | '/_authenticated/ai-columbus/instellingen'
+    | '/_authenticated/ai-columbus/leads'
+    | '/_authenticated/netqloud/instellingen'
+    | '/_authenticated/netqloud/klanten'
+    | '/_authenticated/netqloud/servers'
+    | '/_authenticated/ai-columbus/'
+    | '/_authenticated/netqloud/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -162,6 +261,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTeamsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/netqloud': {
+      id: '/_authenticated/netqloud'
+      path: '/netqloud'
+      fullPath: '/netqloud'
+      preLoaderRoute: typeof AuthenticatedNetqloudRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/gebruikers': {
       id: '/_authenticated/gebruikers'
       path: '/gebruikers'
@@ -183,21 +289,111 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdministratieRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/netqloud/': {
+      id: '/_authenticated/netqloud/'
+      path: '/'
+      fullPath: '/netqloud/'
+      preLoaderRoute: typeof AuthenticatedNetqloudIndexRouteImport
+      parentRoute: typeof AuthenticatedNetqloudRoute
+    }
+    '/_authenticated/ai-columbus/': {
+      id: '/_authenticated/ai-columbus/'
+      path: '/'
+      fullPath: '/ai-columbus/'
+      preLoaderRoute: typeof AuthenticatedAiColumbusIndexRouteImport
+      parentRoute: typeof AuthenticatedAiColumbusRoute
+    }
+    '/_authenticated/netqloud/servers': {
+      id: '/_authenticated/netqloud/servers'
+      path: '/servers'
+      fullPath: '/netqloud/servers'
+      preLoaderRoute: typeof AuthenticatedNetqloudServersRouteImport
+      parentRoute: typeof AuthenticatedNetqloudRoute
+    }
+    '/_authenticated/netqloud/klanten': {
+      id: '/_authenticated/netqloud/klanten'
+      path: '/klanten'
+      fullPath: '/netqloud/klanten'
+      preLoaderRoute: typeof AuthenticatedNetqloudKlantenRouteImport
+      parentRoute: typeof AuthenticatedNetqloudRoute
+    }
+    '/_authenticated/netqloud/instellingen': {
+      id: '/_authenticated/netqloud/instellingen'
+      path: '/instellingen'
+      fullPath: '/netqloud/instellingen'
+      preLoaderRoute: typeof AuthenticatedNetqloudInstellingenRouteImport
+      parentRoute: typeof AuthenticatedNetqloudRoute
+    }
+    '/_authenticated/ai-columbus/leads': {
+      id: '/_authenticated/ai-columbus/leads'
+      path: '/leads'
+      fullPath: '/ai-columbus/leads'
+      preLoaderRoute: typeof AuthenticatedAiColumbusLeadsRouteImport
+      parentRoute: typeof AuthenticatedAiColumbusRoute
+    }
+    '/_authenticated/ai-columbus/instellingen': {
+      id: '/_authenticated/ai-columbus/instellingen'
+      path: '/instellingen'
+      fullPath: '/ai-columbus/instellingen'
+      preLoaderRoute: typeof AuthenticatedAiColumbusInstellingenRouteImport
+      parentRoute: typeof AuthenticatedAiColumbusRoute
+    }
   }
 }
 
+interface AuthenticatedAiColumbusRouteChildren {
+  AuthenticatedAiColumbusInstellingenRoute: typeof AuthenticatedAiColumbusInstellingenRoute
+  AuthenticatedAiColumbusLeadsRoute: typeof AuthenticatedAiColumbusLeadsRoute
+  AuthenticatedAiColumbusIndexRoute: typeof AuthenticatedAiColumbusIndexRoute
+}
+
+const AuthenticatedAiColumbusRouteChildren: AuthenticatedAiColumbusRouteChildren =
+  {
+    AuthenticatedAiColumbusInstellingenRoute:
+      AuthenticatedAiColumbusInstellingenRoute,
+    AuthenticatedAiColumbusLeadsRoute: AuthenticatedAiColumbusLeadsRoute,
+    AuthenticatedAiColumbusIndexRoute: AuthenticatedAiColumbusIndexRoute,
+  }
+
+const AuthenticatedAiColumbusRouteWithChildren =
+  AuthenticatedAiColumbusRoute._addFileChildren(
+    AuthenticatedAiColumbusRouteChildren,
+  )
+
+interface AuthenticatedNetqloudRouteChildren {
+  AuthenticatedNetqloudInstellingenRoute: typeof AuthenticatedNetqloudInstellingenRoute
+  AuthenticatedNetqloudKlantenRoute: typeof AuthenticatedNetqloudKlantenRoute
+  AuthenticatedNetqloudServersRoute: typeof AuthenticatedNetqloudServersRoute
+  AuthenticatedNetqloudIndexRoute: typeof AuthenticatedNetqloudIndexRoute
+}
+
+const AuthenticatedNetqloudRouteChildren: AuthenticatedNetqloudRouteChildren = {
+  AuthenticatedNetqloudInstellingenRoute:
+    AuthenticatedNetqloudInstellingenRoute,
+  AuthenticatedNetqloudKlantenRoute: AuthenticatedNetqloudKlantenRoute,
+  AuthenticatedNetqloudServersRoute: AuthenticatedNetqloudServersRoute,
+  AuthenticatedNetqloudIndexRoute: AuthenticatedNetqloudIndexRoute,
+}
+
+const AuthenticatedNetqloudRouteWithChildren =
+  AuthenticatedNetqloudRoute._addFileChildren(
+    AuthenticatedNetqloudRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdministratieRoute: typeof AuthenticatedAdministratieRoute
-  AuthenticatedAiColumbusRoute: typeof AuthenticatedAiColumbusRoute
+  AuthenticatedAiColumbusRoute: typeof AuthenticatedAiColumbusRouteWithChildren
   AuthenticatedGebruikersRoute: typeof AuthenticatedGebruikersRoute
+  AuthenticatedNetqloudRoute: typeof AuthenticatedNetqloudRouteWithChildren
   AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdministratieRoute: AuthenticatedAdministratieRoute,
-  AuthenticatedAiColumbusRoute: AuthenticatedAiColumbusRoute,
+  AuthenticatedAiColumbusRoute: AuthenticatedAiColumbusRouteWithChildren,
   AuthenticatedGebruikersRoute: AuthenticatedGebruikersRoute,
+  AuthenticatedNetqloudRoute: AuthenticatedNetqloudRouteWithChildren,
   AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
