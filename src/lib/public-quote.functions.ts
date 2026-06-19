@@ -81,9 +81,13 @@ export const payPublicQuote = createServerFn({ method: "POST" })
     const payment_id = `tr_mock_${Math.random().toString(36).slice(2, 12)}`;
 
     // Numbers
-    const { data: num, error: nErr } = await sb.rpc("next_invoice_number", {
+    const rpcAny = sb.rpc as unknown as (
+      name: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: string | null; error: { message: string } | null }>;
+    const { data: num, error: nErr } = await rpcAny("next_invoice_number", {
       _org_id: q.organization_id,
-    } as never);
+    });
     if (nErr) throw new Error(nErr.message);
 
     const total = Number(q.total_amount ?? 0);
