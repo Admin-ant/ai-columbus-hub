@@ -34,7 +34,8 @@
     "models_usage": "Models & usage",
     "reports": "Reports",
     "logs": "Logs",
-    "administration": "Administration"
+    "administration": "Administration",
+    "accounting": "Accounting"
   },
   "leads": {
     "title": "Lead funnel",
