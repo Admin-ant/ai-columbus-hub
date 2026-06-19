@@ -2,6 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Sparkles, FileText, Users, ArrowRight, Lock, LayoutDashboard, Cloud } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
+import { useWorkspace } from "@/hooks/use-workspace";
+import { FinancialKpiCards } from "@/components/financial-kpi-cards";
+import { MonthlyPipelinePanel } from "@/components/monthly-pipeline-panel";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Overzicht — AI van Columbus" }] }),
@@ -46,6 +49,7 @@ const tiles: Tile[] = [
 
 function Index() {
   const { user, hasRole } = useAuth();
+  const { currentOrganizationId, currentOrganization } = useWorkspace();
   const name = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "collega";
 
   return (
@@ -53,9 +57,13 @@ function Index() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Welkom bij AI van Columbus, {name}</h1>
         <p className="mt-2 text-muted-foreground">
-          Kies hieronder een onderdeel. Sommige onderdelen zijn alleen toegankelijk voor admins.
+          Financieel overzicht voor {currentOrganization?.name ?? "je organisatie"}.
         </p>
       </div>
+
+      <FinancialKpiCards organizationId={currentOrganizationId} />
+
+      <MonthlyPipelinePanel organizationId={currentOrganizationId} />
 
       <div className="grid gap-4 sm:grid-cols-2">
         {tiles.map((tile) => {

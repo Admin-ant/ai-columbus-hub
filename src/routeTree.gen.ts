@@ -15,6 +15,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated/teams'
 import { Route as AuthenticatedQuotesRouteImport } from './routes/_authenticated/quotes'
+import { Route as AuthenticatedProductenRouteImport } from './routes/_authenticated/producten'
 import { Route as AuthenticatedNetqloudRouteImport } from './routes/_authenticated/netqloud'
 import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
 import { Route as AuthenticatedGebruikersRouteImport } from './routes/_authenticated/gebruikers'
@@ -61,6 +62,11 @@ const AuthenticatedTeamsRoute = AuthenticatedTeamsRouteImport.update({
 const AuthenticatedQuotesRoute = AuthenticatedQuotesRouteImport.update({
   id: '/quotes',
   path: '/quotes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProductenRoute = AuthenticatedProductenRouteImport.update({
+  id: '/producten',
+  path: '/producten',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedNetqloudRoute = AuthenticatedNetqloudRouteImport.update({
@@ -177,6 +183,7 @@ export interface FileRoutesByFullPath {
   '/gebruikers': typeof AuthenticatedGebruikersRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
   '/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
+  '/producten': typeof AuthenticatedProductenRoute
   '/quotes': typeof AuthenticatedQuotesRoute
   '/teams': typeof AuthenticatedTeamsRoute
   '/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
@@ -199,6 +206,7 @@ export interface FileRoutesByTo {
   '/boekhouding': typeof AuthenticatedBoekhoudingRouteWithChildren
   '/gebruikers': typeof AuthenticatedGebruikersRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
+  '/producten': typeof AuthenticatedProductenRoute
   '/quotes': typeof AuthenticatedQuotesRoute
   '/teams': typeof AuthenticatedTeamsRoute
   '/': typeof AuthenticatedIndexRoute
@@ -226,6 +234,7 @@ export interface FileRoutesById {
   '/_authenticated/gebruikers': typeof AuthenticatedGebruikersRoute
   '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
   '/_authenticated/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
+  '/_authenticated/producten': typeof AuthenticatedProductenRoute
   '/_authenticated/quotes': typeof AuthenticatedQuotesRoute
   '/_authenticated/teams': typeof AuthenticatedTeamsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -254,6 +263,7 @@ export interface FileRouteTypes {
     | '/gebruikers'
     | '/invoices'
     | '/netqloud'
+    | '/producten'
     | '/quotes'
     | '/teams'
     | '/ai-columbus/instellingen'
@@ -276,6 +286,7 @@ export interface FileRouteTypes {
     | '/boekhouding'
     | '/gebruikers'
     | '/invoices'
+    | '/producten'
     | '/quotes'
     | '/teams'
     | '/'
@@ -302,6 +313,7 @@ export interface FileRouteTypes {
     | '/_authenticated/gebruikers'
     | '/_authenticated/invoices'
     | '/_authenticated/netqloud'
+    | '/_authenticated/producten'
     | '/_authenticated/quotes'
     | '/_authenticated/teams'
     | '/_authenticated/'
@@ -368,6 +380,13 @@ declare module '@tanstack/react-router' {
       path: '/quotes'
       fullPath: '/quotes'
       preLoaderRoute: typeof AuthenticatedQuotesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/producten': {
+      id: '/_authenticated/producten'
+      path: '/producten'
+      fullPath: '/producten'
+      preLoaderRoute: typeof AuthenticatedProductenRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/netqloud': {
@@ -567,6 +586,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedGebruikersRoute: typeof AuthenticatedGebruikersRoute
   AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
   AuthenticatedNetqloudRoute: typeof AuthenticatedNetqloudRouteWithChildren
+  AuthenticatedProductenRoute: typeof AuthenticatedProductenRoute
   AuthenticatedQuotesRoute: typeof AuthenticatedQuotesRoute
   AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -579,6 +599,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGebruikersRoute: AuthenticatedGebruikersRoute,
   AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
   AuthenticatedNetqloudRoute: AuthenticatedNetqloudRouteWithChildren,
+  AuthenticatedProductenRoute: AuthenticatedProductenRoute,
   AuthenticatedQuotesRoute: AuthenticatedQuotesRoute,
   AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,

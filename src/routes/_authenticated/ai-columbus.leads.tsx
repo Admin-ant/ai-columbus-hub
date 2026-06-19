@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AIAssistantPanel } from "@/components/ai-assistant-panel";
+import { MonthlyPipelinePanel } from "@/components/monthly-pipeline-panel";
 
 import {
   Dialog,
@@ -71,6 +72,8 @@ function LeadsKanbanPage() {
     phone: "",
     email: "",
     notes: "",
+    potential_monthly_value: "0",
+    target_start_date: "",
   });
 
   const eur = useMemo(
@@ -147,13 +150,15 @@ function LeadsKanbanPage() {
       phone: form.phone || null,
       email: form.email || null,
       notes: form.notes || null,
+      potential_monthly_value: Number(form.potential_monthly_value) || 0,
+      target_start_date: form.target_start_date || null,
       created_by: user?.id ?? null,
     });
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success(t("leads.created"));
     setOpen(false);
-    setForm({ name: "", stage: "nieuwe", value: "0", source: "", rep: "", phone: "", email: "", notes: "" });
+    setForm({ name: "", stage: "nieuwe", value: "0", source: "", rep: "", phone: "", email: "", notes: "", potential_monthly_value: "0", target_start_date: "" });
     load();
   }
 
@@ -215,6 +220,14 @@ function LeadsKanbanPage() {
                   <Label htmlFor="lead-phone">Tel.</Label>
                   <Input id="lead-phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
                 </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="lead-pmv">Pot. waarde / maand (€)</Label>
+                  <Input id="lead-pmv" type="number" step="0.01" value={form.potential_monthly_value} onChange={(e) => setForm({ ...form, potential_monthly_value: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="lead-tsd">Ingangsdatum</Label>
+                  <Input id="lead-tsd" type="date" value={form.target_start_date} onChange={(e) => setForm({ ...form, target_start_date: e.target.value })} />
+                </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label htmlFor="lead-notes">Notities</Label>
                   <Textarea id="lead-notes" rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
@@ -230,6 +243,10 @@ function LeadsKanbanPage() {
           </DialogContent>
         </Dialog>
       </div>
+
+      <MonthlyPipelinePanel organizationId={currentOrganizationId} />
+
+
 
       {loading ? (
         <div className="flex items-center justify-center py-20 text-muted-foreground">
