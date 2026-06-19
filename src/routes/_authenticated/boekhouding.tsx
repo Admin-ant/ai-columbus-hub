@@ -449,9 +449,46 @@ function InvoicesTab({
     d.setDate(d.getDate() + 30);
     return d.toISOString().slice(0, 10);
   });
-  const [lines, setLines] = useState<LineForm[]>([
-    { description: "", quantity: 1, unit_price_cents: 0, vat_rate: 21 },
-  ]);
+  const emptyLine = (): LineForm => ({
+    description: "",
+    quantity: 1,
+    unit_price_cents: 0,
+    vat_rate: 21,
+    product_id: null,
+  });
+  const [lines, setLines] = useState<LineForm[]>([emptyLine()]);
+  const [products, setProducts] = useState<ProductOption[]>([]);
+
+  useEffect(() => {
+    if (!orgId) return;
+    void supabase
+      .from("products")
+      .select("id, name, unit_price_cents, vat_rate, pricing_type, description")
+      .eq("organization_id", orgId)
+      .eq("active", true)
+      .order("name")
+      .then(({ data, error }) => {
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+        setProducts((data ?? []) as ProductOption[]);
+      });
+  }, [orgId]);
+
+  function applyProduct(i: number, productId: string) {
+    const p = products.find((pp) => pp.id === productId);
+    if (!p) return;
+    const n = [...lines];
+    n[i] = {
+      ...n[i],
+      product_id: p.id,
+      description: n[i].description.trim() ? n[i].description : p.description || p.name,
+      unit_price_cents: p.unit_price_cents,
+      vat_rate: Number(p.vat_rate ?? 21),
+    };
+    setLines(n);
+  }
 
   const revenueAccount = accounts.find((a) => a.code === "8000");
 
