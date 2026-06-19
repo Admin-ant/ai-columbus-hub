@@ -90,8 +90,10 @@ interface LineForm {
 
 interface ProductOption {
   id: string;
+  sku: string | null;
   name: string;
   unit_price_cents: number;
+  setup_fee_cents: number;
   vat_rate: number;
   pricing_type: "one_time" | "monthly_recurring" | "per_credit";
   description: string | null;
