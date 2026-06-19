@@ -268,9 +268,11 @@ function JournalDetailPage() {
           >
             {balanced ? "In balans" : "Niet in balans"}
           </Badge>
+          <PdfTemplateDialog orgId={entry.organization_id} />
           <Button size="sm" onClick={exportPdf}>
             <Download className="mr-1.5 h-4 w-4" /> Exporteer PDF
           </Button>
+
         </div>
       </div>
 
