@@ -790,8 +790,12 @@ function JournalTab({
         const totalCredit = e.journal_lines.reduce((s, l) => s + l.credit_cents, 0);
         const balanced = totalDebit === totalCredit;
         return (
-          <div key={e.id} className="rounded-lg border bg-card">
-            <div className="flex items-center justify-between border-b px-4 py-2.5">
+          <div key={e.id} className="rounded-lg border bg-card transition-colors hover:border-primary/40">
+            <Link
+              to="/boekhouding/journal/$entryId"
+              params={{ entryId: e.id }}
+              className="flex items-center justify-between border-b px-4 py-2.5 hover:bg-muted/40"
+            >
               <div>
                 <div className="text-sm font-medium">{e.description}</div>
                 <div className="text-xs text-muted-foreground">
@@ -801,7 +805,8 @@ function JournalTab({
               <Badge variant={balanced ? "outline" : "destructive"} className={balanced ? "bg-emerald-500/10 text-emerald-700" : ""}>
                 {balanced ? t("acc.journal.balanced") : t("acc.journal.unbalanced")}
               </Badge>
-            </div>
+            </Link>
+
             <Table>
               <TableHeader>
                 <TableRow>

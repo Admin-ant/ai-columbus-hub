@@ -32,6 +32,7 @@ import { Route as AuthenticatedAiColumbusModellenRouteImport } from './routes/_a
 import { Route as AuthenticatedAiColumbusLogsRouteImport } from './routes/_authenticated/ai-columbus.logs'
 import { Route as AuthenticatedAiColumbusLeadsRouteImport } from './routes/_authenticated/ai-columbus.leads'
 import { Route as AuthenticatedAiColumbusInstellingenRouteImport } from './routes/_authenticated/ai-columbus.instellingen'
+import { Route as AuthenticatedBoekhoudingJournalEntryIdRouteImport } from './routes/_authenticated/boekhouding.journal.$entryId'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -159,6 +160,12 @@ const AuthenticatedAiColumbusInstellingenRoute =
     path: '/instellingen',
     getParentRoute: () => AuthenticatedAiColumbusRoute,
   } as any)
+const AuthenticatedBoekhoudingJournalEntryIdRoute =
+  AuthenticatedBoekhoudingJournalEntryIdRouteImport.update({
+    id: '/journal/$entryId',
+    path: '/journal/$entryId',
+    getParentRoute: () => AuthenticatedBoekhoudingRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -166,7 +173,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/administratie': typeof AuthenticatedAdministratieRoute
   '/ai-columbus': typeof AuthenticatedAiColumbusRouteWithChildren
-  '/boekhouding': typeof AuthenticatedBoekhoudingRoute
+  '/boekhouding': typeof AuthenticatedBoekhoudingRouteWithChildren
   '/gebruikers': typeof AuthenticatedGebruikersRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
   '/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
@@ -183,12 +190,13 @@ export interface FileRoutesByFullPath {
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
   '/netqloud/': typeof AuthenticatedNetqloudIndexRoute
+  '/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/administratie': typeof AuthenticatedAdministratieRoute
-  '/boekhouding': typeof AuthenticatedBoekhoudingRoute
+  '/boekhouding': typeof AuthenticatedBoekhoudingRouteWithChildren
   '/gebruikers': typeof AuthenticatedGebruikersRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
   '/quotes': typeof AuthenticatedQuotesRoute
@@ -205,6 +213,7 @@ export interface FileRoutesByTo {
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/ai-columbus': typeof AuthenticatedAiColumbusIndexRoute
   '/netqloud': typeof AuthenticatedNetqloudIndexRoute
+  '/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -213,7 +222,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/administratie': typeof AuthenticatedAdministratieRoute
   '/_authenticated/ai-columbus': typeof AuthenticatedAiColumbusRouteWithChildren
-  '/_authenticated/boekhouding': typeof AuthenticatedBoekhoudingRoute
+  '/_authenticated/boekhouding': typeof AuthenticatedBoekhoudingRouteWithChildren
   '/_authenticated/gebruikers': typeof AuthenticatedGebruikersRoute
   '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
   '/_authenticated/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
@@ -231,6 +240,7 @@ export interface FileRoutesById {
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/_authenticated/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
   '/_authenticated/netqloud/': typeof AuthenticatedNetqloudIndexRoute
+  '/_authenticated/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -257,6 +267,7 @@ export interface FileRouteTypes {
     | '/accept/quote/$token'
     | '/ai-columbus/'
     | '/netqloud/'
+    | '/boekhouding/journal/$entryId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -279,6 +290,7 @@ export interface FileRouteTypes {
     | '/accept/quote/$token'
     | '/ai-columbus'
     | '/netqloud'
+    | '/boekhouding/journal/$entryId'
   id:
     | '__root__'
     | '/_authenticated'
@@ -304,6 +316,7 @@ export interface FileRouteTypes {
     | '/accept/quote/$token'
     | '/_authenticated/ai-columbus/'
     | '/_authenticated/netqloud/'
+    | '/_authenticated/boekhouding/journal/$entryId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -476,6 +489,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAiColumbusInstellingenRouteImport
       parentRoute: typeof AuthenticatedAiColumbusRoute
     }
+    '/_authenticated/boekhouding/journal/$entryId': {
+      id: '/_authenticated/boekhouding/journal/$entryId'
+      path: '/journal/$entryId'
+      fullPath: '/boekhouding/journal/$entryId'
+      preLoaderRoute: typeof AuthenticatedBoekhoudingJournalEntryIdRouteImport
+      parentRoute: typeof AuthenticatedBoekhoudingRoute
+    }
   }
 }
 
@@ -505,6 +525,21 @@ const AuthenticatedAiColumbusRouteWithChildren =
     AuthenticatedAiColumbusRouteChildren,
   )
 
+interface AuthenticatedBoekhoudingRouteChildren {
+  AuthenticatedBoekhoudingJournalEntryIdRoute: typeof AuthenticatedBoekhoudingJournalEntryIdRoute
+}
+
+const AuthenticatedBoekhoudingRouteChildren: AuthenticatedBoekhoudingRouteChildren =
+  {
+    AuthenticatedBoekhoudingJournalEntryIdRoute:
+      AuthenticatedBoekhoudingJournalEntryIdRoute,
+  }
+
+const AuthenticatedBoekhoudingRouteWithChildren =
+  AuthenticatedBoekhoudingRoute._addFileChildren(
+    AuthenticatedBoekhoudingRouteChildren,
+  )
+
 interface AuthenticatedNetqloudRouteChildren {
   AuthenticatedNetqloudInstellingenRoute: typeof AuthenticatedNetqloudInstellingenRoute
   AuthenticatedNetqloudKlantenRoute: typeof AuthenticatedNetqloudKlantenRoute
@@ -528,7 +563,7 @@ const AuthenticatedNetqloudRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdministratieRoute: typeof AuthenticatedAdministratieRoute
   AuthenticatedAiColumbusRoute: typeof AuthenticatedAiColumbusRouteWithChildren
-  AuthenticatedBoekhoudingRoute: typeof AuthenticatedBoekhoudingRoute
+  AuthenticatedBoekhoudingRoute: typeof AuthenticatedBoekhoudingRouteWithChildren
   AuthenticatedGebruikersRoute: typeof AuthenticatedGebruikersRoute
   AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
   AuthenticatedNetqloudRoute: typeof AuthenticatedNetqloudRouteWithChildren
@@ -540,7 +575,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdministratieRoute: AuthenticatedAdministratieRoute,
   AuthenticatedAiColumbusRoute: AuthenticatedAiColumbusRouteWithChildren,
-  AuthenticatedBoekhoudingRoute: AuthenticatedBoekhoudingRoute,
+  AuthenticatedBoekhoudingRoute: AuthenticatedBoekhoudingRouteWithChildren,
   AuthenticatedGebruikersRoute: AuthenticatedGebruikersRoute,
   AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
   AuthenticatedNetqloudRoute: AuthenticatedNetqloudRouteWithChildren,
