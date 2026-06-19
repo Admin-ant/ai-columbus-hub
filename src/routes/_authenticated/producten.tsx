@@ -246,9 +246,11 @@ function ProductsPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-28">Artikelnr.</TableHead>
                 <TableHead>Naam</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead className="text-right">Prijs</TableHead>
+                <TableHead className="text-right">Opstart</TableHead>
                 <TableHead className="text-right">BTW</TableHead>
                 <TableHead>Actief</TableHead>
                 <TableHead></TableHead>
@@ -257,6 +259,7 @@ function ProductsPage() {
             <TableBody>
               {products.map((p) => (
                 <TableRow key={p.id} className={!p.active ? "opacity-50" : ""}>
+                  <TableCell className="font-mono text-xs text-muted-foreground">{p.sku ?? "—"}</TableCell>
                   <TableCell>
                     <div className="font-medium">{p.name}</div>
                     {p.description && <div className="text-xs text-muted-foreground">{p.description}</div>}
@@ -267,6 +270,7 @@ function ProductsPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right tabular-nums">{EUR.format(Number(p.unit_price_cents ?? 0) / 100)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{EUR.format(Number(p.setup_fee_cents ?? 0) / 100)}</TableCell>
                   <TableCell className="text-right tabular-nums">{Number(p.vat_rate)}%</TableCell>
                   <TableCell>
                     <Button size="sm" variant={p.active ? "default" : "outline"} onClick={() => toggleActive(p.id, !p.active)}>
