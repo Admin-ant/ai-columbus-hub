@@ -220,6 +220,14 @@ function LeadsKanbanPage() {
                   <Label htmlFor="lead-phone">Tel.</Label>
                   <Input id="lead-phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
                 </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="lead-pmv">Pot. waarde / maand (€)</Label>
+                  <Input id="lead-pmv" type="number" step="0.01" value={form.potential_monthly_value} onChange={(e) => setForm({ ...form, potential_monthly_value: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="lead-tsd">Ingangsdatum</Label>
+                  <Input id="lead-tsd" type="date" value={form.target_start_date} onChange={(e) => setForm({ ...form, target_start_date: e.target.value })} />
+                </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label htmlFor="lead-notes">Notities</Label>
                   <Textarea id="lead-notes" rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
