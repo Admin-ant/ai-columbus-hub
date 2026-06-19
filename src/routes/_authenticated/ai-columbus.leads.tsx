@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AIAssistantPanel } from "@/components/ai-assistant-panel";
+import { MonthlyPipelinePanel } from "@/components/monthly-pipeline-panel";
 
 import {
   Dialog,
