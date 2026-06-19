@@ -32,6 +32,7 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
+import { useWorkspace } from "@/hooks/use-workspace";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 type NavItem = {
