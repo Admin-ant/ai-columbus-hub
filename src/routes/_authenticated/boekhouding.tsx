@@ -552,6 +552,7 @@ function InvoicesTab({
         vat_cents: Math.round(l.quantity * l.unit_price_cents * (l.vat_rate / 100)),
         total_cents: Math.round(l.quantity * l.unit_price_cents * (1 + l.vat_rate / 100)),
         revenue_account_id: revenueAccount?.id ?? null,
+        product_id: l.product_id,
       })),
     );
     setSaving(false);
