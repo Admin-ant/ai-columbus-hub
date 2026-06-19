@@ -639,6 +639,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      next_invoice_number: { Args: { _org_id: string }; Returns: string }
       post_invoice_journal: { Args: { _invoice_id: string }; Returns: string }
       seed_default_chart: { Args: { _org: string }; Returns: undefined }
     }
