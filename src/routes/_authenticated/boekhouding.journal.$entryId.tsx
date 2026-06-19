@@ -230,7 +230,15 @@ function JournalDetailPage() {
           >
             {balanced ? "In balans" : "Niet in balans"}
           </Badge>
-          <PdfTemplateDialog orgId={entry.organization_id} />
+          <Button size="sm" variant="outline" onClick={() => setShowPreview((v) => !v)}>
+            {showPreview ? <EyeOff className="mr-1.5 h-4 w-4" /> : <Eye className="mr-1.5 h-4 w-4" />}
+            {showPreview ? "Preview verbergen" : "Concept-PDF"}
+          </Button>
+          <PdfTemplateDialog
+            orgId={entry.organization_id}
+            buildPreviewUrl={buildPreviewUrl}
+            onChange={(t) => setTpl(t)}
+          />
           <Button size="sm" onClick={exportPdf}>
             <Download className="mr-1.5 h-4 w-4" /> Exporteer PDF
           </Button>
