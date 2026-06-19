@@ -14,6 +14,104 @@ export type Database = {
   }
   public: {
     Tables: {
+      accountant_sync_events: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          invoice_id: string | null
+          organization_id: string
+          payload: Json
+          response: Json | null
+          status: Database["public"]["Enums"]["sync_status"]
+          target: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_id?: string | null
+          organization_id: string
+          payload: Json
+          response?: Json | null
+          status?: Database["public"]["Enums"]["sync_status"]
+          target?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_id?: string | null
+          organization_id?: string
+          payload?: Json
+          response?: Json | null
+          status?: Database["public"]["Enums"]["sync_status"]
+          target?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accountant_sync_events_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountant_sync_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chart_of_accounts: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          id: string
+          is_vat_account: boolean
+          name: string
+          organization_id: string
+          type: Database["public"]["Enums"]["account_type"]
+          updated_at: string
+          vat_rate: number | null
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          id?: string
+          is_vat_account?: boolean
+          name: string
+          organization_id: string
+          type: Database["public"]["Enums"]["account_type"]
+          updated_at?: string
+          vat_rate?: number | null
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          id?: string
+          is_vat_account?: boolean
+          name?: string
+          organization_id?: string
+          type?: Database["public"]["Enums"]["account_type"]
+          updated_at?: string
+          vat_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chart_of_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           created_at: string
@@ -41,44 +139,135 @@ export type Database = {
         }
         Relationships: []
       }
+      invoice_lines: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string
+          position: number
+          quantity: number
+          revenue_account_id: string | null
+          subtotal_cents: number
+          total_cents: number
+          unit_price_cents: number
+          vat_cents: number
+          vat_rate: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          invoice_id: string
+          position?: number
+          quantity?: number
+          revenue_account_id?: string | null
+          subtotal_cents?: number
+          total_cents?: number
+          unit_price_cents?: number
+          vat_cents?: number
+          vat_rate?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id?: string
+          position?: number
+          quantity?: number
+          revenue_account_id?: string | null
+          subtotal_cents?: number
+          total_cents?: number
+          unit_price_cents?: number
+          vat_cents?: number
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_lines_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_lines_revenue_account_id_fkey"
+            columns: ["revenue_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           amount: number
+          client_id: string | null
+          client_name: string | null
           created_at: string
+          currency: string
           due_date: string
           id: string
           invoice_number: string
           issue_date: string
           organization_id: string
+          paid_at: string | null
           quote_id: string | null
+          sent_at: string | null
           status: Database["public"]["Enums"]["invoice_status"]
+          subtotal_cents: number
+          total_cents: number
           updated_at: string
+          vat_cents: number
         }
         Insert: {
           amount?: number
+          client_id?: string | null
+          client_name?: string | null
           created_at?: string
+          currency?: string
           due_date?: string
           id?: string
           invoice_number: string
           issue_date?: string
           organization_id: string
+          paid_at?: string | null
           quote_id?: string | null
+          sent_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
+          subtotal_cents?: number
+          total_cents?: number
           updated_at?: string
+          vat_cents?: number
         }
         Update: {
           amount?: number
+          client_id?: string | null
+          client_name?: string | null
           created_at?: string
+          currency?: string
           due_date?: string
           id?: string
           invoice_number?: string
           issue_date?: string
           organization_id?: string
+          paid_at?: string | null
           quote_id?: string | null
+          sent_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
+          subtotal_cents?: number
+          total_cents?: number
           updated_at?: string
+          vat_cents?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "invoices_organization_id_fkey"
             columns: ["organization_id"]
@@ -91,6 +280,106 @@ export type Database = {
             columns: ["quote_id"]
             isOneToOne: false
             referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entries: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string
+          entry_date: string
+          id: string
+          invoice_id: string | null
+          organization_id: string
+          quote_id: string | null
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description: string
+          entry_date?: string
+          id?: string
+          invoice_id?: string | null
+          organization_id: string
+          quote_id?: string | null
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          entry_date?: string
+          id?: string
+          invoice_id?: string | null
+          organization_id?: string
+          quote_id?: string | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_lines: {
+        Row: {
+          account_id: string
+          credit_cents: number
+          debit_cents: number
+          description: string | null
+          entry_id: string
+          id: string
+        }
+        Insert: {
+          account_id: string
+          credit_cents?: number
+          debit_cents?: number
+          description?: string | null
+          entry_id: string
+          id?: string
+        }
+        Update: {
+          account_id?: string
+          credit_cents?: number
+          debit_cents?: number
+          description?: string | null
+          entry_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_lines_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_lines_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
             referencedColumns: ["id"]
           },
         ]
@@ -350,9 +639,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      post_invoice_journal: { Args: { _invoice_id: string }; Returns: string }
+      seed_default_chart: { Args: { _org: string }; Returns: undefined }
     }
     Enums: {
+      account_type:
+        | "asset"
+        | "liability"
+        | "equity"
+        | "revenue"
+        | "expense"
+        | "vat"
       app_role: "admin" | "medewerker"
       invoice_status: "draft" | "sent" | "paid" | "overdue" | "cancelled"
       lead_stage:
@@ -375,6 +672,7 @@ export type Database = {
         | "signed"
         | "approved_paid"
         | "declined"
+      sync_status: "pending" | "success" | "failed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -502,6 +800,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_type: [
+        "asset",
+        "liability",
+        "equity",
+        "revenue",
+        "expense",
+        "vat",
+      ],
       app_role: ["admin", "medewerker"],
       invoice_status: ["draft", "sent", "paid", "overdue", "cancelled"],
       lead_stage: [
@@ -526,6 +832,7 @@ export const Constants = {
         "approved_paid",
         "declined",
       ],
+      sync_status: ["pending", "success", "failed"],
     },
   },
 } as const
