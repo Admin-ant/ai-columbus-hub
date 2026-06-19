@@ -66,9 +66,11 @@ function ProductsPage() {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
+    sku: "",
     name: "",
     description: "",
     unit_price: "0",
+    setup_fee: "0",
     pricing_type: "one_time" as PricingType,
     vat_rate: "21",
   });
