@@ -1,17 +1,17 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, FileText, Receipt, ScrollText, Download } from "lucide-react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import { ArrowLeft, Loader2, FileText, Receipt, ScrollText, Download, Eye, EyeOff } from "lucide-react";
 
 
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PdfTemplateDialog } from "@/components/pdf-template-dialog";
-import { loadTemplate, THEMES, type PdfTemplate } from "@/lib/pdf-template";
+import { loadTemplate, type PdfTemplate } from "@/lib/pdf-template";
+import { buildJournalPdf, journalPdfBlobUrl, type JournalPdfData } from "@/lib/journal-pdf";
 
 import {
   Table,
