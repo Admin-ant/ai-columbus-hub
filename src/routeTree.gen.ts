@@ -23,6 +23,7 @@ import { Route as AuthenticatedAiColumbusRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdministratieRouteImport } from './routes/_authenticated/administratie'
 import { Route as AuthenticatedNetqloudIndexRouteImport } from './routes/_authenticated/netqloud.index'
 import { Route as AuthenticatedAiColumbusIndexRouteImport } from './routes/_authenticated/ai-columbus.index'
+import { Route as AcceptQuoteTokenRouteImport } from './routes/accept.quote.$token'
 import { Route as AuthenticatedNetqloudServersRouteImport } from './routes/_authenticated/netqloud.servers'
 import { Route as AuthenticatedNetqloudKlantenRouteImport } from './routes/_authenticated/netqloud.klanten'
 import { Route as AuthenticatedNetqloudInstellingenRouteImport } from './routes/_authenticated/netqloud.instellingen'
@@ -105,6 +106,11 @@ const AuthenticatedAiColumbusIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedAiColumbusRoute,
   } as any)
+const AcceptQuoteTokenRoute = AcceptQuoteTokenRouteImport.update({
+  id: '/accept/quote/$token',
+  path: '/accept/quote/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedNetqloudServersRoute =
   AuthenticatedNetqloudServersRouteImport.update({
     id: '/servers',
@@ -174,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
+  '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
   '/netqloud/': typeof AuthenticatedNetqloudIndexRoute
 }
@@ -195,6 +202,7 @@ export interface FileRoutesByTo {
   '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
+  '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/ai-columbus': typeof AuthenticatedAiColumbusIndexRoute
   '/netqloud': typeof AuthenticatedNetqloudIndexRoute
 }
@@ -220,6 +228,7 @@ export interface FileRoutesById {
   '/_authenticated/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/_authenticated/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/_authenticated/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
+  '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/_authenticated/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
   '/_authenticated/netqloud/': typeof AuthenticatedNetqloudIndexRoute
 }
@@ -245,6 +254,7 @@ export interface FileRouteTypes {
     | '/netqloud/instellingen'
     | '/netqloud/klanten'
     | '/netqloud/servers'
+    | '/accept/quote/$token'
     | '/ai-columbus/'
     | '/netqloud/'
   fileRoutesByTo: FileRoutesByTo
@@ -266,6 +276,7 @@ export interface FileRouteTypes {
     | '/netqloud/instellingen'
     | '/netqloud/klanten'
     | '/netqloud/servers'
+    | '/accept/quote/$token'
     | '/ai-columbus'
     | '/netqloud'
   id:
@@ -290,6 +301,7 @@ export interface FileRouteTypes {
     | '/_authenticated/netqloud/instellingen'
     | '/_authenticated/netqloud/klanten'
     | '/_authenticated/netqloud/servers'
+    | '/accept/quote/$token'
     | '/_authenticated/ai-columbus/'
     | '/_authenticated/netqloud/'
   fileRoutesById: FileRoutesById
@@ -298,6 +310,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  AcceptQuoteTokenRoute: typeof AcceptQuoteTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -399,6 +412,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/ai-columbus/'
       preLoaderRoute: typeof AuthenticatedAiColumbusIndexRouteImport
       parentRoute: typeof AuthenticatedAiColumbusRoute
+    }
+    '/accept/quote/$token': {
+      id: '/accept/quote/$token'
+      path: '/accept/quote/$token'
+      fullPath: '/accept/quote/$token'
+      preLoaderRoute: typeof AcceptQuoteTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/netqloud/servers': {
       id: '/_authenticated/netqloud/servers'
@@ -536,6 +556,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  AcceptQuoteTokenRoute: AcceptQuoteTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

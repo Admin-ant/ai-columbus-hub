@@ -174,5 +174,28 @@
       "failed": "Versturen mislukt",
       "empty": "Nog geen sync events"
     }
+  },
+  "accept": {
+    "subtitle": "Offerte ondertekenen & betalen",
+    "issued_on": "Uitgegeven op",
+    "no_lines": "Geen regels op deze offerte.",
+    "signature": "Digitale handtekening",
+    "sign_hint": "Zet hieronder uw handtekening",
+    "clear": "Wissen",
+    "sign_button": "Onderteken offerte",
+    "signed_ok": "Bedankt! Offerte ondertekend.",
+    "signed_on": "Ondertekend op",
+    "payment": "Betaling",
+    "payment_desc": "Na betaling wordt automatisch een factuur aangemaakt en in de boekhouding verwerkt.",
+    "pay_button": "Betaal {{amount}} (iDEAL)",
+    "mock_note": "Demo-omgeving — er wordt geen echte betaling gedaan.",
+    "paid_title": "Betaling ontvangen",
+    "paid_subtitle": "Mollie referentie: {{id}}",
+    "paid_ok": "Betaald — factuur {{number}} aangemaakt",
+    "not_found": "Offerte niet gevonden",
+    "invalid_link": "Deze link is ongeldig of verlopen.",
+    "secured": "Beveiligd via Lovable",
+    "copy_link": "Kopieer publieke link",
+    "link_copied": "Link gekopieerd"
   }
 }

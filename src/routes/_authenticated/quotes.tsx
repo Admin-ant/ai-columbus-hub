@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Plus, Loader2, Trash2, FileText, Sparkles } from "lucide-react";
+import { Plus, Loader2, Trash2, FileText, Sparkles, Link2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -347,10 +347,26 @@ function QuotesPage() {
                     </Select>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" variant="outline" onClick={() => convertToInvoice(q)}>
-                      <FileText className="mr-1 h-3.5 w-3.5" />
-                      {t("quotes.to_invoice")}
-                    </Button>
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          const url = `${window.location.origin}/accept/quote/${q.public_token}`;
+                          navigator.clipboard.writeText(url).then(
+                            () => toast.success(t("accept.link_copied")),
+                            () => toast.error("Clipboard error"),
+                          );
+                        }}
+                      >
+                        <Link2 className="mr-1 h-3.5 w-3.5" />
+                        {t("accept.copy_link")}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => convertToInvoice(q)}>
+                        <FileText className="mr-1 h-3.5 w-3.5" />
+                        {t("quotes.to_invoice")}
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
