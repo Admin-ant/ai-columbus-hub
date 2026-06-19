@@ -101,10 +101,16 @@ function ProductsPage() {
     e.preventDefault();
     if (!currentOrganizationId) return toast.error("Selecteer eerst een organisatie");
     if (!form.name.trim()) return toast.error("Naam is verplicht");
+    const sku = form.sku.trim();
+    if (!sku) return toast.error("Artikelnr. (SKU) is verplicht");
+    if (!/^[A-Za-z0-9._-]{2,32}$/.test(sku))
+      return toast.error("Artikelnr. mag alleen letters, cijfers, '.', '_' of '-' bevatten (2-32 tekens)");
+    if (products.some((p) => (p.sku ?? "").toLowerCase() === sku.toLowerCase()))
+      return toast.error("Dit artikelnummer bestaat al binnen deze organisatie");
     setSaving(true);
     const { error } = await supabase.from("products").insert({
       organization_id: currentOrganizationId,
-      sku: form.sku.trim() || null,
+      sku,
       name: form.name.trim(),
       description: form.description.trim() || null,
       unit_price_cents: Math.round(Number(form.unit_price) * 100),
@@ -114,12 +120,31 @@ function ProductsPage() {
       created_by: user?.id ?? null,
     });
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      if (error.code === "23505") return toast.error("Dit artikelnummer bestaat al binnen deze organisatie");
+      return toast.error(error.message);
+    }
     toast.success("Product aangemaakt");
     setOpen(false);
     setForm({ sku: "", name: "", description: "", unit_price: "0", setup_fee: "0", pricing_type: "one_time", vat_rate: "21" });
     load();
   }
+
+  const [search, setSearch] = useState("");
+  const [pricingFilter, setPricingFilter] = useState<"all" | PricingType>("all");
+
+  const filteredProducts = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return products.filter((p) => {
+      if (pricingFilter !== "all" && p.pricing_type !== pricingFilter) return false;
+      if (!q) return true;
+      return (
+        (p.sku ?? "").toLowerCase().includes(q) ||
+        p.name.toLowerCase().includes(q) ||
+        (p.description ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [products, search, pricingFilter]);
 
   async function toggleActive(id: string, active: boolean) {
     const prev = products;
