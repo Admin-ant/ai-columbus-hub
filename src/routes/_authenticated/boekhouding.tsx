@@ -90,8 +90,10 @@ interface LineForm {
 
 interface ProductOption {
   id: string;
+  sku: string | null;
   name: string;
   unit_price_cents: number;
+  setup_fee_cents: number;
   vat_rate: number;
   pricing_type: "one_time" | "monthly_recurring" | "per_credit";
   description: string | null;
@@ -463,7 +465,7 @@ function InvoicesTab({
     if (!orgId) return;
     void supabase
       .from("products")
-      .select("id, name, unit_price_cents, vat_rate, pricing_type, description")
+      .select("id, sku, name, unit_price_cents, setup_fee_cents, vat_rate, pricing_type, description")
       .eq("organization_id", orgId)
       .eq("active", true)
       .order("name")
@@ -479,14 +481,30 @@ function InvoicesTab({
   function applyProduct(i: number, productId: string) {
     const p = products.find((pp) => pp.id === productId);
     if (!p) return;
+    const vat = Number(p.vat_rate ?? 21);
     const n = [...lines];
     n[i] = {
       ...n[i],
       product_id: p.id,
       description: n[i].description.trim() ? n[i].description : p.description || p.name,
       unit_price_cents: p.unit_price_cents,
-      vat_rate: Number(p.vat_rate ?? 21),
+      vat_rate: vat,
     };
+    const setup = Number(p.setup_fee_cents ?? 0);
+    const setupDesc = `Eenmalige opstartkosten — ${p.name}`;
+    const alreadyHasSetup = n.some(
+      (l) => l.product_id === p.id && l.description === setupDesc,
+    );
+    if (setup > 0 && !alreadyHasSetup) {
+      n.splice(i + 1, 0, {
+        description: setupDesc,
+        quantity: 1,
+        unit_price_cents: setup,
+        vat_rate: vat,
+        product_id: p.id,
+      });
+      toast.success(`Opstartkosten (${(setup / 100).toFixed(2)} €) toegevoegd`);
+    }
     setLines(n);
   }
 
@@ -653,8 +671,9 @@ function InvoicesTab({
                               <SelectContent>
                                 {products.map((p) => (
                                   <SelectItem key={p.id} value={p.id}>
-                                    {p.name} · {centsFmt(p.unit_price_cents, lang)}
+                                    {p.sku ? `[${p.sku}] ` : ""}{p.name} · {centsFmt(p.unit_price_cents, lang)}
                                     {p.pricing_type === "monthly_recurring" ? " /mnd" : ""}
+                                    {Number(p.setup_fee_cents ?? 0) > 0 ? ` (+${centsFmt(p.setup_fee_cents, lang)} setup)` : ""}
                                   </SelectItem>
                                 ))}
                               </SelectContent>

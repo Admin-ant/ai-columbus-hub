@@ -101,10 +101,16 @@ function ProductsPage() {
     e.preventDefault();
     if (!currentOrganizationId) return toast.error("Selecteer eerst een organisatie");
     if (!form.name.trim()) return toast.error("Naam is verplicht");
+    const sku = form.sku.trim();
+    if (!sku) return toast.error("Artikelnr. (SKU) is verplicht");
+    if (!/^[A-Za-z0-9._-]{2,32}$/.test(sku))
+      return toast.error("Artikelnr. mag alleen letters, cijfers, '.', '_' of '-' bevatten (2-32 tekens)");
+    if (products.some((p) => (p.sku ?? "").toLowerCase() === sku.toLowerCase()))
+      return toast.error("Dit artikelnummer bestaat al binnen deze organisatie");
     setSaving(true);
     const { error } = await supabase.from("products").insert({
       organization_id: currentOrganizationId,
-      sku: form.sku.trim() || null,
+      sku,
       name: form.name.trim(),
       description: form.description.trim() || null,
       unit_price_cents: Math.round(Number(form.unit_price) * 100),
@@ -114,12 +120,31 @@ function ProductsPage() {
       created_by: user?.id ?? null,
     });
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      if (error.code === "23505") return toast.error("Dit artikelnummer bestaat al binnen deze organisatie");
+      return toast.error(error.message);
+    }
     toast.success("Product aangemaakt");
     setOpen(false);
     setForm({ sku: "", name: "", description: "", unit_price: "0", setup_fee: "0", pricing_type: "one_time", vat_rate: "21" });
     load();
   }
+
+  const [search, setSearch] = useState("");
+  const [pricingFilter, setPricingFilter] = useState<"all" | PricingType>("all");
+
+  const filteredProducts = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return products.filter((p) => {
+      if (pricingFilter !== "all" && p.pricing_type !== pricingFilter) return false;
+      if (!q) return true;
+      return (
+        (p.sku ?? "").toLowerCase().includes(q) ||
+        p.name.toLowerCase().includes(q) ||
+        (p.description ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [products, search, pricingFilter]);
 
   async function toggleActive(id: string, active: boolean) {
     const prev = products;
@@ -178,8 +203,8 @@ function ProductsPage() {
             <form onSubmit={createProduct} className="space-y-3">
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="p-sku">Artikelnr.</Label>
-                  <Input id="p-sku" placeholder="bv. ART-001" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
+                  <Label htmlFor="p-sku">Artikelnr. *</Label>
+                  <Input id="p-sku" placeholder="bv. ART-001" required maxLength={32} value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
                 </div>
                 <div className="col-span-2 space-y-1.5">
                   <Label htmlFor="p-name">Naam *</Label>
@@ -232,6 +257,27 @@ function ProductsPage() {
         <SummaryCard label="Per credit" value={EUR.format(totals.perCredit / 100)} sub="Som actieve credittarieven" />
       </div>
 
+      <div className="flex flex-wrap items-center gap-3">
+        <Input
+          placeholder="Zoek op artikelnr., naam of omschrijving…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+        <Select value={pricingFilter} onValueChange={(v) => setPricingFilter(v as "all" | PricingType)}>
+          <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Alle prijstypes</SelectItem>
+            {(Object.keys(PRICING_LABELS) as PricingType[]).map((k) => (
+              <SelectItem key={k} value={k}>{PRICING_LABELS[k]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="text-xs text-muted-foreground">
+          {filteredProducts.length} / {products.length}
+        </div>
+      </div>
+
       {loading ? (
         <div className="flex items-center justify-center py-20 text-muted-foreground">
           <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Laden…
@@ -240,6 +286,10 @@ function ProductsPage() {
         <div className="rounded-lg border border-dashed py-16 text-center text-sm text-muted-foreground">
           <Package className="mx-auto mb-2 h-6 w-6 opacity-60" />
           Nog geen producten. Voeg er één toe om te starten.
+        </div>
+      ) : filteredProducts.length === 0 ? (
+        <div className="rounded-lg border border-dashed py-16 text-center text-sm text-muted-foreground">
+          Geen resultaten voor deze filters.
         </div>
       ) : (
         <div className="rounded-lg border">
@@ -257,7 +307,7 @@ function ProductsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products.map((p) => (
+              {filteredProducts.map((p) => (
                 <TableRow key={p.id} className={!p.active ? "opacity-50" : ""}>
                   <TableCell className="font-mono text-xs text-muted-foreground">{p.sku ?? "—"}</TableCell>
                   <TableCell>
