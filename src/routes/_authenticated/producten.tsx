@@ -66,9 +66,11 @@ function ProductsPage() {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
+    sku: "",
     name: "",
     description: "",
     unit_price: "0",
+    setup_fee: "0",
     pricing_type: "one_time" as PricingType,
     vat_rate: "21",
   });
@@ -102,9 +104,11 @@ function ProductsPage() {
     setSaving(true);
     const { error } = await supabase.from("products").insert({
       organization_id: currentOrganizationId,
+      sku: form.sku.trim() || null,
       name: form.name.trim(),
       description: form.description.trim() || null,
       unit_price_cents: Math.round(Number(form.unit_price) * 100),
+      setup_fee_cents: Math.round(Number(form.setup_fee) * 100),
       pricing_type: form.pricing_type,
       vat_rate: Number(form.vat_rate) || 0,
       created_by: user?.id ?? null,
@@ -113,7 +117,7 @@ function ProductsPage() {
     if (error) return toast.error(error.message);
     toast.success("Product aangemaakt");
     setOpen(false);
-    setForm({ name: "", description: "", unit_price: "0", pricing_type: "one_time", vat_rate: "21" });
+    setForm({ sku: "", name: "", description: "", unit_price: "0", setup_fee: "0", pricing_type: "one_time", vat_rate: "21" });
     load();
   }
 
@@ -172,9 +176,15 @@ function ProductsPage() {
               <DialogTitle>Nieuw product</DialogTitle>
             </DialogHeader>
             <form onSubmit={createProduct} className="space-y-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="p-name">Naam *</Label>
-                <Input id="p-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="p-sku">Artikelnr.</Label>
+                  <Input id="p-sku" placeholder="bv. ART-001" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
+                </div>
+                <div className="col-span-2 space-y-1.5">
+                  <Label htmlFor="p-name">Naam *</Label>
+                  <Input id="p-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="p-desc">Omschrijving</Label>
@@ -186,10 +196,14 @@ function ProductsPage() {
                   <Input id="p-price" type="number" step="0.01" value={form.unit_price} onChange={(e) => setForm({ ...form, unit_price: e.target.value })} />
                 </div>
                 <div className="space-y-1.5">
+                  <Label htmlFor="p-setup">Eenmalige opstartkosten (€)</Label>
+                  <Input id="p-setup" type="number" step="0.01" value={form.setup_fee} onChange={(e) => setForm({ ...form, setup_fee: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
                   <Label htmlFor="p-vat">BTW %</Label>
                   <Input id="p-vat" type="number" step="0.01" value={form.vat_rate} onChange={(e) => setForm({ ...form, vat_rate: e.target.value })} />
                 </div>
-                <div className="col-span-2 space-y-1.5">
+                <div className="space-y-1.5">
                   <Label>Prijstype</Label>
                   <Select value={form.pricing_type} onValueChange={(v) => setForm({ ...form, pricing_type: v as PricingType })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -232,9 +246,11 @@ function ProductsPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-28">Artikelnr.</TableHead>
                 <TableHead>Naam</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead className="text-right">Prijs</TableHead>
+                <TableHead className="text-right">Opstart</TableHead>
                 <TableHead className="text-right">BTW</TableHead>
                 <TableHead>Actief</TableHead>
                 <TableHead></TableHead>
@@ -243,6 +259,7 @@ function ProductsPage() {
             <TableBody>
               {products.map((p) => (
                 <TableRow key={p.id} className={!p.active ? "opacity-50" : ""}>
+                  <TableCell className="font-mono text-xs text-muted-foreground">{p.sku ?? "—"}</TableCell>
                   <TableCell>
                     <div className="font-medium">{p.name}</div>
                     {p.description && <div className="text-xs text-muted-foreground">{p.description}</div>}
@@ -253,6 +270,7 @@ function ProductsPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right tabular-nums">{EUR.format(Number(p.unit_price_cents ?? 0) / 100)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{EUR.format(Number(p.setup_fee_cents ?? 0) / 100)}</TableCell>
                   <TableCell className="text-right tabular-nums">{Number(p.vat_rate)}%</TableCell>
                   <TableCell>
                     <Button size="sm" variant={p.active ? "default" : "outline"} onClick={() => toggleActive(p.id, !p.active)}>

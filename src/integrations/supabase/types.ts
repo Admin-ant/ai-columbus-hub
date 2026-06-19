@@ -546,6 +546,8 @@ export type Database = {
           name: string
           organization_id: string
           pricing_type: Database["public"]["Enums"]["pricing_type"]
+          setup_fee_cents: number
+          sku: string | null
           unit_price_cents: number
           updated_at: string
           vat_rate: number
@@ -559,6 +561,8 @@ export type Database = {
           name: string
           organization_id: string
           pricing_type?: Database["public"]["Enums"]["pricing_type"]
+          setup_fee_cents?: number
+          sku?: string | null
           unit_price_cents?: number
           updated_at?: string
           vat_rate?: number
@@ -572,6 +576,8 @@ export type Database = {
           name?: string
           organization_id?: string
           pricing_type?: Database["public"]["Enums"]["pricing_type"]
+          setup_fee_cents?: number
+          sku?: string | null
           unit_price_cents?: number
           updated_at?: string
           vat_rate?: number
