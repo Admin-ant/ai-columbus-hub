@@ -595,6 +595,14 @@ function InvoicesTab({
   );
   const totalCents = subtotalCents + vatCents;
 
+  const contractTotalCents = lines.reduce((s, l) => {
+    if (l.discount_type === "recurring" && l.contract_months && l.contract_months > 1) {
+      const lineTot = Math.round(l.quantity * l.unit_price_cents * (1 + l.vat_rate / 100));
+      return s + lineTot * l.contract_months;
+    }
+    return s;
+  }, 0);
+
   async function createInvoice(e: React.FormEvent) {
     e.preventDefault();
     if (!clientName.trim()) return toast.error(t("acc.inv.client_required"));
