@@ -77,8 +77,13 @@ function JournalDetailPage() {
   const { t, i18n } = useTranslation();
   const lang = i18n.resolvedLanguage ?? "nl";
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [entry, setEntry] = useState<EntryDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tpl, setTpl] = useState<PdfTemplate | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const lastUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
