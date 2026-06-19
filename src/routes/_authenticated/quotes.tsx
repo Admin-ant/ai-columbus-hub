@@ -358,7 +358,7 @@ function QuotesPage() {
       )}
 
       <Dialog open={aiOpen} onOpenChange={setAiOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>
               <Sparkles className="mr-2 inline h-4 w-4" />
@@ -366,19 +366,32 @@ function QuotesPage() {
             </DialogTitle>
             <DialogDescription>{t("ai_assistant.placeholder")}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-2">
-            <Button variant="outline" className="w-full justify-start" disabled>
-              {t("ai_assistant.suggest_quote")}
-            </Button>
-            <Button variant="outline" className="w-full justify-start" disabled>
-              {t("ai_assistant.verify_invoice")}
-            </Button>
-            <Button variant="outline" className="w-full justify-start" disabled>
-              {t("ai_assistant.summarize_lead")}
-            </Button>
-          </div>
+          <AIAssistantPanel
+            task="lead_to_quote"
+            suggestions={[
+              {
+                label: t("ai_assistant.suggest_quote"),
+                task: "lead_to_quote",
+                context:
+                  "Maak een conceptofferte voor een nieuwe klant. Diensten: AI-strategiesessie (1 dagdeel, €1500), implementatie chatbot (40 uur, €110/uur), nazorg (10 uur, €110/uur).",
+              },
+              {
+                label: t("ai_assistant.verify_invoice"),
+                task: "verify_invoice",
+                context:
+                  "Controleer factuur: 3 x €1500 = €4500 subtotaal, 21% BTW = €945, totaal €5445.",
+              },
+              {
+                label: t("ai_assistant.summarize_lead"),
+                task: "summarize_lead",
+                context:
+                  "Lead: bouwbedrijf 25 medewerkers wil offertes sneller maken. Budget onbekend. Vorige aanbieder te traag. Wil binnen 2 weken pilot.",
+              },
+            ]}
+          />
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }
