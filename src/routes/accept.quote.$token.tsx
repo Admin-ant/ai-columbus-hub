@@ -100,11 +100,18 @@ function AcceptQuotePage() {
     );
   }
 
-  const { quote, organization } = data;
+  const { quote, organization, events, journal_entry_id } = data;
   const lines = ((quote.content_json as { lines?: LineItem[] } | null)?.lines ?? []) as LineItem[];
   const isPaid = quote.status === "approved_paid";
   const isSigned = quote.status === "signed" || isPaid;
   const brand = organization?.brand_color ?? "#0f172a";
+
+  const eventMeta: Record<string, { label: string; icon: typeof Eye; tone: string }> = {
+    viewed: { label: t("accept.event.viewed") || "Bekeken", icon: Eye, tone: "text-muted-foreground" },
+    signed: { label: t("accept.event.signed") || "Ondertekend", icon: FileSignature, tone: "text-blue-600" },
+    paid: { label: t("accept.event.paid") || "Betaald", icon: CheckCircle2, tone: "text-emerald-600" },
+    invoice_created: { label: t("accept.event.invoice_created") || "Factuur aangemaakt", icon: Receipt, tone: "text-indigo-600" },
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
