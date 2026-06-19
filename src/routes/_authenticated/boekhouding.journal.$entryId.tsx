@@ -10,6 +10,9 @@ import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { PdfTemplateDialog } from "@/components/pdf-template-dialog";
+import { loadTemplate, THEMES, type PdfTemplate } from "@/lib/pdf-template";
+
 import {
   Table,
   TableBody,
