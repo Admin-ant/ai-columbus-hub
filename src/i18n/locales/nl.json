@@ -1,0 +1,85 @@
+{
+  "common": {
+    "save": "Opslaan",
+    "cancel": "Annuleren",
+    "delete": "Verwijderen",
+    "edit": "Bewerken",
+    "create": "Aanmaken",
+    "loading": "Laden…",
+    "search": "Zoeken",
+    "back": "Terug",
+    "language": "Taal",
+    "dutch": "Nederlands",
+    "english": "Engels",
+    "all_organizations": "Alle organisaties",
+    "switch_organization": "Wissel organisatie",
+    "active_organization": "Actieve organisatie"
+  },
+  "header": {
+    "portal_title": "Holding Portaal",
+    "portal_subtitle": "Intern overzicht"
+  },
+  "nav": {
+    "overview": "Overzicht",
+    "ai_columbus": "AI van Columbus",
+    "netqloud": "Netqloud",
+    "leads": "Leads",
+    "quotes": "Offertes",
+    "invoices": "Facturen",
+    "clients": "Klanten",
+    "servers": "Servers",
+    "settings": "Instellingen",
+    "users": "Gebruikers",
+    "teams": "Teams",
+    "models_usage": "Modellen & gebruik",
+    "reports": "Rapportages",
+    "logs": "Logs",
+    "administration": "Administratie"
+  },
+  "leads": {
+    "title": "Leads funnel",
+    "new_lead": "Nieuwe lead",
+    "stages": {
+      "nieuwe": "Nieuw",
+      "contact_opgenomen": "Contact opgenomen",
+      "offerte_verzonden": "Offerte verzonden",
+      "gewonnen": "Gewonnen",
+      "verloren": "Verloren"
+    }
+  },
+  "quotes": {
+    "title": "Offertes",
+    "new_quote": "Nieuwe offerte",
+    "status": {
+      "draft": "Concept",
+      "sent": "Verzonden",
+      "viewed": "Bekeken",
+      "signed": "Getekend",
+      "approved_paid": "Goedgekeurd & betaald",
+      "declined": "Afgewezen"
+    }
+  },
+  "invoices": {
+    "title": "Facturen",
+    "new_invoice": "Nieuwe factuur",
+    "status": {
+      "draft": "Concept",
+      "sent": "Verzonden",
+      "paid": "Betaald",
+      "overdue": "Achterstallig",
+      "cancelled": "Geannuleerd"
+    }
+  },
+  "ai_assistant": {
+    "title": "AI Assistent",
+    "suggest_quote": "Genereer offerte-concept op basis van lead-notities",
+    "verify_invoice": "Controleer factuurregels",
+    "summarize_lead": "Vat lead samen"
+  },
+  "accept": {
+    "title": "Offerte accepteren",
+    "sign_and_pay": "Tekenen & betalen",
+    "clear_signature": "Wis handtekening",
+    "thanks": "Bedankt! De offerte is getekend en de aanbetaling is geïnitieerd."
+  }
+}
