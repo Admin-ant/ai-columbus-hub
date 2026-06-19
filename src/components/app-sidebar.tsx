@@ -97,8 +97,14 @@ const adminItems: NavItem[] = [
 
 export function AppSidebar() {
   const { user, roles, hasRole, signOut } = useAuth();
+  const { organizations, setCurrentOrganizationId } = useWorkspace();
   const navigate = useNavigate();
   const currentPath = useRouterState({ select: (s) => s.location.pathname });
+
+  const switchToOrg = (slug: string) => {
+    const org = organizations.find((o) => o.slug === slug);
+    if (org) setCurrentOrganizationId(org.id);
+  };
 
   const visibleAdmin = adminItems.filter((i) => !i.requiredRole || hasRole(i.requiredRole));
   const initials = (user?.email ?? "?").slice(0, 2).toUpperCase();
