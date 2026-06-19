@@ -65,7 +65,8 @@ function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const emptyForm = {
     sku: "",
     name: "",
     description: "",
@@ -73,7 +74,34 @@ function ProductsPage() {
     setup_fee: "0",
     pricing_type: "one_time" as PricingType,
     vat_rate: "21",
-  });
+    discount_percent: "0",
+    discount_type: "none" as "none" | "one_time" | "recurring",
+    contract_months: "",
+  };
+  const [form, setForm] = useState(emptyForm);
+
+  function openCreate() {
+    setEditingId(null);
+    setForm(emptyForm);
+    setOpen(true);
+  }
+
+  function openEdit(p: Product) {
+    setEditingId(p.id);
+    setForm({
+      sku: p.sku ?? "",
+      name: p.name,
+      description: p.description ?? "",
+      unit_price: (Number(p.unit_price_cents ?? 0) / 100).toString(),
+      setup_fee: (Number(p.setup_fee_cents ?? 0) / 100).toString(),
+      pricing_type: p.pricing_type,
+      vat_rate: String(p.vat_rate ?? 21),
+      discount_percent: String(p.discount_percent ?? 0),
+      discount_type: (p.discount_type ?? "none") as "none" | "one_time" | "recurring",
+      contract_months: p.contract_months != null ? String(p.contract_months) : "",
+    });
+    setOpen(true);
+  }
 
   async function load() {
     if (!currentOrganizationId) {
