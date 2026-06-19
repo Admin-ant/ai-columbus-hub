@@ -125,7 +125,7 @@ function ProductsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentOrganizationId, wsLoading]);
 
-  async function createProduct(e: React.FormEvent) {
+  async function saveProduct(e: React.FormEvent) {
     e.preventDefault();
     if (!currentOrganizationId) return toast.error("Selecteer eerst een organisatie");
     if (!form.name.trim()) return toast.error("Naam is verplicht");
@@ -133,10 +133,14 @@ function ProductsPage() {
     if (!sku) return toast.error("Artikelnr. (SKU) is verplicht");
     if (!/^[A-Za-z0-9._-]{2,32}$/.test(sku))
       return toast.error("Artikelnr. mag alleen letters, cijfers, '.', '_' of '-' bevatten (2-32 tekens)");
-    if (products.some((p) => (p.sku ?? "").toLowerCase() === sku.toLowerCase()))
+    if (products.some((p) => p.id !== editingId && (p.sku ?? "").toLowerCase() === sku.toLowerCase()))
       return toast.error("Dit artikelnummer bestaat al binnen deze organisatie");
+    const discountPercent = Math.max(0, Math.min(100, Number(form.discount_percent) || 0));
+    const discountType = discountPercent > 0 ? form.discount_type === "none" ? "one_time" : form.discount_type : "none";
+    const contractMonths = form.contract_months.trim() ? Math.max(1, Number(form.contract_months)) : null;
+
     setSaving(true);
-    const { error } = await supabase.from("products").insert({
+    const payload = {
       organization_id: currentOrganizationId,
       sku,
       name: form.name.trim(),
@@ -145,16 +149,22 @@ function ProductsPage() {
       setup_fee_cents: Math.round(Number(form.setup_fee) * 100),
       pricing_type: form.pricing_type,
       vat_rate: Number(form.vat_rate) || 0,
-      created_by: user?.id ?? null,
-    });
+      discount_percent: discountPercent,
+      discount_type: discountType,
+      contract_months: contractMonths,
+    };
+    const { error } = editingId
+      ? await supabase.from("products").update(payload).eq("id", editingId)
+      : await supabase.from("products").insert({ ...payload, created_by: user?.id ?? null });
     setSaving(false);
     if (error) {
       if (error.code === "23505") return toast.error("Dit artikelnummer bestaat al binnen deze organisatie");
       return toast.error(error.message);
     }
-    toast.success("Product aangemaakt");
+    toast.success(editingId ? "Product bijgewerkt" : "Product aangemaakt");
     setOpen(false);
-    setForm({ sku: "", name: "", description: "", unit_price: "0", setup_fee: "0", pricing_type: "one_time", vat_rate: "21" });
+    setEditingId(null);
+    setForm(emptyForm);
     load();
   }
 
