@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Plus, Trash2, Package } from "lucide-react";
+import { Loader2, Plus, Trash2, Package, Pencil } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -65,7 +65,8 @@ function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const emptyForm = {
     sku: "",
     name: "",
     description: "",
@@ -73,7 +74,34 @@ function ProductsPage() {
     setup_fee: "0",
     pricing_type: "one_time" as PricingType,
     vat_rate: "21",
-  });
+    discount_percent: "0",
+    discount_type: "none" as "none" | "one_time" | "recurring",
+    contract_months: "",
+  };
+  const [form, setForm] = useState(emptyForm);
+
+  function openCreate() {
+    setEditingId(null);
+    setForm(emptyForm);
+    setOpen(true);
+  }
+
+  function openEdit(p: Product) {
+    setEditingId(p.id);
+    setForm({
+      sku: p.sku ?? "",
+      name: p.name,
+      description: p.description ?? "",
+      unit_price: (Number(p.unit_price_cents ?? 0) / 100).toString(),
+      setup_fee: (Number(p.setup_fee_cents ?? 0) / 100).toString(),
+      pricing_type: p.pricing_type,
+      vat_rate: String(p.vat_rate ?? 21),
+      discount_percent: String(p.discount_percent ?? 0),
+      discount_type: (p.discount_type ?? "none") as "none" | "one_time" | "recurring",
+      contract_months: p.contract_months != null ? String(p.contract_months) : "",
+    });
+    setOpen(true);
+  }
 
   async function load() {
     if (!currentOrganizationId) {
@@ -97,7 +125,7 @@ function ProductsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentOrganizationId, wsLoading]);
 
-  async function createProduct(e: React.FormEvent) {
+  async function saveProduct(e: React.FormEvent) {
     e.preventDefault();
     if (!currentOrganizationId) return toast.error("Selecteer eerst een organisatie");
     if (!form.name.trim()) return toast.error("Naam is verplicht");
@@ -105,10 +133,15 @@ function ProductsPage() {
     if (!sku) return toast.error("Artikelnr. (SKU) is verplicht");
     if (!/^[A-Za-z0-9._-]{2,32}$/.test(sku))
       return toast.error("Artikelnr. mag alleen letters, cijfers, '.', '_' of '-' bevatten (2-32 tekens)");
-    if (products.some((p) => (p.sku ?? "").toLowerCase() === sku.toLowerCase()))
+    if (products.some((p) => p.id !== editingId && (p.sku ?? "").toLowerCase() === sku.toLowerCase()))
       return toast.error("Dit artikelnummer bestaat al binnen deze organisatie");
+    const discountPercent = Math.max(0, Math.min(100, Number(form.discount_percent) || 0));
+    const discountType: "none" | "one_time" | "recurring" =
+      discountPercent > 0 ? (form.discount_type === "none" ? "one_time" : form.discount_type) : "none";
+    const contractMonths = form.contract_months.trim() ? Math.max(1, Number(form.contract_months)) : null;
+
     setSaving(true);
-    const { error } = await supabase.from("products").insert({
+    const payload = {
       organization_id: currentOrganizationId,
       sku,
       name: form.name.trim(),
@@ -117,16 +150,22 @@ function ProductsPage() {
       setup_fee_cents: Math.round(Number(form.setup_fee) * 100),
       pricing_type: form.pricing_type,
       vat_rate: Number(form.vat_rate) || 0,
-      created_by: user?.id ?? null,
-    });
+      discount_percent: discountPercent,
+      discount_type: discountType,
+      contract_months: contractMonths,
+    };
+    const { error } = editingId
+      ? await supabase.from("products").update(payload).eq("id", editingId)
+      : await supabase.from("products").insert({ ...payload, created_by: user?.id ?? null });
     setSaving(false);
     if (error) {
       if (error.code === "23505") return toast.error("Dit artikelnummer bestaat al binnen deze organisatie");
       return toast.error(error.message);
     }
-    toast.success("Product aangemaakt");
+    toast.success(editingId ? "Product bijgewerkt" : "Product aangemaakt");
     setOpen(false);
-    setForm({ sku: "", name: "", description: "", unit_price: "0", setup_fee: "0", pricing_type: "one_time", vat_rate: "21" });
+    setEditingId(null);
+    setForm(emptyForm);
     load();
   }
 
@@ -189,18 +228,18 @@ function ProductsPage() {
             Beheer diensten, maandtarieven en credittarieven voor de actieve organisatie.
           </p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setForm(emptyForm); } }}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={openCreate}>
               <Plus className="mr-2 h-4 w-4" />
               Nieuw product
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Nieuw product</DialogTitle>
+              <DialogTitle>{editingId ? "Product bewerken" : "Nieuw product"}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={createProduct} className="space-y-3">
+            <form onSubmit={saveProduct} className="space-y-3">
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="p-sku">Artikelnr. *</Label>
@@ -240,10 +279,43 @@ function ProductsPage() {
                   </Select>
                 </div>
               </div>
+
+              <div className="rounded-md border border-dashed p-3 space-y-3">
+                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Korting</div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="p-disc">Korting %</Label>
+                    <Input id="p-disc" type="number" min={0} max={100} step="0.01" value={form.discount_percent}
+                      onChange={(e) => setForm({ ...form, discount_percent: e.target.value })} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Type korting</Label>
+                    <Select
+                      value={form.discount_type}
+                      onValueChange={(v) => setForm({ ...form, discount_type: v as "none" | "one_time" | "recurring" })}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Geen</SelectItem>
+                        <SelectItem value="one_time">Eenmalig</SelectItem>
+                        <SelectItem value="recurring">Per maand</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="p-months">Contractduur (mnd)</Label>
+                    <Input id="p-months" type="number" min={1} placeholder="optioneel"
+                      value={form.contract_months}
+                      onChange={(e) => setForm({ ...form, contract_months: e.target.value })}
+                      disabled={form.discount_type !== "recurring"} />
+                  </div>
+                </div>
+              </div>
+
               <DialogFooter>
                 <Button type="submit" disabled={saving}>
                   {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Opslaan
+                  {editingId ? "Bijwerken" : "Opslaan"}
                 </Button>
               </DialogFooter>
             </form>
@@ -302,6 +374,7 @@ function ProductsPage() {
                 <TableHead className="text-right">Prijs</TableHead>
                 <TableHead className="text-right">Opstart</TableHead>
                 <TableHead className="text-right">BTW</TableHead>
+                <TableHead className="text-right">Korting</TableHead>
                 <TableHead>Actief</TableHead>
                 <TableHead></TableHead>
               </TableRow>
@@ -322,12 +395,27 @@ function ProductsPage() {
                   <TableCell className="text-right tabular-nums">{EUR.format(Number(p.unit_price_cents ?? 0) / 100)}</TableCell>
                   <TableCell className="text-right tabular-nums">{EUR.format(Number(p.setup_fee_cents ?? 0) / 100)}</TableCell>
                   <TableCell className="text-right tabular-nums">{Number(p.vat_rate)}%</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {Number(p.discount_percent ?? 0) > 0 ? (
+                      <span>
+                        {Number(p.discount_percent)}%
+                        <span className="ml-1 text-[10px] uppercase text-muted-foreground">
+                          {p.discount_type === "recurring"
+                            ? `/mnd${p.contract_months ? ` · ${p.contract_months}m` : ""}`
+                            : "eenmalig"}
+                        </span>
+                      </span>
+                    ) : "—"}
+                  </TableCell>
                   <TableCell>
                     <Button size="sm" variant={p.active ? "default" : "outline"} onClick={() => toggleActive(p.id, !p.active)}>
                       {p.active ? "Actief" : "Inactief"}
                     </Button>
                   </TableCell>
                   <TableCell className="text-right">
+                    <Button size="icon" variant="ghost" onClick={() => openEdit(p)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
                     <Button size="icon" variant="ghost" onClick={() => removeProduct(p.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>

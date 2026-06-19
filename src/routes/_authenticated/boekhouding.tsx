@@ -97,6 +97,9 @@ interface ProductOption {
   vat_rate: number;
   pricing_type: "one_time" | "monthly_recurring" | "per_credit";
   description: string | null;
+  discount_percent: number | null;
+  discount_type: "none" | "one_time" | "recurring" | null;
+  contract_months: number | null;
 }
 
 interface JournalLine {
@@ -465,7 +468,7 @@ function InvoicesTab({
     if (!orgId) return;
     void supabase
       .from("products")
-      .select("id, sku, name, unit_price_cents, setup_fee_cents, vat_rate, pricing_type, description")
+      .select("id, sku, name, unit_price_cents, setup_fee_cents, vat_rate, pricing_type, description, discount_percent, discount_type, contract_months")
       .eq("organization_id", orgId)
       .eq("active", true)
       .order("name")
@@ -482,14 +485,24 @@ function InvoicesTab({
     const p = products.find((pp) => pp.id === productId);
     if (!p) return;
     const vat = Number(p.vat_rate ?? 21);
+    const discPct = Math.max(0, Math.min(100, Number(p.discount_percent ?? 0)));
+    const discType = (p.discount_type ?? "none") as "none" | "one_time" | "recurring";
+    const discountedUnit = Math.round(p.unit_price_cents * (1 - discPct / 100));
+    const baseDesc = p.description || p.name;
+    const discSuffix =
+      discPct > 0
+        ? ` (−${discPct}% ${discType === "recurring" ? `/mnd${p.contract_months ? ` · ${p.contract_months}m` : ""}` : "eenmalig"})`
+        : "";
+
     const n = [...lines];
     n[i] = {
       ...n[i],
       product_id: p.id,
-      description: n[i].description.trim() ? n[i].description : p.description || p.name,
-      unit_price_cents: p.unit_price_cents,
+      description: n[i].description.trim() ? n[i].description : baseDesc + discSuffix,
+      unit_price_cents: discountedUnit,
       vat_rate: vat,
     };
+
     const setup = Number(p.setup_fee_cents ?? 0);
     const setupDesc = `Eenmalige opstartkosten — ${p.name}`;
     const alreadyHasSetup = n.some(
@@ -503,9 +516,9 @@ function InvoicesTab({
         vat_rate: vat,
         product_id: p.id,
       });
-      toast.success(`Opstartkosten (${(setup / 100).toFixed(2)} €) toegevoegd`);
     }
     setLines(n);
+    if (discPct > 0) toast.success(`Korting ${discPct}% toegepast`);
   }
 
   const revenueAccount = accounts.find((a) => a.code === "8000");
