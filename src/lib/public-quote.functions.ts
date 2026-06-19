@@ -174,5 +174,20 @@ export const payPublicQuote = createServerFn({ method: "POST" })
       .eq("id", q.id);
     if (uErr) throw new Error(uErr.message);
 
+    await sb.from("quote_status_events").insert([
+      {
+        quote_id: q.id,
+        organization_id: q.organization_id,
+        event_type: "paid",
+        metadata: { payment_id, amount: total },
+      },
+      {
+        quote_id: q.id,
+        organization_id: q.organization_id,
+        event_type: "invoice_created",
+        metadata: { invoice_id: inv.id, invoice_number: inv.invoice_number },
+      },
+    ]);
+
     return { ok: true, mock: true, payment_id, invoice_number: inv.invoice_number };
   });
