@@ -99,7 +99,7 @@ const adminItems: NavItem[] = [
 
 export function AppSidebar() {
   const { user, roles, hasRole, signOut } = useAuth();
-  const { organizations, setCurrentOrganizationId } = useWorkspace();
+  const { organizations, currentOrganization, setCurrentOrganizationId } = useWorkspace();
   const navigate = useNavigate();
   const currentPath = useRouterState({ select: (s) => s.location.pathname });
 
@@ -118,6 +118,8 @@ export function AppSidebar() {
   }
 
   const isActive = (url: string) => currentPath === url;
+  const orgInitial = (currentOrganization?.name ?? "?").slice(0, 1).toUpperCase();
+  const brandColor = currentOrganization?.brand_color || undefined;
 
   return (
     <Sidebar collapsible="icon">
@@ -130,6 +132,26 @@ export function AppSidebar() {
             <span className="text-sm font-semibold leading-none">Portaal</span>
             <span className="text-xs text-muted-foreground">Intern overzicht</span>
           </div>
+        </div>
+        <div
+          className="mx-2 mb-2 flex items-center gap-2 rounded-md border bg-muted/40 px-2 py-1.5 group-data-[collapsible=icon]:hidden"
+          title={currentOrganization ? `Actieve omgeving: ${currentOrganization.name}` : "Geen actieve omgeving"}
+        >
+          <span
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[11px] font-semibold text-white"
+            style={{ backgroundColor: brandColor ?? "hsl(var(--primary))" }}
+          >
+            {orgInitial}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground leading-none">
+              Actieve omgeving
+            </div>
+            <div className="truncate text-xs font-semibold">
+              {currentOrganization?.name ?? "Geen geselecteerd"}
+            </div>
+          </div>
+          <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" aria-hidden />
         </div>
       </SidebarHeader>
       <SidebarContent>
