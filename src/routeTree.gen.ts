@@ -15,8 +15,8 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated/teams'
 import { Route as AuthenticatedGebruikersRouteImport } from './routes/_authenticated/gebruikers'
-import { Route as AuthenticatedAiColumbusRouteImport } from './routes/_authenticated/ai-columbus'
 import { Route as AuthenticatedAdministratieRouteImport } from './routes/_authenticated/administratie'
+import { Route as AuthenticatedAiColumbusLeadsRouteImport } from './routes/_authenticated/ai-columbus.leads'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -47,15 +47,16 @@ const AuthenticatedGebruikersRoute = AuthenticatedGebruikersRouteImport.update({
   path: '/gebruikers',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAiColumbusRoute = AuthenticatedAiColumbusRouteImport.update({
-  id: '/ai-columbus',
-  path: '/ai-columbus',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedAdministratieRoute =
   AuthenticatedAdministratieRouteImport.update({
     id: '/administratie',
     path: '/administratie',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAiColumbusLeadsRoute =
+  AuthenticatedAiColumbusLeadsRouteImport.update({
+    id: '/ai-columbus/leads',
+    path: '/ai-columbus/leads',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
@@ -64,18 +65,18 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/administratie': typeof AuthenticatedAdministratieRoute
-  '/ai-columbus': typeof AuthenticatedAiColumbusRoute
   '/gebruikers': typeof AuthenticatedGebruikersRoute
   '/teams': typeof AuthenticatedTeamsRoute
+  '/ai-columbus/leads': typeof AuthenticatedAiColumbusLeadsRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/administratie': typeof AuthenticatedAdministratieRoute
-  '/ai-columbus': typeof AuthenticatedAiColumbusRoute
   '/gebruikers': typeof AuthenticatedGebruikersRoute
   '/teams': typeof AuthenticatedTeamsRoute
   '/': typeof AuthenticatedIndexRoute
+  '/ai-columbus/leads': typeof AuthenticatedAiColumbusLeadsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -83,10 +84,10 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/administratie': typeof AuthenticatedAdministratieRoute
-  '/_authenticated/ai-columbus': typeof AuthenticatedAiColumbusRoute
   '/_authenticated/gebruikers': typeof AuthenticatedGebruikersRoute
   '/_authenticated/teams': typeof AuthenticatedTeamsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/ai-columbus/leads': typeof AuthenticatedAiColumbusLeadsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -95,28 +96,28 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/administratie'
-    | '/ai-columbus'
     | '/gebruikers'
     | '/teams'
+    | '/ai-columbus/leads'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
     | '/reset-password'
     | '/administratie'
-    | '/ai-columbus'
     | '/gebruikers'
     | '/teams'
     | '/'
+    | '/ai-columbus/leads'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
     | '/_authenticated/administratie'
-    | '/_authenticated/ai-columbus'
     | '/_authenticated/gebruikers'
     | '/_authenticated/teams'
     | '/_authenticated/'
+    | '/_authenticated/ai-columbus/leads'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -169,13 +170,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGebruikersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/ai-columbus': {
-      id: '/_authenticated/ai-columbus'
-      path: '/ai-columbus'
-      fullPath: '/ai-columbus'
-      preLoaderRoute: typeof AuthenticatedAiColumbusRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/administratie': {
       id: '/_authenticated/administratie'
       path: '/administratie'
@@ -183,23 +177,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdministratieRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ai-columbus/leads': {
+      id: '/_authenticated/ai-columbus/leads'
+      path: '/ai-columbus/leads'
+      fullPath: '/ai-columbus/leads'
+      preLoaderRoute: typeof AuthenticatedAiColumbusLeadsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdministratieRoute: typeof AuthenticatedAdministratieRoute
-  AuthenticatedAiColumbusRoute: typeof AuthenticatedAiColumbusRoute
   AuthenticatedGebruikersRoute: typeof AuthenticatedGebruikersRoute
   AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedAiColumbusLeadsRoute: typeof AuthenticatedAiColumbusLeadsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdministratieRoute: AuthenticatedAdministratieRoute,
-  AuthenticatedAiColumbusRoute: AuthenticatedAiColumbusRoute,
   AuthenticatedGebruikersRoute: AuthenticatedGebruikersRoute,
   AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedAiColumbusLeadsRoute: AuthenticatedAiColumbusLeadsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
