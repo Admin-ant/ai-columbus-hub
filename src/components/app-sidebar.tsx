@@ -12,6 +12,8 @@ import {
   Cpu,
   BarChart3,
   ScrollText,
+  Receipt,
+  FileSignature,
 } from "lucide-react";
 
 import {
@@ -59,6 +61,8 @@ const sections: NavSection[] = [
     items: [
       { title: "Dashboard", url: "/ai-columbus", icon: LayoutDashboard },
       { title: "Leads funnel", url: "/ai-columbus/leads", icon: Sparkles },
+      { title: "Offertes", url: "/quotes", icon: FileSignature },
+      { title: "Facturen", url: "/invoices", icon: Receipt },
       { title: "Modellen & gebruik", url: "/ai-columbus/modellen", icon: Cpu },
       { title: "Rapportages", url: "/ai-columbus/rapportages", icon: BarChart3 },
       { title: "Logs", url: "/ai-columbus/logs", icon: ScrollText },
@@ -73,9 +77,12 @@ const sections: NavSection[] = [
       { title: "Dashboard", url: "/netqloud", icon: LayoutDashboard },
       { title: "Klanten", url: "/netqloud/klanten", icon: Users },
       { title: "Servers", url: "/netqloud/servers", icon: Server },
+      { title: "Offertes", url: "/quotes", icon: FileSignature },
+      { title: "Facturen", url: "/invoices", icon: Receipt },
       { title: "Instellingen", url: "/netqloud/instellingen", icon: Settings },
     ],
   },
+
 ];
 
 const adminItems: NavItem[] = [
