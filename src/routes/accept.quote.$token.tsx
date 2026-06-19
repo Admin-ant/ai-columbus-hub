@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { CheckCircle2, Loader2, ShieldCheck, FileSignature, CreditCard } from "lucide-react";
+import { CheckCircle2, Loader2, ShieldCheck, FileSignature, CreditCard, Eye, Receipt, ScrollText, Clock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
