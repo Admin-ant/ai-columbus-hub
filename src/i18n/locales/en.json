@@ -34,7 +34,8 @@
     "models_usage": "Models & usage",
     "reports": "Reports",
     "logs": "Logs",
-    "administration": "Administration"
+    "administration": "Administration",
+    "accounting": "Accounting"
   },
   "leads": {
     "title": "Lead funnel",
@@ -117,5 +118,61 @@
     "sign_and_pay": "Sign & pay",
     "clear_signature": "Clear signature",
     "thanks": "Thank you! The quote has been signed and the down-payment has been initiated."
+  },
+  "acc": {
+    "title": "Accounting",
+    "subtitle": "Quotes, invoices, ledger and double-entry journals — ready for your accountant.",
+    "tabs": {
+      "dashboard": "Dashboard",
+      "invoices": "Invoices",
+      "ledger": "Chart of accounts",
+      "journal": "Journal entries",
+      "sync": "Accountant Sync"
+    },
+    "dash": {
+      "revenue": "Revenue (ex. VAT)",
+      "revenue_hint": "Sent + paid invoices",
+      "outstanding": "Outstanding",
+      "paid": "Paid",
+      "invoice_count": "Invoice count",
+      "recent_invoices": "Recent invoices",
+      "recent_sync": "Recent sync events"
+    },
+    "ledger": {
+      "code": "Code",
+      "name": "Name",
+      "type": "Type",
+      "vat": "VAT %"
+    },
+    "inv": {
+      "client": "Client",
+      "client_required": "Client name is required",
+      "line_required": "Fill in all line descriptions",
+      "unit_eur": "Price (€)",
+      "subtotal": "Subtotal",
+      "dialog_desc": "Amounts are stored in cents to avoid rounding errors.",
+      "posted": "Journal entry posted automatically"
+    },
+    "journal": {
+      "empty": "No journal entries yet — set an invoice to 'Sent' or 'Paid' to generate one.",
+      "balanced": "Balanced",
+      "unbalanced": "Unbalanced",
+      "debit": "Debit",
+      "credit": "Credit"
+    },
+    "sync": {
+      "target": "Target system",
+      "export_all": "Export JSON",
+      "ready_to_push": "Ready to push",
+      "no_ready": "No sent/paid invoices to sync",
+      "payload_preview": "Payload preview",
+      "select_invoice": "Select an invoice to view its payload",
+      "event_log": "Event log",
+      "when": "When",
+      "response": "Response",
+      "pushed": "Sent to accountant",
+      "failed": "Push failed",
+      "empty": "No sync events yet"
+    }
   }
 }
