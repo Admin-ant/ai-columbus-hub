@@ -110,6 +110,69 @@ function JournalDetailPage() {
     };
   }, [entryId]);
 
+  const pdfData: JournalPdfData | null = useMemo(() => {
+    if (!entry) return null;
+    return {
+      id: entry.id,
+      entry_date: entry.entry_date,
+      description: entry.description,
+      source: entry.source,
+      journal_lines: entry.journal_lines.map((l) => ({
+        debit_cents: l.debit_cents,
+        credit_cents: l.credit_cents,
+        description: l.description,
+        chart_of_accounts: l.chart_of_accounts
+          ? { code: l.chart_of_accounts.code, name: l.chart_of_accounts.name }
+          : null,
+      })),
+      invoice: entry.invoices
+        ? {
+            invoice_number: entry.invoices.invoice_number,
+            client_name: entry.invoices.client_name,
+            status: entry.invoices.status,
+            subtotal_cents: entry.invoices.subtotal_cents,
+            vat_cents: entry.invoices.vat_cents,
+            total_cents: entry.invoices.total_cents,
+          }
+        : null,
+      quote: entry.quotes
+        ? {
+            quote_number: entry.quotes.quote_number,
+            client_name: entry.quotes.client_name,
+            status: entry.quotes.status,
+          }
+        : null,
+    };
+  }, [entry]);
+
+  useEffect(() => {
+    if (entry) setTpl(loadTemplate(entry.organization_id, user?.id ?? null));
+  }, [entry, user?.id]);
+
+  // Concept-PDF preview blob URL — regenerates when template or data changes.
+  useEffect(() => {
+    if (!showPreview || !pdfData || !tpl) return;
+    const handle = setTimeout(() => {
+      try {
+        const url = journalPdfBlobUrl(pdfData, tpl, lang);
+        if (lastUrlRef.current) URL.revokeObjectURL(lastUrlRef.current);
+        lastUrlRef.current = url;
+        setPreviewUrl(url);
+      } catch {
+        setPreviewUrl(null);
+      }
+    }, 150);
+    return () => clearTimeout(handle);
+  }, [showPreview, pdfData, tpl, lang]);
+
+  useEffect(() => {
+    return () => {
+      if (lastUrlRef.current) URL.revokeObjectURL(lastUrlRef.current);
+    };
+  }, []);
+
+
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20 text-muted-foreground">
