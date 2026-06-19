@@ -82,7 +82,7 @@ export const signPublicQuote = createServerFn({ method: "POST" })
     const sb = await loadAdmin();
     const { data: q, error: e1 } = await sb
       .from("quotes")
-      .select("id, status")
+      .select("id, organization_id, status")
       .eq("public_token", data.token)
       .maybeSingle();
     if (e1) throw new Error(e1.message);
@@ -99,6 +99,13 @@ export const signPublicQuote = createServerFn({ method: "POST" })
       })
       .eq("id", q.id);
     if (error) throw new Error(error.message);
+
+    await sb.from("quote_status_events").insert({
+      quote_id: q.id,
+      organization_id: q.organization_id,
+      event_type: "signed",
+    });
+
     return { ok: true };
   });
 
