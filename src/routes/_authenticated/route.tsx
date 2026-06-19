@@ -12,11 +12,12 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthenticatedLayout() {
   const { user, loading } = useAuth();
+  const { t } = useTranslation();
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
-        Laden…
+        {t("common.loading")}
       </div>
     );
   }
@@ -31,8 +32,12 @@ function AuthenticatedLayout() {
           <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur">
             <SidebarTrigger />
             <div className="flex flex-col">
-              <span className="text-sm font-semibold">AI van Columbus Portaal</span>
-              <span className="text-xs text-muted-foreground">Intern overzicht</span>
+              <span className="text-sm font-semibold">{t("header.portal_title")}</span>
+              <span className="text-xs text-muted-foreground">{t("header.portal_subtitle")}</span>
+            </div>
+            <div className="ml-auto flex items-center gap-2">
+              <WorkspaceSwitcher />
+              <LanguageSwitcher />
             </div>
           </header>
           <main className="flex-1 p-6">
