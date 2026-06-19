@@ -481,14 +481,30 @@ function InvoicesTab({
   function applyProduct(i: number, productId: string) {
     const p = products.find((pp) => pp.id === productId);
     if (!p) return;
+    const vat = Number(p.vat_rate ?? 21);
     const n = [...lines];
     n[i] = {
       ...n[i],
       product_id: p.id,
       description: n[i].description.trim() ? n[i].description : p.description || p.name,
       unit_price_cents: p.unit_price_cents,
-      vat_rate: Number(p.vat_rate ?? 21),
+      vat_rate: vat,
     };
+    const setup = Number(p.setup_fee_cents ?? 0);
+    const setupDesc = `Eenmalige opstartkosten — ${p.name}`;
+    const alreadyHasSetup = n.some(
+      (l) => l.product_id === p.id && l.description === setupDesc,
+    );
+    if (setup > 0 && !alreadyHasSetup) {
+      n.splice(i + 1, 0, {
+        description: setupDesc,
+        quantity: 1,
+        unit_price_cents: setup,
+        vat_rate: vat,
+        product_id: p.id,
+      });
+      toast.success(`Opstartkosten (${(setup / 100).toFixed(2)} €) toegevoegd`);
+    }
     setLines(n);
   }
 
