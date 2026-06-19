@@ -85,6 +85,16 @@ interface LineForm {
   quantity: number;
   unit_price_cents: number;
   vat_rate: number;
+  product_id: string | null;
+}
+
+interface ProductOption {
+  id: string;
+  name: string;
+  unit_price_cents: number;
+  vat_rate: number;
+  pricing_type: "one_time" | "monthly_recurring" | "per_credit";
+  description: string | null;
 }
 
 interface JournalLine {
