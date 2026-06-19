@@ -257,6 +257,27 @@ function ProductsPage() {
         <SummaryCard label="Per credit" value={EUR.format(totals.perCredit / 100)} sub="Som actieve credittarieven" />
       </div>
 
+      <div className="flex flex-wrap items-center gap-3">
+        <Input
+          placeholder="Zoek op artikelnr., naam of omschrijving…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+        <Select value={pricingFilter} onValueChange={(v) => setPricingFilter(v as "all" | PricingType)}>
+          <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Alle prijstypes</SelectItem>
+            {(Object.keys(PRICING_LABELS) as PricingType[]).map((k) => (
+              <SelectItem key={k} value={k}>{PRICING_LABELS[k]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="text-xs text-muted-foreground">
+          {filteredProducts.length} / {products.length}
+        </div>
+      </div>
+
       {loading ? (
         <div className="flex items-center justify-center py-20 text-muted-foreground">
           <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Laden…
@@ -265,6 +286,10 @@ function ProductsPage() {
         <div className="rounded-lg border border-dashed py-16 text-center text-sm text-muted-foreground">
           <Package className="mx-auto mb-2 h-6 w-6 opacity-60" />
           Nog geen producten. Voeg er één toe om te starten.
+        </div>
+      ) : filteredProducts.length === 0 ? (
+        <div className="rounded-lg border border-dashed py-16 text-center text-sm text-muted-foreground">
+          Geen resultaten voor deze filters.
         </div>
       ) : (
         <div className="rounded-lg border">
