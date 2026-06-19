@@ -468,7 +468,7 @@ function InvoicesTab({
     if (!orgId) return;
     void supabase
       .from("products")
-      .select("id, sku, name, unit_price_cents, setup_fee_cents, vat_rate, pricing_type, description")
+      .select("id, sku, name, unit_price_cents, setup_fee_cents, vat_rate, pricing_type, description, discount_percent, discount_type, contract_months")
       .eq("organization_id", orgId)
       .eq("active", true)
       .order("name")
