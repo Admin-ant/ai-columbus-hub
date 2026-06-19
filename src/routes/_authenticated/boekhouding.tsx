@@ -818,8 +818,24 @@ function InvoicesTab({
                               </SelectContent>
                             </Select>
                           </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min={1}
+                              className="text-right"
+                              placeholder="—"
+                              disabled={l.discount_type !== "recurring" && l.pricing_type !== "monthly_recurring"}
+                              value={l.contract_months ?? ""}
+                              onChange={(e) => updateContractMonths(i, e.target.value)}
+                            />
+                          </TableCell>
                           <TableCell className="text-right text-sm tabular-nums">
-                            {centsFmt(lineTot, lang)}
+                            <div>{centsFmt(lineTot, lang)}</div>
+                            {l.discount_type === "recurring" && l.contract_months && l.contract_months > 1 && (
+                              <div className="text-[10px] text-muted-foreground">
+                                × {l.contract_months}m = {centsFmt(lineTot * l.contract_months, lang)}
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell>
                             <Button
