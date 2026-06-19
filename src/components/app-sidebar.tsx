@@ -45,6 +45,7 @@ type NavItem = {
 type NavSection = {
   label: string;
   rootUrl: string;
+  orgSlug: string;
   icon: typeof LayoutDashboard;
   items: NavItem[];
 };
