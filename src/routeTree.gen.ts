@@ -23,6 +23,9 @@ import { Route as AuthenticatedAiColumbusIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedNetqloudServersRouteImport } from './routes/_authenticated/netqloud.servers'
 import { Route as AuthenticatedNetqloudKlantenRouteImport } from './routes/_authenticated/netqloud.klanten'
 import { Route as AuthenticatedNetqloudInstellingenRouteImport } from './routes/_authenticated/netqloud.instellingen'
+import { Route as AuthenticatedAiColumbusRapportagesRouteImport } from './routes/_authenticated/ai-columbus.rapportages'
+import { Route as AuthenticatedAiColumbusModellenRouteImport } from './routes/_authenticated/ai-columbus.modellen'
+import { Route as AuthenticatedAiColumbusLogsRouteImport } from './routes/_authenticated/ai-columbus.logs'
 import { Route as AuthenticatedAiColumbusLeadsRouteImport } from './routes/_authenticated/ai-columbus.leads'
 import { Route as AuthenticatedAiColumbusInstellingenRouteImport } from './routes/_authenticated/ai-columbus.instellingen'
 
@@ -101,6 +104,24 @@ const AuthenticatedNetqloudInstellingenRoute =
     path: '/instellingen',
     getParentRoute: () => AuthenticatedNetqloudRoute,
   } as any)
+const AuthenticatedAiColumbusRapportagesRoute =
+  AuthenticatedAiColumbusRapportagesRouteImport.update({
+    id: '/rapportages',
+    path: '/rapportages',
+    getParentRoute: () => AuthenticatedAiColumbusRoute,
+  } as any)
+const AuthenticatedAiColumbusModellenRoute =
+  AuthenticatedAiColumbusModellenRouteImport.update({
+    id: '/modellen',
+    path: '/modellen',
+    getParentRoute: () => AuthenticatedAiColumbusRoute,
+  } as any)
+const AuthenticatedAiColumbusLogsRoute =
+  AuthenticatedAiColumbusLogsRouteImport.update({
+    id: '/logs',
+    path: '/logs',
+    getParentRoute: () => AuthenticatedAiColumbusRoute,
+  } as any)
 const AuthenticatedAiColumbusLeadsRoute =
   AuthenticatedAiColumbusLeadsRouteImport.update({
     id: '/leads',
@@ -125,6 +146,9 @@ export interface FileRoutesByFullPath {
   '/teams': typeof AuthenticatedTeamsRoute
   '/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
   '/ai-columbus/leads': typeof AuthenticatedAiColumbusLeadsRoute
+  '/ai-columbus/logs': typeof AuthenticatedAiColumbusLogsRoute
+  '/ai-columbus/modellen': typeof AuthenticatedAiColumbusModellenRoute
+  '/ai-columbus/rapportages': typeof AuthenticatedAiColumbusRapportagesRoute
   '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
@@ -140,6 +164,9 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
   '/ai-columbus/leads': typeof AuthenticatedAiColumbusLeadsRoute
+  '/ai-columbus/logs': typeof AuthenticatedAiColumbusLogsRoute
+  '/ai-columbus/modellen': typeof AuthenticatedAiColumbusModellenRoute
+  '/ai-columbus/rapportages': typeof AuthenticatedAiColumbusRapportagesRoute
   '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
@@ -159,6 +186,9 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
   '/_authenticated/ai-columbus/leads': typeof AuthenticatedAiColumbusLeadsRoute
+  '/_authenticated/ai-columbus/logs': typeof AuthenticatedAiColumbusLogsRoute
+  '/_authenticated/ai-columbus/modellen': typeof AuthenticatedAiColumbusModellenRoute
+  '/_authenticated/ai-columbus/rapportages': typeof AuthenticatedAiColumbusRapportagesRoute
   '/_authenticated/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/_authenticated/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/_authenticated/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
@@ -178,6 +208,9 @@ export interface FileRouteTypes {
     | '/teams'
     | '/ai-columbus/instellingen'
     | '/ai-columbus/leads'
+    | '/ai-columbus/logs'
+    | '/ai-columbus/modellen'
+    | '/ai-columbus/rapportages'
     | '/netqloud/instellingen'
     | '/netqloud/klanten'
     | '/netqloud/servers'
@@ -193,6 +226,9 @@ export interface FileRouteTypes {
     | '/'
     | '/ai-columbus/instellingen'
     | '/ai-columbus/leads'
+    | '/ai-columbus/logs'
+    | '/ai-columbus/modellen'
+    | '/ai-columbus/rapportages'
     | '/netqloud/instellingen'
     | '/netqloud/klanten'
     | '/netqloud/servers'
@@ -211,6 +247,9 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/_authenticated/ai-columbus/instellingen'
     | '/_authenticated/ai-columbus/leads'
+    | '/_authenticated/ai-columbus/logs'
+    | '/_authenticated/ai-columbus/modellen'
+    | '/_authenticated/ai-columbus/rapportages'
     | '/_authenticated/netqloud/instellingen'
     | '/_authenticated/netqloud/klanten'
     | '/_authenticated/netqloud/servers'
@@ -324,6 +363,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNetqloudInstellingenRouteImport
       parentRoute: typeof AuthenticatedNetqloudRoute
     }
+    '/_authenticated/ai-columbus/rapportages': {
+      id: '/_authenticated/ai-columbus/rapportages'
+      path: '/rapportages'
+      fullPath: '/ai-columbus/rapportages'
+      preLoaderRoute: typeof AuthenticatedAiColumbusRapportagesRouteImport
+      parentRoute: typeof AuthenticatedAiColumbusRoute
+    }
+    '/_authenticated/ai-columbus/modellen': {
+      id: '/_authenticated/ai-columbus/modellen'
+      path: '/modellen'
+      fullPath: '/ai-columbus/modellen'
+      preLoaderRoute: typeof AuthenticatedAiColumbusModellenRouteImport
+      parentRoute: typeof AuthenticatedAiColumbusRoute
+    }
+    '/_authenticated/ai-columbus/logs': {
+      id: '/_authenticated/ai-columbus/logs'
+      path: '/logs'
+      fullPath: '/ai-columbus/logs'
+      preLoaderRoute: typeof AuthenticatedAiColumbusLogsRouteImport
+      parentRoute: typeof AuthenticatedAiColumbusRoute
+    }
     '/_authenticated/ai-columbus/leads': {
       id: '/_authenticated/ai-columbus/leads'
       path: '/leads'
@@ -344,6 +404,9 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedAiColumbusRouteChildren {
   AuthenticatedAiColumbusInstellingenRoute: typeof AuthenticatedAiColumbusInstellingenRoute
   AuthenticatedAiColumbusLeadsRoute: typeof AuthenticatedAiColumbusLeadsRoute
+  AuthenticatedAiColumbusLogsRoute: typeof AuthenticatedAiColumbusLogsRoute
+  AuthenticatedAiColumbusModellenRoute: typeof AuthenticatedAiColumbusModellenRoute
+  AuthenticatedAiColumbusRapportagesRoute: typeof AuthenticatedAiColumbusRapportagesRoute
   AuthenticatedAiColumbusIndexRoute: typeof AuthenticatedAiColumbusIndexRoute
 }
 
@@ -352,6 +415,10 @@ const AuthenticatedAiColumbusRouteChildren: AuthenticatedAiColumbusRouteChildren
     AuthenticatedAiColumbusInstellingenRoute:
       AuthenticatedAiColumbusInstellingenRoute,
     AuthenticatedAiColumbusLeadsRoute: AuthenticatedAiColumbusLeadsRoute,
+    AuthenticatedAiColumbusLogsRoute: AuthenticatedAiColumbusLogsRoute,
+    AuthenticatedAiColumbusModellenRoute: AuthenticatedAiColumbusModellenRoute,
+    AuthenticatedAiColumbusRapportagesRoute:
+      AuthenticatedAiColumbusRapportagesRoute,
     AuthenticatedAiColumbusIndexRoute: AuthenticatedAiColumbusIndexRoute,
   }
 
@@ -409,13 +476,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
