@@ -150,13 +150,15 @@ function LeadsKanbanPage() {
       phone: form.phone || null,
       email: form.email || null,
       notes: form.notes || null,
+      potential_monthly_value: Number(form.potential_monthly_value) || 0,
+      target_start_date: form.target_start_date || null,
       created_by: user?.id ?? null,
     });
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success(t("leads.created"));
     setOpen(false);
-    setForm({ name: "", stage: "nieuwe", value: "0", source: "", rep: "", phone: "", email: "", notes: "" });
+    setForm({ name: "", stage: "nieuwe", value: "0", source: "", rep: "", phone: "", email: "", notes: "", potential_monthly_value: "0", target_start_date: "" });
     load();
   }
 
