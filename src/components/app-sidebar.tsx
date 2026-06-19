@@ -32,6 +32,7 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
+import { useWorkspace } from "@/hooks/use-workspace";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 type NavItem = {
@@ -44,6 +45,7 @@ type NavItem = {
 type NavSection = {
   label: string;
   rootUrl: string;
+  orgSlug: string;
   icon: typeof LayoutDashboard;
   items: NavItem[];
 };
@@ -58,6 +60,7 @@ const sections: NavSection[] = [
   {
     label: "AI van Columbus",
     rootUrl: "/ai-columbus",
+    orgSlug: "ai-columbus",
     icon: Sparkles,
     items: [
       { title: "Dashboard", url: "/ai-columbus", icon: LayoutDashboard },
@@ -73,6 +76,7 @@ const sections: NavSection[] = [
   {
     label: "Netqloud",
     rootUrl: "/netqloud",
+    orgSlug: "netqloud",
     icon: Cloud,
     items: [
       { title: "Dashboard", url: "/netqloud", icon: LayoutDashboard },
@@ -93,8 +97,14 @@ const adminItems: NavItem[] = [
 
 export function AppSidebar() {
   const { user, roles, hasRole, signOut } = useAuth();
+  const { organizations, setCurrentOrganizationId } = useWorkspace();
   const navigate = useNavigate();
   const currentPath = useRouterState({ select: (s) => s.location.pathname });
+
+  const switchToOrg = (slug: string) => {
+    const org = organizations.find((o) => o.slug === slug);
+    if (org) setCurrentOrganizationId(org.id);
+  };
 
   const visibleAdmin = adminItems.filter((i) => !i.requiredRole || hasRole(i.requiredRole));
   const initials = (user?.email ?? "?").slice(0, 2).toUpperCase();
@@ -151,7 +161,11 @@ export function AppSidebar() {
                 <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={isActive(section.rootUrl)}>
-                      <Link to={section.rootUrl} className="flex items-center gap-2">
+                      <Link
+                        to={section.rootUrl}
+                        onClick={() => switchToOrg(section.orgSlug)}
+                        className="flex items-center gap-2"
+                      >
                         <section.icon className="h-4 w-4" />
                         <span>Open omgeving</span>
                       </Link>
