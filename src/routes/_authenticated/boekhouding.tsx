@@ -467,6 +467,13 @@ function InvoicesTab({
     unit_price_cents: 0,
     vat_rate: 21,
     product_id: null,
+    base_unit_price_cents: 0,
+    discount_percent: 0,
+    discount_type: "none",
+    contract_months: null,
+    pricing_type: null,
+    product_name: null,
+    is_setup_fee: false,
   });
   const [lines, setLines] = useState<LineForm[]>([emptyLine()]);
   const [products, setProducts] = useState<ProductOption[]>([]);
