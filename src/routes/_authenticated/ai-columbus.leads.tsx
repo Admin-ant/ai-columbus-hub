@@ -51,14 +51,15 @@ const STAGES: { key: LeadStage; color: string }[] = [
 
 const EUR = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
 
-function AiColumbusPage() {
+function LeadsKanbanPage() {
   const { user } = useAuth();
+  const { t, i18n } = useTranslation();
+  const { currentOrganizationId, currentOrganization, loading: wsLoading } = useWorkspace();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [dragId, setDragId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [orgId, setOrgId] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "",
     stage: "nieuwe" as LeadStage,
@@ -70,26 +71,36 @@ function AiColumbusPage() {
     notes: "",
   });
 
+  const eur = useMemo(
+    () =>
+      new Intl.NumberFormat(i18n.resolvedLanguage === "en" ? "en-IE" : "nl-NL", {
+        style: "currency",
+        currency: "EUR",
+      }),
+    [i18n.resolvedLanguage],
+  );
+
   async function load() {
+    if (!currentOrganizationId) {
+      setLeads([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    const { data: org } = await supabase
-      .from("organizations")
-      .select("id")
-      .eq("slug", "ai-columbus")
-      .maybeSingle();
-    setOrgId(org?.id ?? null);
     const { data, error } = await supabase
       .from("leads")
       .select("*")
+      .eq("organization_id", currentOrganizationId)
       .order("created_at", { ascending: false });
-    if (error) toast.error("Leads laden mislukt: " + error.message);
+    if (error) toast.error(error.message);
     setLeads((data ?? []) as Lead[]);
     setLoading(false);
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    if (!wsLoading) load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentOrganizationId, wsLoading]);
 
   const grouped = useMemo(() => {
     const map = new Map<LeadStage, Lead[]>();
@@ -102,9 +113,9 @@ function AiColumbusPage() {
     const map = new Map<LeadStage, { count: number; value: number }>();
     STAGES.forEach((s) => map.set(s.key, { count: 0, value: 0 }));
     leads.forEach((l) => {
-      const t = map.get(l.stage)!;
-      t.count += 1;
-      t.value += Number(l.value ?? 0);
+      const tt = map.get(l.stage)!;
+      tt.count += 1;
+      tt.value += Number(l.value ?? 0);
     });
     return map;
   }, [leads]);
@@ -114,25 +125,18 @@ function AiColumbusPage() {
     setLeads((ls) => ls.map((l) => (l.id === id ? { ...l, stage } : l)));
     const { error } = await supabase.from("leads").update({ stage }).eq("id", id);
     if (error) {
-      toast.error("Verplaatsen mislukt: " + error.message);
+      toast.error(error.message);
       setLeads(prev);
     }
   }
 
   async function createLead(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name.trim()) {
-      toast.error("Naam is verplicht");
-      return;
-    }
-    if (!orgId) {
-      toast.error("Organisatie niet gevonden");
-      setSaving(false);
-      return;
-    }
+    if (!form.name.trim()) return toast.error(t("leads.name_required"));
+    if (!currentOrganizationId) return toast.error(t("leads.no_organization"));
     setSaving(true);
     const { error } = await supabase.from("leads").insert({
-      organization_id: orgId,
+      organization_id: currentOrganizationId,
       name: form.name.trim(),
       stage: form.stage,
       value: Number(form.value) || 0,
@@ -144,22 +148,10 @@ function AiColumbusPage() {
       created_by: user?.id ?? null,
     });
     setSaving(false);
-    if (error) {
-      toast.error("Aanmaken mislukt: " + error.message);
-      return;
-    }
-    toast.success("Lead aangemaakt");
+    if (error) return toast.error(error.message);
+    toast.success(t("leads.created"));
     setOpen(false);
-    setForm({
-      name: "",
-      stage: "nieuwe",
-      value: "0",
-      source: "",
-      rep: "",
-      phone: "",
-      email: "",
-      notes: "",
-    });
+    setForm({ name: "", stage: "nieuwe", value: "0", source: "", rep: "", phone: "", email: "", notes: "" });
     load();
   }
 
@@ -167,110 +159,69 @@ function AiColumbusPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">AI van Columbus — Leads funnel</h1>
-          <p className="text-sm text-muted-foreground">
-            Sleep een lead naar een andere kolom om de fase te wijzigen.
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {currentOrganization?.name ?? ""} — {t("leads.title")}
+          </h1>
+          <p className="text-sm text-muted-foreground">{t("leads.drag_hint")}</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              Nieuwe lead
+              {t("leads.new_lead")}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Nieuwe lead</DialogTitle>
-              <DialogDescription>Voeg een nieuwe lead toe aan de funnel.</DialogDescription>
+              <DialogTitle>{t("leads.new_lead")}</DialogTitle>
+              <DialogDescription>{currentOrganization?.name}</DialogDescription>
             </DialogHeader>
             <form onSubmit={createLead} className="space-y-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label htmlFor="lead-name">Naam *</Label>
-                  <Input
-                    id="lead-name"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    required
-                  />
+                  <Input id="lead-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Fase</Label>
-                  <Select
-                    value={form.stage}
-                    onValueChange={(v) => setForm({ ...form, stage: v as LeadStage })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                  <Select value={form.stage} onValueChange={(v) => setForm({ ...form, stage: v as LeadStage })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {STAGES.map((s) => (
-                        <SelectItem key={s.key} value={s.key}>
-                          {s.label}
-                        </SelectItem>
+                        <SelectItem key={s.key} value={s.key}>{t(`leads.stages.${s.key}`)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="lead-value">Lead waarde (€)</Label>
-                  <Input
-                    id="lead-value"
-                    type="number"
-                    step="0.01"
-                    value={form.value}
-                    onChange={(e) => setForm({ ...form, value: e.target.value })}
-                  />
+                  <Label htmlFor="lead-value">€</Label>
+                  <Input id="lead-value" type="number" step="0.01" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="lead-source">Bron</Label>
-                  <Input
-                    id="lead-source"
-                    value={form.source}
-                    onChange={(e) => setForm({ ...form, source: e.target.value })}
-                    placeholder="bv. Telecom"
-                  />
+                  <Input id="lead-source" value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="lead-rep">Vertegenwoordiger</Label>
-                  <Input
-                    id="lead-rep"
-                    value={form.rep}
-                    onChange={(e) => setForm({ ...form, rep: e.target.value })}
-                  />
+                  <Label htmlFor="lead-rep">{t("leads.rep")}</Label>
+                  <Input id="lead-rep" value={form.rep} onChange={(e) => setForm({ ...form, rep: e.target.value })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="lead-email">E-mail</Label>
-                  <Input
-                    id="lead-email"
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  />
+                  <Input id="lead-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="lead-phone">Telefoon</Label>
-                  <Input
-                    id="lead-phone"
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  />
+                  <Label htmlFor="lead-phone">Tel.</Label>
+                  <Input id="lead-phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label htmlFor="lead-notes">Notities</Label>
-                  <Textarea
-                    id="lead-notes"
-                    rows={3}
-                    value={form.notes}
-                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  />
+                  <Textarea id="lead-notes" rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
                 </div>
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={saving}>
                   {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Opslaan
+                  {t("common.save")}
                 </Button>
               </DialogFooter>
             </form>
@@ -280,13 +231,13 @@ function AiColumbusPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-20 text-muted-foreground">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Laden…
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("common.loading")}
         </div>
       ) : (
         <div className="grid grid-flow-col auto-cols-[16rem] gap-3 overflow-x-auto pb-4">
           {STAGES.map((stage) => {
             const stageLeads = grouped.get(stage.key) ?? [];
-            const t = totals.get(stage.key)!;
+            const tot = totals.get(stage.key)!;
             return (
               <div
                 key={stage.key}
@@ -299,18 +250,14 @@ function AiColumbusPage() {
                 }}
                 className="flex flex-col rounded-lg border bg-muted/30"
               >
-                <div
-                  className={`flex items-center justify-between gap-2 rounded-t-lg px-3 py-2 text-xs font-semibold text-white ${stage.color}`}
-                >
-                  <span className="truncate">{stage.label}</span>
-                  <span className="shrink-0 opacity-90">
-                    {EUR.format(t.value)} · {t.count}
-                  </span>
+                <div className={`flex items-center justify-between gap-2 rounded-t-lg px-3 py-2 text-xs font-semibold text-white ${stage.color}`}>
+                  <span className="truncate">{t(`leads.stages.${stage.key}`)}</span>
+                  <span className="shrink-0 opacity-90">{eur.format(tot.value)} · {tot.count}</span>
                 </div>
                 <div className="flex min-h-[120px] flex-1 flex-col gap-2 p-2">
                   {stageLeads.length === 0 && (
                     <div className="flex flex-1 items-center justify-center py-6 text-xs text-muted-foreground">
-                      Geen leads
+                      {t("leads.empty")}
                     </div>
                   )}
                   {stageLeads.map((lead) => (
@@ -323,19 +270,11 @@ function AiColumbusPage() {
                     >
                       <div className="font-medium">{lead.name}</div>
                       {lead.rep && (
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          Vertegenwoordiger: {lead.rep}
-                        </div>
+                        <div className="mt-1 text-xs text-muted-foreground">{t("leads.rep")}: {lead.rep}</div>
                       )}
                       <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <Badge variant="secondary" className="text-[10px]">
-                          {EUR.format(Number(lead.value ?? 0))}
-                        </Badge>
-                        {lead.source && (
-                          <Badge variant="outline" className="text-[10px]">
-                            {lead.source}
-                          </Badge>
-                        )}
+                        <Badge variant="secondary" className="text-[10px]">{eur.format(Number(lead.value ?? 0))}</Badge>
+                        {lead.source && <Badge variant="outline" className="text-[10px]">{lead.source}</Badge>}
                       </div>
                     </div>
                   ))}
@@ -348,3 +287,4 @@ function AiColumbusPage() {
     </div>
   );
 }
+
