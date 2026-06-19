@@ -86,6 +86,13 @@ interface LineForm {
   unit_price_cents: number;
   vat_rate: number;
   product_id: string | null;
+  base_unit_price_cents: number;
+  discount_percent: number;
+  discount_type: "none" | "one_time" | "recurring";
+  contract_months: number | null;
+  pricing_type: "one_time" | "monthly_recurring" | "per_credit" | null;
+  product_name: string | null;
+  is_setup_fee: boolean;
 }
 
 interface ProductOption {
@@ -460,6 +467,13 @@ function InvoicesTab({
     unit_price_cents: 0,
     vat_rate: 21,
     product_id: null,
+    base_unit_price_cents: 0,
+    discount_percent: 0,
+    discount_type: "none",
+    contract_months: null,
+    pricing_type: null,
+    product_name: null,
+    is_setup_fee: false,
   });
   const [lines, setLines] = useState<LineForm[]>([emptyLine()]);
   const [products, setProducts] = useState<ProductOption[]>([]);
@@ -481,32 +495,51 @@ function InvoicesTab({
       });
   }, [orgId]);
 
+  function buildDescription(opts: {
+    base: string;
+    discPct: number;
+    discType: "none" | "one_time" | "recurring";
+    months: number | null;
+  }) {
+    const { base, discPct, discType, months } = opts;
+    if (discPct <= 0 || discType === "none") return base;
+    const suffix =
+      discType === "recurring"
+        ? ` (−${discPct}% /mnd${months ? ` · ${months}m` : ""})`
+        : ` (−${discPct}% eenmalig)`;
+    return base + suffix;
+  }
+
   function applyProduct(i: number, productId: string) {
     const p = products.find((pp) => pp.id === productId);
     if (!p) return;
     const vat = Number(p.vat_rate ?? 21);
     const discPct = Math.max(0, Math.min(100, Number(p.discount_percent ?? 0)));
     const discType = (p.discount_type ?? "none") as "none" | "one_time" | "recurring";
+    const months = p.contract_months ?? null;
     const discountedUnit = Math.round(p.unit_price_cents * (1 - discPct / 100));
     const baseDesc = p.description || p.name;
-    const discSuffix =
-      discPct > 0
-        ? ` (−${discPct}% ${discType === "recurring" ? `/mnd${p.contract_months ? ` · ${p.contract_months}m` : ""}` : "eenmalig"})`
-        : "";
 
     const n = [...lines];
     n[i] = {
       ...n[i],
       product_id: p.id,
-      description: n[i].description.trim() ? n[i].description : baseDesc + discSuffix,
+      product_name: p.name,
+      pricing_type: p.pricing_type,
+      base_unit_price_cents: p.unit_price_cents,
+      discount_percent: discPct,
+      discount_type: discType,
+      contract_months: months,
+      description: buildDescription({ base: baseDesc, discPct, discType, months }),
       unit_price_cents: discountedUnit,
       vat_rate: vat,
+      is_setup_fee: false,
     };
 
     const setup = Number(p.setup_fee_cents ?? 0);
     const setupDesc = `Eenmalige opstartkosten — ${p.name}`;
     const alreadyHasSetup = n.some(
-      (l) => l.product_id === p.id && l.description === setupDesc,
+      (l) => l.product_id === p.id && l.is_setup_fee,
     );
     if (setup > 0 && !alreadyHasSetup) {
       n.splice(i + 1, 0, {
@@ -515,10 +548,39 @@ function InvoicesTab({
         unit_price_cents: setup,
         vat_rate: vat,
         product_id: p.id,
+        base_unit_price_cents: setup,
+        discount_percent: 0,
+        discount_type: "none",
+        contract_months: null,
+        pricing_type: "one_time",
+        product_name: p.name,
+        is_setup_fee: true,
       });
     }
     setLines(n);
     if (discPct > 0) toast.success(`Korting ${discPct}% toegepast`);
+  }
+
+  function updateContractMonths(i: number, raw: string) {
+    const n = [...lines];
+    const l = n[i];
+    const months = raw.trim() ? Math.max(1, Math.floor(Number(raw))) : null;
+    const base = l.product_name ?? l.description.split(" (−")[0];
+    const discountedUnit = Math.round(
+      l.base_unit_price_cents * (1 - l.discount_percent / 100),
+    );
+    n[i] = {
+      ...l,
+      contract_months: months,
+      unit_price_cents: discountedUnit,
+      description: buildDescription({
+        base,
+        discPct: l.discount_percent,
+        discType: l.discount_type,
+        months,
+      }),
+    };
+    setLines(n);
   }
 
   const revenueAccount = accounts.find((a) => a.code === "8000");
@@ -532,6 +594,14 @@ function InvoicesTab({
     0,
   );
   const totalCents = subtotalCents + vatCents;
+
+  const contractTotalCents = lines.reduce((s, l) => {
+    if (l.discount_type === "recurring" && l.contract_months && l.contract_months > 1) {
+      const lineTot = Math.round(l.quantity * l.unit_price_cents * (1 + l.vat_rate / 100));
+      return s + lineTot * l.contract_months;
+    }
+    return s;
+  }, 0);
 
   async function createInvoice(e: React.FormEvent) {
     e.preventDefault();
@@ -663,6 +733,7 @@ function InvoicesTab({
                       <TableHead className="w-20 text-right">{t("quotes.qty")}</TableHead>
                       <TableHead className="w-32 text-right">{t("acc.inv.unit_eur")}</TableHead>
                       <TableHead className="w-24 text-right">BTW %</TableHead>
+                      <TableHead className="w-20 text-right">Mnd</TableHead>
                       <TableHead className="w-28 text-right">{t("quotes.total")}</TableHead>
                       <TableHead className="w-12"></TableHead>
                     </TableRow>
@@ -747,8 +818,24 @@ function InvoicesTab({
                               </SelectContent>
                             </Select>
                           </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min={1}
+                              className="text-right"
+                              placeholder="—"
+                              disabled={l.discount_type !== "recurring" && l.pricing_type !== "monthly_recurring"}
+                              value={l.contract_months ?? ""}
+                              onChange={(e) => updateContractMonths(i, e.target.value)}
+                            />
+                          </TableCell>
                           <TableCell className="text-right text-sm tabular-nums">
-                            {centsFmt(lineTot, lang)}
+                            <div>{centsFmt(lineTot, lang)}</div>
+                            {l.discount_type === "recurring" && l.contract_months && l.contract_months > 1 && (
+                              <div className="text-[10px] text-muted-foreground">
+                                × {l.contract_months}m = {centsFmt(lineTot * l.contract_months, lang)}
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell>
                             <Button
@@ -793,6 +880,11 @@ function InvoicesTab({
                     <span className="text-muted-foreground">{t("quotes.total")}: </span>
                     <span className="tabular-nums">{centsFmt(totalCents, lang)}</span>
                   </div>
+                  {contractTotalCents > 0 && (
+                    <div className="text-xs text-muted-foreground">
+                      Contractwaarde (incl. btw): <span className="tabular-nums">{centsFmt(contractTotalCents, lang)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
