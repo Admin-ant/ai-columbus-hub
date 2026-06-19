@@ -136,7 +136,8 @@ function ProductsPage() {
     if (products.some((p) => p.id !== editingId && (p.sku ?? "").toLowerCase() === sku.toLowerCase()))
       return toast.error("Dit artikelnummer bestaat al binnen deze organisatie");
     const discountPercent = Math.max(0, Math.min(100, Number(form.discount_percent) || 0));
-    const discountType = discountPercent > 0 ? form.discount_type === "none" ? "one_time" : form.discount_type : "none";
+    const discountType: "none" | "one_time" | "recurring" =
+      discountPercent > 0 ? (form.discount_type === "none" ? "one_time" : form.discount_type) : "none";
     const contractMonths = form.contract_months.trim() ? Math.max(1, Number(form.contract_months)) : null;
 
     setSaving(true);
