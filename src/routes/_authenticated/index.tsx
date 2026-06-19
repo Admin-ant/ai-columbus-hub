@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Sparkles, FileText, Users, ArrowRight, Lock, LayoutDashboard } from "lucide-react";
+import { Sparkles, FileText, Users, ArrowRight, Lock, LayoutDashboard, Cloud } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 
@@ -22,6 +22,12 @@ const tiles: Tile[] = [
     description: "Leads funnel, AI-tools en assistenten van Columbus.",
     url: "/ai-columbus",
     icon: Sparkles,
+  },
+  {
+    title: "Netqloud",
+    description: "Klanten, servers en instellingen van Netqloud.",
+    url: "/netqloud",
+    icon: Cloud,
   },
   {
     title: "Teams",
