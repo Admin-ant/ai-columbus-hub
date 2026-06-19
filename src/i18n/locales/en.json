@@ -61,7 +61,20 @@
   },
   "quotes": {
     "title": "Quotes",
+    "subtitle": "Build quotes, track status and convert to invoices.",
     "new_quote": "New quote",
+    "field_title": "Title",
+    "line_items": "Line items",
+    "description": "Description",
+    "qty": "Qty",
+    "unit_price": "Unit price",
+    "total": "Total",
+    "add_line": "Add line",
+    "title_required": "Title is required",
+    "created": "Quote created",
+    "empty": "No quotes yet",
+    "actions": "Actions",
+    "to_invoice": "To invoice",
     "status": {
       "draft": "Draft",
       "sent": "Sent",
@@ -73,7 +86,17 @@
   },
   "invoices": {
     "title": "Invoices",
+    "subtitle": "Per-organization invoice overview.",
     "new_invoice": "New invoice",
+    "number": "Number",
+    "issue_date": "Issue date",
+    "due_date": "Due date",
+    "amount": "Amount",
+    "total": "Total",
+    "paid": "Paid",
+    "open": "Outstanding",
+    "empty": "No invoices yet",
+    "created": "Invoice {{number}} created",
     "status": {
       "draft": "Draft",
       "sent": "Sent",
@@ -84,6 +107,7 @@
   },
   "ai_assistant": {
     "title": "AI Assistant",
+    "placeholder": "Ready for integration with Lovable AI / OpenAI / Anthropic.",
     "suggest_quote": "Draft a quote from the lead's notes",
     "verify_invoice": "Verify invoice line items",
     "summarize_lead": "Summarize this lead"
