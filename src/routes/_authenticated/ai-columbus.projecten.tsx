@@ -168,6 +168,97 @@ function ProjectsDashboardPage() {
 
   const filtersActive = statusFilter !== "all" || monthFilter !== "all" || search !== "";
 
+  function buildExportRows() {
+    return filtered.map((r) => ({
+      Project: r.name,
+      "Waarde (EUR)": Number(r.value_cents ?? 0) / 100,
+      Maand: r.target_month ? monthLabel(r.target_month) : "",
+      Status: STATUS_META[r.status].label,
+      Contactpersoon: r.contact_name ?? "",
+      Email: r.contact_email ?? "",
+      Telefoon: r.contact_phone ?? "",
+      Notities: r.notes ?? "",
+      "Laatst gewijzigd door":
+        (r.last_modified_by && (profiles[r.last_modified_by]?.display_name || profiles[r.last_modified_by]?.email)) || "",
+      "Laatst gewijzigd op": r.last_modified_at
+        ? new Date(r.last_modified_at).toLocaleString("nl-NL", { dateStyle: "short", timeStyle: "short" })
+        : "",
+    }));
+  }
+
+  function filterSummary() {
+    const parts: string[] = [];
+    parts.push(`Status: ${statusFilter === "all" ? "Alle" : STATUS_META[statusFilter as ProjectStatus].label}`);
+    parts.push(`Maand: ${monthFilter === "all" ? "Alle" : monthLabel(`${monthFilter}-01`)}`);
+    if (search) parts.push(`Zoekterm: ${search}`);
+    return parts.join(" · ");
+  }
+
+  function fileBase() {
+    const stamp = new Date().toISOString().slice(0, 10);
+    return `projecten_${currentOrganization?.slug ?? "export"}_${stamp}`;
+  }
+
+  function exportCsv() {
+    const rows = buildExportRows();
+    if (rows.length === 0) return toast.error("Geen rijen om te exporteren");
+    const headers = Object.keys(rows[0]);
+    const esc = (v: unknown) => {
+      const s = v === null || v === undefined ? "" : String(v);
+      return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const meta = [
+      `# Projectenexport — ${currentOrganization?.name ?? ""}`,
+      `# Filters: ${filterSummary()}`,
+      `# Rijen: ${rows.length} · Totale waarde: € ${(total / 100).toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      "",
+    ].join("\n");
+    const body = [headers.join(";"), ...rows.map((r) => headers.map((h) => esc((r as Record<string, unknown>)[h])).join(";"))].join("\n");
+    const totalRow = headers
+      .map((h, i) => (i === 0 ? "TOTAAL" : h === "Waarde (EUR)" ? (total / 100).toFixed(2) : ""))
+      .join(";");
+    const csv = "\ufeff" + meta + body + "\n" + totalRow + "\n";
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `${fileBase()}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`${rows.length} rijen geëxporteerd`);
+  }
+
+  function exportXlsx() {
+    const rows = buildExportRows();
+    if (rows.length === 0) return toast.error("Geen rijen om te exporteren");
+    const wb = XLSX.utils.book_new();
+    const headerRow = ["Projectenexport", currentOrganization?.name ?? ""];
+    const filtersRow = ["Filters", filterSummary()];
+    const countRow = ["Rijen", rows.length];
+    const totalRow = ["Totale waarde (EUR)", total / 100];
+    const headers = Object.keys(rows[0]);
+    const dataAoa: (string | number)[][] = [
+      headerRow, filtersRow, countRow, totalRow, [],
+      headers,
+      ...rows.map((r) => headers.map((h) => (r as Record<string, string | number>)[h])),
+      ["TOTAAL", total / 100],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(dataAoa);
+    ws["!cols"] = headers.map((h) => ({ wch: h === "Notities" ? 40 : h === "Project" ? 24 : 18 }));
+    // Currency format on value column (index 1) for data + total rows
+    const headerRowIdx = 6; // 1-based: 5 meta rows + headers at row 6
+    for (let i = 0; i < rows.length; i++) {
+      const cell = XLSX.utils.encode_cell({ r: headerRowIdx + i, c: 1 });
+      if (ws[cell]) ws[cell].z = '€ #,##0.00;€ -#,##0.00;-';
+    }
+    const totalCell = XLSX.utils.encode_cell({ r: headerRowIdx + rows.length, c: 1 });
+    if (ws[totalCell]) ws[totalCell].z = '€ #,##0.00;€ -#,##0.00;-';
+    const totalsValCell = XLSX.utils.encode_cell({ r: 3, c: 1 });
+    if (ws[totalsValCell]) ws[totalsValCell].z = '€ #,##0.00;€ -#,##0.00;-';
+    XLSX.utils.book_append_sheet(wb, ws, "Projecten");
+    XLSX.writeFile(wb, `${fileBase()}.xlsx`);
+    toast.success(`${rows.length} rijen geëxporteerd`);
+  }
+
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
