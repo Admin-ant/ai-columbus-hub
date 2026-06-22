@@ -441,6 +441,49 @@ function JournalDetailPage() {
           </TableBody>
         </Table>
       </div>
+
+      <div className="rounded-lg border bg-card">
+        <div className="flex items-center justify-between border-b px-4 py-2.5 text-sm font-semibold">
+          <span className="flex items-center gap-2">
+            <History className="h-4 w-4 text-muted-foreground" /> Exporthistorie
+          </span>
+          <span className="text-xs font-normal text-muted-foreground">
+            {history.length === 0 ? "Nog geen downloads" : `${history.length} export${history.length === 1 ? "" : "s"}`}
+          </span>
+        </div>
+        {history.length === 0 ? (
+          <div className="px-4 py-6 text-sm text-muted-foreground">
+            Zodra je deze journaalpost exporteert, verschijnt hier wie wanneer welke PDF heeft gedownload.
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Datum</TableHead>
+                <TableHead>Gebruiker</TableHead>
+                <TableHead>Bestand</TableHead>
+                <TableHead>Thema</TableHead>
+                <TableHead className="text-right">Grootte</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {history.map((h) => (
+                <TableRow key={h.id}>
+                  <TableCell className="text-sm">{new Date(h.exported_at).toLocaleString(lang)}</TableCell>
+                  <TableCell className="text-sm">
+                    {h.profiles?.display_name ?? h.profiles?.email ?? "—"}
+                  </TableCell>
+                  <TableCell className="font-mono text-xs">{h.file_name}</TableCell>
+                  <TableCell className="text-sm capitalize">{h.template_theme ?? "—"}</TableCell>
+                  <TableCell className="text-right text-xs tabular-nums text-muted-foreground">
+                    {h.file_size_bytes ? `${(h.file_size_bytes / 1024).toFixed(1)} KB` : "—"}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </div>
     </div>
   );
 }
