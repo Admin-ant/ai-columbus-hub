@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, FileText, Receipt, ScrollText, Download, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Loader2, FileText, Receipt, ScrollText, Download, Eye, EyeOff, History } from "lucide-react";
 
 
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { PdfTemplateDialog } from "@/components/pdf-template-dialog";
 import { loadTemplate, type PdfTemplate } from "@/lib/pdf-template";
 import { buildJournalPdf, journalPdfBlobUrl, type JournalPdfData } from "@/lib/journal-pdf";
+
 
 import {
   Table,
@@ -200,18 +201,36 @@ function JournalDetailPage() {
   const sourceQuote = entry.quotes ?? null;
   const sourceInvoice = entry.invoices ?? null;
 
-  function exportPdf() {
+  async function exportPdf() {
     if (!pdfData) return;
     const effective = tpl ?? loadTemplate(entry!.organization_id, user?.id ?? null);
     const doc = buildJournalPdf(pdfData, effective, lang);
     const ref = sourceInvoice?.invoice_number ?? entry!.id.slice(0, 8);
-    doc.save(`journaalpost-${ref}.pdf`);
+    const fileName = `journaalpost-${ref}.pdf`;
+    doc.save(fileName);
+
+    try {
+      const blob = doc.output("blob") as Blob;
+      const { error } = await supabase.from("journal_export_log").insert({
+        organization_id: entry!.organization_id,
+        journal_entry_id: entry!.id,
+        exported_by: user?.id ?? null,
+        file_name: fileName,
+        file_size_bytes: blob.size,
+        template_theme: effective.theme,
+      });
+      if (error) throw error;
+      void loadHistory();
+    } catch (e) {
+      console.warn("export log failed", e);
+    }
   }
 
   function buildPreviewUrl(t: PdfTemplate): string | null {
     if (!pdfData) return null;
     return journalPdfBlobUrl(pdfData, t, lang);
   }
+
 
 
 
