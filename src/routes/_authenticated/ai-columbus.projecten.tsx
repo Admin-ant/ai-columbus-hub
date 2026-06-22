@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Loader2, Search, X, Trash2, ExternalLink, Download, FileSpreadsheet } from "lucide-react";
+import { Plus, Loader2, Search, X, Trash2, ExternalLink, Download, FileSpreadsheet, Eye } from "lucide-react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 
@@ -65,6 +65,8 @@ function ProjectsDashboardPage() {
   const [monthFilter, setMonthFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportType, setExportType] = useState<"csv" | "xlsx" | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: "", value: "0", target_month: "",
@@ -199,6 +201,12 @@ function ProjectsDashboardPage() {
     return `projecten_${currentOrganization?.slug ?? "export"}_${stamp}`;
   }
 
+  function runExport(type: "csv" | "xlsx") {
+    if (type === "csv") exportCsv();
+    else exportXlsx();
+    setExportOpen(false);
+  }
+
   function exportCsv() {
     const rows = buildExportRows();
     if (rows.length === 0) return toast.error("Geen rijen om te exporteren");
@@ -258,6 +266,8 @@ function ProjectsDashboardPage() {
     toast.success(`${rows.length} rijen geëxporteerd`);
   }
 
+  const exportPreviewRows = buildExportRows();
+
 
   return (
     <div className="space-y-6">
@@ -278,10 +288,10 @@ function ProjectsDashboardPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={exportXlsx}>
+              <DropdownMenuItem onClick={() => { setExportType("xlsx"); setExportOpen(true); }}>
                 <FileSpreadsheet className="mr-2 h-4 w-4" /> Excel (.xlsx)
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={exportCsv}>
+              <DropdownMenuItem onClick={() => { setExportType("csv"); setExportOpen(true); }}>
                 <Download className="mr-2 h-4 w-4" /> CSV (.csv)
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -342,6 +352,57 @@ function ProjectsDashboardPage() {
                 </Button>
               </DialogFooter>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={exportOpen} onOpenChange={setExportOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" /> Exportvoorbeeld
+              </DialogTitle>
+              <DialogDescription>
+                Controleer welke rijen en filters worden meegenomen in de export.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg border bg-muted/40 p-3">
+                  <div className="text-xs text-muted-foreground">Aantal rijen</div>
+                  <div className="text-2xl font-semibold tabular-nums">{exportPreviewRows.length}</div>
+                </div>
+                <div className="rounded-lg border bg-muted/40 p-3">
+                  <div className="text-xs text-muted-foreground">Totale waarde</div>
+                  <div className="text-2xl font-semibold tabular-nums">{EUR.format(total / 100)}</div>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <div className="text-xs font-medium text-muted-foreground">Actieve filters</div>
+                <div className="rounded-md border bg-card p-2.5 text-sm">{filterSummary()}</div>
+              </div>
+              {exportPreviewRows.length > 0 && (
+                <div className="space-y-1.5">
+                  <div className="text-xs font-medium text-muted-foreground">
+                    Eerste {Math.min(exportPreviewRows.length, 5)} project{exportPreviewRows.length === 1 ? "" : "en"}
+                  </div>
+                  <ul className="max-h-32 overflow-auto rounded-md border bg-card text-sm">
+                    {exportPreviewRows.slice(0, 5).map((r, i) => (
+                      <li key={i} className="flex items-center justify-between border-b px-3 py-1.5 last:border-b-0">
+                        <span className="truncate pr-2">{r.Project}</span>
+                        <span className="tabular-nums text-muted-foreground">{EUR.format(Number(r["Waarde (EUR)"]))}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="outline" onClick={() => setExportOpen(false)}>Annuleren</Button>
+              <Button onClick={() => exportType && runExport(exportType)} disabled={!exportType || exportPreviewRows.length === 0}>
+                {exportType === "xlsx" ? <FileSpreadsheet className="mr-2 h-4 w-4" /> : <Download className="mr-2 h-4 w-4" />}
+                Exporteer {exportType === "xlsx" ? "Excel" : "CSV"}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
         </div>
