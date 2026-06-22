@@ -295,7 +295,14 @@ function ProjectsDashboardPage() {
                   return (
                     <tr key={r.id} className="border-b align-top hover:bg-muted/20">
                       <td className="px-4 py-2 font-medium">
-                        <EditableText value={r.name} onSave={(v) => updateRow(r.id, { name: v || r.name })} />
+                        <div className="flex items-center gap-1">
+                          <EditableText value={r.name} onSave={(v) => updateRow(r.id, { name: v || r.name })} />
+                          <Link to="/ai-columbus/projecten/$projectId" params={{ projectId: r.id }}
+                            className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            title="Open detail">
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </Link>
+                        </div>
                       </td>
                       <td className="px-4 py-2 text-right tabular-nums">
                         <EditableNumber value={Number(r.value_cents) / 100}
