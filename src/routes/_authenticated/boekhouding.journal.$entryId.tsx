@@ -67,6 +67,16 @@ interface EntryDetail {
   journal_lines: LineRow[];
 }
 
+interface ExportLogRow {
+  id: string;
+  file_name: string;
+  file_size_bytes: number | null;
+  template_theme: string | null;
+  exported_at: string;
+  exported_by: string | null;
+  profiles: { display_name: string | null; email: string | null } | null;
+}
+
 const centsFmt = (cents: number, lang: string) =>
   new Intl.NumberFormat(lang === "en" ? "en-IE" : "nl-NL", {
     style: "currency",
@@ -85,6 +95,22 @@ function JournalDetailPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const lastUrlRef = useRef<string | null>(null);
+  const [history, setHistory] = useState<ExportLogRow[]>([]);
+
+  const loadHistory = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("journal_export_log")
+      .select("id, file_name, file_size_bytes, template_theme, exported_at, exported_by, profiles:exported_by(display_name, email)")
+      .eq("journal_entry_id", entryId)
+      .order("exported_at", { ascending: false })
+      .limit(20);
+    if (!error) setHistory((data as unknown as ExportLogRow[]) ?? []);
+  }, [entryId]);
+
+  useEffect(() => {
+    void loadHistory();
+  }, [loadHistory]);
+
 
   useEffect(() => {
     let cancelled = false;
