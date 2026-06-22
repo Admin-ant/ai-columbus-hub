@@ -201,6 +201,12 @@ function ProjectsDashboardPage() {
     return `projecten_${currentOrganization?.slug ?? "export"}_${stamp}`;
   }
 
+  function runExport(type: "csv" | "xlsx") {
+    if (type === "csv") exportCsv();
+    else exportXlsx();
+    setExportOpen(false);
+  }
+
   function exportCsv() {
     const rows = buildExportRows();
     if (rows.length === 0) return toast.error("Geen rijen om te exporteren");
@@ -259,6 +265,8 @@ function ProjectsDashboardPage() {
     XLSX.writeFile(wb, `${fileBase()}.xlsx`);
     toast.success(`${rows.length} rijen geëxporteerd`);
   }
+
+  const exportPreviewRows = buildExportRows();
 
 
   return (
