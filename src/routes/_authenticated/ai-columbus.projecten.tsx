@@ -288,10 +288,10 @@ function ProjectsDashboardPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={exportXlsx}>
+              <DropdownMenuItem onClick={() => { setExportType("xlsx"); setExportOpen(true); }}>
                 <FileSpreadsheet className="mr-2 h-4 w-4" /> Excel (.xlsx)
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={exportCsv}>
+              <DropdownMenuItem onClick={() => { setExportType("csv"); setExportOpen(true); }}>
                 <Download className="mr-2 h-4 w-4" /> CSV (.csv)
               </DropdownMenuItem>
             </DropdownMenuContent>
