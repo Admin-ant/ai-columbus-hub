@@ -270,6 +270,22 @@ function ProjectsDashboardPage() {
             Overzicht van status en voortgang van klanten/projecten.
           </p>
         </div>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={filtered.length === 0}>
+                <Download className="mr-2 h-4 w-4" /> Exporteren
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={exportXlsx}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" /> Excel (.xlsx)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportCsv}>
+                <Download className="mr-2 h-4 w-4" /> CSV (.csv)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" /> Nieuw project toevoegen</Button>
