@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Loader2, Search, X, Trash2, ExternalLink, Download, FileSpreadsheet } from "lucide-react";
+import { Plus, Loader2, Search, X, Trash2, ExternalLink, Download, FileSpreadsheet, Eye } from "lucide-react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 
@@ -65,6 +65,8 @@ function ProjectsDashboardPage() {
   const [monthFilter, setMonthFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportType, setExportType] = useState<"csv" | "xlsx" | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: "", value: "0", target_month: "",
