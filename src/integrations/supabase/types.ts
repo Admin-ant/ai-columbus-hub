@@ -676,6 +676,68 @@ export type Database = {
         }
         Relationships: []
       }
+      projects: {
+        Row: {
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          last_modified_at: string
+          last_modified_by: string | null
+          name: string
+          notes: string | null
+          organization_id: string
+          status: Database["public"]["Enums"]["project_status"]
+          target_month: string | null
+          updated_at: string
+          value_cents: number
+        }
+        Insert: {
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_modified_at?: string
+          last_modified_by?: string | null
+          name: string
+          notes?: string | null
+          organization_id: string
+          status?: Database["public"]["Enums"]["project_status"]
+          target_month?: string | null
+          updated_at?: string
+          value_cents?: number
+        }
+        Update: {
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_modified_at?: string
+          last_modified_by?: string | null
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          status?: Database["public"]["Enums"]["project_status"]
+          target_month?: string | null
+          updated_at?: string
+          value_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quote_status_events: {
         Row: {
           created_at: string
@@ -842,6 +904,13 @@ export type Database = {
         | "gewonnen"
       org_role: "holding_admin" | "company_staff"
       pricing_type: "one_time" | "monthly_recurring" | "per_credit"
+      project_status:
+        | "contact_gezocht"
+        | "afspraak_geboekt"
+        | "offerte_verstuurd"
+        | "contract_verstuurd"
+        | "contract_getekend"
+        | "on_hold"
       quote_event_type: "viewed" | "signed" | "paid" | "invoice_created"
       quote_status:
         | "draft"
@@ -1004,6 +1073,14 @@ export const Constants = {
       ],
       org_role: ["holding_admin", "company_staff"],
       pricing_type: ["one_time", "monthly_recurring", "per_credit"],
+      project_status: [
+        "contact_gezocht",
+        "afspraak_geboekt",
+        "offerte_verstuurd",
+        "contract_verstuurd",
+        "contract_getekend",
+        "on_hold",
+      ],
       quote_event_type: ["viewed", "signed", "paid", "invoice_created"],
       quote_status: [
         "draft",
