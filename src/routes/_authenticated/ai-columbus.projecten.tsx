@@ -1,0 +1,400 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { Plus, Loader2, Search, X, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+
+import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+import { useAuth } from "@/hooks/use-auth";
+import { useWorkspace } from "@/hooks/use-workspace";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter,
+  DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+
+export const Route = createFileRoute("/_authenticated/ai-columbus/projecten")({
+  head: () => ({ meta: [{ title: "Projecten dashboard" }] }),
+  component: ProjectsDashboardPage,
+});
+
+type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
+type ProjectStatus = Database["public"]["Enums"]["project_status"];
+
+const EUR = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
+
+const STATUS_META: Record<ProjectStatus, { label: string; cls: string }> = {
+  contact_gezocht:     { label: "Contact gezocht",     cls: "bg-blue-500 text-white" },
+  afspraak_geboekt:    { label: "Afspraak geboekt",    cls: "bg-green-500 text-white" },
+  offerte_verstuurd:   { label: "Offerte verstuurd",   cls: "bg-yellow-400 text-black" },
+  contract_verstuurd:  { label: "Contract verstuurd",  cls: "bg-orange-500 text-white" },
+  contract_getekend:   { label: "Contract getekend",   cls: "bg-emerald-700 text-white" },
+  on_hold:             { label: "On hold",             cls: "bg-slate-400 text-white" },
+};
+const STATUS_KEYS = Object.keys(STATUS_META) as ProjectStatus[];
+
+function monthKey(d: Date | string | null) {
+  if (!d) return "";
+  const dt = typeof d === "string" ? new Date(d) : d;
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}`;
+}
+function monthLabel(d: Date | string | null) {
+  if (!d) return "—";
+  const dt = typeof d === "string" ? new Date(d) : d;
+  return dt.toLocaleDateString("nl-NL", { month: "short", year: "2-digit" }).replace(".", "");
+}
+
+function ProjectsDashboardPage() {
+  const { user } = useAuth();
+  const { currentOrganizationId, currentOrganization, loading: wsLoading } = useWorkspace();
+  const [rows, setRows] = useState<ProjectRow[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, { display_name: string | null; email: string | null }>>({});
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [monthFilter, setMonthFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    name: "", value: "0", target_month: "",
+    status: "contact_gezocht" as ProjectStatus,
+    contact_name: "", contact_email: "", contact_phone: "", notes: "",
+  });
+
+  async function load() {
+    if (!currentOrganizationId) { setRows([]); setLoading(false); return; }
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("projects").select("*")
+      .eq("organization_id", currentOrganizationId)
+      .order("target_month", { ascending: true, nullsFirst: false });
+    if (error) toast.error(error.message);
+    const list = (data ?? []) as ProjectRow[];
+    setRows(list);
+
+    const ids = Array.from(new Set(list.map((r) => r.last_modified_by).filter(Boolean))) as string[];
+    if (ids.length) {
+      const { data: profs } = await supabase
+        .from("profiles").select("id,display_name,email").in("id", ids);
+      const map: Record<string, { display_name: string | null; email: string | null }> = {};
+      (profs ?? []).forEach((p) => { map[p.id] = { display_name: p.display_name, email: p.email }; });
+      setProfiles(map);
+    } else setProfiles({});
+    setLoading(false);
+  }
+
+  useEffect(() => { if (!wsLoading) load(); /* eslint-disable-next-line */ }, [currentOrganizationId, wsLoading]);
+
+  const monthOptions = useMemo(() => {
+    const set = new Set<string>();
+    rows.forEach((r) => { if (r.target_month) set.add(monthKey(r.target_month)); });
+    return Array.from(set).sort();
+  }, [rows]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (statusFilter !== "all" && r.status !== statusFilter) return false;
+      if (monthFilter !== "all" && monthKey(r.target_month) !== monthFilter) return false;
+      if (q) {
+        const hay = `${r.name} ${r.contact_name ?? ""} ${r.contact_email ?? ""} ${r.notes ?? ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [rows, statusFilter, monthFilter, search]);
+
+  const total = useMemo(() => filtered.reduce((s, r) => s + Number(r.value_cents ?? 0), 0), [filtered]);
+
+  async function updateRow(id: string, patch: Partial<ProjectRow>) {
+    const prev = rows;
+    setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch, last_modified_by: user?.id ?? r.last_modified_by, last_modified_at: new Date().toISOString() } : r)));
+    const { error } = await supabase
+      .from("projects")
+      .update({ ...patch, last_modified_by: user?.id ?? null, last_modified_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) { toast.error(error.message); setRows(prev); }
+    else if (user?.id) {
+      setProfiles((p) => p[user.id] ? p : { ...p, [user.id]: { display_name: user.email ?? null, email: user.email ?? null } });
+    }
+  }
+
+  async function deleteRow(id: string) {
+    if (!confirm("Project verwijderen?")) return;
+    const prev = rows;
+    setRows((rs) => rs.filter((r) => r.id !== id));
+    const { error } = await supabase.from("projects").delete().eq("id", id);
+    if (error) { toast.error(error.message); setRows(prev); }
+    else toast.success("Verwijderd");
+  }
+
+  async function createRow(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.name.trim()) return toast.error("Naam verplicht");
+    if (!currentOrganizationId) return toast.error("Geen organisatie");
+    setSaving(true);
+    const valueCents = Math.round((Number(form.value) || 0) * 100);
+    const { error } = await supabase.from("projects").insert({
+      organization_id: currentOrganizationId,
+      name: form.name.trim(),
+      value_cents: valueCents,
+      target_month: form.target_month || null,
+      status: form.status,
+      contact_name: form.contact_name || null,
+      contact_email: form.contact_email || null,
+      contact_phone: form.contact_phone || null,
+      notes: form.notes || null,
+      created_by: user?.id ?? null,
+      last_modified_by: user?.id ?? null,
+    });
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success("Project toegevoegd");
+    setOpen(false);
+    setForm({ name: "", value: "0", target_month: "", status: "contact_gezocht", contact_name: "", contact_email: "", contact_phone: "", notes: "" });
+    load();
+  }
+
+  const filtersActive = statusFilter !== "all" || monthFilter !== "all" || search !== "";
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {currentOrganization?.name ?? ""} — Projecten dashboard
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Overzicht van status en voortgang van klanten/projecten.
+          </p>
+        </div>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button><Plus className="mr-2 h-4 w-4" /> Nieuw project toevoegen</Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Nieuw project</DialogTitle>
+              <DialogDescription>{currentOrganization?.name}</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={createRow} className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Naam *</Label>
+                  <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Waarde (€)</Label>
+                  <Input type="number" step="0.01" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Doelmaand</Label>
+                  <Input type="month" value={form.target_month ? form.target_month.slice(0,7) : ""}
+                    onChange={(e) => setForm({ ...form, target_month: e.target.value ? `${e.target.value}-01` : "" })} />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Status</Label>
+                  <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as ProjectStatus })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {STATUS_KEYS.map((s) => <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Contactpersoon</Label>
+                  <Input value={form.contact_name} onChange={(e) => setForm({ ...form, contact_name: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>E-mail</Label>
+                  <Input type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Telefoon</Label>
+                  <Input value={form.contact_phone} onChange={(e) => setForm({ ...form, contact_phone: e.target.value })} />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Notities</Label>
+                  <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={saving}>
+                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Opslaan
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="rounded-lg border bg-card">
+        <div className="flex flex-wrap items-center gap-2 border-b px-4 py-3">
+          <div className="relative min-w-[200px] flex-1">
+            <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)}
+              placeholder="Zoek project, contact of notitie…" className="h-9 pl-7" />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-9 w-[180px]"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Alle statussen</SelectItem>
+              {STATUS_KEYS.map((s) => <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={monthFilter} onValueChange={setMonthFilter}>
+            <SelectTrigger className="h-9 w-[160px]"><SelectValue placeholder="Maand" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Alle maanden</SelectItem>
+              {monthOptions.map((m) => (
+                <SelectItem key={m} value={m}>{monthLabel(`${m}-01`)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {filtersActive && (
+            <Button variant="ghost" size="sm" className="h-9"
+              onClick={() => { setStatusFilter("all"); setMonthFilter("all"); setSearch(""); }}>
+              <X className="mr-1 h-3 w-3" /> Wis filters
+            </Button>
+          )}
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Laden…
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="px-4 py-2 font-medium">Project</th>
+                  <th className="px-4 py-2 text-right font-medium">Waarde</th>
+                  <th className="px-4 py-2 font-medium">Maand</th>
+                  <th className="px-4 py-2 font-medium">Status</th>
+                  <th className="px-4 py-2 font-medium">Contact</th>
+                  <th className="px-4 py-2 font-medium">Laatste actie / Notities</th>
+                  <th className="px-4 py-2 font-medium">Laatst gewijzigd</th>
+                  <th className="px-2 py-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 && (
+                  <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">Geen projecten met deze filters.</td></tr>
+                )}
+                {filtered.map((r) => {
+                  const prof = r.last_modified_by ? profiles[r.last_modified_by] : null;
+                  const who = prof?.display_name || prof?.email || "—";
+                  return (
+                    <tr key={r.id} className="border-b align-top hover:bg-muted/20">
+                      <td className="px-4 py-2 font-medium">
+                        <EditableText value={r.name} onSave={(v) => updateRow(r.id, { name: v || r.name })} />
+                      </td>
+                      <td className="px-4 py-2 text-right tabular-nums">
+                        <EditableNumber value={Number(r.value_cents) / 100}
+                          onSave={(v) => updateRow(r.id, { value_cents: Math.round(v * 100) })} />
+                      </td>
+                      <td className="px-4 py-2 text-muted-foreground">
+                        <Input type="month" defaultValue={r.target_month ? r.target_month.slice(0,7) : ""}
+                          onBlur={(e) => {
+                            const v = e.target.value ? `${e.target.value}-01` : null;
+                            if (v !== r.target_month) updateRow(r.id, { target_month: v });
+                          }}
+                          className="h-8 w-[130px] text-xs" />
+                      </td>
+                      <td className="px-4 py-2">
+                        <Select value={r.status} onValueChange={(v) => updateRow(r.id, { status: v as ProjectStatus })}>
+                          <SelectTrigger className="h-8 w-[170px] border-0 p-0 [&>span]:w-full">
+                            <Badge className={`${STATUS_META[r.status].cls} w-full justify-center`}>
+                              {STATUS_META[r.status].label}
+                            </Badge>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {STATUS_KEYS.map((s) => (
+                              <SelectItem key={s} value={s}>
+                                <span className={`mr-2 inline-block h-2 w-2 rounded-full ${STATUS_META[s].cls.split(" ")[0]}`} />
+                                {STATUS_META[s].label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="px-4 py-2 text-xs">
+                        <EditableText placeholder="Naam" value={r.contact_name ?? ""}
+                          onSave={(v) => updateRow(r.id, { contact_name: v || null })} />
+                        <EditableText placeholder="E-mail" value={r.contact_email ?? ""}
+                          onSave={(v) => updateRow(r.id, { contact_email: v || null })}
+                          className="text-muted-foreground" />
+                        <EditableText placeholder="Telefoon" value={r.contact_phone ?? ""}
+                          onSave={(v) => updateRow(r.id, { contact_phone: v || null })}
+                          className="text-muted-foreground" />
+                      </td>
+                      <td className="px-4 py-2 min-w-[220px]">
+                        <Textarea defaultValue={r.notes ?? ""} rows={2}
+                          placeholder="Korte update…"
+                          onBlur={(e) => { if (e.target.value !== (r.notes ?? "")) updateRow(r.id, { notes: e.target.value || null }); }}
+                          className="min-h-[44px] text-xs" />
+                      </td>
+                      <td className="px-4 py-2 text-xs text-muted-foreground">
+                        <div>{who}</div>
+                        <div>{r.last_modified_at ? new Date(r.last_modified_at).toLocaleString("nl-NL", { dateStyle: "short", timeStyle: "short" }) : "—"}</div>
+                      </td>
+                      <td className="px-2 py-2">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteRow(r.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="bg-muted/40 font-semibold">
+                  <td className="px-4 py-3">Totaal ({filtered.length})</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{EUR.format(total / 100)}</td>
+                  <td colSpan={6}></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function EditableText({
+  value, onSave, placeholder, className,
+}: { value: string; onSave: (v: string) => void; placeholder?: string; className?: string }) {
+  return (
+    <Input
+      defaultValue={value}
+      placeholder={placeholder}
+      onBlur={(e) => { if (e.target.value !== value) onSave(e.target.value); }}
+      className={`h-7 border-transparent bg-transparent px-1 text-xs hover:border-input focus:border-input ${className ?? ""}`}
+    />
+  );
+}
+
+function EditableNumber({
+  value, onSave,
+}: { value: number; onSave: (v: number) => void }) {
+  return (
+    <Input
+      type="number" step="0.01"
+      defaultValue={value}
+      onBlur={(e) => {
+        const v = Number(e.target.value) || 0;
+        if (v !== value) onSave(v);
+      }}
+      className="h-7 border-transparent bg-transparent px-1 text-right text-xs hover:border-input focus:border-input"
+    />
+  );
+}
