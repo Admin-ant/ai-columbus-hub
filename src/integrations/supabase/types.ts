@@ -114,30 +114,80 @@ export type Database = {
       }
       clients: {
         Row: {
+          address_line1: string | null
+          address_line2: string | null
+          city: string | null
+          contact_person: string | null
+          country: string | null
           created_at: string
+          created_by: string | null
+          email: string | null
           id: string
-          monthly_value: number
+          kvk_number: string | null
+          monthly_value: number | null
           name: string
+          notes: string | null
+          organization_id: string | null
+          phone: string | null
+          postal_code: string | null
           start_date: string | null
           updated_at: string
+          vat_number: string | null
+          website: string | null
         }
         Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          contact_person?: string | null
+          country?: string | null
           created_at?: string
+          created_by?: string | null
+          email?: string | null
           id?: string
-          monthly_value?: number
+          kvk_number?: string | null
+          monthly_value?: number | null
           name: string
+          notes?: string | null
+          organization_id?: string | null
+          phone?: string | null
+          postal_code?: string | null
           start_date?: string | null
           updated_at?: string
+          vat_number?: string | null
+          website?: string | null
         }
         Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          contact_person?: string | null
+          country?: string | null
           created_at?: string
+          created_by?: string | null
+          email?: string | null
           id?: string
-          monthly_value?: number
+          kvk_number?: string | null
+          monthly_value?: number | null
           name?: string
+          notes?: string | null
+          organization_id?: string | null
+          phone?: string | null
+          postal_code?: string | null
           start_date?: string | null
           updated_at?: string
+          vat_number?: string | null
+          website?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clients_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invoice_lines: {
         Row: {
