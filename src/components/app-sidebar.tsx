@@ -67,6 +67,7 @@ const sections: NavSection[] = [
     items: [
       { title: "Dashboard", url: "/ai-columbus", icon: LayoutDashboard },
       { title: "Leads funnel", url: "/ai-columbus/leads", icon: Sparkles },
+      { title: "Projecten dashboard", url: "/ai-columbus/projecten", icon: LayoutDashboard },
       { title: "Offertes", url: "/quotes", icon: FileSignature },
       { title: "Facturen", url: "/invoices", icon: Receipt },
       { title: "Modellen & gebruik", url: "/ai-columbus/modellen", icon: Cpu },
