@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Loader2, Search, X, Trash2 } from "lucide-react";
+import { Plus, Loader2, Search, X, Trash2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -235,6 +235,26 @@ function ProjectsDashboardPage() {
         </Dialog>
       </div>
 
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {STATUS_KEYS.map((s) => {
+          const items = rows.filter((r) => r.status === s);
+          const sum = items.reduce((acc, r) => acc + Number(r.value_cents ?? 0), 0);
+          const active = statusFilter === s;
+          return (
+            <button key={s} type="button"
+              onClick={() => setStatusFilter(active ? "all" : s)}
+              className={`rounded-lg border bg-card p-3 text-left transition-shadow hover:shadow-md ${active ? "ring-2 ring-primary" : ""}`}>
+              <div className="flex items-center justify-between gap-2">
+                <span className={`inline-block h-2.5 w-2.5 rounded-full ${STATUS_META[s].cls.split(" ")[0]}`} />
+                <span className="text-xs font-medium text-muted-foreground">{items.length}</span>
+              </div>
+              <div className="mt-2 text-xs font-medium leading-tight">{STATUS_META[s].label}</div>
+              <div className="mt-1 text-base font-semibold tabular-nums">{EUR.format(sum / 100)}</div>
+            </button>
+          );
+        })}
+      </div>
+
       <div className="rounded-lg border bg-card">
         <div className="flex flex-wrap items-center gap-2 border-b px-4 py-3">
           <div className="relative min-w-[200px] flex-1">
@@ -295,7 +315,14 @@ function ProjectsDashboardPage() {
                   return (
                     <tr key={r.id} className="border-b align-top hover:bg-muted/20">
                       <td className="px-4 py-2 font-medium">
-                        <EditableText value={r.name} onSave={(v) => updateRow(r.id, { name: v || r.name })} />
+                        <div className="flex items-center gap-1">
+                          <EditableText value={r.name} onSave={(v) => updateRow(r.id, { name: v || r.name })} />
+                          <Link to="/ai-columbus/projecten/$projectId" params={{ projectId: r.id }}
+                            className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            title="Open detail">
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </Link>
+                        </div>
                       </td>
                       <td className="px-4 py-2 text-right tabular-nums">
                         <EditableNumber value={Number(r.value_cents) / 100}
