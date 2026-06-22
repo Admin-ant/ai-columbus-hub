@@ -352,6 +352,54 @@ export type Database = {
           },
         ]
       }
+      journal_export_log: {
+        Row: {
+          exported_at: string
+          exported_by: string | null
+          file_name: string
+          file_size_bytes: number | null
+          id: string
+          journal_entry_id: string
+          organization_id: string
+          template_theme: string | null
+        }
+        Insert: {
+          exported_at?: string
+          exported_by?: string | null
+          file_name: string
+          file_size_bytes?: number | null
+          id?: string
+          journal_entry_id: string
+          organization_id: string
+          template_theme?: string | null
+        }
+        Update: {
+          exported_at?: string
+          exported_by?: string | null
+          file_name?: string
+          file_size_bytes?: number | null
+          id?: string
+          journal_entry_id?: string
+          organization_id?: string
+          template_theme?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_export_log_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_export_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       journal_lines: {
         Row: {
           account_id: string

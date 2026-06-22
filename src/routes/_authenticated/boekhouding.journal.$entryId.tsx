@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, FileText, Receipt, ScrollText, Download, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Loader2, FileText, Receipt, ScrollText, Download, Eye, EyeOff, History } from "lucide-react";
 
 
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { PdfTemplateDialog } from "@/components/pdf-template-dialog";
 import { loadTemplate, type PdfTemplate } from "@/lib/pdf-template";
 import { buildJournalPdf, journalPdfBlobUrl, type JournalPdfData } from "@/lib/journal-pdf";
+
 
 import {
   Table,
@@ -66,6 +67,16 @@ interface EntryDetail {
   journal_lines: LineRow[];
 }
 
+interface ExportLogRow {
+  id: string;
+  file_name: string;
+  file_size_bytes: number | null;
+  template_theme: string | null;
+  exported_at: string;
+  exported_by: string | null;
+  profiles: { display_name: string | null; email: string | null } | null;
+}
+
 const centsFmt = (cents: number, lang: string) =>
   new Intl.NumberFormat(lang === "en" ? "en-IE" : "nl-NL", {
     style: "currency",
@@ -84,6 +95,22 @@ function JournalDetailPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const lastUrlRef = useRef<string | null>(null);
+  const [history, setHistory] = useState<ExportLogRow[]>([]);
+
+  const loadHistory = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("journal_export_log")
+      .select("id, file_name, file_size_bytes, template_theme, exported_at, exported_by, profiles:exported_by(display_name, email)")
+      .eq("journal_entry_id", entryId)
+      .order("exported_at", { ascending: false })
+      .limit(20);
+    if (!error) setHistory((data as unknown as ExportLogRow[]) ?? []);
+  }, [entryId]);
+
+  useEffect(() => {
+    void loadHistory();
+  }, [loadHistory]);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -200,18 +227,36 @@ function JournalDetailPage() {
   const sourceQuote = entry.quotes ?? null;
   const sourceInvoice = entry.invoices ?? null;
 
-  function exportPdf() {
+  async function exportPdf() {
     if (!pdfData) return;
     const effective = tpl ?? loadTemplate(entry!.organization_id, user?.id ?? null);
     const doc = buildJournalPdf(pdfData, effective, lang);
     const ref = sourceInvoice?.invoice_number ?? entry!.id.slice(0, 8);
-    doc.save(`journaalpost-${ref}.pdf`);
+    const fileName = `journaalpost-${ref}.pdf`;
+    doc.save(fileName);
+
+    try {
+      const blob = doc.output("blob") as Blob;
+      const { error } = await supabase.from("journal_export_log").insert({
+        organization_id: entry!.organization_id,
+        journal_entry_id: entry!.id,
+        exported_by: user?.id ?? null,
+        file_name: fileName,
+        file_size_bytes: blob.size,
+        template_theme: effective.theme,
+      });
+      if (error) throw error;
+      void loadHistory();
+    } catch (e) {
+      console.warn("export log failed", e);
+    }
   }
 
   function buildPreviewUrl(t: PdfTemplate): string | null {
     if (!pdfData) return null;
     return journalPdfBlobUrl(pdfData, t, lang);
   }
+
 
 
 
@@ -395,6 +440,49 @@ function JournalDetailPage() {
             </TableRow>
           </TableBody>
         </Table>
+      </div>
+
+      <div className="rounded-lg border bg-card">
+        <div className="flex items-center justify-between border-b px-4 py-2.5 text-sm font-semibold">
+          <span className="flex items-center gap-2">
+            <History className="h-4 w-4 text-muted-foreground" /> Exporthistorie
+          </span>
+          <span className="text-xs font-normal text-muted-foreground">
+            {history.length === 0 ? "Nog geen downloads" : `${history.length} export${history.length === 1 ? "" : "s"}`}
+          </span>
+        </div>
+        {history.length === 0 ? (
+          <div className="px-4 py-6 text-sm text-muted-foreground">
+            Zodra je deze journaalpost exporteert, verschijnt hier wie wanneer welke PDF heeft gedownload.
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Datum</TableHead>
+                <TableHead>Gebruiker</TableHead>
+                <TableHead>Bestand</TableHead>
+                <TableHead>Thema</TableHead>
+                <TableHead className="text-right">Grootte</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {history.map((h) => (
+                <TableRow key={h.id}>
+                  <TableCell className="text-sm">{new Date(h.exported_at).toLocaleString(lang)}</TableCell>
+                  <TableCell className="text-sm">
+                    {h.profiles?.display_name ?? h.profiles?.email ?? "—"}
+                  </TableCell>
+                  <TableCell className="font-mono text-xs">{h.file_name}</TableCell>
+                  <TableCell className="text-sm capitalize">{h.template_theme ?? "—"}</TableCell>
+                  <TableCell className="text-right text-xs tabular-nums text-muted-foreground">
+                    {h.file_size_bytes ? `${(h.file_size_bytes / 1024).toFixed(1)} KB` : "—"}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </div>
     </div>
   );
