@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Loader2, Search, X, Trash2, ExternalLink } from "lucide-react";
+import { Plus, Loader2, Search, X, Trash2, ExternalLink, Download, FileSpreadsheet } from "lucide-react";
+import * as XLSX from "xlsx";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
