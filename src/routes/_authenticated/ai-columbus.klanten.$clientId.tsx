@@ -163,13 +163,23 @@ function ClientDetailPage() {
 
         <TabsContent value="projecten" className="mt-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Projecten</CardTitle>
-              <CardDescription>Projecten gekoppeld op basis van klantnaam.</CardDescription>
+            <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
+              <div>
+                <CardTitle className="text-base">Projecten</CardTitle>
+                <CardDescription>Gekoppeld aan deze klant of voorgesteld op basis van naam.</CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" asChild>
+                  <Link to="/ai-columbus/projecten"><Briefcase className="mr-2 h-4 w-4" /> Beheren</Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link to="/ai-columbus/projecten"><Plus className="mr-2 h-4 w-4" /> Nieuw project</Link>
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               {projects.length === 0 ? (
-                <p className="p-6 text-sm text-muted-foreground">Geen projecten gevonden voor deze klant.</p>
+                <p className="p-6 text-sm text-muted-foreground">Nog geen projecten voor deze klant. Maak er een aan via "Nieuw project".</p>
               ) : (
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50 text-left">
@@ -178,23 +188,47 @@ function ClientDetailPage() {
                       <th className="px-4 py-2 font-medium">Status</th>
                       <th className="px-4 py-2 font-medium">Doelmaand</th>
                       <th className="px-4 py-2 text-right font-medium">Waarde</th>
-                      <th className="px-4 py-2"></th>
+                      <th className="px-4 py-2 text-right font-medium">Acties</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {projects.map(p => (
-                      <tr key={p.id} className="border-t">
-                        <td className="px-4 py-2 font-medium">{p.name}</td>
-                        <td className="px-4 py-2"><Badge variant="outline">{String(p.status).replace(/_/g, " ")}</Badge></td>
-                        <td className="px-4 py-2 text-muted-foreground">{p.target_month ? String(p.target_month).slice(0, 7) : "—"}</td>
-                        <td className="px-4 py-2 text-right">{EUR.format(Number(p.value_cents) / 100)}</td>
-                        <td className="px-4 py-2 text-right">
-                          <Button variant="ghost" size="sm" asChild>
-                            <Link to="/ai-columbus/projecten/$projectId" params={{ projectId: p.id }}><ExternalLink className="h-3.5 w-3.5" /></Link>
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
+                    {projects.map(p => {
+                      const linked = p.client_id === clientId;
+                      return (
+                        <tr key={p.id} className="border-t">
+                          <td className="px-4 py-2 font-medium">
+                            <div className="flex items-center gap-2">
+                              {p.name}
+                              {!linked && <Badge variant="secondary" className="text-[10px]">naam-match</Badge>}
+                            </div>
+                          </td>
+                          <td className="px-4 py-2"><Badge variant="outline">{String(p.status).replace(/_/g, " ")}</Badge></td>
+                          <td className="px-4 py-2 text-muted-foreground">{p.target_month ? String(p.target_month).slice(0, 7) : "—"}</td>
+                          <td className="px-4 py-2 text-right">{EUR.format(Number(p.value_cents) / 100)}</td>
+                          <td className="px-4 py-2 text-right">
+                            <div className="flex justify-end gap-1">
+                              {linked ? (
+                                <Button variant="ghost" size="sm" title="Loskoppelen" onClick={() => toggleLink(p.id, null)}>
+                                  <Unlink className="h-3.5 w-3.5" />
+                                </Button>
+                              ) : (
+                                <Button variant="ghost" size="sm" title="Koppelen aan deze klant" onClick={() => toggleLink(p.id, clientId)}>
+                                  <Link2 className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                              <Button variant="ghost" size="sm" asChild title="Openen / beheren">
+                                <Link to="/ai-columbus/projecten/$projectId" params={{ projectId: p.id }}>
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Link>
+                              </Button>
+                              <Button variant="ghost" size="sm" title="Verwijderen" onClick={() => deleteProject(p.id)}>
+                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               )}
