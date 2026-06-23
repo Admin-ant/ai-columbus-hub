@@ -53,16 +53,6 @@ function ClientDetailPage() {
       setLoading(false);
     })();
   }, [clientId]);
-            .eq("organization_id", (c as ClientRow).organization_id)
-            .ilike("name", `%${(c as ClientRow).name}%`)
-            .order("created_at", { ascending: false }),
-        ]);
-        setInvoices((invs ?? []) as InvoiceRow[]);
-        setProjects((projs ?? []) as ProjectRow[]);
-      }
-      setLoading(false);
-    })();
-  }, [clientId]);
 
   if (loading) {
     return <div className="flex items-center justify-center py-16 text-sm text-muted-foreground"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Laden…</div>;
