@@ -31,6 +31,7 @@ export const Route = createFileRoute("/_authenticated/ai-columbus/projecten")({
 
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
 type ProjectStatus = Database["public"]["Enums"]["project_status"];
+type ClientLite = { id: string; name: string };
 
 const EUR = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
 
@@ -59,6 +60,7 @@ function ProjectsDashboardPage() {
   const { user } = useAuth();
   const { currentOrganizationId, currentOrganization, loading: wsLoading } = useWorkspace();
   const [rows, setRows] = useState<ProjectRow[]>([]);
+  const [clients, setClients] = useState<ClientLite[]>([]);
   const [profiles, setProfiles] = useState<Record<string, { display_name: string | null; email: string | null }>>({});
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -69,7 +71,7 @@ function ProjectsDashboardPage() {
   const [exportType, setExportType] = useState<"csv" | "xlsx" | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    name: "", value: "0", target_month: "",
+    name: "", value: "0", target_month: "", client_id: "" as string,
     status: "contact_gezocht" as ProjectStatus,
     contact_name: "", contact_email: "", contact_phone: "", notes: "",
   });
@@ -97,6 +99,12 @@ function ProjectsDashboardPage() {
   }
 
   useEffect(() => { if (!wsLoading) load(); /* eslint-disable-next-line */ }, [currentOrganizationId, wsLoading]);
+
+  useEffect(() => {
+    if (!currentOrganizationId) { setClients([]); return; }
+    supabase.from("clients").select("id,name").eq("organization_id", currentOrganizationId).order("name")
+      .then(({ data }) => setClients((data ?? []) as ClientLite[]));
+  }, [currentOrganizationId]);
 
   const monthOptions = useMemo(() => {
     const set = new Set<string>();
@@ -153,6 +161,7 @@ function ProjectsDashboardPage() {
       value_cents: valueCents,
       target_month: form.target_month || null,
       status: form.status,
+      client_id: form.client_id || null,
       contact_name: form.contact_name || null,
       contact_email: form.contact_email || null,
       contact_phone: form.contact_phone || null,
@@ -164,7 +173,7 @@ function ProjectsDashboardPage() {
     if (error) return toast.error(error.message);
     toast.success("Project toegevoegd");
     setOpen(false);
-    setForm({ name: "", value: "0", target_month: "", status: "contact_gezocht", contact_name: "", contact_email: "", contact_phone: "", notes: "" });
+    setForm({ name: "", value: "0", target_month: "", client_id: "", status: "contact_gezocht", contact_name: "", contact_email: "", contact_phone: "", notes: "" });
     load();
   }
 
@@ -310,6 +319,20 @@ function ProjectsDashboardPage() {
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label>Naam *</Label>
                   <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Klant</Label>
+                  <Select value={form.client_id || "__none"} onValueChange={(v) => {
+                    const id = v === "__none" ? "" : v;
+                    const c = clients.find(c => c.id === id);
+                    setForm({ ...form, client_id: id, name: form.name || (c?.name ?? "") });
+                  }}>
+                    <SelectTrigger><SelectValue placeholder="Geen klant" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">Geen klant</SelectItem>
+                      {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Waarde (€)</Label>
