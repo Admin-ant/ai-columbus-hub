@@ -57,6 +57,23 @@ function ClientDetailPage() {
     })();
   }, [clientId]);
 
+  async function toggleLink(projectId: string, target: string | null) {
+    const prev = projects;
+    setProjects(p => p.map(x => x.id === projectId ? { ...x, client_id: target } : x).filter(x => x.client_id === clientId || (x.client_id === null && client && x.name.toLowerCase().includes(client.name.toLowerCase()))));
+    const { error } = await supabase.from("projects").update({ client_id: target }).eq("id", projectId);
+    if (error) { toast.error(error.message); setProjects(prev); return; }
+    toast.success(target ? "Project gekoppeld" : "Project losgekoppeld");
+  }
+
+  async function deleteProject(projectId: string) {
+    if (!confirm("Project verwijderen?")) return;
+    const prev = projects;
+    setProjects(p => p.filter(x => x.id !== projectId));
+    const { error } = await supabase.from("projects").delete().eq("id", projectId);
+    if (error) { toast.error(error.message); setProjects(prev); return; }
+    toast.success("Project verwijderd");
+  }
+
   if (loading) {
     return <div className="flex items-center justify-center py-16 text-sm text-muted-foreground"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Laden…</div>;
   }
