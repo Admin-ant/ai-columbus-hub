@@ -37,6 +37,7 @@ import { Route as AuthenticatedAiColumbusKlantenRouteImport } from './routes/_au
 import { Route as AuthenticatedAiColumbusInstellingenRouteImport } from './routes/_authenticated/ai-columbus.instellingen'
 import { Route as AuthenticatedBoekhoudingJournalEntryIdRouteImport } from './routes/_authenticated/boekhouding.journal.$entryId'
 import { Route as AuthenticatedAiColumbusProjectenProjectIdRouteImport } from './routes/_authenticated/ai-columbus.projecten.$projectId'
+import { Route as AuthenticatedAiColumbusKlantenClientIdRouteImport } from './routes/_authenticated/ai-columbus.klanten.$clientId'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -193,6 +194,12 @@ const AuthenticatedAiColumbusProjectenProjectIdRoute =
     path: '/$projectId',
     getParentRoute: () => AuthenticatedAiColumbusProjectenRoute,
   } as any)
+const AuthenticatedAiColumbusKlantenClientIdRoute =
+  AuthenticatedAiColumbusKlantenClientIdRouteImport.update({
+    id: '/$clientId',
+    path: '/$clientId',
+    getParentRoute: () => AuthenticatedAiColumbusKlantenRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -208,7 +215,7 @@ export interface FileRoutesByFullPath {
   '/quotes': typeof AuthenticatedQuotesRoute
   '/teams': typeof AuthenticatedTeamsRoute
   '/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
-  '/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenRoute
+  '/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenRouteWithChildren
   '/ai-columbus/leads': typeof AuthenticatedAiColumbusLeadsRoute
   '/ai-columbus/logs': typeof AuthenticatedAiColumbusLogsRoute
   '/ai-columbus/modellen': typeof AuthenticatedAiColumbusModellenRoute
@@ -220,6 +227,7 @@ export interface FileRoutesByFullPath {
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
   '/netqloud/': typeof AuthenticatedNetqloudIndexRoute
+  '/ai-columbus/klanten/$clientId': typeof AuthenticatedAiColumbusKlantenClientIdRoute
   '/ai-columbus/projecten/$projectId': typeof AuthenticatedAiColumbusProjectenProjectIdRoute
   '/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
 }
@@ -235,7 +243,7 @@ export interface FileRoutesByTo {
   '/teams': typeof AuthenticatedTeamsRoute
   '/': typeof AuthenticatedIndexRoute
   '/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
-  '/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenRoute
+  '/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenRouteWithChildren
   '/ai-columbus/leads': typeof AuthenticatedAiColumbusLeadsRoute
   '/ai-columbus/logs': typeof AuthenticatedAiColumbusLogsRoute
   '/ai-columbus/modellen': typeof AuthenticatedAiColumbusModellenRoute
@@ -247,6 +255,7 @@ export interface FileRoutesByTo {
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/ai-columbus': typeof AuthenticatedAiColumbusIndexRoute
   '/netqloud': typeof AuthenticatedNetqloudIndexRoute
+  '/ai-columbus/klanten/$clientId': typeof AuthenticatedAiColumbusKlantenClientIdRoute
   '/ai-columbus/projecten/$projectId': typeof AuthenticatedAiColumbusProjectenProjectIdRoute
   '/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
 }
@@ -266,7 +275,7 @@ export interface FileRoutesById {
   '/_authenticated/teams': typeof AuthenticatedTeamsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
-  '/_authenticated/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenRoute
+  '/_authenticated/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenRouteWithChildren
   '/_authenticated/ai-columbus/leads': typeof AuthenticatedAiColumbusLeadsRoute
   '/_authenticated/ai-columbus/logs': typeof AuthenticatedAiColumbusLogsRoute
   '/_authenticated/ai-columbus/modellen': typeof AuthenticatedAiColumbusModellenRoute
@@ -278,6 +287,7 @@ export interface FileRoutesById {
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/_authenticated/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
   '/_authenticated/netqloud/': typeof AuthenticatedNetqloudIndexRoute
+  '/_authenticated/ai-columbus/klanten/$clientId': typeof AuthenticatedAiColumbusKlantenClientIdRoute
   '/_authenticated/ai-columbus/projecten/$projectId': typeof AuthenticatedAiColumbusProjectenProjectIdRoute
   '/_authenticated/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
 }
@@ -309,6 +319,7 @@ export interface FileRouteTypes {
     | '/accept/quote/$token'
     | '/ai-columbus/'
     | '/netqloud/'
+    | '/ai-columbus/klanten/$clientId'
     | '/ai-columbus/projecten/$projectId'
     | '/boekhouding/journal/$entryId'
   fileRoutesByTo: FileRoutesByTo
@@ -336,6 +347,7 @@ export interface FileRouteTypes {
     | '/accept/quote/$token'
     | '/ai-columbus'
     | '/netqloud'
+    | '/ai-columbus/klanten/$clientId'
     | '/ai-columbus/projecten/$projectId'
     | '/boekhouding/journal/$entryId'
   id:
@@ -366,6 +378,7 @@ export interface FileRouteTypes {
     | '/accept/quote/$token'
     | '/_authenticated/ai-columbus/'
     | '/_authenticated/netqloud/'
+    | '/_authenticated/ai-columbus/klanten/$clientId'
     | '/_authenticated/ai-columbus/projecten/$projectId'
     | '/_authenticated/boekhouding/journal/$entryId'
   fileRoutesById: FileRoutesById
@@ -575,8 +588,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAiColumbusProjectenProjectIdRouteImport
       parentRoute: typeof AuthenticatedAiColumbusProjectenRoute
     }
+    '/_authenticated/ai-columbus/klanten/$clientId': {
+      id: '/_authenticated/ai-columbus/klanten/$clientId'
+      path: '/$clientId'
+      fullPath: '/ai-columbus/klanten/$clientId'
+      preLoaderRoute: typeof AuthenticatedAiColumbusKlantenClientIdRouteImport
+      parentRoute: typeof AuthenticatedAiColumbusKlantenRoute
+    }
   }
 }
+
+interface AuthenticatedAiColumbusKlantenRouteChildren {
+  AuthenticatedAiColumbusKlantenClientIdRoute: typeof AuthenticatedAiColumbusKlantenClientIdRoute
+}
+
+const AuthenticatedAiColumbusKlantenRouteChildren: AuthenticatedAiColumbusKlantenRouteChildren =
+  {
+    AuthenticatedAiColumbusKlantenClientIdRoute:
+      AuthenticatedAiColumbusKlantenClientIdRoute,
+  }
+
+const AuthenticatedAiColumbusKlantenRouteWithChildren =
+  AuthenticatedAiColumbusKlantenRoute._addFileChildren(
+    AuthenticatedAiColumbusKlantenRouteChildren,
+  )
 
 interface AuthenticatedAiColumbusProjectenRouteChildren {
   AuthenticatedAiColumbusProjectenProjectIdRoute: typeof AuthenticatedAiColumbusProjectenProjectIdRoute
@@ -595,7 +630,7 @@ const AuthenticatedAiColumbusProjectenRouteWithChildren =
 
 interface AuthenticatedAiColumbusRouteChildren {
   AuthenticatedAiColumbusInstellingenRoute: typeof AuthenticatedAiColumbusInstellingenRoute
-  AuthenticatedAiColumbusKlantenRoute: typeof AuthenticatedAiColumbusKlantenRoute
+  AuthenticatedAiColumbusKlantenRoute: typeof AuthenticatedAiColumbusKlantenRouteWithChildren
   AuthenticatedAiColumbusLeadsRoute: typeof AuthenticatedAiColumbusLeadsRoute
   AuthenticatedAiColumbusLogsRoute: typeof AuthenticatedAiColumbusLogsRoute
   AuthenticatedAiColumbusModellenRoute: typeof AuthenticatedAiColumbusModellenRoute
@@ -608,7 +643,8 @@ const AuthenticatedAiColumbusRouteChildren: AuthenticatedAiColumbusRouteChildren
   {
     AuthenticatedAiColumbusInstellingenRoute:
       AuthenticatedAiColumbusInstellingenRoute,
-    AuthenticatedAiColumbusKlantenRoute: AuthenticatedAiColumbusKlantenRoute,
+    AuthenticatedAiColumbusKlantenRoute:
+      AuthenticatedAiColumbusKlantenRouteWithChildren,
     AuthenticatedAiColumbusLeadsRoute: AuthenticatedAiColumbusLeadsRoute,
     AuthenticatedAiColumbusLogsRoute: AuthenticatedAiColumbusLogsRoute,
     AuthenticatedAiColumbusModellenRoute: AuthenticatedAiColumbusModellenRoute,
