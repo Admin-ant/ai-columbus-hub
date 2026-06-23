@@ -38,7 +38,21 @@ function ClientDetailPage() {
       if (c) {
         const [{ data: invs }, { data: projs }] = await Promise.all([
           supabase.from("invoices").select("*").eq("client_id", clientId).order("issue_date", { ascending: false }),
-          supabase.from("projects").select("*")
+          (c as ClientRow).organization_id
+            ? supabase.from("projects").select("*")
+                .eq("organization_id", (c as ClientRow).organization_id as string)
+                .ilike("name", `%${(c as ClientRow).name}%`)
+                .order("created_at", { ascending: false })
+            : Promise.resolve({ data: [] as ProjectRow[] }),
+        ]);
+        const _unused = 0; void _unused;
+        const projsList = (projs ?? []) as ProjectRow[];
+        setInvoices((invs ?? []) as InvoiceRow[]);
+        setProjects(projsList);
+      }
+      setLoading(false);
+    })();
+  }, [clientId]);
             .eq("organization_id", (c as ClientRow).organization_id)
             .ilike("name", `%${(c as ClientRow).name}%`)
             .order("created_at", { ascending: false }),
