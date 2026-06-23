@@ -31,6 +31,7 @@ export const Route = createFileRoute("/_authenticated/ai-columbus/projecten")({
 
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
 type ProjectStatus = Database["public"]["Enums"]["project_status"];
+type ClientLite = { id: string; name: string };
 
 const EUR = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
 
