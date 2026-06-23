@@ -36,19 +36,22 @@ function ClientDetailPage() {
       setClient(c as ClientRow | null);
 
       if (c) {
-        const [{ data: invs }, { data: projs }] = await Promise.all([
+        const cli = c as ClientRow;
+        const orgId = cli.organization_id as string | null;
+        const [{ data: invs }, { data: byId }, { data: byName }] = await Promise.all([
           supabase.from("invoices").select("*").eq("client_id", clientId).order("issue_date", { ascending: false }),
-          (c as ClientRow).organization_id
+          supabase.from("projects").select("*").eq("client_id", clientId).order("created_at", { ascending: false }),
+          orgId
             ? supabase.from("projects").select("*")
-                .eq("organization_id", (c as ClientRow).organization_id as string)
-                .ilike("name", `%${(c as ClientRow).name}%`)
+                .eq("organization_id", orgId)
+                .is("client_id", null)
+                .ilike("name", `%${cli.name}%`)
                 .order("created_at", { ascending: false })
             : Promise.resolve({ data: [] as ProjectRow[] }),
         ]);
-        const _unused = 0; void _unused;
-        const projsList = (projs ?? []) as ProjectRow[];
+        const merged = [...((byId ?? []) as ProjectRow[]), ...((byName ?? []) as ProjectRow[])];
         setInvoices((invs ?? []) as InvoiceRow[]);
-        setProjects(projsList);
+        setProjects(merged);
       }
       setLoading(false);
     })();
