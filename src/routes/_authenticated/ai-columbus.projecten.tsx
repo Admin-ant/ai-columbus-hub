@@ -320,6 +320,20 @@ function ProjectsDashboardPage() {
                   <Label>Naam *</Label>
                   <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
                 </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Klant</Label>
+                  <Select value={form.client_id || "__none"} onValueChange={(v) => {
+                    const id = v === "__none" ? "" : v;
+                    const c = clients.find(c => c.id === id);
+                    setForm({ ...form, client_id: id, name: form.name || (c?.name ?? "") });
+                  }}>
+                    <SelectTrigger><SelectValue placeholder="Geen klant" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">Geen klant</SelectItem>
+                      {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="space-y-1.5">
                   <Label>Waarde (€)</Label>
                   <Input type="number" step="0.01" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} />
