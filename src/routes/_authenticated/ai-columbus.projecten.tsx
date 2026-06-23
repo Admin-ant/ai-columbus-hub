@@ -100,6 +100,12 @@ function ProjectsDashboardPage() {
 
   useEffect(() => { if (!wsLoading) load(); /* eslint-disable-next-line */ }, [currentOrganizationId, wsLoading]);
 
+  useEffect(() => {
+    if (!currentOrganizationId) { setClients([]); return; }
+    supabase.from("clients").select("id,name").eq("organization_id", currentOrganizationId).order("name")
+      .then(({ data }) => setClients((data ?? []) as ClientLite[]));
+  }, [currentOrganizationId]);
+
   const monthOptions = useMemo(() => {
     const set = new Set<string>();
     rows.forEach((r) => { if (r.target_month) set.add(monthKey(r.target_month)); });
