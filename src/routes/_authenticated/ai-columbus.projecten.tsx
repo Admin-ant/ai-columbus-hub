@@ -155,6 +155,7 @@ function ProjectsDashboardPage() {
       value_cents: valueCents,
       target_month: form.target_month || null,
       status: form.status,
+      client_id: form.client_id || null,
       contact_name: form.contact_name || null,
       contact_email: form.contact_email || null,
       contact_phone: form.contact_phone || null,
@@ -166,7 +167,7 @@ function ProjectsDashboardPage() {
     if (error) return toast.error(error.message);
     toast.success("Project toegevoegd");
     setOpen(false);
-    setForm({ name: "", value: "0", target_month: "", status: "contact_gezocht", contact_name: "", contact_email: "", contact_phone: "", notes: "" });
+    setForm({ name: "", value: "0", target_month: "", client_id: "", status: "contact_gezocht", contact_name: "", contact_email: "", contact_phone: "", notes: "" });
     load();
   }
 
