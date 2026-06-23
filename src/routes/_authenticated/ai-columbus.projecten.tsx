@@ -60,6 +60,7 @@ function ProjectsDashboardPage() {
   const { user } = useAuth();
   const { currentOrganizationId, currentOrganization, loading: wsLoading } = useWorkspace();
   const [rows, setRows] = useState<ProjectRow[]>([]);
+  const [clients, setClients] = useState<ClientLite[]>([]);
   const [profiles, setProfiles] = useState<Record<string, { display_name: string | null; email: string | null }>>({});
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -70,7 +71,7 @@ function ProjectsDashboardPage() {
   const [exportType, setExportType] = useState<"csv" | "xlsx" | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    name: "", value: "0", target_month: "",
+    name: "", value: "0", target_month: "", client_id: "" as string,
     status: "contact_gezocht" as ProjectStatus,
     contact_name: "", contact_email: "", contact_phone: "", notes: "",
   });
