@@ -773,6 +773,7 @@ export type Database = {
       }
       projects: {
         Row: {
+          client_id: string | null
           contact_email: string | null
           contact_name: string | null
           contact_phone: string | null
@@ -790,6 +791,7 @@ export type Database = {
           value_cents: number
         }
         Insert: {
+          client_id?: string | null
           contact_email?: string | null
           contact_name?: string | null
           contact_phone?: string | null
@@ -807,6 +809,7 @@ export type Database = {
           value_cents?: number
         }
         Update: {
+          client_id?: string | null
           contact_email?: string | null
           contact_name?: string | null
           contact_phone?: string | null
@@ -824,6 +827,13 @@ export type Database = {
           value_cents?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "projects_organization_id_fkey"
             columns: ["organization_id"]
