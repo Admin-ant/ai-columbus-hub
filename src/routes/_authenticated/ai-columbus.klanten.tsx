@@ -225,6 +225,9 @@ function ClientsPage() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="icon" asChild title="Bekijk klant">
+                        <Link to="/ai-columbus/klanten/$clientId" params={{ clientId: r.id }}><ExternalLink className="h-4 w-4" /></Link>
+                      </Button>
                       <Button variant="ghost" size="icon" onClick={() => startEdit(r)}><Pencil className="h-4 w-4" /></Button>
                       <Button variant="ghost" size="icon" onClick={() => setDeleteId(r.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </div>
