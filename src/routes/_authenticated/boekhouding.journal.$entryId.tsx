@@ -44,6 +44,7 @@ interface EntryDetail {
   organization_id: string;
   invoice_id: string | null;
   quote_id: string | null;
+  expense_id: string | null;
   created_at: string;
   invoices: {
     id: string;
@@ -65,6 +66,15 @@ interface EntryDetail {
     total_cents: number | null;
   } | null;
   journal_lines: LineRow[];
+}
+
+interface AttachmentRow {
+  id: string;
+  storage_path: string;
+  file_name: string;
+  mime_type: string | null;
+  size_bytes: number | null;
+  created_at: string;
 }
 
 interface ExportLogRow {
