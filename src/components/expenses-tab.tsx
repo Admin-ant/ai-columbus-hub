@@ -105,6 +105,18 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
       if (!existing || isActive) map.set(j.expense_id, j);
     });
     setJournalByExpense(map);
+
+    // Aantal bijlagen per uitgave
+    const { data: atts } = await supabase
+      .from("expense_attachments")
+      .select("expense_id")
+      .eq("organization_id", orgId);
+    const counts = new Map<string, number>();
+    ((atts ?? []) as { expense_id: string }[]).forEach(a => {
+      counts.set(a.expense_id, (counts.get(a.expense_id) ?? 0) + 1);
+    });
+    setAttachmentCounts(counts);
+
     setLoading(false);
   }, [orgId]);
 
