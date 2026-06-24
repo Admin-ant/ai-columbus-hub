@@ -21,7 +21,13 @@ import {
 
 
 import { useServerFn } from "@tanstack/react-start";
-import { createShareToken } from "@/lib/studio-public.functions";
+import {
+  createShareToken,
+  createTemplatePreviewToken,
+  revokeTemplatePreviewToken,
+  getTemplatePreviewInfo,
+} from "@/lib/studio-public.functions";
+
 import { AIQuoteGeneratorDialog } from "@/components/ai-quote-generator-dialog";
 
 import { supabase } from "@/integrations/supabase/client";
