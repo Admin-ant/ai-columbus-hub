@@ -45,6 +45,25 @@ interface LineItem {
   unit_price: number;
 }
 
+function normalizeVideoUrl(raw: string): { type: "iframe" | "video"; url: string } | null {
+  const u = raw.trim();
+  if (!u) return null;
+  // YouTube
+  const yt = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{6,})/);
+  if (yt) return { type: "iframe", url: `https://www.youtube.com/embed/${yt[1]}` };
+  // Loom
+  const loom = u.match(/loom\.com\/(?:share|embed)\/([\w-]{6,})/);
+  if (loom) return { type: "iframe", url: `https://www.loom.com/embed/${loom[1]}` };
+  // Vimeo
+  const vim = u.match(/vimeo\.com\/(\d+)/);
+  if (vim) return { type: "iframe", url: `https://player.vimeo.com/video/${vim[1]}` };
+  // Direct video file
+  if (/\.(mp4|webm|ogg|mov)(\?|$)/i.test(u)) return { type: "video", url: u };
+  // Fallback assume iframe-able
+  return { type: "iframe", url: u };
+}
+
+
 function AcceptQuotePage() {
   const { token } = Route.useParams();
   const { t, i18n } = useTranslation();
