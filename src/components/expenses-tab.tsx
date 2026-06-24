@@ -765,6 +765,8 @@ function AttachmentsDialog({
   const [items, setItems] = useState<AttachmentRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [progress, setProgress] = useState<Array<{ name: string; pct: number; status: "uploading" | "done" | "error"; message?: string }>>([]);
 
   const refresh = useCallback(async () => {
     if (!expenseId) return;
@@ -779,41 +781,68 @@ function AttachmentsDialog({
     setLoading(false);
   }, [expenseId]);
 
-  useEffect(() => { if (expenseId) void refresh(); else setItems([]); }, [expenseId, refresh]);
+  useEffect(() => { if (expenseId) void refresh(); else { setItems([]); setProgress([]); } }, [expenseId, refresh]);
 
-  async function handleFiles(files: FileList | null) {
+  function uploadWithProgress(url: string, file: File, onProgress: (pct: number) => void): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("PUT", url);
+      if (file.type) xhr.setRequestHeader("Content-Type", file.type);
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+      };
+      xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`HTTP ${xhr.status}`)));
+      xhr.onerror = () => reject(new Error("Netwerkfout"));
+      xhr.send(file);
+    });
+  }
+
+  async function handleFiles(files: FileList | File[] | null) {
     if (!files || !expenseId) return;
+    const list = Array.from(files);
+    if (list.length === 0) return;
     setUploading(true);
-    for (const file of Array.from(files)) {
+    setProgress(list.map((f) => ({ name: f.name, pct: 0, status: "uploading" as const })));
+
+    await Promise.all(list.map(async (file, idx) => {
+      const update = (patch: Partial<{ pct: number; status: "uploading" | "done" | "error"; message: string }>) =>
+        setProgress((prev) => prev.map((p, i) => (i === idx ? { ...p, ...patch } : p)));
+
       if (file.size > 25 * 1024 * 1024) {
-        toast.error(`${file.name} is groter dan 25 MB`);
-        continue;
+        update({ status: "error", message: "Groter dan 25 MB" });
+        return;
       }
       const safe = file.name.replace(/[^\w.\-]+/g, "_");
-      const path = `${orgId}/${expenseId}/${Date.now()}-${safe}`;
-      const up = await supabase.storage.from("expense-attachments").upload(path, file, {
-        contentType: file.type || undefined,
-        upsert: false,
-      });
-      if (up.error) { toast.error(`${file.name}: ${up.error.message}`); continue; }
-      const ins = await supabase.from("expense_attachments").insert({
-        organization_id: orgId,
-        expense_id: expenseId,
-        storage_path: path,
-        file_name: file.name,
-        mime_type: file.type || null,
-        size_bytes: file.size,
-        uploaded_by: userId,
-      });
-      if (ins.error) {
-        toast.error(`${file.name}: ${ins.error.message}`);
-        await supabase.storage.from("expense-attachments").remove([path]);
+      const path = `${orgId}/${expenseId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safe}`;
+      try {
+        const signed = await supabase.storage.from("expense-attachments").createSignedUploadUrl(path);
+        if (signed.error || !signed.data?.signedUrl) throw new Error(signed.error?.message ?? "Geen upload-URL");
+        await uploadWithProgress(signed.data.signedUrl, file, (pct) => update({ pct }));
+        const ins = await supabase.from("expense_attachments").insert({
+          organization_id: orgId,
+          expense_id: expenseId,
+          storage_path: path,
+          file_name: file.name,
+          mime_type: file.type || null,
+          size_bytes: file.size,
+          uploaded_by: userId,
+        });
+        if (ins.error) {
+          await supabase.storage.from("expense-attachments").remove([path]);
+          throw new Error(ins.error.message);
+        }
+        update({ pct: 100, status: "done" });
+      } catch (e) {
+        update({ status: "error", message: e instanceof Error ? e.message : "Mislukt" });
       }
-    }
+    }));
+
     setUploading(false);
-    toast.success("Bijlage(n) opgeslagen");
+    const okCount = list.length - progress.filter((p) => p.status === "error").length;
+    if (okCount > 0) toast.success(`${okCount} bijlage(n) geüpload`);
     await refresh();
     onChanged();
+    setTimeout(() => setProgress((prev) => prev.filter((p) => p.status === "error")), 1500);
   }
 
   async function openAttachment(a: AttachmentRow) {
@@ -841,10 +870,25 @@ function AttachmentsDialog({
           <DialogTitle>Bijlagen{expense ? ` — ${expense.supplier}` : ""}</DialogTitle>
         </DialogHeader>
 
-        <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-muted-foreground/30 bg-muted/30 p-6 text-sm hover:bg-muted/50">
-          <Upload className="h-5 w-5 text-muted-foreground" />
-          <span className="text-muted-foreground">
-            {uploading ? "Bezig met uploaden…" : "Klik of sleep bestanden hier (PDF, JPG, PNG — max 25 MB)"}
+        <label
+          onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+          onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+          onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }}
+          onDrop={(e) => {
+            e.preventDefault(); e.stopPropagation(); setIsDragging(false);
+            if (!uploading) void handleFiles(e.dataTransfer.files);
+          }}
+          className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed p-6 text-sm transition-colors ${
+            isDragging ? "border-primary bg-primary/10" : "border-muted-foreground/30 bg-muted/30 hover:bg-muted/50"
+          }`}
+        >
+          <Upload className={`h-5 w-5 ${isDragging ? "text-primary" : "text-muted-foreground"}`} />
+          <span className={isDragging ? "text-primary font-medium" : "text-muted-foreground"}>
+            {uploading
+              ? "Bezig met uploaden…"
+              : isDragging
+                ? "Laat los om te uploaden"
+                : "Sleep meerdere bestanden hier of klik (PDF, JPG, PNG — max 25 MB per bestand)"}
           </span>
           <input
             type="file"
@@ -855,6 +899,31 @@ function AttachmentsDialog({
             onChange={(e) => { void handleFiles(e.target.files); e.target.value = ""; }}
           />
         </label>
+
+        {progress.length > 0 && (
+          <div className="space-y-2 rounded-md border bg-muted/20 p-3">
+            {progress.map((p, i) => (
+              <div key={i} className="space-y-1">
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  <span className="truncate font-medium" title={p.name}>{p.name}</span>
+                  <span className={`shrink-0 tabular-nums ${
+                    p.status === "error" ? "text-destructive" : p.status === "done" ? "text-green-600" : "text-muted-foreground"
+                  }`}>
+                    {p.status === "error" ? (p.message ?? "Fout") : p.status === "done" ? "Klaar" : `${p.pct}%`}
+                  </span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className={`h-full transition-all ${
+                      p.status === "error" ? "bg-destructive" : p.status === "done" ? "bg-green-500" : "bg-primary"
+                    }`}
+                    style={{ width: `${p.status === "error" ? 100 : p.pct}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="max-h-72 overflow-y-auto rounded-md border">
           {loading ? (
@@ -888,7 +957,7 @@ function AttachmentsDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Sluiten</Button>
+          <Button variant="outline" onClick={onClose} disabled={uploading}>Sluiten</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
