@@ -20,6 +20,10 @@ import {
   Search,
   FlaskConical,
   Copy,
+  Upload,
+  Send,
+  CalendarClock,
+  MessageSquare,
 } from "lucide-react";
 import { buildDefaultSections, DEFAULT_THEME } from "@/lib/offerte-studio";
 
