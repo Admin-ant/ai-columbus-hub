@@ -38,8 +38,15 @@ function ClientDetailPage() {
       if (c) {
         const cli = c as ClientRow;
         const orgId = cli.organization_id as string | null;
-        const [{ data: invs }, { data: byId }, { data: byName }] = await Promise.all([
+        const [{ data: invsById }, { data: invsByName }, { data: byId }, { data: byName }] = await Promise.all([
           supabase.from("invoices").select("*").eq("client_id", clientId).order("issue_date", { ascending: false }),
+          orgId
+            ? supabase.from("invoices").select("*")
+                .eq("organization_id", orgId)
+                .is("client_id", null)
+                .ilike("client_name", `%${cli.name}%`)
+                .order("issue_date", { ascending: false })
+            : Promise.resolve({ data: [] as InvoiceRow[] }),
           supabase.from("projects").select("*").eq("client_id", clientId).order("created_at", { ascending: false }),
           orgId
             ? supabase.from("projects").select("*")
@@ -50,7 +57,8 @@ function ClientDetailPage() {
             : Promise.resolve({ data: [] as ProjectRow[] }),
         ]);
         const merged = [...((byId ?? []) as ProjectRow[]), ...((byName ?? []) as ProjectRow[])];
-        setInvoices((invs ?? []) as InvoiceRow[]);
+        const mergedInv = [...((invsById ?? []) as InvoiceRow[]), ...((invsByName ?? []) as InvoiceRow[])];
+        setInvoices(mergedInv);
         setProjects(merged);
       }
       setLoading(false);
