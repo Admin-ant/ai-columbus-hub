@@ -1017,6 +1017,19 @@ function AttachmentsDialog({
                   <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
                     {a.size_bytes ? `${(a.size_bytes / 1024).toFixed(0)} KB` : ""}
                   </span>
+                  <label title="Vervangen" className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md hover:bg-muted">
+                    <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />
+                    <input
+                      type="file"
+                      accept="application/pdf,image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        e.target.value = "";
+                        if (f) void replaceAttachment(a, f);
+                      }}
+                    />
+                  </label>
                   <Button variant="ghost" size="sm" onClick={() => removeAttachment(a)} title="Verwijder">
                     <Trash2 className="h-3.5 w-3.5 text-destructive" />
                   </Button>
