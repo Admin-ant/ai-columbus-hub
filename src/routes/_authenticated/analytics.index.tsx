@@ -73,7 +73,7 @@ function AnalyticsDashboard() {
           .eq("organization_id", org),
         supabase
           .from("studio_quotes")
-          .select("status,public_token,accepted_at")
+          .select("id,title,status,public_token,accepted_at")
           .eq("organization_id", org),
       ]);
 
@@ -93,6 +93,50 @@ function AnalyticsDashboard() {
         shared: quotes.filter((x) => x.public_token).length,
         accepted: quotes.filter((x) => x.accepted_at).length,
       });
+
+      // Heatmap: aggregate section_view events per quote.
+      const ev = await supabase
+        .from("studio_quote_events")
+        .select("quote_id,section_key,duration_ms,event_type")
+        .eq("organization_id", org)
+        .eq("event_type", "section_view")
+        .order("occurred_at", { ascending: false })
+        .limit(2000);
+      const byQuote = new Map<string, { total: number; bySec: Map<string, number>; views: number }>();
+      for (const e of ev.data ?? []) {
+        const key = e.quote_id as string;
+        const ms = (e.duration_ms as number) ?? 0;
+        const sec = (e.section_key as string) ?? "?";
+        if (!byQuote.has(key)) byQuote.set(key, { total: 0, bySec: new Map(), views: 0 });
+        const b = byQuote.get(key)!;
+        b.total += ms;
+        b.views += 1;
+        b.bySec.set(sec, (b.bySec.get(sec) ?? 0) + ms);
+      }
+      const heat: HeatRow[] = [];
+      for (const qr of quotes) {
+        const b = byQuote.get(qr.id as string);
+        if (!b) continue;
+        let topSec: string | null = null;
+        let topMs = 0;
+        b.bySec.forEach((ms, sec) => {
+          if (ms > topMs) {
+            topMs = ms;
+            topSec = sec;
+          }
+        });
+        heat.push({
+          quote_id: qr.id as string,
+          title: (qr.title as string) ?? "Offerte",
+          total_ms: b.total,
+          views: b.views,
+          top_section: topSec,
+          top_section_ms: topMs,
+        });
+      }
+      heat.sort((a, b) => b.total_ms - a.total_ms);
+      setHeatmap(heat.slice(0, 8));
+
       setLoading(false);
     }
     if (!wsLoading) load();
