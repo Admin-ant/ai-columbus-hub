@@ -164,7 +164,7 @@ export const signPublicQuote = createServerFn({ method: "POST" })
         .select("name")
         .eq("id", q.organization_id)
         .maybeSingle();
-      const base = process.env.APP_URL || process.env.SITE_URL || "";
+      const base = process.env.APP_URL || process.env.SITE_URL || "https://project--0addc860-2162-4de8-8a00-3906ef74a397.lovable.app";
       const publicUrl = `${base.replace(/\/$/, "")}/accept/quote/${q.public_token}`;
       await sendSignedNotification({
         to: q.notify_email,
