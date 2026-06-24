@@ -121,7 +121,35 @@ function OutreachDashboard() {
   const ask = useServerFn(askAssistant);
   const research = useServerFn(researchLead);
   const genVariants = useServerFn(generatePitchVariants);
+  const sendEmailFn = useServerFn(sendOutreachEmail);
+  const scheduleSeqFn = useServerFn(scheduleSequence);
+  const importFn = useServerFn(bulkImportTargets);
   const navigate = useNavigate();
+
+  async function sendNow(t: TargetRow) {
+    if (!t.email) return toast.error("Geen e-mailadres");
+    if (!confirm(`Direct e-mail sturen naar ${t.email}?`)) return;
+    toast.loading("Versturen…", { id: "snd" });
+    try {
+      await sendEmailFn({ data: { target_id: t.id } });
+      toast.success("Verstuurd", { id: "snd" });
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Mislukt", { id: "snd" });
+    }
+  }
+
+  async function startSequence(t: TargetRow) {
+    if (!t.campaign_id) return toast.error("Koppel eerst aan een campagne met sequentie");
+    toast.loading("Inplannen…", { id: "sch" });
+    try {
+      await scheduleSeqFn({ data: { target_id: t.id, start_in_minutes: 1 } });
+      toast.success("Sequentie ingepland (start binnen 15 min)", { id: "sch" });
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Mislukt", { id: "sch" });
+    }
+  }
 
   async function runResearch(t: TargetRow) {
     const website = prompt(
