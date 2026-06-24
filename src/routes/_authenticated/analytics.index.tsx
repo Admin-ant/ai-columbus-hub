@@ -46,6 +46,7 @@ function AnalyticsDashboard() {
     shared: 0,
     accepted: 0,
   });
+  const [heatmap, setHeatmap] = useState<HeatRow[]>([]);
 
   useEffect(() => {
     async function load() {
