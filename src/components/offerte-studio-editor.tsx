@@ -655,7 +655,38 @@ export function OfferteStudioEditor({ kind, id }: Props) {
             onChange={(patch) => updateSection(activeIdx, patch)}
           />
         </main>
+
+        {/* Live preview */}
+        {showPreview && (
+          <aside
+            className="w-[44%] min-w-[360px] shrink-0 overflow-y-auto border-l"
+            style={{ borderColor: "rgba(255,255,255,0.08)", background: "#0a0a0a" }}
+          >
+            <div
+              className="sticky top-0 z-10 flex items-center justify-between border-b px-3 py-2 text-[10px] uppercase tracking-wider text-white/50 backdrop-blur"
+              style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(10,10,10,0.85)" }}
+            >
+              <span>Live preview</span>
+              <span className="text-white/30">Klantweergave</span>
+            </div>
+            <LivePreview
+              title={title}
+              client={client}
+              cover={cover}
+              theme={theme}
+              sections={sections}
+              packages={packages}
+              videoUrl={videoUrl}
+              activeKey={active.key}
+              onJump={(k) => {
+                const i = sections.findIndex((s) => s.key === k);
+                if (i >= 0) setActiveIdx(i);
+              }}
+            />
+          </aside>
+        )}
       </div>
+
 
       {kind === "quote" && (
         <AIQuoteGeneratorDialog
