@@ -213,6 +213,19 @@ function QuotesPage() {
                   <Input id="q-title" value={title} onChange={(e) => setTitle(e.target.value)} required />
                 </div>
 
+                <div className="space-y-1.5">
+                  <Label>Klant (optioneel)</Label>
+                  <Select value={clientId || "__none"} onValueChange={(v) => setClientId(v === "__none" ? "" : v)}>
+                    <SelectTrigger><SelectValue placeholder="Geen klant" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">Geen klant</SelectItem>
+                      {clients.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="space-y-2">
                   <Label>{t("quotes.line_items")}</Label>
                   <div className="rounded-md border">
