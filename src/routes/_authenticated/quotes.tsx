@@ -113,6 +113,7 @@ function QuotesPage() {
     followup_after_days: number;
   };
   const [settingsQuote, setSettingsQuote] = useState<QuoteExt | null>(null);
+  const [commentsQuote, setCommentsQuote] = useState<QuoteExt | null>(null);
   const revokeFn = useServerFn(revokeQuoteLink);
   const restoreFn = useServerFn(restoreQuoteLink);
   const regenFn = useServerFn(regenerateQuoteToken);
