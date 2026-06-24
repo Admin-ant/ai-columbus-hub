@@ -427,6 +427,42 @@ export function OfferteStudioEditor({ kind, id }: Props) {
               {shareToken ? "Deel-link" : "Delen"}
             </Button>
           )}
+          {kind === "template" && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={shareTemplatePreview}
+                disabled={sharing}
+                className="hover:bg-white/10"
+                style={{ color: tplPreviewToken ? styles.accent : "rgba(255,255,255,0.8)" }}
+                title={
+                  tplPreviewToken
+                    ? `Preview-link kopiëren${tplPreviewExpires ? ` (verloopt ${new Date(tplPreviewExpires).toLocaleString("nl-NL")})` : ""}`
+                    : "Tijdelijke preview-link genereren (72u)"
+                }
+              >
+                {tplPreviewToken ? (
+                  <Copy className="mr-1 h-4 w-4" />
+                ) : (
+                  <Share2 className="mr-1 h-4 w-4" />
+                )}
+                {tplPreviewToken ? "Preview-link" : "Deel preview"}
+              </Button>
+              {tplPreviewToken && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={revokeTemplatePreview}
+                  className="text-white/60 hover:bg-white/10 hover:text-red-400"
+                  title="Preview-link intrekken"
+                >
+                  Intrekken
+                </Button>
+              )}
+            </>
+          )}
+
           <Button
             variant="ghost"
             size="sm"
