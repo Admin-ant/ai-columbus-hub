@@ -90,6 +90,8 @@ export function OfferteStudioEditor({ kind, id }: Props) {
   const [sharing, setSharing] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [showPreview, setShowPreview] = useState(true);
+  const createTok = useServerFn(createShareToken);
+
 
 
   const table = kind === "quote" ? "studio_quotes" : "quote_templates";
