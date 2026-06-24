@@ -20,6 +20,9 @@ import {
   Search,
   FlaskConical,
   Copy,
+  Upload,
+  Send,
+  CalendarClock,
 } from "lucide-react";
 import { buildDefaultSections, DEFAULT_THEME } from "@/lib/offerte-studio";
 
@@ -51,6 +54,11 @@ import { useWorkspace } from "@/hooks/use-workspace";
 import { useServerFn } from "@tanstack/react-start";
 import { askAssistant } from "@/lib/ai-assistant.functions";
 import { researchLead, generatePitchVariants, type PitchVariant } from "@/lib/ai-power.functions";
+import {
+  bulkImportTargets,
+  sendOutreachEmail,
+  scheduleSequence,
+} from "@/lib/outreach.functions";
 
 export const Route = createFileRoute("/_authenticated/outreach/")({
   head: () => ({ meta: [{ title: "Cold Outreach" }] }),
@@ -112,7 +120,35 @@ function OutreachDashboard() {
   const ask = useServerFn(askAssistant);
   const research = useServerFn(researchLead);
   const genVariants = useServerFn(generatePitchVariants);
+  const sendEmailFn = useServerFn(sendOutreachEmail);
+  const scheduleSeqFn = useServerFn(scheduleSequence);
+  const importFn = useServerFn(bulkImportTargets);
   const navigate = useNavigate();
+
+  async function sendNow(t: TargetRow) {
+    if (!t.email) return toast.error("Geen e-mailadres");
+    if (!confirm(`Direct e-mail sturen naar ${t.email}?`)) return;
+    toast.loading("Versturen…", { id: "snd" });
+    try {
+      await sendEmailFn({ data: { target_id: t.id } });
+      toast.success("Verstuurd", { id: "snd" });
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Mislukt", { id: "snd" });
+    }
+  }
+
+  async function startSequence(t: TargetRow) {
+    if (!t.campaign_id) return toast.error("Koppel eerst aan een campagne met sequentie");
+    toast.loading("Inplannen…", { id: "sch" });
+    try {
+      await scheduleSeqFn({ data: { target_id: t.id, start_in_minutes: 1 } });
+      toast.success("Sequentie ingepland (start binnen 15 min)", { id: "sch" });
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Mislukt", { id: "sch" });
+    }
+  }
 
   async function runResearch(t: TargetRow) {
     const website = prompt(
@@ -288,6 +324,12 @@ function OutreachDashboard() {
             </p>
           </div>
           <div className="flex gap-2">
+            <ImportCsvDialog
+              campaigns={campaigns}
+              orgId={currentOrganizationId}
+              importFn={importFn}
+              onDone={load}
+            />
             <NewTargetDialog
               campaigns={campaigns}
               orgId={currentOrganizationId}
@@ -357,6 +399,8 @@ function OutreachDashboard() {
                               onDelete={deleteTarget}
                               onCreateQuote={() => createQuoteFromTarget(t)}
                               onResearch={() => runResearch(t)}
+                              onSendNow={() => sendNow(t)}
+                              onStartSequence={() => startSequence(t)}
                             />
                           ))
                         )}
@@ -429,6 +473,8 @@ function TargetCard({
   onDelete,
   onCreateQuote,
   onResearch,
+  onSendNow,
+  onStartSequence,
 }: {
   row: TargetRow;
   campaign: Campaign | null;
@@ -436,6 +482,8 @@ function TargetCard({
   onDelete: (id: string) => void;
   onCreateQuote: () => void;
   onResearch: () => void;
+  onSendNow: () => void;
+  onStartSequence: () => void;
 }) {
   const [showResearch, setShowResearch] = useState(false);
   return (
@@ -504,6 +552,28 @@ function TargetCard({
           <FileSignature className="mr-1 h-3 w-3" /> Offerte
         </Button>
       </div>
+      {row.email && (
+        <div className="mt-1 flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onSendNow}
+            className="h-7 flex-1 justify-start text-[11px] hover:bg-white/10"
+            title="Stuur direct e-mail"
+          >
+            <Send className="mr-1 h-3 w-3" /> Verstuur
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onStartSequence}
+            className="h-7 flex-1 justify-start text-[11px] hover:bg-white/10"
+            title="Start sequentie van de campagne"
+          >
+            <CalendarClock className="mr-1 h-3 w-3" /> Sequentie
+          </Button>
+        </div>
+      )}
       {row.research_summary && (
         <button
           type="button"
@@ -962,5 +1032,145 @@ function Empty({ text }: { text: string }) {
     <div className="rounded-lg border border-dashed border-white/10 py-16 text-center text-sm text-white/50">
       {text}
     </div>
+  );
+}
+
+function parseCsv(text: string): Array<Record<string, string>> {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length === 0) return [];
+  const splitLine = (l: string): string[] => {
+    const out: string[] = [];
+    let cur = "";
+    let inQ = false;
+    for (let i = 0; i < l.length; i++) {
+      const ch = l[i];
+      if (ch === '"') {
+        if (inQ && l[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else inQ = !inQ;
+      } else if ((ch === "," || ch === ";" || ch === "\t") && !inQ) {
+        out.push(cur);
+        cur = "";
+      } else cur += ch;
+    }
+    out.push(cur);
+    return out.map((s) => s.trim());
+  };
+  const headers = splitLine(lines[0]).map((h) => h.toLowerCase().replace(/[^a-z0-9_]/g, "_"));
+  return lines.slice(1).map((l) => {
+    const cells = splitLine(l);
+    const obj: Record<string, string> = {};
+    headers.forEach((h, i) => (obj[h] = cells[i] ?? ""));
+    return obj;
+  });
+}
+
+function ImportCsvDialog({
+  campaigns,
+  orgId,
+  importFn,
+  onDone,
+}: {
+  campaigns: Campaign[];
+  orgId: string | null;
+  importFn: ReturnType<typeof useServerFn<typeof bulkImportTargets>>;
+  onDone: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [campaignId, setCampaignId] = useState<string>("");
+  const [busy, setBusy] = useState(false);
+
+  function fieldOf(row: Record<string, string>, keys: string[]): string {
+    for (const k of keys) {
+      if (row[k] && row[k].length > 0) return row[k];
+    }
+    return "";
+  }
+
+  async function handleImport() {
+    if (!orgId) return toast.error("Geen organisatie");
+    const parsed = parseCsv(text);
+    if (parsed.length === 0) return toast.error("Geen rijen gevonden");
+    const rows = parsed
+      .map((r) => ({
+        company: fieldOf(r, ["company", "bedrijf", "organization", "name"]),
+        contact_name: fieldOf(r, ["contact_name", "contact", "naam", "first_name", "full_name"]) || null,
+        email: fieldOf(r, ["email", "e_mail", "mail"]) || null,
+        phone: fieldOf(r, ["phone", "telefoon", "tel"]) || null,
+        linkedin_url: fieldOf(r, ["linkedin", "linkedin_url"]) || null,
+        notes: fieldOf(r, ["notes", "notitie"]) || null,
+      }))
+      .filter((r) => r.company);
+    if (rows.length === 0) return toast.error("Geen geldige rijen — vereist kolom: company");
+    setBusy(true);
+    try {
+      const res = await importFn({
+        data: {
+          organization_id: orgId,
+          campaign_id: campaignId || null,
+          rows,
+        },
+      });
+      toast.success(`${res.inserted} prospects geïmporteerd`);
+      setOpen(false);
+      setText("");
+      onDone();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Import mislukt");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="border-white/20 bg-white/5 text-white hover:bg-white/10">
+          <Upload className="mr-2 h-4 w-4" /> CSV import
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl border-white/10 bg-[#0a0a0a] text-white">
+        <DialogHeader>
+          <DialogTitle>CSV bulk import</DialogTitle>
+          <DialogDescription className="text-white/60">
+            Plak CSV (kop verplicht). Herkende kolommen: company, contact_name, email, phone, linkedin_url, notes.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs text-white/70">Campagne (optioneel)</Label>
+            <Select value={campaignId} onValueChange={setCampaignId}>
+              <SelectTrigger className="border-white/10 bg-white/5">
+                <SelectValue placeholder="Geen campagne" />
+              </SelectTrigger>
+              <SelectContent>
+                {campaigns.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={"company,contact_name,email\nAcme BV,Jan Jansen,jan@acme.nl"}
+            className="min-h-[220px] border-white/10 bg-black/40 font-mono text-xs"
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setOpen(false)}>
+            Annuleren
+          </Button>
+          <Button onClick={handleImport} disabled={busy} style={{ background: ACCENT, color: "white" }}>
+            {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+            Importeer
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

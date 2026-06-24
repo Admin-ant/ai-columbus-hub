@@ -1009,6 +1009,91 @@ export type Database = {
           },
         ]
       }
+      outreach_messages: {
+        Row: {
+          body: string | null
+          campaign_id: string | null
+          channel: string
+          created_at: string
+          direction: string
+          error: string | null
+          id: string
+          organization_id: string
+          provider_message_id: string | null
+          received_at: string | null
+          reply_classification: string | null
+          sent_at: string | null
+          sentiment: string | null
+          status: string
+          step_index: number | null
+          subject: string | null
+          target_id: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          campaign_id?: string | null
+          channel?: string
+          created_at?: string
+          direction?: string
+          error?: string | null
+          id?: string
+          organization_id: string
+          provider_message_id?: string | null
+          received_at?: string | null
+          reply_classification?: string | null
+          sent_at?: string | null
+          sentiment?: string | null
+          status?: string
+          step_index?: number | null
+          subject?: string | null
+          target_id: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          campaign_id?: string | null
+          channel?: string
+          created_at?: string
+          direction?: string
+          error?: string | null
+          id?: string
+          organization_id?: string
+          provider_message_id?: string | null
+          received_at?: string | null
+          reply_classification?: string | null
+          sent_at?: string | null
+          sentiment?: string | null
+          status?: string
+          step_index?: number | null
+          subject?: string | null
+          target_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outreach_messages_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "outreach_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_messages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_messages_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "outreach_targets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       outreach_targets: {
         Row: {
           campaign_id: string | null
@@ -1019,13 +1104,18 @@ export type Database = {
           email: string | null
           id: string
           last_contact_at: string | null
+          last_message_at: string | null
           linkedin_url: string | null
+          next_send_at: string | null
           notes: string | null
           organization_id: string
+          paused: boolean
           phone: string | null
           pitch_variant_id: string | null
+          reply_classification: string | null
           research_at: string | null
           research_summary: string | null
+          sequence_step_index: number
           stage: string
           updated_at: string
         }
@@ -1038,13 +1128,18 @@ export type Database = {
           email?: string | null
           id?: string
           last_contact_at?: string | null
+          last_message_at?: string | null
           linkedin_url?: string | null
+          next_send_at?: string | null
           notes?: string | null
           organization_id: string
+          paused?: boolean
           phone?: string | null
           pitch_variant_id?: string | null
+          reply_classification?: string | null
           research_at?: string | null
           research_summary?: string | null
+          sequence_step_index?: number
           stage?: string
           updated_at?: string
         }
@@ -1057,13 +1152,18 @@ export type Database = {
           email?: string | null
           id?: string
           last_contact_at?: string | null
+          last_message_at?: string | null
           linkedin_url?: string | null
+          next_send_at?: string | null
           notes?: string | null
           organization_id?: string
+          paused?: boolean
           phone?: string | null
           pitch_variant_id?: string | null
+          reply_classification?: string | null
           research_at?: string | null
           research_summary?: string | null
+          sequence_step_index?: number
           stage?: string
           updated_at?: string
         }
