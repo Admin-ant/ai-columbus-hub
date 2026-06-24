@@ -632,6 +632,21 @@ export function OfferteStudioEditor({ kind, id }: Props) {
           />
         </main>
       </div>
+
+      {kind === "quote" && (
+        <AIQuoteGeneratorDialog
+          open={aiOpen}
+          onOpenChange={setAiOpen}
+          defaultClient={client}
+          onResult={(d) => {
+            setTitle(d.title);
+            if (d.client) setClient(d.client);
+            setSections(d.sections);
+            setPackages(d.packages);
+            mark();
+          }}
+        />
+      )}
     </div>
   );
 }
