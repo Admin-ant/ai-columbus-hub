@@ -2,7 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Plus, Loader2, Trash2, FileText, Sparkles, Link2, Wand2 } from "lucide-react";
+import { Plus, Loader2, Trash2, FileText, Sparkles, Link2, Wand2, HelpCircle, AlertTriangle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { buildDefaultSections, DEFAULT_THEME, type StudioSection, type StudioTheme, type StudioPackage } from "@/lib/offerte-studio";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -359,16 +360,43 @@ function QuotesPage() {
                     const tpl = templates.find((x) => x.id === templateId);
                     if (!tpl || tpl.packages.length > 0) return null;
                     return (
-                      <div
-                        role="alert"
-                        className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-200"
-                      >
-                        <span className="mt-0.5">⚠️</span>
-                        <div>
-                          <div className="font-semibold">Dit template heeft geen pakketten</div>
-                          <div className="opacity-90">De offerte wordt aangemaakt zonder prijstabel. Je kunt later in de Offerte Studio pakketten met prijzen toevoegen.</div>
+                      <TooltipProvider delayDuration={150}>
+                        <div
+                          role="alert"
+                          className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-200"
+                        >
+                          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-semibold">Dit template heeft geen pakketten</span>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    aria-label="Meer informatie over deze waarschuwing"
+                                    className="inline-flex items-center justify-center rounded-full p-0.5 hover:bg-amber-500/20"
+                                  >
+                                    <HelpCircle className="h-3.5 w-3.5" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
+                                  <p className="font-semibold mb-1">Waarom geen prijstabel?</p>
+                                  <p>
+                                    Een Studio-offerte toont prijzen via <strong>pakketten</strong> (bijv. Starter / Groeien / Schalen) met een prijs per pakket en kenmerken.
+                                    Dit template bevat nog geen pakketten, dus de pagina <em>Investering</em> wordt zonder prijstabel aangemaakt.
+                                  </p>
+                                  <p className="mt-1.5">
+                                    Open de offerte daarna in de Offerte Studio en voeg pakketten toe via <strong>Investering → Pakket toevoegen</strong>. De prijzen verschijnen dan automatisch.
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                            <div className="opacity-90">
+                              De offerte wordt aangemaakt zonder prijstabel. Je kunt later in de Offerte Studio pakketten met prijzen toevoegen.
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      </TooltipProvider>
                     );
                   })()}
                   {templateId && (
