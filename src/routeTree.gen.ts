@@ -42,6 +42,7 @@ import { Route as AuthenticatedAiColumbusLeadsRouteImport } from './routes/_auth
 import { Route as AuthenticatedAiColumbusKlantenRouteImport } from './routes/_authenticated/ai-columbus.klanten'
 import { Route as AuthenticatedAiColumbusInstellingenRouteImport } from './routes/_authenticated/ai-columbus.instellingen'
 import { Route as ApiPublicHooksStudioFollowupsRouteImport } from './routes/api/public/hooks/studio-followups'
+import { Route as ApiPublicHooksQuoteFollowupsRouteImport } from './routes/api/public/hooks/quote-followups'
 import { Route as ApiPublicHooksOutreachSequenceRouteImport } from './routes/api/public/hooks/outreach-sequence'
 import { Route as ApiPublicHooksOutreachReplyRouteImport } from './routes/api/public/hooks/outreach-reply'
 import { Route as AuthenticatedOfferteStudioTIdRouteImport } from './routes/_authenticated/offerte-studio.t.$id'
@@ -232,6 +233,12 @@ const ApiPublicHooksStudioFollowupsRoute =
     path: '/api/public/hooks/studio-followups',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksQuoteFollowupsRoute =
+  ApiPublicHooksQuoteFollowupsRouteImport.update({
+    id: '/api/public/hooks/quote-followups',
+    path: '/api/public/hooks/quote-followups',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksOutreachSequenceRoute =
   ApiPublicHooksOutreachSequenceRouteImport.update({
     id: '/api/public/hooks/outreach-sequence',
@@ -314,6 +321,7 @@ export interface FileRoutesByFullPath {
   '/offerte-studio/t/$id': typeof AuthenticatedOfferteStudioTIdRoute
   '/api/public/hooks/outreach-reply': typeof ApiPublicHooksOutreachReplyRoute
   '/api/public/hooks/outreach-sequence': typeof ApiPublicHooksOutreachSequenceRoute
+  '/api/public/hooks/quote-followups': typeof ApiPublicHooksQuoteFollowupsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
 }
 export interface FileRoutesByTo {
@@ -353,6 +361,7 @@ export interface FileRoutesByTo {
   '/offerte-studio/t/$id': typeof AuthenticatedOfferteStudioTIdRoute
   '/api/public/hooks/outreach-reply': typeof ApiPublicHooksOutreachReplyRoute
   '/api/public/hooks/outreach-sequence': typeof ApiPublicHooksOutreachSequenceRoute
+  '/api/public/hooks/quote-followups': typeof ApiPublicHooksQuoteFollowupsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
 }
 export interface FileRoutesById {
@@ -396,6 +405,7 @@ export interface FileRoutesById {
   '/_authenticated/offerte-studio/t/$id': typeof AuthenticatedOfferteStudioTIdRoute
   '/api/public/hooks/outreach-reply': typeof ApiPublicHooksOutreachReplyRoute
   '/api/public/hooks/outreach-sequence': typeof ApiPublicHooksOutreachSequenceRoute
+  '/api/public/hooks/quote-followups': typeof ApiPublicHooksQuoteFollowupsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
 }
 export interface FileRouteTypes {
@@ -439,6 +449,7 @@ export interface FileRouteTypes {
     | '/offerte-studio/t/$id'
     | '/api/public/hooks/outreach-reply'
     | '/api/public/hooks/outreach-sequence'
+    | '/api/public/hooks/quote-followups'
     | '/api/public/hooks/studio-followups'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -478,6 +489,7 @@ export interface FileRouteTypes {
     | '/offerte-studio/t/$id'
     | '/api/public/hooks/outreach-reply'
     | '/api/public/hooks/outreach-sequence'
+    | '/api/public/hooks/quote-followups'
     | '/api/public/hooks/studio-followups'
   id:
     | '__root__'
@@ -520,6 +532,7 @@ export interface FileRouteTypes {
     | '/_authenticated/offerte-studio/t/$id'
     | '/api/public/hooks/outreach-reply'
     | '/api/public/hooks/outreach-sequence'
+    | '/api/public/hooks/quote-followups'
     | '/api/public/hooks/studio-followups'
   fileRoutesById: FileRoutesById
 }
@@ -532,6 +545,7 @@ export interface RootRouteChildren {
   QuoteTokenPdfRoute: typeof QuoteTokenPdfRoute
   ApiPublicHooksOutreachReplyRoute: typeof ApiPublicHooksOutreachReplyRoute
   ApiPublicHooksOutreachSequenceRoute: typeof ApiPublicHooksOutreachSequenceRoute
+  ApiPublicHooksQuoteFollowupsRoute: typeof ApiPublicHooksQuoteFollowupsRoute
   ApiPublicHooksStudioFollowupsRoute: typeof ApiPublicHooksStudioFollowupsRoute
 }
 
@@ -768,6 +782,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksStudioFollowupsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/quote-followups': {
+      id: '/api/public/hooks/quote-followups'
+      path: '/api/public/hooks/quote-followups'
+      fullPath: '/api/public/hooks/quote-followups'
+      preLoaderRoute: typeof ApiPublicHooksQuoteFollowupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/outreach-sequence': {
       id: '/api/public/hooks/outreach-sequence'
       path: '/api/public/hooks/outreach-sequence'
@@ -967,6 +988,7 @@ const rootRouteChildren: RootRouteChildren = {
   QuoteTokenPdfRoute: QuoteTokenPdfRoute,
   ApiPublicHooksOutreachReplyRoute: ApiPublicHooksOutreachReplyRoute,
   ApiPublicHooksOutreachSequenceRoute: ApiPublicHooksOutreachSequenceRoute,
+  ApiPublicHooksQuoteFollowupsRoute: ApiPublicHooksQuoteFollowupsRoute,
   ApiPublicHooksStudioFollowupsRoute: ApiPublicHooksStudioFollowupsRoute,
 }
 export const routeTree = rootRouteImport
