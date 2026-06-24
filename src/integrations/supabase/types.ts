@@ -962,6 +962,7 @@ export type Database = {
           name: string
           notes: string | null
           organization_id: string
+          sequence_steps: Json
           status: string
           updated_at: string
         }
@@ -976,6 +977,7 @@ export type Database = {
           name: string
           notes?: string | null
           organization_id: string
+          sequence_steps?: Json
           status?: string
           updated_at?: string
         }
@@ -990,6 +992,7 @@ export type Database = {
           name?: string
           notes?: string | null
           organization_id?: string
+          sequence_steps?: Json
           status?: string
           updated_at?: string
         }
@@ -1451,6 +1454,9 @@ export type Database = {
       }
       studio_quotes: {
         Row: {
+          accepted_at: string | null
+          accepted_by_name: string | null
+          accepted_signature: string | null
           approved_at: string | null
           client_name: string | null
           cover_image_url: string | null
@@ -1458,6 +1464,8 @@ export type Database = {
           created_by: string | null
           id: string
           organization_id: string
+          outreach_target_id: string | null
+          public_token: string | null
           sections: Json
           status: string
           template_id: string | null
@@ -1466,6 +1474,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          accepted_at?: string | null
+          accepted_by_name?: string | null
+          accepted_signature?: string | null
           approved_at?: string | null
           client_name?: string | null
           cover_image_url?: string | null
@@ -1473,6 +1484,8 @@ export type Database = {
           created_by?: string | null
           id?: string
           organization_id: string
+          outreach_target_id?: string | null
+          public_token?: string | null
           sections?: Json
           status?: string
           template_id?: string | null
@@ -1481,6 +1494,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          accepted_at?: string | null
+          accepted_by_name?: string | null
+          accepted_signature?: string | null
           approved_at?: string | null
           client_name?: string | null
           cover_image_url?: string | null
@@ -1488,6 +1504,8 @@ export type Database = {
           created_by?: string | null
           id?: string
           organization_id?: string
+          outreach_target_id?: string | null
+          public_token?: string | null
           sections?: Json
           status?: string
           template_id?: string | null
@@ -1501,6 +1519,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_quotes_outreach_target_id_fkey"
+            columns: ["outreach_target_id"]
+            isOneToOne: false
+            referencedRelation: "outreach_targets"
             referencedColumns: ["id"]
           },
           {
