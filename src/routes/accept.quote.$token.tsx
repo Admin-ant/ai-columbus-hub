@@ -75,12 +75,12 @@ function AcceptQuotePage() {
   });
 
   const sign = useMutation({
-    mutationFn: () =>
+    mutationFn: (vars: { signature_svg: string; name: string }) =>
       signFn({
         data: {
           token,
-          signature_svg: signature ?? "",
-          name: signerName.trim(),
+          signature_svg: vars.signature_svg,
+          name: vars.name,
           terms_accepted: true as const,
         },
       }),
