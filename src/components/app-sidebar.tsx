@@ -17,6 +17,7 @@ import {
   Package,
   Wand2,
   Megaphone,
+  Rocket,
 } from "lucide-react";
 
 import {
