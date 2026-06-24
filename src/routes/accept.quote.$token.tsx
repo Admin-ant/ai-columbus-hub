@@ -25,8 +25,8 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import {
   getPublicQuote,
   signPublicQuote,
-  payPublicQuote,
 } from "@/lib/public-quote.functions";
+import { createMolliePayment } from "@/lib/mollie.functions";
 
 export const Route = createFileRoute("/accept/quote/$token")({
   head: () => ({
@@ -70,13 +70,17 @@ function AcceptQuotePage() {
   const qc = useQueryClient();
   const getFn = useServerFn(getPublicQuote);
   const signFn = useServerFn(signPublicQuote);
-  const payFn = useServerFn(payPublicQuote);
+  const payFn = useServerFn(createMolliePayment);
   const [signature, setSignature] = useState<string | null>(null);
   const [signOpen, setSignOpen] = useState(false);
   const [signerName, setSignerName] = useState("");
   const [typed, setTyped] = useState("");
   const [signTab, setSignTab] = useState<"typen" | "tekenen">("typen");
   const [terms, setTerms] = useState(false);
+  const [payerEmail, setPayerEmail] = useState("");
+  const [payerCompany, setPayerCompany] = useState("");
+  const [payerKvk, setPayerKvk] = useState("");
+  const [payerVat, setPayerVat] = useState("");
 
   const eur = useMemo(
     () =>
@@ -116,10 +120,18 @@ function AcceptQuotePage() {
   });
 
   const pay = useMutation({
-    mutationFn: () => payFn({ data: { token } }),
+    mutationFn: () =>
+      payFn({
+        data: {
+          token,
+          email: payerEmail.trim(),
+          company: payerCompany.trim(),
+          kvk: payerKvk.trim() || null,
+          vat: payerVat.trim() || null,
+        },
+      }),
     onSuccess: (r) => {
-      toast.success(t("accept.paid_ok", { number: r.invoice_number ?? "" }));
-      qc.invalidateQueries({ queryKey: ["public-quote", token] });
+      window.location.href = r.checkoutUrl;
     },
     onError: (e: Error) => toast.error(e.message),
   });
