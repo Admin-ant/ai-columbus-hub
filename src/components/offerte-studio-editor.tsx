@@ -140,7 +140,7 @@ export function OfferteStudioEditor({ kind, id }: Props) {
         setPackages(Array.isArray(extra.packages) ? (extra.packages as StudioPackage[]) : []);
         setVideoUrl(extra.intro_video_url ?? "");
       } else {
-        const t = data as unknown as TemplateRow;
+        const t = data as unknown as TemplateRow & { packages?: unknown };
         setTitle(t.name);
         setClient(t.description ?? "");
         setCover(t.cover_image_url);
@@ -148,6 +148,7 @@ export function OfferteStudioEditor({ kind, id }: Props) {
         setSections(
           Array.isArray(t.sections) && t.sections.length ? t.sections : buildDefaultSections(),
         );
+        setPackages(Array.isArray(t.packages) ? (t.packages as StudioPackage[]) : []);
       }
       setLoading(false);
     }
@@ -191,6 +192,7 @@ export function OfferteStudioEditor({ kind, id }: Props) {
             cover_image_url: cover,
             theme: theme as never,
             sections: sections as never,
+            packages: packages as never,
           };
 
     const { error } = await supabase.from(table).update(payload as never).eq("id", id);
@@ -488,6 +490,11 @@ export function OfferteStudioEditor({ kind, id }: Props) {
                   className="h-8 border-white/10 bg-white/5 text-xs text-white placeholder:text-white/40"
                 />
               </div>
+            </>
+          )}
+
+          <>
+
 
               <div className="mt-4 flex items-center justify-between px-2 py-1.5">
                 <span className="text-[10px] uppercase tracking-wider text-white/40">
@@ -599,7 +606,6 @@ export function OfferteStudioEditor({ kind, id }: Props) {
                 ))}
               </div>
             </>
-          )}
         </aside>
 
         {/* Stage */}
