@@ -12,7 +12,12 @@ import {
   Image as ImageIcon,
   BookmarkPlus,
   Wand2,
+  Share2,
+  Copy,
 } from "lucide-react";
+
+import { useServerFn } from "@tanstack/react-start";
+import { createShareToken } from "@/lib/studio-public.functions";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
