@@ -296,6 +296,7 @@ function QuotesPage() {
                 </div>
 
 
+                {!templateId && (
                 <div className="space-y-2">
                   <Label>{t("quotes.line_items")}</Label>
                   <div className="rounded-md border">
