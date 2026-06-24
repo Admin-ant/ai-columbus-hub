@@ -89,7 +89,8 @@ export function OfferteStudioEditor({ kind, id }: Props) {
   const [shareToken, setShareToken] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
-  const createTok = useServerFn(createShareToken);
+  const [showPreview, setShowPreview] = useState(true);
+
 
   const table = kind === "quote" ? "studio_quotes" : "quote_templates";
 
