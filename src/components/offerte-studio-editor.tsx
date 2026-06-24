@@ -28,7 +28,9 @@ import { Input } from "@/components/ui/input";
 import {
   buildDefaultSections,
   DEFAULT_THEME,
+  newPackage,
   SECTION_DEFS,
+  type StudioPackage,
   type StudioSection,
   type StudioTheme,
 } from "@/lib/offerte-studio";
