@@ -20,6 +20,7 @@ import { Route as AuthenticatedProductenRouteImport } from './routes/_authentica
 import { Route as AuthenticatedNetqloudRouteImport } from './routes/_authenticated/netqloud'
 import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
 import { Route as AuthenticatedGebruikersRouteImport } from './routes/_authenticated/gebruikers'
+import { Route as AuthenticatedEnterpriseRouteImport } from './routes/_authenticated/enterprise'
 import { Route as AuthenticatedBoekhoudingRouteImport } from './routes/_authenticated/boekhouding'
 import { Route as AuthenticatedAiColumbusRouteImport } from './routes/_authenticated/ai-columbus'
 import { Route as AuthenticatedAdministratieRouteImport } from './routes/_authenticated/administratie'
@@ -100,6 +101,11 @@ const AuthenticatedInvoicesRoute = AuthenticatedInvoicesRouteImport.update({
 const AuthenticatedGebruikersRoute = AuthenticatedGebruikersRouteImport.update({
   id: '/gebruikers',
   path: '/gebruikers',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEnterpriseRoute = AuthenticatedEnterpriseRouteImport.update({
+  id: '/enterprise',
+  path: '/enterprise',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedBoekhoudingRoute =
@@ -270,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/administratie': typeof AuthenticatedAdministratieRoute
   '/ai-columbus': typeof AuthenticatedAiColumbusRouteWithChildren
   '/boekhouding': typeof AuthenticatedBoekhoudingRouteWithChildren
+  '/enterprise': typeof AuthenticatedEnterpriseRoute
   '/gebruikers': typeof AuthenticatedGebruikersRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
   '/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
@@ -307,6 +314,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/administratie': typeof AuthenticatedAdministratieRoute
   '/boekhouding': typeof AuthenticatedBoekhoudingRouteWithChildren
+  '/enterprise': typeof AuthenticatedEnterpriseRoute
   '/gebruikers': typeof AuthenticatedGebruikersRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
   '/producten': typeof AuthenticatedProductenRoute
@@ -347,6 +355,7 @@ export interface FileRoutesById {
   '/_authenticated/administratie': typeof AuthenticatedAdministratieRoute
   '/_authenticated/ai-columbus': typeof AuthenticatedAiColumbusRouteWithChildren
   '/_authenticated/boekhouding': typeof AuthenticatedBoekhoudingRouteWithChildren
+  '/_authenticated/enterprise': typeof AuthenticatedEnterpriseRoute
   '/_authenticated/gebruikers': typeof AuthenticatedGebruikersRoute
   '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
   '/_authenticated/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
@@ -389,6 +398,7 @@ export interface FileRouteTypes {
     | '/administratie'
     | '/ai-columbus'
     | '/boekhouding'
+    | '/enterprise'
     | '/gebruikers'
     | '/invoices'
     | '/netqloud'
@@ -426,6 +436,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/administratie'
     | '/boekhouding'
+    | '/enterprise'
     | '/gebruikers'
     | '/invoices'
     | '/producten'
@@ -465,6 +476,7 @@ export interface FileRouteTypes {
     | '/_authenticated/administratie'
     | '/_authenticated/ai-columbus'
     | '/_authenticated/boekhouding'
+    | '/_authenticated/enterprise'
     | '/_authenticated/gebruikers'
     | '/_authenticated/invoices'
     | '/_authenticated/netqloud'
@@ -587,6 +599,13 @@ declare module '@tanstack/react-router' {
       path: '/gebruikers'
       fullPath: '/gebruikers'
       preLoaderRoute: typeof AuthenticatedGebruikersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/enterprise': {
+      id: '/_authenticated/enterprise'
+      path: '/enterprise'
+      fullPath: '/enterprise'
+      preLoaderRoute: typeof AuthenticatedEnterpriseRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/boekhouding': {
@@ -882,6 +901,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdministratieRoute: typeof AuthenticatedAdministratieRoute
   AuthenticatedAiColumbusRoute: typeof AuthenticatedAiColumbusRouteWithChildren
   AuthenticatedBoekhoudingRoute: typeof AuthenticatedBoekhoudingRouteWithChildren
+  AuthenticatedEnterpriseRoute: typeof AuthenticatedEnterpriseRoute
   AuthenticatedGebruikersRoute: typeof AuthenticatedGebruikersRoute
   AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
   AuthenticatedNetqloudRoute: typeof AuthenticatedNetqloudRouteWithChildren
@@ -900,6 +920,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdministratieRoute: AuthenticatedAdministratieRoute,
   AuthenticatedAiColumbusRoute: AuthenticatedAiColumbusRouteWithChildren,
   AuthenticatedBoekhoudingRoute: AuthenticatedBoekhoudingRouteWithChildren,
+  AuthenticatedEnterpriseRoute: AuthenticatedEnterpriseRoute,
   AuthenticatedGebruikersRoute: AuthenticatedGebruikersRoute,
   AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
   AuthenticatedNetqloudRoute: AuthenticatedNetqloudRouteWithChildren,
@@ -930,13 +951,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
