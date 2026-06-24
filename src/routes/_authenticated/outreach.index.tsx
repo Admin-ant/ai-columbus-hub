@@ -595,6 +595,42 @@ function CampaignCard({
           ))}
         </div>
       )}
+      {Array.isArray(campaign.pitch_variants) && campaign.pitch_variants.length > 0 && (
+        <div className="mt-3 space-y-1.5">
+          <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-white/60">
+            <FlaskConical className="h-3 w-3" /> A/B varianten ({campaign.pitch_variants.length})
+          </div>
+          {campaign.pitch_variants.map((v) => (
+            <div key={v.id} className="rounded border border-white/10 bg-black/40 p-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-semibold text-white/90">{v.label}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const txt = v.subject ? `${v.subject}\n\n${v.body}` : v.body;
+                    navigator.clipboard.writeText(txt).then(() => toast.success("Gekopieerd"));
+                  }}
+                  className="text-white/40 hover:text-white"
+                  title="Kopieer"
+                >
+                  <Copy className="h-3 w-3" />
+                </button>
+              </div>
+              {v.angle && (
+                <div className="text-[10px] uppercase tracking-wider" style={{ color: ACCENT }}>
+                  {v.angle}
+                </div>
+              )}
+              {v.subject && (
+                <div className="mt-1 text-[10px] text-white/60">Onderwerp: {v.subject}</div>
+              )}
+              <p className="mt-1 line-clamp-3 text-[11px] text-white/75 whitespace-pre-wrap">
+                {v.body}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3">
         <span className="text-[11px] text-white/40">Limiet: {campaign.daily_limit}/dag</span>
         <div className="flex gap-1">
