@@ -1706,9 +1706,15 @@ export type Database = {
           last_followup_at: string | null
           last_viewed_at: string | null
           lead_id: string | null
+          mollie_checkout_url: string | null
           mollie_payment_id: string | null
           notify_email: string | null
           organization_id: string
+          paid_at: string | null
+          payer_company: string | null
+          payer_email: string | null
+          payer_kvk: string | null
+          payer_vat: string | null
           public_token: string
           revoked_at: string | null
           revoked_by: string | null
@@ -1740,9 +1746,15 @@ export type Database = {
           last_followup_at?: string | null
           last_viewed_at?: string | null
           lead_id?: string | null
+          mollie_checkout_url?: string | null
           mollie_payment_id?: string | null
           notify_email?: string | null
           organization_id: string
+          paid_at?: string | null
+          payer_company?: string | null
+          payer_email?: string | null
+          payer_kvk?: string | null
+          payer_vat?: string | null
           public_token?: string
           revoked_at?: string | null
           revoked_by?: string | null
@@ -1774,9 +1786,15 @@ export type Database = {
           last_followup_at?: string | null
           last_viewed_at?: string | null
           lead_id?: string | null
+          mollie_checkout_url?: string | null
           mollie_payment_id?: string | null
           notify_email?: string | null
           organization_id?: string
+          paid_at?: string | null
+          payer_company?: string | null
+          payer_email?: string | null
+          payer_kvk?: string | null
+          payer_vat?: string | null
           public_token?: string
           revoked_at?: string | null
           revoked_by?: string | null
