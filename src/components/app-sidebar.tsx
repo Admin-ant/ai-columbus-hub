@@ -18,6 +18,7 @@ import {
   Wand2,
   Megaphone,
   Rocket,
+  ClipboardList,
 } from "lucide-react";
 
 import {
@@ -58,6 +59,7 @@ const topItems: NavItem[] = [
   { title: "Overzicht", url: "/", icon: LayoutDashboard },
   { title: "Offerte Studio", url: "/offerte-studio", icon: Wand2 },
   { title: "Cold Outreach", url: "/outreach", icon: Megaphone },
+  { title: "CRM Activiteiten", url: "/crm/activities", icon: ClipboardList },
   { title: "Enterprise", url: "/enterprise", icon: Rocket },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Boekhouding", url: "/boekhouding", icon: Receipt },

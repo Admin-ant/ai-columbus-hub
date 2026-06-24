@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Plus, Loader2, Trash2, FileText, Sparkles, Link2, Wand2, HelpCircle, AlertTriangle, MoreHorizontal, Download, RefreshCw, Ban, RotateCcw, Settings2, CheckCircle2, Send } from "lucide-react";
+import { Plus, Loader2, Trash2, FileText, Sparkles, Link2, Wand2, HelpCircle, AlertTriangle, MoreHorizontal, Download, RefreshCw, Ban, RotateCcw, Settings2, CheckCircle2, Send, MessageSquare } from "lucide-react";
+import { QuoteCommentsDialog } from "@/components/quote-comments-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
@@ -112,6 +113,7 @@ function QuotesPage() {
     followup_after_days: number;
   };
   const [settingsQuote, setSettingsQuote] = useState<QuoteExt | null>(null);
+  const [commentsQuote, setCommentsQuote] = useState<QuoteExt | null>(null);
   const revokeFn = useServerFn(revokeQuoteLink);
   const restoreFn = useServerFn(restoreQuoteLink);
   const regenFn = useServerFn(regenerateQuoteToken);
@@ -672,6 +674,9 @@ function QuotesPage() {
                             <DropdownMenuItem onClick={() => setSettingsQuote(q)}>
                               <Settings2 className="mr-2 h-4 w-4" /> Instellingen & follow-up
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setCommentsQuote(q)}>
+                              <MessageSquare className="mr-2 h-4 w-4" /> Team-opmerkingen
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={async () => {
                               try {
@@ -772,6 +777,14 @@ function QuotesPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <QuoteCommentsDialog
+        open={!!commentsQuote}
+        onOpenChange={(o) => !o && setCommentsQuote(null)}
+        quoteId={commentsQuote?.id ?? null}
+        organizationId={currentOrganizationId ?? ""}
+        quoteTitle={commentsQuote?.title ?? undefined}
+      />
 
     </div>
   );

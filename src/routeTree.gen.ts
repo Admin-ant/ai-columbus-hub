@@ -34,6 +34,7 @@ import { Route as AcceptQuoteTokenRouteImport } from './routes/accept.quote.$tok
 import { Route as AuthenticatedNetqloudServersRouteImport } from './routes/_authenticated/netqloud.servers'
 import { Route as AuthenticatedNetqloudKlantenRouteImport } from './routes/_authenticated/netqloud.klanten'
 import { Route as AuthenticatedNetqloudInstellingenRouteImport } from './routes/_authenticated/netqloud.instellingen'
+import { Route as AuthenticatedCrmActivitiesRouteImport } from './routes/_authenticated/crm.activities'
 import { Route as AuthenticatedAiColumbusRapportagesRouteImport } from './routes/_authenticated/ai-columbus.rapportages'
 import { Route as AuthenticatedAiColumbusProjectenRouteImport } from './routes/_authenticated/ai-columbus.projecten'
 import { Route as AuthenticatedAiColumbusModellenRouteImport } from './routes/_authenticated/ai-columbus.modellen'
@@ -185,6 +186,12 @@ const AuthenticatedNetqloudInstellingenRoute =
     path: '/instellingen',
     getParentRoute: () => AuthenticatedNetqloudRoute,
   } as any)
+const AuthenticatedCrmActivitiesRoute =
+  AuthenticatedCrmActivitiesRouteImport.update({
+    id: '/crm/activities',
+    path: '/crm/activities',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAiColumbusRapportagesRoute =
   AuthenticatedAiColumbusRapportagesRouteImport.update({
     id: '/rapportages',
@@ -304,6 +311,7 @@ export interface FileRoutesByFullPath {
   '/ai-columbus/modellen': typeof AuthenticatedAiColumbusModellenRoute
   '/ai-columbus/projecten': typeof AuthenticatedAiColumbusProjectenRouteWithChildren
   '/ai-columbus/rapportages': typeof AuthenticatedAiColumbusRapportagesRoute
+  '/crm/activities': typeof AuthenticatedCrmActivitiesRoute
   '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
@@ -344,6 +352,7 @@ export interface FileRoutesByTo {
   '/ai-columbus/modellen': typeof AuthenticatedAiColumbusModellenRoute
   '/ai-columbus/projecten': typeof AuthenticatedAiColumbusProjectenRouteWithChildren
   '/ai-columbus/rapportages': typeof AuthenticatedAiColumbusRapportagesRoute
+  '/crm/activities': typeof AuthenticatedCrmActivitiesRoute
   '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
@@ -388,6 +397,7 @@ export interface FileRoutesById {
   '/_authenticated/ai-columbus/modellen': typeof AuthenticatedAiColumbusModellenRoute
   '/_authenticated/ai-columbus/projecten': typeof AuthenticatedAiColumbusProjectenRouteWithChildren
   '/_authenticated/ai-columbus/rapportages': typeof AuthenticatedAiColumbusRapportagesRoute
+  '/_authenticated/crm/activities': typeof AuthenticatedCrmActivitiesRoute
   '/_authenticated/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/_authenticated/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/_authenticated/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
@@ -432,6 +442,7 @@ export interface FileRouteTypes {
     | '/ai-columbus/modellen'
     | '/ai-columbus/projecten'
     | '/ai-columbus/rapportages'
+    | '/crm/activities'
     | '/netqloud/instellingen'
     | '/netqloud/klanten'
     | '/netqloud/servers'
@@ -472,6 +483,7 @@ export interface FileRouteTypes {
     | '/ai-columbus/modellen'
     | '/ai-columbus/projecten'
     | '/ai-columbus/rapportages'
+    | '/crm/activities'
     | '/netqloud/instellingen'
     | '/netqloud/klanten'
     | '/netqloud/servers'
@@ -515,6 +527,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ai-columbus/modellen'
     | '/_authenticated/ai-columbus/projecten'
     | '/_authenticated/ai-columbus/rapportages'
+    | '/_authenticated/crm/activities'
     | '/_authenticated/netqloud/instellingen'
     | '/_authenticated/netqloud/klanten'
     | '/_authenticated/netqloud/servers'
@@ -725,6 +738,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/netqloud/instellingen'
       preLoaderRoute: typeof AuthenticatedNetqloudInstellingenRouteImport
       parentRoute: typeof AuthenticatedNetqloudRoute
+    }
+    '/_authenticated/crm/activities': {
+      id: '/_authenticated/crm/activities'
+      path: '/crm/activities'
+      fullPath: '/crm/activities'
+      preLoaderRoute: typeof AuthenticatedCrmActivitiesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ai-columbus/rapportages': {
       id: '/_authenticated/ai-columbus/rapportages'
@@ -950,6 +970,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedQuotesRoute: typeof AuthenticatedQuotesRoute
   AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedCrmActivitiesRoute: typeof AuthenticatedCrmActivitiesRoute
   AuthenticatedAnalyticsIndexRoute: typeof AuthenticatedAnalyticsIndexRoute
   AuthenticatedOfferteStudioIndexRoute: typeof AuthenticatedOfferteStudioIndexRoute
   AuthenticatedOutreachIndexRoute: typeof AuthenticatedOutreachIndexRoute
@@ -969,6 +990,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedQuotesRoute: AuthenticatedQuotesRoute,
   AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedCrmActivitiesRoute: AuthenticatedCrmActivitiesRoute,
   AuthenticatedAnalyticsIndexRoute: AuthenticatedAnalyticsIndexRoute,
   AuthenticatedOfferteStudioIndexRoute: AuthenticatedOfferteStudioIndexRoute,
   AuthenticatedOutreachIndexRoute: AuthenticatedOutreachIndexRoute,
