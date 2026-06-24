@@ -15,7 +15,10 @@ import {
   Users,
   PlayCircle,
   PauseCircle,
+  FileSignature,
+  ListOrdered,
 } from "lucide-react";
+import { buildDefaultSections, DEFAULT_THEME } from "@/lib/offerte-studio";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
