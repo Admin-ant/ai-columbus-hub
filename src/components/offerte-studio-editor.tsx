@@ -606,7 +606,6 @@ export function OfferteStudioEditor({ kind, id }: Props) {
                 ))}
               </div>
             </>
-          )}
         </aside>
 
         {/* Stage */}
