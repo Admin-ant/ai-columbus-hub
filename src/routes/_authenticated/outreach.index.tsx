@@ -512,7 +512,20 @@ function CampaignCard({
           ))}
         </div>
       )}
+      <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3">
+        <span className="text-[11px] text-white/40">Limiet: {campaign.daily_limit}/dag</span>
         <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onGenerateSequence}
+            className="h-7 text-xs hover:bg-[#ff2bd6]/10"
+            style={{ color: ACCENT }}
+            title="Genereer een 3-staps AI-sequentie"
+          >
+            <Sparkles className="mr-1 h-3.5 w-3.5" />
+            Sequentie
+          </Button>
           <Button
             variant="ghost"
             size="sm"
