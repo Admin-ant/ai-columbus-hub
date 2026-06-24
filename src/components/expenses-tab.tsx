@@ -1095,6 +1095,46 @@ function AttachmentsDialog({
           )}
         </div>
 
+        <div className="rounded-md border">
+          <button
+            type="button"
+            onClick={() => setShowAudit((s) => !s)}
+            className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium hover:bg-muted/40"
+          >
+            <span>Auditgeschiedenis ({audit.length})</span>
+            <span className="text-xs text-muted-foreground">{showAudit ? "Verbergen" : "Tonen"}</span>
+          </button>
+          {showAudit && (
+            <div className="max-h-56 overflow-y-auto border-t">
+              {audit.length === 0 ? (
+                <div className="py-6 text-center text-sm text-muted-foreground">Nog geen activiteit.</div>
+              ) : (
+                <ul className="divide-y text-xs">
+                  {audit.map((e) => {
+                    const label = e.action === "uploaded" ? "Toegevoegd" : e.action === "replaced" ? "Vervangen" : "Verwijderd";
+                    const variant = e.action === "deleted" ? "destructive" : e.action === "replaced" ? "secondary" : "default";
+                    return (
+                      <li key={e.id} className="flex items-start gap-3 px-3 py-2">
+                        <Badge variant={variant as "default" | "secondary" | "destructive"} className="shrink-0">{label}</Badge>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate">
+                            {e.action === "replaced"
+                              ? <><span className="line-through text-muted-foreground">{e.previous_file_name}</span> → <span className="font-medium">{e.file_name}</span></>
+                              : <span className="font-medium">{e.file_name ?? e.previous_file_name ?? "—"}</span>}
+                          </div>
+                          <div className="text-muted-foreground">
+                            door {e.actor_name} · {new Date(e.created_at).toLocaleString("nl-NL")}
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={uploading}>Sluiten</Button>
         </DialogFooter>
