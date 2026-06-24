@@ -64,6 +64,8 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [accounts, setAccounts] = useState<AccountRow[]>([]);
   const [journalByExpense, setJournalByExpense] = useState<Map<string, JournalLink>>(new Map());
+  const [attachmentCounts, setAttachmentCounts] = useState<Map<string, number>>(new Map());
+  const [attachExpenseId, setAttachExpenseId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
