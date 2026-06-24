@@ -82,6 +82,24 @@ function ClientDetailPage() {
     toast.success("Project verwijderd");
   }
 
+  async function linkInvoice(invoiceId: string) {
+    const prev = invoices;
+    setInvoices(list => list.map(i => i.id === invoiceId ? { ...i, client_id: clientId } : i));
+    const { error } = await supabase.from("invoices").update({ client_id: clientId }).eq("id", invoiceId);
+    if (error) { toast.error(error.message); setInvoices(prev); return; }
+    toast.success("Factuur gekoppeld aan klant");
+  }
+
+  async function linkAllNameMatches() {
+    const ids = invoices.filter(i => !i.client_id).map(i => i.id);
+    if (ids.length === 0) return;
+    const prev = invoices;
+    setInvoices(list => list.map(i => ids.includes(i.id) ? { ...i, client_id: clientId } : i));
+    const { error } = await supabase.from("invoices").update({ client_id: clientId }).in("id", ids);
+    if (error) { toast.error(error.message); setInvoices(prev); return; }
+    toast.success(`${ids.length} factuur/facturen gekoppeld`);
+  }
+
   if (loading) {
     return <div className="flex items-center justify-center py-16 text-sm text-muted-foreground"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Laden…</div>;
   }
