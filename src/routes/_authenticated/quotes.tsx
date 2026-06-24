@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Plus, Loader2, Trash2, FileText, Sparkles, Link2 } from "lucide-react";
+import { Plus, Loader2, Trash2, FileText, Sparkles, Link2, Wand2 } from "lucide-react";
+import { buildDefaultSections, DEFAULT_THEME, type StudioSection, type StudioTheme, type StudioPackage } from "@/lib/offerte-studio";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -68,6 +69,7 @@ function QuotesPage() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const { currentOrganizationId, currentOrganization, loading: wsLoading } = useWorkspace();
+  const navigate = useNavigate();
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -76,6 +78,8 @@ function QuotesPage() {
   const [title, setTitle] = useState("");
   const [clientId, setClientId] = useState<string>("");
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [templates, setTemplates] = useState<{ id: string; name: string }[]>([]);
+  const [templateId, setTemplateId] = useState<string>("");
   const [lines, setLines] = useState<LineItem[]>([{ description: "", quantity: 1, unit_price: 0 }]);
 
   const eur = useMemo(
@@ -96,17 +100,20 @@ function QuotesPage() {
     if (!currentOrganizationId) {
       setQuotes([]);
       setClients([]);
+      setTemplates([]);
       setLoading(false);
       return;
     }
     setLoading(true);
-    const [{ data, error }, { data: cs }] = await Promise.all([
+    const [{ data, error }, { data: cs }, { data: tpls }] = await Promise.all([
       supabase.from("quotes").select("*").eq("organization_id", currentOrganizationId).order("created_at", { ascending: false }),
       supabase.from("clients").select("id,name").eq("organization_id", currentOrganizationId).order("name"),
+      supabase.from("quote_templates").select("id,name").eq("organization_id", currentOrganizationId).order("name"),
     ]);
     if (error) toast.error(error.message);
     setQuotes((data ?? []) as Quote[]);
     setClients((cs ?? []) as { id: string; name: string }[]);
+    setTemplates((tpls ?? []) as { id: string; name: string }[]);
     setLoading(false);
   }
 
@@ -120,6 +127,44 @@ function QuotesPage() {
     if (!title.trim()) return toast.error(t("quotes.title_required"));
     if (!currentOrganizationId) return toast.error(t("leads.no_organization"));
     setSaving(true);
+
+    // If a Studio template is selected → create a studio_quote and open editor
+    if (templateId) {
+      const { data: full } = await supabase
+        .from("quote_templates")
+        .select("sections,theme,cover_image_url,packages")
+        .eq("id", templateId)
+        .maybeSingle();
+      const sections = ((full?.sections as unknown as StudioSection[]) ?? buildDefaultSections());
+      const theme = ((full?.theme as unknown as StudioTheme) ?? DEFAULT_THEME);
+      const packages = ((full?.packages as unknown as StudioPackage[]) ?? []);
+      const cover = full?.cover_image_url ?? null;
+      const clientName = clientId ? clients.find((c) => c.id === clientId)?.name ?? null : null;
+      const { data: row, error: insErr } = await supabase
+        .from("studio_quotes")
+        .insert({
+          organization_id: currentOrganizationId,
+          template_id: templateId,
+          title: title.trim(),
+          client_name: clientName,
+          cover_image_url: cover,
+          theme: theme as never,
+          sections: sections as never,
+          packages: packages as never,
+          status: "draft",
+          created_by: user?.id ?? null,
+        } as never)
+        .select("id")
+        .single();
+      setSaving(false);
+      if (insErr || !row) return toast.error(insErr?.message ?? "Aanmaken mislukt");
+      toast.success("Studio-offerte aangemaakt");
+      setOpen(false);
+      setTitle(""); setClientId(""); setTemplateId("");
+      navigate({ to: "/offerte-studio/q/$id", params: { id: row.id } });
+      return;
+    }
+
     const { error } = await supabase.from("quotes").insert({
       organization_id: currentOrganizationId,
       title: title.trim(),
@@ -138,6 +183,8 @@ function QuotesPage() {
     setLines([{ description: "", quantity: 1, unit_price: 0 }]);
     load();
   }
+
+
 
   async function updateStatus(id: string, status: QuoteStatus) {
     const prev = quotes;
@@ -209,6 +256,28 @@ function QuotesPage() {
               </DialogHeader>
               <form onSubmit={createQuote} className="space-y-4">
                 <div className="space-y-1.5">
+                  <Label>Studio-template (optioneel)</Label>
+                  <Select value={templateId || "__none"} onValueChange={(v) => setTemplateId(v === "__none" ? "" : v)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={templates.length === 0 ? "Nog geen templates — maak er een in Offerte Studio" : "Eenvoudige offerte (regels)"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">Eenvoudige offerte (regels)</SelectItem>
+                      {templates.map((tpl) => (
+                        <SelectItem key={tpl.id} value={tpl.id}>
+                          <Wand2 className="inline mr-1 h-3.5 w-3.5" />{tpl.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {templateId && (
+                    <p className="text-xs text-muted-foreground">
+                      Opent direct in de Offerte Studio met alle pagina&apos;s, branding en pakketten van dit template.
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
                   <Label htmlFor="q-title">{t("quotes.field_title")}</Label>
                   <Input id="q-title" value={title} onChange={(e) => setTitle(e.target.value)} required />
                 </div>
@@ -226,6 +295,8 @@ function QuotesPage() {
                   </Select>
                 </div>
 
+
+                {!templateId && (
                 <div className="space-y-2">
                   <Label>{t("quotes.line_items")}</Label>
                   <div className="rounded-md border">
@@ -315,6 +386,9 @@ function QuotesPage() {
                     </div>
                   </div>
                 </div>
+                )}
+
+
 
                 <DialogFooter>
                   <Button type="submit" disabled={saving}>
