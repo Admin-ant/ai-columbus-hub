@@ -150,13 +150,13 @@ export const analyzeWinLoss = createServerFn({ method: "POST" })
 
     const prompt = `Offerte: ${q.title}\nKlant: ${q.client_name ?? "?"}\nViews: ${q.view_count}\nFollowups: ${q.followup_count}\nBrief: ${q.ai_brief ?? "geen"}\nPakketten: ${JSON.stringify(q.packages)}\nResultaat: ${data.outcome}\nReden: ${data.reason ?? "—"}`;
 
-    let analysis: unknown = {};
+    let analysis: Record<string, unknown> = {};
     try {
       const raw = await aiJson(
         "Je bent een sales-coach. Analyseer waarom deze offerte is gewonnen of verloren. Antwoord in JSON: {summary, strengths:[], weaknesses:[], lessons:[], next_actions:[]}.",
         prompt,
       );
-      analysis = JSON.parse(raw);
+      analysis = JSON.parse(raw) as Record<string, unknown>;
     } catch (e) {
       analysis = { error: String(e) };
     }
