@@ -134,12 +134,11 @@ function PublicQuote() {
   const sections: StudioSection[] = Array.isArray(data.quote.sections)
     ? (data.quote.sections as unknown as StudioSection[])
     : [];
-  const packages: StudioPackage[] = Array.isArray(
-    (data.quote as { packages?: unknown }).packages,
-  )
-    ? ((data.quote as { packages: StudioPackage[] }).packages)
+  const rawPackages = (data.quote as unknown as { packages?: unknown }).packages;
+  const packages: StudioPackage[] = Array.isArray(rawPackages)
+    ? (rawPackages as unknown as StudioPackage[])
     : [];
-  const videoUrl = (data.quote as { intro_video_url?: string | null }).intro_video_url;
+  const videoUrl = (data.quote as unknown as { intro_video_url?: string | null }).intro_video_url;
   const embed = toEmbedUrl(videoUrl);
   const cover = data.quote.cover_image_url;
   const accepted = !!data.quote.accepted_at;
