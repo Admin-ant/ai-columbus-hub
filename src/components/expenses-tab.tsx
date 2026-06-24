@@ -767,21 +767,67 @@ function AttachmentsDialog({
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [progress, setProgress] = useState<Array<{ name: string; pct: number; status: "uploading" | "done" | "error"; message?: string }>>([]);
+  const [audit, setAudit] = useState<Array<{
+    id: string; action: string; file_name: string | null; previous_file_name: string | null;
+    actor_id: string | null; actor_name: string; created_at: string;
+  }>>([]);
+  const [showAudit, setShowAudit] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!expenseId) return;
     setLoading(true);
-    const { data, error } = await supabase
-      .from("expense_attachments")
-      .select("id,storage_path,file_name,mime_type,size_bytes,created_at,uploaded_by")
-      .eq("expense_id", expenseId)
-      .order("created_at", { ascending: false });
-    if (error) toast.error(error.message);
-    setItems((data ?? []) as AttachmentRow[]);
+    const [att, aud] = await Promise.all([
+      supabase
+        .from("expense_attachments")
+        .select("id,storage_path,file_name,mime_type,size_bytes,created_at,uploaded_by")
+        .eq("expense_id", expenseId)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("expense_attachment_audit")
+        .select("id,action,file_name,previous_file_name,actor_id,created_at")
+        .eq("expense_id", expenseId)
+        .order("created_at", { ascending: false })
+        .limit(50),
+    ]);
+    if (att.error) toast.error(att.error.message);
+    setItems((att.data ?? []) as AttachmentRow[]);
+
+    const rows = (aud.data ?? []) as Array<{ id: string; action: string; file_name: string | null; previous_file_name: string | null; actor_id: string | null; created_at: string }>;
+    const ids = Array.from(new Set(rows.map(r => r.actor_id).filter(Boolean) as string[]));
+    let names = new Map<string, string>();
+    if (ids.length > 0) {
+      const { data: profs } = await supabase.from("profiles").select("id,display_name,email").in("id", ids);
+      names = new Map((profs ?? []).map(p => [p.id, p.display_name ?? p.email ?? "Onbekend"]));
+    }
+    setAudit(rows.map(r => ({ ...r, actor_name: r.actor_id ? (names.get(r.actor_id) ?? "Onbekend") : "Systeem" })));
     setLoading(false);
   }, [expenseId]);
 
-  useEffect(() => { if (expenseId) void refresh(); else { setItems([]); setProgress([]); } }, [expenseId, refresh]);
+  useEffect(() => {
+    if (expenseId) void refresh();
+    else { setItems([]); setProgress([]); setAudit([]); setShowAudit(false); }
+  }, [expenseId, refresh]);
+
+  async function logAudit(action: "uploaded" | "replaced" | "deleted", patch: {
+    attachment_id?: string | null;
+    file_name?: string | null;
+    storage_path?: string | null;
+    previous_file_name?: string | null;
+    previous_storage_path?: string | null;
+  }) {
+    if (!expenseId || !userId) return;
+    await supabase.from("expense_attachment_audit").insert({
+      organization_id: orgId,
+      expense_id: expenseId,
+      action,
+      actor_id: userId,
+      attachment_id: patch.attachment_id ?? null,
+      file_name: patch.file_name ?? null,
+      storage_path: patch.storage_path ?? null,
+      previous_file_name: patch.previous_file_name ?? null,
+      previous_storage_path: patch.previous_storage_path ?? null,
+    });
+  }
 
   function uploadWithProgress(url: string, file: File, onProgress: (pct: number) => void): Promise<void> {
     return new Promise((resolve, reject) => {
