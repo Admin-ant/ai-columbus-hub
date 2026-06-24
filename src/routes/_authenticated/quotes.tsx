@@ -74,6 +74,8 @@ function QuotesPage() {
   const [saving, setSaving] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [title, setTitle] = useState("");
+  const [clientId, setClientId] = useState<string>("");
+  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
   const [lines, setLines] = useState<LineItem[]>([{ description: "", quantity: 1, unit_price: 0 }]);
 
   const eur = useMemo(
