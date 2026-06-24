@@ -383,6 +383,7 @@ function OutreachDashboard() {
                     onToggle={() => toggleCampaign(c)}
                     onDelete={() => deleteCampaign(c.id)}
                     onGenerateSequence={() => generateSequence(c)}
+                    onGenerateVariants={() => runVariants(c)}
                   />
                 ))}
               </div>
