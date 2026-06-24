@@ -1692,15 +1692,27 @@ export type Database = {
           accepted_at: string | null
           accepted_by_name: string | null
           accepted_ip: string | null
+          client_email: string | null
           client_id: string | null
           content_json: Json
           created_at: string
           created_by: string | null
+          followup_after_days: number
+          followup_count: number
+          followup_enabled: boolean
           id: string
+          intro_message: string | null
+          intro_video_url: string | null
+          last_followup_at: string | null
+          last_viewed_at: string | null
           lead_id: string | null
           mollie_payment_id: string | null
+          notify_email: string | null
           organization_id: string
           public_token: string
+          revoked_at: string | null
+          revoked_by: string | null
+          sent_at: string | null
           signature_svg: string | null
           signed_at: string | null
           status: Database["public"]["Enums"]["quote_status"]
@@ -1708,20 +1720,33 @@ export type Database = {
           title: string
           total_amount: number
           updated_at: string
+          view_count: number
         }
         Insert: {
           accepted_at?: string | null
           accepted_by_name?: string | null
           accepted_ip?: string | null
+          client_email?: string | null
           client_id?: string | null
           content_json?: Json
           created_at?: string
           created_by?: string | null
+          followup_after_days?: number
+          followup_count?: number
+          followup_enabled?: boolean
           id?: string
+          intro_message?: string | null
+          intro_video_url?: string | null
+          last_followup_at?: string | null
+          last_viewed_at?: string | null
           lead_id?: string | null
           mollie_payment_id?: string | null
+          notify_email?: string | null
           organization_id: string
           public_token?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          sent_at?: string | null
           signature_svg?: string | null
           signed_at?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
@@ -1729,20 +1754,33 @@ export type Database = {
           title: string
           total_amount?: number
           updated_at?: string
+          view_count?: number
         }
         Update: {
           accepted_at?: string | null
           accepted_by_name?: string | null
           accepted_ip?: string | null
+          client_email?: string | null
           client_id?: string | null
           content_json?: Json
           created_at?: string
           created_by?: string | null
+          followup_after_days?: number
+          followup_count?: number
+          followup_enabled?: boolean
           id?: string
+          intro_message?: string | null
+          intro_video_url?: string | null
+          last_followup_at?: string | null
+          last_viewed_at?: string | null
           lead_id?: string | null
           mollie_payment_id?: string | null
+          notify_email?: string | null
           organization_id?: string
           public_token?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          sent_at?: string | null
           signature_svg?: string | null
           signed_at?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
@@ -1750,6 +1788,7 @@ export type Database = {
           title?: string
           total_amount?: number
           updated_at?: string
+          view_count?: number
         }
         Relationships: [
           {
@@ -1988,6 +2027,7 @@ export type Database = {
         Returns: string
       }
       seed_default_chart: { Args: { _org: string }; Returns: undefined }
+      track_quote_view: { Args: { _token: string }; Returns: undefined }
     }
     Enums: {
       account_type:

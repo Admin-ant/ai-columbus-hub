@@ -29,6 +29,7 @@ import { Route as AuthenticatedOfferteStudioIndexRouteImport } from './routes/_a
 import { Route as AuthenticatedNetqloudIndexRouteImport } from './routes/_authenticated/netqloud.index'
 import { Route as AuthenticatedAnalyticsIndexRouteImport } from './routes/_authenticated/analytics.index'
 import { Route as AuthenticatedAiColumbusIndexRouteImport } from './routes/_authenticated/ai-columbus.index'
+import { Route as QuoteTokenPdfRouteImport } from './routes/quote.$token.pdf'
 import { Route as AcceptQuoteTokenRouteImport } from './routes/accept.quote.$token'
 import { Route as AuthenticatedNetqloudServersRouteImport } from './routes/_authenticated/netqloud.servers'
 import { Route as AuthenticatedNetqloudKlantenRouteImport } from './routes/_authenticated/netqloud.klanten'
@@ -41,6 +42,7 @@ import { Route as AuthenticatedAiColumbusLeadsRouteImport } from './routes/_auth
 import { Route as AuthenticatedAiColumbusKlantenRouteImport } from './routes/_authenticated/ai-columbus.klanten'
 import { Route as AuthenticatedAiColumbusInstellingenRouteImport } from './routes/_authenticated/ai-columbus.instellingen'
 import { Route as ApiPublicHooksStudioFollowupsRouteImport } from './routes/api/public/hooks/studio-followups'
+import { Route as ApiPublicHooksQuoteFollowupsRouteImport } from './routes/api/public/hooks/quote-followups'
 import { Route as ApiPublicHooksOutreachSequenceRouteImport } from './routes/api/public/hooks/outreach-sequence'
 import { Route as ApiPublicHooksOutreachReplyRouteImport } from './routes/api/public/hooks/outreach-reply'
 import { Route as AuthenticatedOfferteStudioTIdRouteImport } from './routes/_authenticated/offerte-studio.t.$id'
@@ -155,6 +157,11 @@ const AuthenticatedAiColumbusIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedAiColumbusRoute,
   } as any)
+const QuoteTokenPdfRoute = QuoteTokenPdfRouteImport.update({
+  id: '/quote/$token/pdf',
+  path: '/quote/$token/pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AcceptQuoteTokenRoute = AcceptQuoteTokenRouteImport.update({
   id: '/accept/quote/$token',
   path: '/accept/quote/$token',
@@ -226,6 +233,12 @@ const ApiPublicHooksStudioFollowupsRoute =
     path: '/api/public/hooks/studio-followups',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksQuoteFollowupsRoute =
+  ApiPublicHooksQuoteFollowupsRouteImport.update({
+    id: '/api/public/hooks/quote-followups',
+    path: '/api/public/hooks/quote-followups',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksOutreachSequenceRoute =
   ApiPublicHooksOutreachSequenceRouteImport.update({
     id: '/api/public/hooks/outreach-sequence',
@@ -295,6 +308,7 @@ export interface FileRoutesByFullPath {
   '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
+  '/quote/$token/pdf': typeof QuoteTokenPdfRoute
   '/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
   '/analytics/': typeof AuthenticatedAnalyticsIndexRoute
   '/netqloud/': typeof AuthenticatedNetqloudIndexRoute
@@ -307,6 +321,7 @@ export interface FileRoutesByFullPath {
   '/offerte-studio/t/$id': typeof AuthenticatedOfferteStudioTIdRoute
   '/api/public/hooks/outreach-reply': typeof ApiPublicHooksOutreachReplyRoute
   '/api/public/hooks/outreach-sequence': typeof ApiPublicHooksOutreachSequenceRoute
+  '/api/public/hooks/quote-followups': typeof ApiPublicHooksQuoteFollowupsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
 }
 export interface FileRoutesByTo {
@@ -333,6 +348,7 @@ export interface FileRoutesByTo {
   '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
+  '/quote/$token/pdf': typeof QuoteTokenPdfRoute
   '/ai-columbus': typeof AuthenticatedAiColumbusIndexRoute
   '/analytics': typeof AuthenticatedAnalyticsIndexRoute
   '/netqloud': typeof AuthenticatedNetqloudIndexRoute
@@ -345,6 +361,7 @@ export interface FileRoutesByTo {
   '/offerte-studio/t/$id': typeof AuthenticatedOfferteStudioTIdRoute
   '/api/public/hooks/outreach-reply': typeof ApiPublicHooksOutreachReplyRoute
   '/api/public/hooks/outreach-sequence': typeof ApiPublicHooksOutreachSequenceRoute
+  '/api/public/hooks/quote-followups': typeof ApiPublicHooksQuoteFollowupsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
 }
 export interface FileRoutesById {
@@ -375,6 +392,7 @@ export interface FileRoutesById {
   '/_authenticated/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/_authenticated/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
+  '/quote/$token/pdf': typeof QuoteTokenPdfRoute
   '/_authenticated/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
   '/_authenticated/analytics/': typeof AuthenticatedAnalyticsIndexRoute
   '/_authenticated/netqloud/': typeof AuthenticatedNetqloudIndexRoute
@@ -387,6 +405,7 @@ export interface FileRoutesById {
   '/_authenticated/offerte-studio/t/$id': typeof AuthenticatedOfferteStudioTIdRoute
   '/api/public/hooks/outreach-reply': typeof ApiPublicHooksOutreachReplyRoute
   '/api/public/hooks/outreach-sequence': typeof ApiPublicHooksOutreachSequenceRoute
+  '/api/public/hooks/quote-followups': typeof ApiPublicHooksQuoteFollowupsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
 }
 export interface FileRouteTypes {
@@ -417,6 +436,7 @@ export interface FileRouteTypes {
     | '/netqloud/klanten'
     | '/netqloud/servers'
     | '/accept/quote/$token'
+    | '/quote/$token/pdf'
     | '/ai-columbus/'
     | '/analytics/'
     | '/netqloud/'
@@ -429,6 +449,7 @@ export interface FileRouteTypes {
     | '/offerte-studio/t/$id'
     | '/api/public/hooks/outreach-reply'
     | '/api/public/hooks/outreach-sequence'
+    | '/api/public/hooks/quote-followups'
     | '/api/public/hooks/studio-followups'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -455,6 +476,7 @@ export interface FileRouteTypes {
     | '/netqloud/klanten'
     | '/netqloud/servers'
     | '/accept/quote/$token'
+    | '/quote/$token/pdf'
     | '/ai-columbus'
     | '/analytics'
     | '/netqloud'
@@ -467,6 +489,7 @@ export interface FileRouteTypes {
     | '/offerte-studio/t/$id'
     | '/api/public/hooks/outreach-reply'
     | '/api/public/hooks/outreach-sequence'
+    | '/api/public/hooks/quote-followups'
     | '/api/public/hooks/studio-followups'
   id:
     | '__root__'
@@ -496,6 +519,7 @@ export interface FileRouteTypes {
     | '/_authenticated/netqloud/klanten'
     | '/_authenticated/netqloud/servers'
     | '/accept/quote/$token'
+    | '/quote/$token/pdf'
     | '/_authenticated/ai-columbus/'
     | '/_authenticated/analytics/'
     | '/_authenticated/netqloud/'
@@ -508,6 +532,7 @@ export interface FileRouteTypes {
     | '/_authenticated/offerte-studio/t/$id'
     | '/api/public/hooks/outreach-reply'
     | '/api/public/hooks/outreach-sequence'
+    | '/api/public/hooks/quote-followups'
     | '/api/public/hooks/studio-followups'
   fileRoutesById: FileRoutesById
 }
@@ -517,8 +542,10 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   QTokenRoute: typeof QTokenRoute
   AcceptQuoteTokenRoute: typeof AcceptQuoteTokenRoute
+  QuoteTokenPdfRoute: typeof QuoteTokenPdfRoute
   ApiPublicHooksOutreachReplyRoute: typeof ApiPublicHooksOutreachReplyRoute
   ApiPublicHooksOutreachSequenceRoute: typeof ApiPublicHooksOutreachSequenceRoute
+  ApiPublicHooksQuoteFollowupsRoute: typeof ApiPublicHooksQuoteFollowupsRoute
   ApiPublicHooksStudioFollowupsRoute: typeof ApiPublicHooksStudioFollowupsRoute
 }
 
@@ -664,6 +691,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAiColumbusIndexRouteImport
       parentRoute: typeof AuthenticatedAiColumbusRoute
     }
+    '/quote/$token/pdf': {
+      id: '/quote/$token/pdf'
+      path: '/quote/$token/pdf'
+      fullPath: '/quote/$token/pdf'
+      preLoaderRoute: typeof QuoteTokenPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/accept/quote/$token': {
       id: '/accept/quote/$token'
       path: '/accept/quote/$token'
@@ -746,6 +780,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/studio-followups'
       fullPath: '/api/public/hooks/studio-followups'
       preLoaderRoute: typeof ApiPublicHooksStudioFollowupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/quote-followups': {
+      id: '/api/public/hooks/quote-followups'
+      path: '/api/public/hooks/quote-followups'
+      fullPath: '/api/public/hooks/quote-followups'
+      preLoaderRoute: typeof ApiPublicHooksQuoteFollowupsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/outreach-sequence': {
@@ -944,8 +985,10 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   QTokenRoute: QTokenRoute,
   AcceptQuoteTokenRoute: AcceptQuoteTokenRoute,
+  QuoteTokenPdfRoute: QuoteTokenPdfRoute,
   ApiPublicHooksOutreachReplyRoute: ApiPublicHooksOutreachReplyRoute,
   ApiPublicHooksOutreachSequenceRoute: ApiPublicHooksOutreachSequenceRoute,
+  ApiPublicHooksQuoteFollowupsRoute: ApiPublicHooksQuoteFollowupsRoute,
   ApiPublicHooksStudioFollowupsRoute: ApiPublicHooksStudioFollowupsRoute,
 }
 export const routeTree = rootRouteImport

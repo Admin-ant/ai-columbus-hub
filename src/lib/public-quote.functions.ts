@@ -8,6 +8,48 @@ async function loadAdmin() {
   return supabaseAdmin;
 }
 
+async function sendSignedNotification(opts: {
+  to: string;
+  orgName: string;
+  quoteTitle: string;
+  signerName: string;
+  signedAt: string;
+  publicUrl: string;
+}) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.OUTREACH_FROM_EMAIL;
+  if (!apiKey || !from || !opts.to) return;
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        from,
+        to: [opts.to],
+        subject: `Offerte ondertekend: ${opts.quoteTitle}`,
+        html: `<div style="font-family:Inter,Arial,sans-serif;max-width:560px">
+          <h2 style="margin:0 0 12px">Offerte ondertekend ✅</h2>
+          <p>Goed nieuws — <strong>${escapeHtml(opts.signerName)}</strong> heeft zojuist je offerte
+          <strong>${escapeHtml(opts.quoteTitle)}</strong> ondertekend.</p>
+          <p style="color:#555">Organisatie: ${escapeHtml(opts.orgName)}<br/>
+          Tijdstip: ${new Date(opts.signedAt).toLocaleString("nl-NL")}</p>
+          <p><a href="${opts.publicUrl}" style="background:#0f172a;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">Bekijk de getekende offerte</a></p>
+          <p style="color:#888;font-size:12px;margin-top:24px">Automatisch verstuurd vanuit het Offerte Studio platform.</p>
+        </div>`,
+      }),
+    });
+  } catch {
+    // notification is best-effort
+  }
+}
+
+function escapeHtml(s: string) {
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+}
+
 export const getPublicQuote = createServerFn({ method: "GET" })
   .inputValidator((d) => TokenSchema.parse(d))
   .handler(async ({ data }) => {
@@ -15,33 +57,37 @@ export const getPublicQuote = createServerFn({ method: "GET" })
     const { data: q, error } = await sb
       .from("quotes")
       .select(
-        "id, title, content_json, total_amount, status, signature_svg, signed_at, mollie_payment_id, public_token, organization_id, created_at",
+        "id, title, content_json, total_amount, status, signature_svg, signed_at, mollie_payment_id, public_token, organization_id, created_at, accepted_at, accepted_by_name, intro_video_url, intro_message, revoked_at, last_viewed_at, sent_at",
       )
       .eq("public_token", data.token)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!q) throw new Error("Offerte niet gevonden");
+
     const { data: org } = await sb
       .from("organizations")
       .select("name, logo_url, brand_color, invoice_prefix")
       .eq("id", q.organization_id)
       .maybeSingle();
 
-    // Log a "viewed" event at most once per hour to avoid noise.
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const { data: recentView } = await sb
-      .from("quote_status_events")
-      .select("id")
-      .eq("quote_id", q.id)
-      .eq("event_type", "viewed")
-      .gte("occurred_at", oneHourAgo)
-      .maybeSingle();
-    if (!recentView) {
-      await sb.from("quote_status_events").insert({
-        quote_id: q.id,
-        organization_id: q.organization_id,
-        event_type: "viewed",
-      });
+    // Track view (counter + status promotion sent->viewed); ignored if revoked/accepted
+    if (!q.revoked_at && !q.accepted_at) {
+      await sb.rpc("track_quote_view", { _token: data.token } as never);
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const { data: recentView } = await sb
+        .from("quote_status_events")
+        .select("id")
+        .eq("quote_id", q.id)
+        .eq("event_type", "viewed")
+        .gte("occurred_at", oneHourAgo)
+        .maybeSingle();
+      if (!recentView) {
+        await sb.from("quote_status_events").insert({
+          quote_id: q.id,
+          organization_id: q.organization_id,
+          event_type: "viewed",
+        });
+      }
     }
 
     const { data: events } = await sb
@@ -50,7 +96,6 @@ export const getPublicQuote = createServerFn({ method: "GET" })
       .eq("quote_id", q.id)
       .order("occurred_at", { ascending: false });
 
-    // Resolve linked journal entry (via the invoice spawned by this quote, if any).
     let journal_entry_id: string | null = null;
     const { data: inv } = await sb
       .from("invoices")
@@ -84,13 +129,13 @@ export const signPublicQuote = createServerFn({ method: "POST" })
     const sb = await loadAdmin();
     const { data: q, error: e1 } = await sb
       .from("quotes")
-      .select("id, organization_id, status")
+      .select("id, organization_id, status, revoked_at, notify_email, title, public_token")
       .eq("public_token", data.token)
       .maybeSingle();
     if (e1) throw new Error(e1.message);
     if (!q) throw new Error("Offerte niet gevonden");
-    if (q.status === "approved_paid")
-      throw new Error("Offerte is al betaald");
+    if (q.revoked_at) throw new Error("Deze offertelink is ingetrokken");
+    if (q.status === "approved_paid") throw new Error("Offerte is al betaald");
 
     const nowIso = new Date().toISOString();
     const { error } = await sb
@@ -112,6 +157,25 @@ export const signPublicQuote = createServerFn({ method: "POST" })
       event_type: "signed",
     });
 
+    // Best-effort notification e-mail
+    if (q.notify_email) {
+      const { data: org } = await sb
+        .from("organizations")
+        .select("name")
+        .eq("id", q.organization_id)
+        .maybeSingle();
+      const base = process.env.APP_URL || process.env.SITE_URL || "https://project--0addc860-2162-4de8-8a00-3906ef74a397.lovable.app";
+      const publicUrl = `${base.replace(/\/$/, "")}/accept/quote/${q.public_token}`;
+      await sendSignedNotification({
+        to: q.notify_email,
+        orgName: org?.name ?? "",
+        quoteTitle: q.title,
+        signerName: data.name,
+        signedAt: nowIso,
+        publicUrl,
+      });
+    }
+
     return { ok: true };
   });
 
@@ -121,19 +185,18 @@ export const payPublicQuote = createServerFn({ method: "POST" })
     const sb = await loadAdmin();
     const { data: q, error: e1 } = await sb
       .from("quotes")
-      .select("id, organization_id, title, total_amount, status, mollie_payment_id")
+      .select("id, organization_id, title, total_amount, status, mollie_payment_id, revoked_at")
       .eq("public_token", data.token)
       .maybeSingle();
     if (e1) throw new Error(e1.message);
     if (!q) throw new Error("Offerte niet gevonden");
+    if (q.revoked_at) throw new Error("Deze offertelink is ingetrokken");
     if (q.status === "approved_paid" && q.mollie_payment_id) {
       return { ok: true, mock: true, payment_id: q.mollie_payment_id, invoice_number: null };
     }
 
-    // Mock Mollie payment
     const payment_id = `tr_mock_${Math.random().toString(36).slice(2, 12)}`;
 
-    // next_invoice_number is missing from the generated rpc overload union; cast via unknown.
     type RpcFn = (
       name: "next_invoice_number",
       args: { _org_id: string },
@@ -171,7 +234,6 @@ export const payPublicQuote = createServerFn({ method: "POST" })
       .single();
     if (iErr) throw new Error(iErr.message);
 
-    // Post double-entry journal
     await sb.rpc("post_invoice_journal", { _invoice_id: inv.id } as never);
 
     const { error: uErr } = await sb

@@ -45,6 +45,25 @@ interface LineItem {
   unit_price: number;
 }
 
+function normalizeVideoUrl(raw: string): { type: "iframe" | "video"; url: string } | null {
+  const u = raw.trim();
+  if (!u) return null;
+  // YouTube
+  const yt = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{6,})/);
+  if (yt) return { type: "iframe", url: `https://www.youtube.com/embed/${yt[1]}` };
+  // Loom
+  const loom = u.match(/loom\.com\/(?:share|embed)\/([\w-]{6,})/);
+  if (loom) return { type: "iframe", url: `https://www.loom.com/embed/${loom[1]}` };
+  // Vimeo
+  const vim = u.match(/vimeo\.com\/(\d+)/);
+  if (vim) return { type: "iframe", url: `https://player.vimeo.com/video/${vim[1]}` };
+  // Direct video file
+  if (/\.(mp4|webm|ogg|mov)(\?|$)/i.test(u)) return { type: "video", url: u };
+  // Fallback assume iframe-able
+  return { type: "iframe", url: u };
+}
+
+
 function AcceptQuotePage() {
   const { token } = Route.useParams();
   const { t, i18n } = useTranslation();
@@ -130,9 +149,16 @@ function AcceptQuotePage() {
 
   const { quote, organization, events, journal_entry_id } = data;
   const lines = ((quote.content_json as { lines?: LineItem[] } | null)?.lines ?? []) as LineItem[];
+  const qExt = quote as typeof quote & {
+    revoked_at?: string | null;
+    intro_video_url?: string | null;
+    intro_message?: string | null;
+  };
+  const isRevoked = !!qExt.revoked_at;
   const isPaid = quote.status === "approved_paid";
   const isSigned = quote.status === "signed" || isPaid;
   const brand = organization?.brand_color ?? "#0f172a";
+  const videoEmbed = qExt.intro_video_url ? normalizeVideoUrl(qExt.intro_video_url) : null;
 
   const eventMeta: Record<string, { label: string; icon: typeof Eye; tone: string }> = {
     viewed: { label: t("accept.event.viewed") || "Bekeken", icon: Eye, tone: "text-muted-foreground" },
@@ -140,6 +166,21 @@ function AcceptQuotePage() {
     paid: { label: t("accept.event.paid") || "Betaald", icon: CheckCircle2, tone: "text-emerald-600" },
     invoice_created: { label: t("accept.event.invoice_created") || "Factuur aangemaakt", icon: Receipt, tone: "text-indigo-600" },
   };
+
+  if (isRevoked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <Card className="max-w-md border-red-300">
+          <CardHeader>
+            <CardTitle className="text-red-700">Deze offertelink is ingetrokken</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">
+            Neem contact op met {organization?.name ?? "de afzender"} voor een nieuwe link.
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
@@ -181,6 +222,32 @@ function AcceptQuotePage() {
             {t(`quotes.status.${quote.status}`)}
           </Badge>
         </div>
+
+        {(videoEmbed || qExt.intro_message) && (
+          <Card className="overflow-hidden border-2" style={{ borderColor: brand }}>
+            <CardContent className="space-y-3 p-4">
+              {qExt.intro_message && (
+                <p className="text-sm leading-relaxed">{qExt.intro_message}</p>
+              )}
+              {videoEmbed && (
+                videoEmbed.type === "iframe" ? (
+                  <div className="aspect-video w-full overflow-hidden rounded-md bg-black">
+                    <iframe
+                      src={videoEmbed.url}
+                      className="h-full w-full"
+                      allow="autoplay; fullscreen; encrypted-media"
+                      allowFullScreen
+                      title="Video introductie"
+                    />
+                  </div>
+                ) : (
+                  <video src={videoEmbed.url} controls className="w-full rounded-md" />
+                )
+              )}
+            </CardContent>
+          </Card>
+        )}
+
 
         <Card>
           <CardHeader>

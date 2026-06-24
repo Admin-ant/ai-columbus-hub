@@ -1,10 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Plus, Loader2, Trash2, FileText, Sparkles, Link2, Wand2, HelpCircle, AlertTriangle } from "lucide-react";
+import { Plus, Loader2, Trash2, FileText, Sparkles, Link2, Wand2, HelpCircle, AlertTriangle, MoreHorizontal, Download, RefreshCw, Ban, RotateCcw, Settings2, CheckCircle2, Send } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { buildDefaultSections, DEFAULT_THEME, type StudioSection, type StudioTheme, type StudioPackage } from "@/lib/offerte-studio";
+import { revokeQuoteLink, restoreQuoteLink, regenerateQuoteToken, updateQuoteSettings, markQuoteSent } from "@/lib/quote-admin.functions";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -91,6 +96,27 @@ function QuotesPage() {
   const [templates, setTemplates] = useState<TemplateRow[]>([]);
   const [templateId, setTemplateId] = useState<string>("");
   const [lines, setLines] = useState<LineItem[]>([{ description: "", quantity: 1, unit_price: 0 }]);
+  type QuoteExt = Quote & {
+    public_token: string;
+    accepted_at: string | null;
+    accepted_by_name: string | null;
+    signed_at: string | null;
+    revoked_at: string | null;
+    sent_at: string | null;
+    last_viewed_at: string | null;
+    intro_video_url: string | null;
+    intro_message: string | null;
+    notify_email: string | null;
+    client_email: string | null;
+    followup_enabled: boolean;
+    followup_after_days: number;
+  };
+  const [settingsQuote, setSettingsQuote] = useState<QuoteExt | null>(null);
+  const revokeFn = useServerFn(revokeQuoteLink);
+  const restoreFn = useServerFn(restoreQuoteLink);
+  const regenFn = useServerFn(regenerateQuoteToken);
+  const updateSettingsFn = useServerFn(updateQuoteSettings);
+  const markSentFn = useServerFn(markQuoteSent);
 
   const eur = useMemo(
     () =>
@@ -557,53 +583,134 @@ function QuotesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {quotes.map((q) => (
-                <TableRow key={q.id}>
-                  <TableCell className="font-medium">{q.title}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {new Date(q.created_at).toLocaleDateString(i18n.resolvedLanguage ?? "nl")}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">{eur.format(Number(q.total_amount))}</TableCell>
-                  <TableCell>
-                    <Select value={q.status} onValueChange={(v) => updateStatus(q.id, v as QuoteStatus)}>
-                      <SelectTrigger className="h-7 w-[170px]">
-                        <Badge variant="outline" className={STATUS_COLOR[q.status]}>
-                          {t(`quotes.status.${q.status}`)}
-                        </Badge>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {STATUS.map((s) => (
-                          <SelectItem key={s} value={s}>
-                            {t(`quotes.status.${s}`)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          const url = `${window.location.origin}/accept/quote/${q.public_token}`;
-                          navigator.clipboard.writeText(url).then(
-                            () => toast.success(t("accept.link_copied")),
-                            () => toast.error("Clipboard error"),
-                          );
-                        }}
-                      >
-                        <Link2 className="mr-1 h-3.5 w-3.5" />
-                        {t("accept.copy_link")}
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => convertToInvoice(q)}>
-                        <FileText className="mr-1 h-3.5 w-3.5" />
-                        {t("quotes.to_invoice")}
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {quotes.map((qBase) => {
+                const q = qBase as QuoteExt;
+                const isRevoked = !!q.revoked_at;
+                const isSigned = !!q.accepted_at;
+                const publicUrl = typeof window !== "undefined" ? `${window.location.origin}/accept/quote/${q.public_token}` : "";
+                const pdfUrl = typeof window !== "undefined" ? `${window.location.origin}/quote/${q.public_token}/pdf` : "";
+                return (
+                  <TableRow key={q.id} className={isRevoked ? "opacity-60" : ""}>
+                    <TableCell className="font-medium">
+                      <div>{q.title}</div>
+                      {isSigned && (
+                        <div className="mt-0.5 text-xs text-emerald-700 dark:text-emerald-400">
+                          <CheckCircle2 className="mr-1 inline h-3 w-3" />
+                          Ondertekend door {q.accepted_by_name ?? "klant"}
+                        </div>
+                      )}
+                      {isRevoked && (
+                        <div className="mt-0.5 text-xs text-red-600">
+                          <Ban className="mr-1 inline h-3 w-3" />Link ingetrokken
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {new Date(q.created_at).toLocaleDateString(i18n.resolvedLanguage ?? "nl")}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">{eur.format(Number(q.total_amount))}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <Select value={q.status} onValueChange={(v) => updateStatus(q.id, v as QuoteStatus)}>
+                          <SelectTrigger className="h-7 w-[170px]">
+                            <Badge variant="outline" className={STATUS_COLOR[q.status]}>
+                              {t(`quotes.status.${q.status}`)}
+                            </Badge>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {STATUS.map((s) => (
+                              <SelectItem key={s} value={s}>
+                                {t(`quotes.status.${s}`)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <div className="text-xs text-muted-foreground">
+                          {q.signed_at ? (
+                            <>Ondertekend: {new Date(q.signed_at).toLocaleString(i18n.resolvedLanguage ?? "nl")}</>
+                          ) : q.last_viewed_at ? (
+                            <>Bekeken: {new Date(q.last_viewed_at).toLocaleString(i18n.resolvedLanguage ?? "nl")}</>
+                          ) : q.sent_at ? (
+                            <>Verzonden: {new Date(q.sent_at).toLocaleString(i18n.resolvedLanguage ?? "nl")}</>
+                          ) : (
+                            <>Concept</>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button size="sm" variant="outline" onClick={() => convertToInvoice(q)}>
+                          <FileText className="mr-1 h-3.5 w-3.5" />
+                          {t("quotes.to_invoice")}
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="sm" variant="ghost"><MoreHorizontal className="h-4 w-4" /></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuItem onClick={() => {
+                              navigator.clipboard.writeText(publicUrl).then(
+                                () => toast.success(t("accept.link_copied")),
+                                () => toast.error("Clipboard error"),
+                              );
+                            }}>
+                              <Link2 className="mr-2 h-4 w-4" /> Ondertekenlink kopiëren
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => window.open(pdfUrl, "_blank")} disabled={!isSigned}>
+                              <Download className="mr-2 h-4 w-4" /> PDF downloaden
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={async () => {
+                              try {
+                                await markSentFn({ data: { id: q.id } });
+                                toast.success("Gemarkeerd als verzonden");
+                                load();
+                              } catch (e) { toast.error((e as Error).message); }
+                            }}>
+                              <Send className="mr-2 h-4 w-4" /> Markeer als verzonden
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setSettingsQuote(q)}>
+                              <Settings2 className="mr-2 h-4 w-4" /> Instellingen & follow-up
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={async () => {
+                              try {
+                                await regenFn({ data: { id: q.id } });
+                                toast.success("Nieuwe link gegenereerd");
+                                load();
+                              } catch (e) { toast.error((e as Error).message); }
+                            }}>
+                              <RefreshCw className="mr-2 h-4 w-4" /> Link vernieuwen
+                            </DropdownMenuItem>
+                            {isRevoked ? (
+                              <DropdownMenuItem onClick={async () => {
+                                try {
+                                  await restoreFn({ data: { id: q.id } });
+                                  toast.success("Link hersteld");
+                                  load();
+                                } catch (e) { toast.error((e as Error).message); }
+                              }}>
+                                <RotateCcw className="mr-2 h-4 w-4" /> Link herstellen
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem className="text-red-600" onClick={async () => {
+                                if (!confirm("Weet je zeker dat je de link wil intrekken? De klant kan dan niet meer ondertekenen.")) return;
+                                try {
+                                  await revokeFn({ data: { id: q.id } });
+                                  toast.success("Link ingetrokken");
+                                  load();
+                                } catch (e) { toast.error((e as Error).message); }
+                              }}>
+                                <Ban className="mr-2 h-4 w-4" /> Link intrekken
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
@@ -644,6 +751,83 @@ function QuotesPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!settingsQuote} onOpenChange={(o) => !o && setSettingsQuote(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Instellingen — {settingsQuote?.title}</DialogTitle>
+            <DialogDescription>Personaliseer de publieke offerte en automatische follow-ups.</DialogDescription>
+          </DialogHeader>
+          {settingsQuote && (
+            <SettingsForm
+              q={settingsQuote}
+              onSave={async (patch) => {
+                try {
+                  await updateSettingsFn({ data: { id: settingsQuote.id, ...patch } });
+                  toast.success("Opgeslagen");
+                  setSettingsQuote(null);
+                  load();
+                } catch (e) { toast.error((e as Error).message); }
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+    </div>
+  );
+}
+
+function SettingsForm({ q, onSave }: {
+  q: { intro_video_url: string | null; intro_message: string | null; notify_email: string | null; client_email: string | null; followup_enabled: boolean; followup_after_days: number };
+  onSave: (patch: { intro_video_url?: string | null; intro_message?: string | null; notify_email?: string | null; client_email?: string | null; followup_enabled?: boolean; followup_after_days?: number }) => void;
+}) {
+  const [video, setVideo] = useState(q.intro_video_url ?? "");
+  const [msg, setMsg] = useState(q.intro_message ?? "");
+  const [notify, setNotify] = useState(q.notify_email ?? "");
+  const [clientEmail, setClientEmail] = useState(q.client_email ?? "");
+  const [enabled, setEnabled] = useState(q.followup_enabled ?? true);
+  const [days, setDays] = useState(q.followup_after_days ?? 3);
+  return (
+    <div className="space-y-4">
+      <div>
+        <Label>Persoonlijke video-intro (Loom/YouTube/Vimeo embed of MP4-URL)</Label>
+        <Input value={video} onChange={(e) => setVideo(e.target.value)} placeholder="https://www.loom.com/embed/..." />
+      </div>
+      <div>
+        <Label>Persoonlijke boodschap</Label>
+        <Textarea value={msg} onChange={(e) => setMsg(e.target.value)} rows={3} placeholder="Hi, hierbij onze offerte..." />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label>E-mail klant (follow-ups)</Label>
+          <Input value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} placeholder="klant@bedrijf.nl" type="email" />
+        </div>
+        <div>
+          <Label>Notificatie naar (jij)</Label>
+          <Input value={notify} onChange={(e) => setNotify(e.target.value)} placeholder="jij@bedrijf.nl" type="email" />
+        </div>
+      </div>
+      <div className="flex items-center justify-between rounded-md border p-3">
+        <div>
+          <div className="text-sm font-medium">Automatische follow-up e-mails</div>
+          <div className="text-xs text-muted-foreground">Stuur herinneringen als de klant niet bekijkt of ondertekent.</div>
+        </div>
+        <Switch checked={enabled} onCheckedChange={setEnabled} />
+      </div>
+      <div>
+        <Label>Eerste follow-up na (dagen)</Label>
+        <Input type="number" min={1} max={60} value={days} onChange={(e) => setDays(parseInt(e.target.value || "3", 10))} />
+      </div>
+      <DialogFooter>
+        <Button onClick={() => onSave({
+          intro_video_url: video.trim() || null,
+          intro_message: msg.trim() || null,
+          notify_email: notify.trim() || null,
+          client_email: clientEmail.trim() || null,
+          followup_enabled: enabled,
+          followup_after_days: days,
+        })}>Opslaan</Button>
+      </DialogFooter>
     </div>
   );
 }
