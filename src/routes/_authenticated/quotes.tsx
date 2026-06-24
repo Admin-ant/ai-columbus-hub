@@ -778,6 +778,14 @@ function QuotesPage() {
         </DialogContent>
       </Dialog>
 
+      <QuoteCommentsDialog
+        open={!!commentsQuote}
+        onOpenChange={(o) => !o && setCommentsQuote(null)}
+        quoteId={commentsQuote?.id ?? null}
+        organizationId={currentOrganizationId ?? ""}
+        quoteTitle={commentsQuote?.title ?? undefined}
+      />
+
     </div>
   );
 }
