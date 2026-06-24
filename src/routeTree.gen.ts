@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as QTokenRouteImport } from './routes/q.$token'
+import { Route as OTokenRouteImport } from './routes/o.$token'
 import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated/teams'
 import { Route as AuthenticatedQuotesRouteImport } from './routes/_authenticated/quotes'
 import { Route as AuthenticatedProductenRouteImport } from './routes/_authenticated/producten'
@@ -71,6 +72,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
 const QTokenRoute = QTokenRouteImport.update({
   id: '/q/$token',
   path: '/q/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OTokenRoute = OTokenRouteImport.update({
+  id: '/o/$token',
+  path: '/o/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedTeamsRoute = AuthenticatedTeamsRouteImport.update({
@@ -283,6 +289,7 @@ export interface FileRoutesByFullPath {
   '/producten': typeof AuthenticatedProductenRoute
   '/quotes': typeof AuthenticatedQuotesRoute
   '/teams': typeof AuthenticatedTeamsRoute
+  '/o/$token': typeof OTokenRoute
   '/q/$token': typeof QTokenRoute
   '/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
   '/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenRouteWithChildren
@@ -320,6 +327,7 @@ export interface FileRoutesByTo {
   '/producten': typeof AuthenticatedProductenRoute
   '/quotes': typeof AuthenticatedQuotesRoute
   '/teams': typeof AuthenticatedTeamsRoute
+  '/o/$token': typeof OTokenRoute
   '/q/$token': typeof QTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
@@ -362,6 +370,7 @@ export interface FileRoutesById {
   '/_authenticated/producten': typeof AuthenticatedProductenRoute
   '/_authenticated/quotes': typeof AuthenticatedQuotesRoute
   '/_authenticated/teams': typeof AuthenticatedTeamsRoute
+  '/o/$token': typeof OTokenRoute
   '/q/$token': typeof QTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
@@ -405,6 +414,7 @@ export interface FileRouteTypes {
     | '/producten'
     | '/quotes'
     | '/teams'
+    | '/o/$token'
     | '/q/$token'
     | '/ai-columbus/instellingen'
     | '/ai-columbus/klanten'
@@ -442,6 +452,7 @@ export interface FileRouteTypes {
     | '/producten'
     | '/quotes'
     | '/teams'
+    | '/o/$token'
     | '/q/$token'
     | '/'
     | '/ai-columbus/instellingen'
@@ -483,6 +494,7 @@ export interface FileRouteTypes {
     | '/_authenticated/producten'
     | '/_authenticated/quotes'
     | '/_authenticated/teams'
+    | '/o/$token'
     | '/q/$token'
     | '/_authenticated/'
     | '/_authenticated/ai-columbus/instellingen'
@@ -515,6 +527,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  OTokenRoute: typeof OTokenRoute
   QTokenRoute: typeof QTokenRoute
   AcceptQuoteTokenRoute: typeof AcceptQuoteTokenRoute
   ApiPublicHooksOutreachReplyRoute: typeof ApiPublicHooksOutreachReplyRoute
@@ -557,6 +570,13 @@ declare module '@tanstack/react-router' {
       path: '/q/$token'
       fullPath: '/q/$token'
       preLoaderRoute: typeof QTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/o/$token': {
+      id: '/o/$token'
+      path: '/o/$token'
+      fullPath: '/o/$token'
+      preLoaderRoute: typeof OTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/teams': {
@@ -942,6 +962,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  OTokenRoute: OTokenRoute,
   QTokenRoute: QTokenRoute,
   AcceptQuoteTokenRoute: AcceptQuoteTokenRoute,
   ApiPublicHooksOutreachReplyRoute: ApiPublicHooksOutreachReplyRoute,
