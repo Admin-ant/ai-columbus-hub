@@ -294,6 +294,11 @@ function BoekhoudingPage() {
             />
           </TabsContent>
 
+          <TabsContent value="expenses">
+            <ExpensesTab orgId={currentOrganizationId!} userId={user?.id ?? null} />
+          </TabsContent>
+
+
           <TabsContent value="ledger">
             <LedgerTab accounts={accounts} lang={lang} />
           </TabsContent>
