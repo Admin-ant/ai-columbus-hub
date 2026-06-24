@@ -17,6 +17,9 @@ import {
   PauseCircle,
   FileSignature,
   ListOrdered,
+  Search,
+  FlaskConical,
+  Copy,
 } from "lucide-react";
 import { buildDefaultSections, DEFAULT_THEME } from "@/lib/offerte-studio";
 
