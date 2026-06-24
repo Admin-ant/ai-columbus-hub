@@ -110,7 +110,43 @@ function OutreachDashboard() {
   const { user } = useAuth();
   const { currentOrganizationId, currentOrganization, loading: wsLoading } = useWorkspace();
   const ask = useServerFn(askAssistant);
+  const research = useServerFn(researchLead);
+  const genVariants = useServerFn(generatePitchVariants);
   const navigate = useNavigate();
+
+  async function runResearch(t: TargetRow) {
+    const website = prompt(
+      `Website van ${t.company}? (optioneel — laat leeg om alleen met bedrijfsnaam te werken)`,
+      "",
+    );
+    if (website === null) return;
+    const url = website.trim();
+    const safeUrl = url
+      ? url.startsWith("http")
+        ? url
+        : `https://${url}`
+      : undefined;
+    toast.loading("AI research…", { id: "rs" });
+    try {
+      await research({ data: { target_id: t.id, website: safeUrl } });
+      toast.success("Research klaar", { id: "rs" });
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Mislukt", { id: "rs" });
+    }
+  }
+
+  async function runVariants(c: Campaign) {
+    toast.loading("A/B varianten genereren…", { id: "ab" });
+    try {
+      await genVariants({ data: { campaign_id: c.id } });
+      toast.success("Varianten opgeslagen", { id: "ab" });
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Mislukt", { id: "ab" });
+    }
+  }
+
 
   async function createQuoteFromTarget(t: TargetRow) {
     if (!currentOrganizationId) return;
