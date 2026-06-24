@@ -16,6 +16,7 @@ import {
   FileSignature,
   Package,
   Wand2,
+  Megaphone,
 } from "lucide-react";
 
 import {
@@ -55,6 +56,7 @@ type NavSection = {
 const topItems: NavItem[] = [
   { title: "Overzicht", url: "/", icon: LayoutDashboard },
   { title: "Offerte Studio", url: "/offerte-studio", icon: Wand2 },
+  { title: "Cold Outreach", url: "/outreach", icon: Megaphone },
   { title: "Boekhouding", url: "/boekhouding", icon: Receipt },
   { title: "Producten & Prijzen", url: "/producten", icon: Package },
   { title: "Teams", url: "/teams", icon: Users },

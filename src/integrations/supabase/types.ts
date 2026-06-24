@@ -950,6 +950,125 @@ export type Database = {
         }
         Relationships: []
       }
+      outreach_campaigns: {
+        Row: {
+          ai_pitch: string | null
+          channel: string
+          created_at: string
+          created_by: string | null
+          daily_limit: number
+          goal: string | null
+          id: string
+          name: string
+          notes: string | null
+          organization_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ai_pitch?: string | null
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          daily_limit?: number
+          goal?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          organization_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ai_pitch?: string | null
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          daily_limit?: number
+          goal?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outreach_campaigns_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      outreach_targets: {
+        Row: {
+          campaign_id: string | null
+          company: string
+          contact_name: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          last_contact_at: string | null
+          linkedin_url: string | null
+          notes: string | null
+          organization_id: string
+          phone: string | null
+          stage: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          company: string
+          contact_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          last_contact_at?: string | null
+          linkedin_url?: string | null
+          notes?: string | null
+          organization_id: string
+          phone?: string | null
+          stage?: string
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string | null
+          company?: string
+          contact_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          last_contact_at?: string | null
+          linkedin_url?: string | null
+          notes?: string | null
+          organization_id?: string
+          phone?: string | null
+          stage?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outreach_targets_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "outreach_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_targets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           active: boolean
