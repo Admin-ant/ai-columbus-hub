@@ -264,6 +264,9 @@ function BoekhoudingPage() {
             <TabsTrigger value="invoices" className="gap-1.5">
               <Receipt className="h-3.5 w-3.5" /> {t("acc.tabs.invoices")}
             </TabsTrigger>
+            <TabsTrigger value="expenses" className="gap-1.5">
+              <CreditCard className="h-3.5 w-3.5" /> Uitgaven
+            </TabsTrigger>
             <TabsTrigger value="ledger" className="gap-1.5">
               <BookOpen className="h-3.5 w-3.5" /> {t("acc.tabs.ledger")}
             </TabsTrigger>
@@ -273,6 +276,7 @@ function BoekhoudingPage() {
             <TabsTrigger value="sync" className="gap-1.5">
               <Activity className="h-3.5 w-3.5" /> {t("acc.tabs.sync")}
             </TabsTrigger>
+
           </TabsList>
 
           <TabsContent value="dashboard">
