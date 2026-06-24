@@ -379,15 +379,20 @@ function QuotesPage() {
                                     <HelpCircle className="h-3.5 w-3.5" />
                                   </button>
                                 </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
-                                  <p className="font-semibold mb-1">Waarom geen prijstabel?</p>
-                                  <p>
-                                    Een Studio-offerte toont prijzen via <strong>pakketten</strong> (bijv. Starter / Groeien / Schalen) met een prijs per pakket en kenmerken.
-                                    Dit template bevat nog geen pakketten, dus de pagina <em>Investering</em> wordt zonder prijstabel aangemaakt.
-                                  </p>
-                                  <p className="mt-1.5">
-                                    Open de offerte daarna in de Offerte Studio en voeg pakketten toe via <strong>Investering → Pakket toevoegen</strong>. De prijzen verschijnen dan automatisch.
-                                  </p>
+                                <TooltipContent side="top" className="max-w-sm text-xs leading-relaxed">
+                                  <p className="font-semibold mb-1.5">Waarom geen prijstabel?</p>
+                                  <ol className="list-decimal pl-4 space-y-1">
+                                    <li>De prijstabel wordt opgebouwd uit het veld <strong>Pakketten</strong> van het template.</li>
+                                    <li>Dit template heeft <strong>0 pakketten</strong>, dus de pagina <em>Investering</em> blijft leeg.</li>
+                                    <li>Per pakket heb je nodig: <strong>Naam</strong>, <strong>Prijs (€)</strong>, <strong>Facturatie</strong> (eenmalig / per maand / per jaar) en <strong>Kenmerken</strong>.</li>
+                                  </ol>
+                                  <p className="font-semibold mt-2 mb-1">Stappen om dit op te lossen:</p>
+                                  <ol className="list-decimal pl-4 space-y-1">
+                                    <li>Maak de offerte nu aan (gaat zonder prijstabel).</li>
+                                    <li>Open de Offerte Studio → tab <strong>Investering</strong>.</li>
+                                    <li>Klik <strong>Pakket toevoegen</strong> en vul <em>Naam</em> + <em>Prijs (€)</em> in (verplicht).</li>
+                                    <li>Optioneel: pas <em>Facturatie</em> en <em>Kenmerken</em> aan.</li>
+                                  </ol>
                                 </TooltipContent>
                               </Tooltip>
                             </div>
