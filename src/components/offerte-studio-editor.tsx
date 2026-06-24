@@ -21,7 +21,13 @@ import {
 
 
 import { useServerFn } from "@tanstack/react-start";
-import { createShareToken } from "@/lib/studio-public.functions";
+import {
+  createShareToken,
+  createTemplatePreviewToken,
+  revokeTemplatePreviewToken,
+  getTemplatePreviewInfo,
+} from "@/lib/studio-public.functions";
+
 import { AIQuoteGeneratorDialog } from "@/components/ai-quote-generator-dialog";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -91,8 +97,11 @@ export function OfferteStudioEditor({ kind, id }: Props) {
   const [aiOpen, setAiOpen] = useState(false);
   const [showPreview, setShowPreview] = useState(true);
   const createTok = useServerFn(createShareToken);
-
-
+  const createTplTok = useServerFn(createTemplatePreviewToken);
+  const revokeTplTok = useServerFn(revokeTemplatePreviewToken);
+  const getTplInfo = useServerFn(getTemplatePreviewInfo);
+  const [tplPreviewToken, setTplPreviewToken] = useState<string | null>(null);
+  const [tplPreviewExpires, setTplPreviewExpires] = useState<string | null>(null);
 
   const table = kind === "quote" ? "studio_quotes" : "quote_templates";
 
@@ -111,6 +120,47 @@ export function OfferteStudioEditor({ kind, id }: Props) {
       setSharing(false);
     }
   }
+
+  async function shareTemplatePreview() {
+    if (kind !== "template") return;
+    setSharing(true);
+    try {
+      let token = tplPreviewToken;
+      let expires = tplPreviewExpires;
+      if (!token) {
+        const res = await createTplTok({ data: { id, hours: 72 } });
+        token = res.token;
+        expires = res.expires_at;
+        setTplPreviewToken(token);
+        setTplPreviewExpires(expires);
+      }
+      const url = `${window.location.origin}/t/${token}`;
+      await navigator.clipboard.writeText(url).catch(() => undefined);
+      toast.success(
+        expires
+          ? `Preview-link gekopieerd. Verloopt ${new Date(expires).toLocaleString("nl-NL")}`
+          : "Preview-link gekopieerd",
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Mislukt");
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  async function revokeTemplatePreview() {
+    if (kind !== "template" || !tplPreviewToken) return;
+    if (!confirm("Preview-link intrekken? Bestaande link werkt daarna niet meer.")) return;
+    try {
+      await revokeTplTok({ data: { id } });
+      setTplPreviewToken(null);
+      setTplPreviewExpires(null);
+      toast.success("Preview-link ingetrokken");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Mislukt");
+    }
+  }
+
 
   useEffect(() => {
     let active = true;
@@ -155,7 +205,15 @@ export function OfferteStudioEditor({ kind, id }: Props) {
           Array.isArray(t.sections) && t.sections.length ? t.sections : buildDefaultSections(),
         );
         setPackages(Array.isArray(t.packages) ? (t.packages as StudioPackage[]) : []);
+        try {
+          const info = await getTplInfo({ data: { id } });
+          setTplPreviewToken(info.token);
+          setTplPreviewExpires(info.expires_at);
+        } catch {
+          /* ignore */
+        }
       }
+
       setLoading(false);
     }
     load();
@@ -369,6 +427,42 @@ export function OfferteStudioEditor({ kind, id }: Props) {
               {shareToken ? "Deel-link" : "Delen"}
             </Button>
           )}
+          {kind === "template" && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={shareTemplatePreview}
+                disabled={sharing}
+                className="hover:bg-white/10"
+                style={{ color: tplPreviewToken ? styles.accent : "rgba(255,255,255,0.8)" }}
+                title={
+                  tplPreviewToken
+                    ? `Preview-link kopiëren${tplPreviewExpires ? ` (verloopt ${new Date(tplPreviewExpires).toLocaleString("nl-NL")})` : ""}`
+                    : "Tijdelijke preview-link genereren (72u)"
+                }
+              >
+                {tplPreviewToken ? (
+                  <Copy className="mr-1 h-4 w-4" />
+                ) : (
+                  <Share2 className="mr-1 h-4 w-4" />
+                )}
+                {tplPreviewToken ? "Preview-link" : "Deel preview"}
+              </Button>
+              {tplPreviewToken && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={revokeTemplatePreview}
+                  className="text-white/60 hover:bg-white/10 hover:text-red-400"
+                  title="Preview-link intrekken"
+                >
+                  Intrekken
+                </Button>
+              )}
+            </>
+          )}
+
           <Button
             variant="ghost"
             size="sm"

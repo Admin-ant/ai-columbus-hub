@@ -175,3 +175,85 @@ export const createShareToken = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { token };
   });
+
+export const createTemplatePreviewToken = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        hours: z.number().int().min(1).max(24 * 30).default(72),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const sb = await loadAdmin();
+    const token = randToken();
+    const expiresAt = new Date(Date.now() + data.hours * 3600 * 1000).toISOString();
+    const { error } = await sb
+      .from("quote_templates")
+      .update({
+        preview_token: token,
+        preview_token_expires_at: expiresAt,
+      } as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { token, expires_at: expiresAt };
+  });
+
+export const revokeTemplatePreviewToken = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const sb = await loadAdmin();
+    const { error } = await sb
+      .from("quote_templates")
+      .update({
+        preview_token: null,
+        preview_token_expires_at: null,
+      } as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const getTemplatePreviewInfo = createServerFn({ method: "GET" })
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const sb = await loadAdmin();
+    const { data: row } = await sb
+      .from("quote_templates")
+      .select("preview_token, preview_token_expires_at")
+      .eq("id", data.id)
+      .maybeSingle();
+    const r = row as { preview_token?: string | null; preview_token_expires_at?: string | null } | null;
+    if (!r?.preview_token) return { token: null as string | null, expires_at: null as string | null };
+    if (r.preview_token_expires_at && new Date(r.preview_token_expires_at) < new Date()) {
+      return { token: null, expires_at: r.preview_token_expires_at };
+    }
+    return { token: r.preview_token, expires_at: r.preview_token_expires_at ?? null };
+  });
+
+export const getPublicTemplatePreview = createServerFn({ method: "GET" })
+  .inputValidator((d) => TokenSchema.parse(d))
+  .handler(async ({ data }) => {
+    const sb = await loadAdmin();
+    const { data: t, error } = await sb
+      .from("quote_templates")
+      .select(
+        "id, name, description, cover_image_url, theme, sections, packages, organization_id, preview_token_expires_at",
+      )
+      .eq("preview_token", data.token)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!t) throw new Error("Preview niet gevonden of ingetrokken");
+    const row = t as unknown as { preview_token_expires_at?: string | null; organization_id: string };
+    if (row.preview_token_expires_at && new Date(row.preview_token_expires_at) < new Date()) {
+      throw new Error("Deze preview-link is verlopen");
+    }
+    const { data: org } = await sb
+      .from("organizations")
+      .select("name, logo_url, brand_color")
+      .eq("id", row.organization_id)
+      .maybeSingle();
+    return { template: t, organization: org };
+  });
+

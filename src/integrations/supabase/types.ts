@@ -1645,6 +1645,8 @@ export type Database = {
           name: string
           organization_id: string
           packages: Json
+          preview_token: string | null
+          preview_token_expires_at: string | null
           sections: Json
           theme: Json
           updated_at: string
@@ -1659,6 +1661,8 @@ export type Database = {
           name: string
           organization_id: string
           packages?: Json
+          preview_token?: string | null
+          preview_token_expires_at?: string | null
           sections?: Json
           theme?: Json
           updated_at?: string
@@ -1673,6 +1677,8 @@ export type Database = {
           name?: string
           organization_id?: string
           packages?: Json
+          preview_token?: string | null
+          preview_token_expires_at?: string | null
           sections?: Json
           theme?: Json
           updated_at?: string
