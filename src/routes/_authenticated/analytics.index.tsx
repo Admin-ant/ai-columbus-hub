@@ -8,6 +8,8 @@ import {
   CheckCircle2,
   Sparkles,
   Loader2,
+  Flame,
+  Eye,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
