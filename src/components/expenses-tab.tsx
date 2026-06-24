@@ -863,6 +863,63 @@ function AttachmentsDialog({
     onChanged();
   }
 
+  async function replaceAttachment(a: AttachmentRow, file: File) {
+    if (!expenseId) return;
+    if (file.size > 25 * 1024 * 1024) { toast.error("Bestand groter dan 25 MB"); return; }
+    const safe = file.name.replace(/[^\w.\-]+/g, "_");
+    const path = `${orgId}/${expenseId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safe}`;
+    const tid = toast.loading(`Vervangen: ${a.file_name}…`);
+    try {
+      const signed = await supabase.storage.from("expense-attachments").createSignedUploadUrl(path);
+      if (signed.error || !signed.data?.signedUrl) throw new Error(signed.error?.message ?? "Geen upload-URL");
+      await uploadWithProgress(signed.data.signedUrl, file, () => {});
+      const upd = await supabase.from("expense_attachments").update({
+        storage_path: path,
+        file_name: file.name,
+        mime_type: file.type || null,
+        size_bytes: file.size,
+        uploaded_by: userId,
+      }).eq("id", a.id);
+      if (upd.error) {
+        await supabase.storage.from("expense-attachments").remove([path]);
+        throw new Error(upd.error.message);
+      }
+      await supabase.storage.from("expense-attachments").remove([a.storage_path]);
+      toast.success("Bijlage vervangen", { id: tid });
+      await refresh();
+      onChanged();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Vervangen mislukt", { id: tid });
+    }
+  }
+
+  async function downloadAll() {
+    if (items.length === 0) return;
+    const tid = toast.loading(`Bezig met downloaden van ${items.length} bijlage(n)…`);
+    let ok = 0;
+    for (const a of items) {
+      try {
+        const { data, error } = await supabase.storage
+          .from("expense-attachments")
+          .createSignedUrl(a.storage_path, 60 * 5, { download: a.file_name });
+        if (error || !data?.signedUrl) throw new Error(error?.message ?? "Geen URL");
+        const link = document.createElement("a");
+        link.href = data.signedUrl;
+        link.download = a.file_name;
+        link.rel = "noopener";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        ok++;
+        await new Promise((r) => setTimeout(r, 400));
+      } catch (e) {
+        toast.error(`${a.file_name}: ${e instanceof Error ? e.message : "Mislukt"}`);
+      }
+    }
+    toast.success(`${ok} van ${items.length} bijlage(n) gedownload`, { id: tid });
+  }
+
+
   return (
     <Dialog open={!!expenseId} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-xl">
