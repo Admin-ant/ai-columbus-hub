@@ -256,6 +256,28 @@ function QuotesPage() {
               </DialogHeader>
               <form onSubmit={createQuote} className="space-y-4">
                 <div className="space-y-1.5">
+                  <Label>Studio-template (optioneel)</Label>
+                  <Select value={templateId || "__none"} onValueChange={(v) => setTemplateId(v === "__none" ? "" : v)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={templates.length === 0 ? "Nog geen templates — maak er een in Offerte Studio" : "Eenvoudige offerte (regels)"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">Eenvoudige offerte (regels)</SelectItem>
+                      {templates.map((tpl) => (
+                        <SelectItem key={tpl.id} value={tpl.id}>
+                          <Wand2 className="inline mr-1 h-3.5 w-3.5" />{tpl.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {templateId && (
+                    <p className="text-xs text-muted-foreground">
+                      Opent direct in de Offerte Studio met alle pagina&apos;s, branding en pakketten van dit template.
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
                   <Label htmlFor="q-title">{t("quotes.field_title")}</Label>
                   <Input id="q-title" value={title} onChange={(e) => setTitle(e.target.value)} required />
                 </div>
@@ -272,6 +294,7 @@ function QuotesPage() {
                     </SelectContent>
                   </Select>
                 </div>
+
 
                 <div className="space-y-2">
                   <Label>{t("quotes.line_items")}</Label>
