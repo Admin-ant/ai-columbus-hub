@@ -75,6 +75,8 @@ export const signPublicQuote = createServerFn({ method: "POST" })
       .object({
         token: z.string().min(10).max(128),
         signature_svg: z.string().min(20).max(200_000),
+        name: z.string().trim().min(2).max(120),
+        terms_accepted: z.literal(true),
       })
       .parse(d),
   )
@@ -90,13 +92,17 @@ export const signPublicQuote = createServerFn({ method: "POST" })
     if (q.status === "approved_paid")
       throw new Error("Offerte is al betaald");
 
+    const nowIso = new Date().toISOString();
     const { error } = await sb
       .from("quotes")
       .update({
         signature_svg: data.signature_svg,
-        signed_at: new Date().toISOString(),
+        signed_at: nowIso,
+        accepted_at: nowIso,
+        accepted_by_name: data.name,
+        terms_accepted_at: nowIso,
         status: "signed",
-      })
+      } as never)
       .eq("id", q.id);
     if (error) throw new Error(error.message);
 
