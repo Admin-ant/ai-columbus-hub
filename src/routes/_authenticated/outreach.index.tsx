@@ -356,6 +356,7 @@ function OutreachDashboard() {
                               onMove={moveTarget}
                               onDelete={deleteTarget}
                               onCreateQuote={() => createQuoteFromTarget(t)}
+                              onResearch={() => runResearch(t)}
                             />
                           ))
                         )}
