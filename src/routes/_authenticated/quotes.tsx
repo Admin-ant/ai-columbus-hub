@@ -100,17 +100,20 @@ function QuotesPage() {
     if (!currentOrganizationId) {
       setQuotes([]);
       setClients([]);
+      setTemplates([]);
       setLoading(false);
       return;
     }
     setLoading(true);
-    const [{ data, error }, { data: cs }] = await Promise.all([
+    const [{ data, error }, { data: cs }, { data: tpls }] = await Promise.all([
       supabase.from("quotes").select("*").eq("organization_id", currentOrganizationId).order("created_at", { ascending: false }),
       supabase.from("clients").select("id,name").eq("organization_id", currentOrganizationId).order("name"),
+      supabase.from("quote_templates").select("id,name").eq("organization_id", currentOrganizationId).order("name"),
     ]);
     if (error) toast.error(error.message);
     setQuotes((data ?? []) as Quote[]);
     setClients((cs ?? []) as { id: string; name: string }[]);
+    setTemplates((tpls ?? []) as { id: string; name: string }[]);
     setLoading(false);
   }
 
@@ -124,6 +127,44 @@ function QuotesPage() {
     if (!title.trim()) return toast.error(t("quotes.title_required"));
     if (!currentOrganizationId) return toast.error(t("leads.no_organization"));
     setSaving(true);
+
+    // If a Studio template is selected → create a studio_quote and open editor
+    if (templateId) {
+      const { data: full } = await supabase
+        .from("quote_templates")
+        .select("sections,theme,cover_image_url,packages")
+        .eq("id", templateId)
+        .maybeSingle();
+      const sections = ((full?.sections as unknown as StudioSection[]) ?? buildDefaultSections());
+      const theme = ((full?.theme as unknown as StudioTheme) ?? DEFAULT_THEME);
+      const packages = ((full?.packages as unknown as StudioPackage[]) ?? []);
+      const cover = full?.cover_image_url ?? null;
+      const clientName = clientId ? clients.find((c) => c.id === clientId)?.name ?? null : null;
+      const { data: row, error: insErr } = await supabase
+        .from("studio_quotes")
+        .insert({
+          organization_id: currentOrganizationId,
+          template_id: templateId,
+          title: title.trim(),
+          client_name: clientName,
+          cover_image_url: cover,
+          theme: theme as never,
+          sections: sections as never,
+          packages: packages as never,
+          status: "draft",
+          created_by: user?.id ?? null,
+        } as never)
+        .select("id")
+        .single();
+      setSaving(false);
+      if (insErr || !row) return toast.error(insErr?.message ?? "Aanmaken mislukt");
+      toast.success("Studio-offerte aangemaakt");
+      setOpen(false);
+      setTitle(""); setClientId(""); setTemplateId("");
+      navigate({ to: "/offerte-studio/q/$id", params: { id: row.id } });
+      return;
+    }
+
     const { error } = await supabase.from("quotes").insert({
       organization_id: currentOrganizationId,
       title: title.trim(),
@@ -142,6 +183,8 @@ function QuotesPage() {
     setLines([{ description: "", quantity: 1, unit_price: 0 }]);
     load();
   }
+
+
 
   async function updateStatus(id: string, status: QuoteStatus) {
     const prev = quotes;
