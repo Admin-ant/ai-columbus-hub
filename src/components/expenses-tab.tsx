@@ -934,6 +934,13 @@ function AttachmentsDialog({
         throw new Error(upd.error.message);
       }
       await supabase.storage.from("expense-attachments").remove([a.storage_path]);
+      await logAudit("replaced", {
+        attachment_id: a.id,
+        file_name: file.name,
+        storage_path: path,
+        previous_file_name: a.file_name,
+        previous_storage_path: a.storage_path,
+      });
       toast.success("Bijlage vervangen", { id: tid });
       await refresh();
       onChanged();
