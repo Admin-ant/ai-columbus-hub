@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, FileText, Receipt, ScrollText, Download, Eye, EyeOff, History } from "lucide-react";
+import { ArrowLeft, Loader2, FileText, Receipt, ScrollText, Download, Eye, EyeOff, History, Paperclip } from "lucide-react";
 
 
 import { supabase } from "@/integrations/supabase/client";
