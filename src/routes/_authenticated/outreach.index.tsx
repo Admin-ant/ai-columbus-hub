@@ -496,8 +496,22 @@ function CampaignCard({
           <p className="line-clamp-4 text-[11px] text-white/80 whitespace-pre-wrap">{campaign.ai_pitch}</p>
         </div>
       )}
-      <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3">
-        <span className="text-[11px] text-white/40">Limiet: {campaign.daily_limit}/dag</span>
+      {Array.isArray(campaign.sequence_steps) && campaign.sequence_steps.length > 0 && (
+        <div className="mt-3 space-y-1.5">
+          <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-white/60">
+            <ListOrdered className="h-3 w-3" /> Sequentie ({campaign.sequence_steps.length} stappen)
+          </div>
+          {campaign.sequence_steps.map((s, i) => (
+            <div key={i} className="rounded border border-white/10 bg-black/40 p-2">
+              <div className="flex items-center justify-between text-[10px] text-white/50">
+                <span>Dag {s.day} · {s.channel}</span>
+                {s.subject && <span className="truncate font-medium text-white/70">{s.subject}</span>}
+              </div>
+              <p className="mt-1 line-clamp-2 text-[11px] text-white/75 whitespace-pre-wrap">{s.body}</p>
+            </div>
+          ))}
+        </div>
+      )}
         <div className="flex gap-1">
           <Button
             variant="ghost"
