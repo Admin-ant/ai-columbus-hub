@@ -117,12 +117,24 @@ function QuotesPage() {
     const [{ data, error }, { data: cs }, { data: tpls }] = await Promise.all([
       supabase.from("quotes").select("*").eq("organization_id", currentOrganizationId).order("created_at", { ascending: false }),
       supabase.from("clients").select("id,name").eq("organization_id", currentOrganizationId).order("name"),
-      supabase.from("quote_templates").select("id,name").eq("organization_id", currentOrganizationId).order("name"),
+      supabase.from("quote_templates").select("id,name,description,cover_image_url,theme,sections,packages").eq("organization_id", currentOrganizationId).order("name"),
     ]);
     if (error) toast.error(error.message);
     setQuotes((data ?? []) as Quote[]);
     setClients((cs ?? []) as { id: string; name: string }[]);
-    setTemplates((tpls ?? []) as { id: string; name: string }[]);
+    const rows: TemplateRow[] = (tpls ?? []).map((r) => {
+      const x = r as unknown as Record<string, unknown>;
+      return {
+        id: String(x.id),
+        name: String(x.name),
+        description: (x.description as string | null) ?? null,
+        cover_image_url: (x.cover_image_url as string | null) ?? null,
+        theme: (x.theme as StudioTheme) ?? DEFAULT_THEME,
+        sections: Array.isArray(x.sections) ? (x.sections as StudioSection[]) : [],
+        packages: Array.isArray(x.packages) ? (x.packages as StudioPackage[]) : [],
+      };
+    });
+    setTemplates(rows);
     setLoading(false);
   }
 
