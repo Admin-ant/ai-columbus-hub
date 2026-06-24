@@ -200,6 +200,53 @@ function AnalyticsDashboard() {
                 ]}
               />
             </Section>
+
+            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5">
+              <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-white/80">
+                <Flame className="h-4 w-4" style={{ color: ACCENT }} />
+                Heatmap — wat lezen klanten écht?
+              </div>
+              {heatmap.length === 0 ? (
+                <div className="rounded border border-dashed border-white/10 p-6 text-center text-xs text-white/40">
+                  Nog geen weergavedata. Deel een offerte-link om de heatmap op te bouwen.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {heatmap.map((h) => {
+                    const max = Math.max(1, ...heatmap.map((x) => x.total_ms));
+                    const pct = Math.round((h.total_ms / max) * 100);
+                    return (
+                      <div key={h.quote_id} className="rounded border border-white/5 bg-black/30 p-3">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="truncate font-semibold text-white">{h.title}</span>
+                          <span className="flex items-center gap-2 tabular-nums text-white/50">
+                            <Eye className="h-3 w-3" /> {h.views}
+                            <span className="text-white/30">·</span>
+                            <span>{Math.round(h.total_ms / 1000)}s</span>
+                          </span>
+                        </div>
+                        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/5">
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${pct}%`,
+                              background: `linear-gradient(90deg, ${ACCENT}, ${ACCENT}88)`,
+                              boxShadow: `0 0 12px ${ACCENT}66`,
+                            }}
+                          />
+                        </div>
+                        {h.top_section && (
+                          <div className="mt-1 text-[10px] text-white/40">
+                            Hotspot:{" "}
+                            <span className="text-white/70">{h.top_section}</span> ({Math.round(h.top_section_ms / 1000)}s)
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
