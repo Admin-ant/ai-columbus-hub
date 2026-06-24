@@ -312,6 +312,7 @@ function OutreachDashboard() {
                               campaign={campaigns.find((c) => c.id === t.campaign_id) ?? null}
                               onMove={moveTarget}
                               onDelete={deleteTarget}
+                              onCreateQuote={() => createQuoteFromTarget(t)}
                             />
                           ))
                         )}
