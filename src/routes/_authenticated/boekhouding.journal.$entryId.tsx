@@ -472,7 +472,42 @@ function JournalDetailPage() {
         </Table>
       </div>
 
-      <div className="rounded-lg border bg-card">
+      {entry.expense_id && (
+        <div className="rounded-lg border bg-card">
+          <div className="flex items-center justify-between border-b px-4 py-2.5 text-sm font-semibold">
+            <span className="flex items-center gap-2">
+              <Paperclip className="h-4 w-4 text-muted-foreground" /> Bijlagen
+            </span>
+            <span className="text-xs font-normal text-muted-foreground">
+              {attachments.length === 0 ? "Geen bijlagen" : `${attachments.length} bestand${attachments.length === 1 ? "" : "en"}`}
+            </span>
+          </div>
+          {attachments.length === 0 ? (
+            <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+              Geen factuur- of bonbijlagen gekoppeld. Voeg deze toe vanuit de Uitgaven-tab.
+            </div>
+          ) : (
+            <ul className="divide-y">
+              {attachments.map(a => (
+                <li key={a.id} className="flex items-center gap-3 px-4 py-2.5">
+                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <button
+                    onClick={() => void openAttachment(a)}
+                    className="flex-1 truncate text-left text-sm font-medium text-primary hover:underline"
+                    title={a.file_name}
+                  >
+                    {a.file_name}
+                  </button>
+                  <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                    {a.size_bytes ? `${(a.size_bytes / 1024).toFixed(0)} KB` : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
         <div className="flex items-center justify-between border-b px-4 py-2.5 text-sm font-semibold">
           <span className="flex items-center gap-2">
             <History className="h-4 w-4 text-muted-foreground" /> Exporthistorie
