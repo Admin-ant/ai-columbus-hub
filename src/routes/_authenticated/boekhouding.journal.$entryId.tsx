@@ -130,7 +130,7 @@ function JournalDetailPage() {
       const { data, error } = await supabase
         .from("journal_entries")
         .select(
-          `id, entry_date, description, source, organization_id, invoice_id, quote_id, created_at,
+          `id, entry_date, description, source, organization_id, invoice_id, quote_id, expense_id, created_at,
            invoices(id, invoice_number, client_name, status, subtotal_cents, vat_cents, total_cents, issue_date, due_date, quote_id),
            quotes(id, quote_number, client_name, status, total_cents),
            journal_lines(id, debit_cents, credit_cents, description,
@@ -140,13 +140,32 @@ function JournalDetailPage() {
         .maybeSingle();
       if (cancelled) return;
       if (error) toast.error(error.message);
-      setEntry((data as unknown as EntryDetail) ?? null);
+      const e = (data as unknown as EntryDetail) ?? null;
+      setEntry(e);
+      if (e?.expense_id) {
+        const { data: atts } = await supabase
+          .from("expense_attachments")
+          .select("id,storage_path,file_name,mime_type,size_bytes,created_at")
+          .eq("expense_id", e.expense_id)
+          .order("created_at", { ascending: false });
+        if (!cancelled) setAttachments((atts ?? []) as AttachmentRow[]);
+      } else {
+        setAttachments([]);
+      }
       setLoading(false);
     })();
     return () => {
       cancelled = true;
     };
   }, [entryId]);
+
+  async function openAttachment(a: AttachmentRow) {
+    const { data, error } = await supabase.storage
+      .from("expense-attachments")
+      .createSignedUrl(a.storage_path, 60 * 5);
+    if (error || !data?.signedUrl) { toast.error(error?.message ?? "Kan bestand niet openen"); return; }
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  }
 
   const pdfData: JournalPdfData | null = useMemo(() => {
     if (!entry) return null;
