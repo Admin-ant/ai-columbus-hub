@@ -106,6 +106,7 @@ function JournalDetailPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const lastUrlRef = useRef<string | null>(null);
   const [history, setHistory] = useState<ExportLogRow[]>([]);
+  const [attachments, setAttachments] = useState<AttachmentRow[]>([]);
 
   const loadHistory = useCallback(async () => {
     const { data, error } = await supabase
