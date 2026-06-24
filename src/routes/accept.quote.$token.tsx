@@ -76,9 +76,21 @@ function AcceptQuotePage() {
 
   const sign = useMutation({
     mutationFn: () =>
-      signFn({ data: { token, signature_svg: signature ?? "" } }),
+      signFn({
+        data: {
+          token,
+          signature_svg: signature ?? "",
+          name: signerName.trim(),
+          terms_accepted: true as const,
+        },
+      }),
     onSuccess: () => {
       toast.success(t("accept.signed_ok"));
+      setSignOpen(false);
+      setSignerName("");
+      setTyped("");
+      setSignature(null);
+      setTerms(false);
       qc.invalidateQueries({ queryKey: ["public-quote", token] });
     },
     onError: (e: Error) => toast.error(e.message),
