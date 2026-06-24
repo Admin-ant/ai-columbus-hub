@@ -15,7 +15,10 @@ import {
   Share2,
   Copy,
   Sparkles,
+  Eye,
+  EyeOff,
 } from "lucide-react";
+
 
 import { useServerFn } from "@tanstack/react-start";
 import { createShareToken } from "@/lib/studio-public.functions";
