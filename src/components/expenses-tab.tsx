@@ -872,11 +872,12 @@ function AttachmentsDialog({
           mime_type: file.type || null,
           size_bytes: file.size,
           uploaded_by: userId,
-        });
+        }).select("id").single();
         if (ins.error) {
           await supabase.storage.from("expense-attachments").remove([path]);
           throw new Error(ins.error.message);
         }
+        await logAudit("uploaded", { attachment_id: ins.data?.id ?? null, file_name: file.name, storage_path: path });
         update({ pct: 100, status: "done" });
       } catch (e) {
         update({ status: "error", message: e instanceof Error ? e.message : "Mislukt" });
