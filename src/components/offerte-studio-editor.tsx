@@ -508,5 +508,3 @@ function SectionStage({
   );
 }
 
-// Used externally by the route wrappers
-export const _imports = { Textarea, Link };
