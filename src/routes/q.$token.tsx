@@ -45,9 +45,9 @@ function PublicQuote() {
   const accept = useServerFn(acceptPublicStudioQuote);
   const [data, setData] = useState<Loaded | null>(null);
   const [loading, setLoading] = useState(true);
-  const [signing, setSigning] = useState(false);
   const [accepting, setAccepting] = useState(false);
   const [signerName, setSignerName] = useState("");
+  const [sig, setSig] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -83,12 +83,8 @@ function PublicQuote() {
   const accepted = !!data.quote.accepted_at;
 
   return (
-    <div
-      className="min-h-screen"
-      style={{ background: theme.bg, color: theme.fg }}
-    >
+    <div className="min-h-screen" style={{ background: theme.bg, color: theme.fg }}>
       <div className="mx-auto max-w-4xl px-4 py-10">
-        {/* Hero / Cover */}
         <div
           className="relative overflow-hidden rounded-2xl border shadow-2xl"
           style={{
@@ -119,12 +115,11 @@ function PublicQuote() {
           </div>
         </div>
 
-        {/* Sections */}
         <div className="mt-10 space-y-10">
           {SECTION_DEFS.map((def, idx) => {
+            if (def.key === "cover") return null;
             const sec = sections.find((s) => s.key === def.key);
             if (!sec) return null;
-            if (sec.key === "cover") return null;
             return (
               <section
                 key={def.key}
@@ -143,9 +138,7 @@ function PublicQuote() {
                   </span>
                   {sec.label}
                 </div>
-                <h2 className="mt-3 text-2xl font-bold md:text-3xl">
-                  {sec.heading}
-                </h2>
+                <h2 className="mt-3 text-2xl font-bold md:text-3xl">{sec.heading}</h2>
                 <div className="mt-4 whitespace-pre-wrap text-base leading-relaxed text-white/85">
                   {sec.body}
                 </div>
@@ -154,7 +147,6 @@ function PublicQuote() {
           })}
         </div>
 
-        {/* Accept */}
         <div
           className="mt-12 overflow-hidden rounded-2xl border"
           style={{
@@ -164,10 +156,7 @@ function PublicQuote() {
         >
           {accepted ? (
             <div className="p-8 text-center">
-              <CheckCircle2
-                className="mx-auto h-10 w-10"
-                style={{ color: theme.accent }}
-              />
+              <CheckCircle2 className="mx-auto h-10 w-10" style={{ color: theme.accent }} />
               <div className="mt-3 text-lg font-semibold">Offerte geaccepteerd</div>
               <div className="text-sm text-white/60">
                 Door {data.quote.accepted_by_name} op{" "}
@@ -176,7 +165,10 @@ function PublicQuote() {
             </div>
           ) : (
             <div className="p-8">
-              <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.25em]" style={{ color: theme.accent }}>
+              <div
+                className="flex items-center gap-2 text-[10px] uppercase tracking-[0.25em]"
+                style={{ color: theme.accent }}
+              >
                 <Sparkles className="h-3 w-3" /> Akkoord
               </div>
               <h3 className="mt-2 text-2xl font-bold">Akkoord op deze offerte</h3>
@@ -192,23 +184,14 @@ function PublicQuote() {
                   placeholder="Volledige naam"
                   className="border-white/10 bg-white/5 text-white placeholder:text-white/40"
                 />
-                <SignaturePad
-                  accent={theme.accent}
-                  onChange={(svg) => setSig(svg)}
-                  active={signing}
-                  onActive={setSigning}
-                />
+                <SignaturePad accent={theme.accent} onChange={setSig} />
                 <Button
                   disabled={accepting || !signerName.trim() || !sig}
                   onClick={async () => {
                     setAccepting(true);
                     try {
                       await accept({
-                        data: {
-                          token,
-                          name: signerName.trim(),
-                          signature_svg: sig!,
-                        },
+                        data: { token, name: signerName.trim(), signature_svg: sig! },
                       });
                       toast.success("Bedankt — offerte geaccepteerd");
                       await load();
@@ -243,59 +226,46 @@ function PublicQuote() {
       </div>
     </div>
   );
-
-  function setSig(svg: string | null) {
-    sigRef.current = svg;
-    // force rerender via state
-    setSignerName((n) => n);
-  }
 }
-
-const sigRef = { current: null as string | null };
-const sig = () => sigRef.current;
-
-// helper proxy used above
-Object.defineProperty(globalThis, "__sig", { get: sig });
 
 function SignaturePad({
   accent,
   onChange,
-  active,
-  onActive,
 }: {
   accent: string;
   onChange: (svg: string | null) => void;
-  active: boolean;
-  onActive: (a: boolean) => void;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
   const pts = useRef<Array<Array<[number, number]>>>([]);
   const cur = useRef<Array<[number, number]>>([]);
+  const [hasDrawn, setHasDrawn] = useState(false);
 
   function reset() {
     const c = ref.current;
     if (!c) return;
-    const ctx = c.getContext("2d");
-    ctx?.clearRect(0, 0, c.width, c.height);
+    c.getContext("2d")?.clearRect(0, 0, c.width, c.height);
     pts.current = [];
     cur.current = [];
+    setHasDrawn(false);
     onChange(null);
   }
 
   function pos(e: React.PointerEvent) {
     const c = ref.current!;
     const r = c.getBoundingClientRect();
-    return [e.clientX - r.left, e.clientY - r.top] as [number, number];
+    return [
+      ((e.clientX - r.left) * c.width) / r.width,
+      ((e.clientY - r.top) * c.height) / r.height,
+    ] as [number, number];
   }
 
   function start(e: React.PointerEvent) {
     drawing.current = true;
-    onActive(true);
     cur.current = [pos(e)];
     const ctx = ref.current!.getContext("2d")!;
     ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 2.2;
+    ctx.lineWidth = 2.4;
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
     ctx.beginPath();
@@ -313,9 +283,13 @@ function SignaturePad({
   function end() {
     if (!drawing.current) return;
     drawing.current = false;
-    pts.current.push(cur.current);
+    if (cur.current.length > 1) pts.current.push(cur.current);
     cur.current = [];
-    onChange(serialize());
+    const svg = serialize();
+    if (svg) {
+      setHasDrawn(true);
+      onChange(svg);
+    }
   }
   function serialize() {
     const c = ref.current!;
@@ -331,14 +305,14 @@ function SignaturePad({
       .filter(Boolean)
       .join(" ");
     if (!paths) return null;
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${c.width} ${c.height}"><path d="${paths}" stroke="white" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${c.width} ${c.height}"><path d="${paths}" stroke="white" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   }
 
   return (
     <div className="space-y-2">
       <div
         className="relative rounded-lg border bg-black/40"
-        style={{ borderColor: active ? accent : "rgba(255,255,255,0.1)" }}
+        style={{ borderColor: hasDrawn ? accent : "rgba(255,255,255,0.1)" }}
       >
         <canvas
           ref={ref}
@@ -350,7 +324,7 @@ function SignaturePad({
           onPointerUp={end}
           onPointerLeave={end}
         />
-        {!active && (
+        {!hasDrawn && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs text-white/30">
             Teken hier je handtekening
           </div>

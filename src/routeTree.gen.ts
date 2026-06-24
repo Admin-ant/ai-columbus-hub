@@ -13,6 +13,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as QTokenRouteImport } from './routes/q.$token'
 import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated/teams'
 import { Route as AuthenticatedQuotesRouteImport } from './routes/_authenticated/quotes'
 import { Route as AuthenticatedProductenRouteImport } from './routes/_authenticated/producten'
@@ -61,6 +62,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const QTokenRoute = QTokenRouteImport.update({
+  id: '/q/$token',
+  path: '/q/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedTeamsRoute = AuthenticatedTeamsRouteImport.update({
   id: '/teams',
@@ -242,6 +248,7 @@ export interface FileRoutesByFullPath {
   '/producten': typeof AuthenticatedProductenRoute
   '/quotes': typeof AuthenticatedQuotesRoute
   '/teams': typeof AuthenticatedTeamsRoute
+  '/q/$token': typeof QTokenRoute
   '/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
   '/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenRouteWithChildren
   '/ai-columbus/leads': typeof AuthenticatedAiColumbusLeadsRoute
@@ -273,6 +280,7 @@ export interface FileRoutesByTo {
   '/producten': typeof AuthenticatedProductenRoute
   '/quotes': typeof AuthenticatedQuotesRoute
   '/teams': typeof AuthenticatedTeamsRoute
+  '/q/$token': typeof QTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
   '/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenRouteWithChildren
@@ -309,6 +317,7 @@ export interface FileRoutesById {
   '/_authenticated/producten': typeof AuthenticatedProductenRoute
   '/_authenticated/quotes': typeof AuthenticatedQuotesRoute
   '/_authenticated/teams': typeof AuthenticatedTeamsRoute
+  '/q/$token': typeof QTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
   '/_authenticated/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenRouteWithChildren
@@ -346,6 +355,7 @@ export interface FileRouteTypes {
     | '/producten'
     | '/quotes'
     | '/teams'
+    | '/q/$token'
     | '/ai-columbus/instellingen'
     | '/ai-columbus/klanten'
     | '/ai-columbus/leads'
@@ -377,6 +387,7 @@ export interface FileRouteTypes {
     | '/producten'
     | '/quotes'
     | '/teams'
+    | '/q/$token'
     | '/'
     | '/ai-columbus/instellingen'
     | '/ai-columbus/klanten'
@@ -412,6 +423,7 @@ export interface FileRouteTypes {
     | '/_authenticated/producten'
     | '/_authenticated/quotes'
     | '/_authenticated/teams'
+    | '/q/$token'
     | '/_authenticated/'
     | '/_authenticated/ai-columbus/instellingen'
     | '/_authenticated/ai-columbus/klanten'
@@ -439,6 +451,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  QTokenRoute: typeof QTokenRoute
   AcceptQuoteTokenRoute: typeof AcceptQuoteTokenRoute
 }
 
@@ -471,6 +484,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/q/$token': {
+      id: '/q/$token'
+      path: '/q/$token'
+      fullPath: '/q/$token'
+      preLoaderRoute: typeof QTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/teams': {
       id: '/_authenticated/teams'
@@ -816,6 +836,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  QTokenRoute: QTokenRoute,
   AcceptQuoteTokenRoute: AcceptQuoteTokenRoute,
 }
 export const routeTree = rootRouteImport
