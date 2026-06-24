@@ -26,7 +26,7 @@ import {
   type StudioTheme,
 } from "@/lib/offerte-studio";
 
-export const Route = createFileRoute("/_authenticated/offerte-studio")({
+export const Route = createFileRoute("/_authenticated/offerte-studio/")({
   head: () => ({ meta: [{ title: "Offerte Studio" }] }),
   component: OfferteStudioIndex,
 });

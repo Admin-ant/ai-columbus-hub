@@ -22,6 +22,7 @@ import { Route as AuthenticatedGebruikersRouteImport } from './routes/_authentic
 import { Route as AuthenticatedBoekhoudingRouteImport } from './routes/_authenticated/boekhouding'
 import { Route as AuthenticatedAiColumbusRouteImport } from './routes/_authenticated/ai-columbus'
 import { Route as AuthenticatedAdministratieRouteImport } from './routes/_authenticated/administratie'
+import { Route as AuthenticatedOfferteStudioIndexRouteImport } from './routes/_authenticated/offerte-studio.index'
 import { Route as AuthenticatedNetqloudIndexRouteImport } from './routes/_authenticated/netqloud.index'
 import { Route as AuthenticatedAiColumbusIndexRouteImport } from './routes/_authenticated/ai-columbus.index'
 import { Route as AcceptQuoteTokenRouteImport } from './routes/accept.quote.$token'
@@ -103,6 +104,12 @@ const AuthenticatedAdministratieRoute =
   AuthenticatedAdministratieRouteImport.update({
     id: '/administratie',
     path: '/administratie',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOfferteStudioIndexRoute =
+  AuthenticatedOfferteStudioIndexRouteImport.update({
+    id: '/offerte-studio/',
+    path: '/offerte-studio/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedNetqloudIndexRoute =
@@ -227,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
   '/netqloud/': typeof AuthenticatedNetqloudIndexRoute
+  '/offerte-studio/': typeof AuthenticatedOfferteStudioIndexRoute
   '/ai-columbus/klanten/$clientId': typeof AuthenticatedAiColumbusKlantenClientIdRoute
   '/ai-columbus/projecten/$projectId': typeof AuthenticatedAiColumbusProjectenProjectIdRoute
   '/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
@@ -255,6 +263,7 @@ export interface FileRoutesByTo {
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/ai-columbus': typeof AuthenticatedAiColumbusIndexRoute
   '/netqloud': typeof AuthenticatedNetqloudIndexRoute
+  '/offerte-studio': typeof AuthenticatedOfferteStudioIndexRoute
   '/ai-columbus/klanten/$clientId': typeof AuthenticatedAiColumbusKlantenClientIdRoute
   '/ai-columbus/projecten/$projectId': typeof AuthenticatedAiColumbusProjectenProjectIdRoute
   '/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
@@ -287,6 +296,7 @@ export interface FileRoutesById {
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/_authenticated/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
   '/_authenticated/netqloud/': typeof AuthenticatedNetqloudIndexRoute
+  '/_authenticated/offerte-studio/': typeof AuthenticatedOfferteStudioIndexRoute
   '/_authenticated/ai-columbus/klanten/$clientId': typeof AuthenticatedAiColumbusKlantenClientIdRoute
   '/_authenticated/ai-columbus/projecten/$projectId': typeof AuthenticatedAiColumbusProjectenProjectIdRoute
   '/_authenticated/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
@@ -319,6 +329,7 @@ export interface FileRouteTypes {
     | '/accept/quote/$token'
     | '/ai-columbus/'
     | '/netqloud/'
+    | '/offerte-studio/'
     | '/ai-columbus/klanten/$clientId'
     | '/ai-columbus/projecten/$projectId'
     | '/boekhouding/journal/$entryId'
@@ -347,6 +358,7 @@ export interface FileRouteTypes {
     | '/accept/quote/$token'
     | '/ai-columbus'
     | '/netqloud'
+    | '/offerte-studio'
     | '/ai-columbus/klanten/$clientId'
     | '/ai-columbus/projecten/$projectId'
     | '/boekhouding/journal/$entryId'
@@ -378,6 +390,7 @@ export interface FileRouteTypes {
     | '/accept/quote/$token'
     | '/_authenticated/ai-columbus/'
     | '/_authenticated/netqloud/'
+    | '/_authenticated/offerte-studio/'
     | '/_authenticated/ai-columbus/klanten/$clientId'
     | '/_authenticated/ai-columbus/projecten/$projectId'
     | '/_authenticated/boekhouding/journal/$entryId'
@@ -481,6 +494,13 @@ declare module '@tanstack/react-router' {
       path: '/administratie'
       fullPath: '/administratie'
       preLoaderRoute: typeof AuthenticatedAdministratieRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/offerte-studio/': {
+      id: '/_authenticated/offerte-studio/'
+      path: '/offerte-studio'
+      fullPath: '/offerte-studio/'
+      preLoaderRoute: typeof AuthenticatedOfferteStudioIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/netqloud/': {
@@ -706,6 +726,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedQuotesRoute: typeof AuthenticatedQuotesRoute
   AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedOfferteStudioIndexRoute: typeof AuthenticatedOfferteStudioIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -719,6 +740,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedQuotesRoute: AuthenticatedQuotesRoute,
   AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedOfferteStudioIndexRoute: AuthenticatedOfferteStudioIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
