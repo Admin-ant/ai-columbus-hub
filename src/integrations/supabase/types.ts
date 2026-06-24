@@ -189,6 +189,97 @@ export type Database = {
           },
         ]
       }
+      expenses: {
+        Row: {
+          amount_cents: number
+          category: string | null
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          expense_date: string
+          id: string
+          notes: string | null
+          organization_id: string
+          paid_at: string | null
+          payment_method: string | null
+          project_id: string | null
+          reference: string | null
+          status: string
+          supplier: string
+          total_cents: number
+          updated_at: string
+          vat_cents: number
+          vat_rate: number | null
+        }
+        Insert: {
+          amount_cents?: number
+          category?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expense_date?: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          paid_at?: string | null
+          payment_method?: string | null
+          project_id?: string | null
+          reference?: string | null
+          status?: string
+          supplier: string
+          total_cents?: number
+          updated_at?: string
+          vat_cents?: number
+          vat_rate?: number | null
+        }
+        Update: {
+          amount_cents?: number
+          category?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expense_date?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          paid_at?: string | null
+          payment_method?: string | null
+          project_id?: string | null
+          reference?: string | null
+          status?: string
+          supplier?: string
+          total_cents?: number
+          updated_at?: string
+          vat_cents?: number
+          vat_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_lines: {
         Row: {
           created_at: string
@@ -255,6 +346,74 @@ export type Database = {
             columns: ["revenue_account_id"]
             isOneToOne: false
             referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_link_log: {
+        Row: {
+          actor_id: string | null
+          actor_label: string | null
+          client_id: string | null
+          created_at: string
+          id: string
+          invoice_id: string
+          note: string | null
+          organization_id: string
+          project_id: string | null
+          source: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_label?: string | null
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          invoice_id: string
+          note?: string | null
+          organization_id: string
+          project_id?: string | null
+          source: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_label?: string | null
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          note?: string | null
+          organization_id?: string
+          project_id?: string | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_link_log_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_link_log_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_link_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_link_log_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -360,6 +519,7 @@ export type Database = {
           created_by: string | null
           description: string
           entry_date: string
+          expense_id: string | null
           id: string
           invoice_id: string | null
           organization_id: string
@@ -371,6 +531,7 @@ export type Database = {
           created_by?: string | null
           description: string
           entry_date?: string
+          expense_id?: string | null
           id?: string
           invoice_id?: string | null
           organization_id: string
@@ -382,6 +543,7 @@ export type Database = {
           created_by?: string | null
           description?: string
           entry_date?: string
+          expense_id?: string | null
           id?: string
           invoice_id?: string | null
           organization_id?: string
@@ -389,6 +551,13 @@ export type Database = {
           source?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "journal_entries_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "journal_entries_invoice_id_fkey"
             columns: ["invoice_id"]
@@ -1001,6 +1170,7 @@ export type Database = {
     }
     Functions: {
       next_invoice_number: { Args: { _org_id: string }; Returns: string }
+      post_expense_journal: { Args: { _expense_id: string }; Returns: string }
       post_invoice_journal: { Args: { _invoice_id: string }; Returns: string }
       seed_default_chart: { Args: { _org: string }; Returns: undefined }
     }
