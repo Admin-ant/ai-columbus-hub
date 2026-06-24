@@ -583,53 +583,134 @@ function QuotesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {quotes.map((q) => (
-                <TableRow key={q.id}>
-                  <TableCell className="font-medium">{q.title}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {new Date(q.created_at).toLocaleDateString(i18n.resolvedLanguage ?? "nl")}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">{eur.format(Number(q.total_amount))}</TableCell>
-                  <TableCell>
-                    <Select value={q.status} onValueChange={(v) => updateStatus(q.id, v as QuoteStatus)}>
-                      <SelectTrigger className="h-7 w-[170px]">
-                        <Badge variant="outline" className={STATUS_COLOR[q.status]}>
-                          {t(`quotes.status.${q.status}`)}
-                        </Badge>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {STATUS.map((s) => (
-                          <SelectItem key={s} value={s}>
-                            {t(`quotes.status.${s}`)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          const url = `${window.location.origin}/accept/quote/${q.public_token}`;
-                          navigator.clipboard.writeText(url).then(
-                            () => toast.success(t("accept.link_copied")),
-                            () => toast.error("Clipboard error"),
-                          );
-                        }}
-                      >
-                        <Link2 className="mr-1 h-3.5 w-3.5" />
-                        {t("accept.copy_link")}
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => convertToInvoice(q)}>
-                        <FileText className="mr-1 h-3.5 w-3.5" />
-                        {t("quotes.to_invoice")}
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {quotes.map((qBase) => {
+                const q = qBase as QuoteExt;
+                const isRevoked = !!q.revoked_at;
+                const isSigned = !!q.accepted_at;
+                const publicUrl = typeof window !== "undefined" ? `${window.location.origin}/accept/quote/${q.public_token}` : "";
+                const pdfUrl = typeof window !== "undefined" ? `${window.location.origin}/quote/${q.public_token}/pdf` : "";
+                return (
+                  <TableRow key={q.id} className={isRevoked ? "opacity-60" : ""}>
+                    <TableCell className="font-medium">
+                      <div>{q.title}</div>
+                      {isSigned && (
+                        <div className="mt-0.5 text-xs text-emerald-700 dark:text-emerald-400">
+                          <CheckCircle2 className="mr-1 inline h-3 w-3" />
+                          Ondertekend door {q.accepted_by_name ?? "klant"}
+                        </div>
+                      )}
+                      {isRevoked && (
+                        <div className="mt-0.5 text-xs text-red-600">
+                          <Ban className="mr-1 inline h-3 w-3" />Link ingetrokken
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {new Date(q.created_at).toLocaleDateString(i18n.resolvedLanguage ?? "nl")}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">{eur.format(Number(q.total_amount))}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <Select value={q.status} onValueChange={(v) => updateStatus(q.id, v as QuoteStatus)}>
+                          <SelectTrigger className="h-7 w-[170px]">
+                            <Badge variant="outline" className={STATUS_COLOR[q.status]}>
+                              {t(`quotes.status.${q.status}`)}
+                            </Badge>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {STATUS.map((s) => (
+                              <SelectItem key={s} value={s}>
+                                {t(`quotes.status.${s}`)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <div className="text-xs text-muted-foreground">
+                          {q.signed_at ? (
+                            <>Ondertekend: {new Date(q.signed_at).toLocaleString(i18n.resolvedLanguage ?? "nl")}</>
+                          ) : q.last_viewed_at ? (
+                            <>Bekeken: {new Date(q.last_viewed_at).toLocaleString(i18n.resolvedLanguage ?? "nl")}</>
+                          ) : q.sent_at ? (
+                            <>Verzonden: {new Date(q.sent_at).toLocaleString(i18n.resolvedLanguage ?? "nl")}</>
+                          ) : (
+                            <>Concept</>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button size="sm" variant="outline" onClick={() => convertToInvoice(q)}>
+                          <FileText className="mr-1 h-3.5 w-3.5" />
+                          {t("quotes.to_invoice")}
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="sm" variant="ghost"><MoreHorizontal className="h-4 w-4" /></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuItem onClick={() => {
+                              navigator.clipboard.writeText(publicUrl).then(
+                                () => toast.success(t("accept.link_copied")),
+                                () => toast.error("Clipboard error"),
+                              );
+                            }}>
+                              <Link2 className="mr-2 h-4 w-4" /> Ondertekenlink kopiëren
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => window.open(pdfUrl, "_blank")} disabled={!isSigned}>
+                              <Download className="mr-2 h-4 w-4" /> PDF downloaden
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={async () => {
+                              try {
+                                await markSentFn({ data: { id: q.id } });
+                                toast.success("Gemarkeerd als verzonden");
+                                load();
+                              } catch (e) { toast.error((e as Error).message); }
+                            }}>
+                              <Send className="mr-2 h-4 w-4" /> Markeer als verzonden
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setSettingsQuote(q)}>
+                              <Settings2 className="mr-2 h-4 w-4" /> Instellingen & follow-up
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={async () => {
+                              try {
+                                await regenFn({ data: { id: q.id } });
+                                toast.success("Nieuwe link gegenereerd");
+                                load();
+                              } catch (e) { toast.error((e as Error).message); }
+                            }}>
+                              <RefreshCw className="mr-2 h-4 w-4" /> Link vernieuwen
+                            </DropdownMenuItem>
+                            {isRevoked ? (
+                              <DropdownMenuItem onClick={async () => {
+                                try {
+                                  await restoreFn({ data: { id: q.id } });
+                                  toast.success("Link hersteld");
+                                  load();
+                                } catch (e) { toast.error((e as Error).message); }
+                              }}>
+                                <RotateCcw className="mr-2 h-4 w-4" /> Link herstellen
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem className="text-red-600" onClick={async () => {
+                                if (!confirm("Weet je zeker dat je de link wil intrekken? De klant kan dan niet meer ondertekenen.")) return;
+                                try {
+                                  await revokeFn({ data: { id: q.id } });
+                                  toast.success("Link ingetrokken");
+                                  load();
+                                } catch (e) { toast.error((e as Error).message); }
+                              }}>
+                                <Ban className="mr-2 h-4 w-4" /> Link intrekken
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
