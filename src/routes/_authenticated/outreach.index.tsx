@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -15,7 +15,10 @@ import {
   Users,
   PlayCircle,
   PauseCircle,
+  FileSignature,
+  ListOrdered,
 } from "lucide-react";
+import { buildDefaultSections, DEFAULT_THEME } from "@/lib/offerte-studio";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -73,6 +76,14 @@ type Campaign = {
   ai_pitch: string | null;
   notes: string | null;
   created_at: string;
+  sequence_steps?: SequenceStep[];
+};
+
+export type SequenceStep = {
+  day: number;
+  channel: "email" | "linkedin" | "cold-call";
+  subject?: string;
+  body: string;
 };
 
 type TargetRow = {
@@ -92,6 +103,51 @@ function OutreachDashboard() {
   const { user } = useAuth();
   const { currentOrganizationId, currentOrganization, loading: wsLoading } = useWorkspace();
   const ask = useServerFn(askAssistant);
+  const navigate = useNavigate();
+
+  async function createQuoteFromTarget(t: TargetRow) {
+    if (!currentOrganizationId) return;
+    const { data, error } = await supabase
+      .from("studio_quotes")
+      .insert({
+        organization_id: currentOrganizationId,
+        title: `Offerte ${t.company}`,
+        client_name: t.company,
+        outreach_target_id: t.id,
+        theme: DEFAULT_THEME as never,
+        sections: buildDefaultSections() as never,
+        status: "draft",
+        created_by: user?.id ?? null,
+      } as never)
+      .select("id")
+      .single();
+    if (error) return toast.error(error.message);
+    toast.success("Offerte aangemaakt vanuit prospect");
+    if (data) navigate({ to: "/offerte-studio/q/$id", params: { id: data.id } });
+  }
+
+  async function generateSequence(c: Campaign) {
+    toast.loading("AI sequentie genereren…", { id: "seq" });
+    try {
+      const { reply } = await ask({
+        data: {
+          task: "generic",
+          context: `Maak een 3-staps cold-outreach sequentie als JSON-array voor campagne "${c.name}" (kanaal ${c.channel}, doel: ${c.goal ?? "afspraak inplannen"}). Elk object: {"day": number, "channel": "email"|"linkedin"|"cold-call", "subject": string, "body": string}. Dag 1 = intro, dag 4 = waarde-follow-up, dag 8 = laatste kans. Schrijf in het Nederlands, kort, persoonlijk, geen clichés. Antwoord met UITSLUITEND geldige JSON, geen toelichting of markdown.`,
+        },
+      });
+      const cleaned = reply.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+      const parsed = JSON.parse(cleaned) as SequenceStep[];
+      const { error } = await supabase
+        .from("outreach_campaigns")
+        .update({ sequence_steps: parsed as never })
+        .eq("id", c.id);
+      if (error) throw new Error(error.message);
+      toast.success("Sequentie opgeslagen", { id: "seq" });
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Genereren mislukt", { id: "seq" });
+    }
+  }
 
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [targets, setTargets] = useState<TargetRow[]>([]);
@@ -119,7 +175,7 @@ function OutreachDashboard() {
     ]);
     if (c.error) toast.error(c.error.message);
     if (t.error) toast.error(t.error.message);
-    setCampaigns((c.data ?? []) as Campaign[]);
+    setCampaigns((c.data ?? []) as unknown as Campaign[]);
     setTargets((t.data ?? []) as TargetRow[]);
     setLoading(false);
   }
@@ -256,6 +312,7 @@ function OutreachDashboard() {
                               campaign={campaigns.find((c) => c.id === t.campaign_id) ?? null}
                               onMove={moveTarget}
                               onDelete={deleteTarget}
+                              onCreateQuote={() => createQuoteFromTarget(t)}
                             />
                           ))
                         )}
@@ -281,6 +338,7 @@ function OutreachDashboard() {
                     targetCount={targets.filter((t) => t.campaign_id === c.id).length}
                     onToggle={() => toggleCampaign(c)}
                     onDelete={() => deleteCampaign(c.id)}
+                    onGenerateSequence={() => generateSequence(c)}
                   />
                 ))}
               </div>
@@ -324,11 +382,13 @@ function TargetCard({
   campaign,
   onMove,
   onDelete,
+  onCreateQuote,
 }: {
   row: TargetRow;
   campaign: Campaign | null;
   onMove: (id: string, stage: Stage) => void;
   onDelete: (id: string) => void;
+  onCreateQuote: () => void;
 }) {
   return (
     <div className="group rounded-md border border-white/10 bg-black/40 p-3 transition-all hover:border-[#ff2bd6]/50">
@@ -368,6 +428,15 @@ function TargetCard({
           ))}
         </SelectContent>
       </Select>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onCreateQuote}
+        className="mt-2 h-7 w-full justify-start text-[11px] hover:bg-[#ff2bd6]/10"
+        style={{ color: ACCENT }}
+      >
+        <FileSignature className="mr-1 h-3 w-3" /> Maak offerte
+      </Button>
     </div>
   );
 }
@@ -377,11 +446,13 @@ function CampaignCard({
   targetCount,
   onToggle,
   onDelete,
+  onGenerateSequence,
 }: {
   campaign: Campaign;
   targetCount: number;
   onToggle: () => void;
   onDelete: () => void;
+  onGenerateSequence: () => void;
 }) {
   const channelIcon =
     campaign.channel === "linkedin" ? Linkedin : campaign.channel === "cold-call" ? Phone : Mail;
@@ -425,9 +496,36 @@ function CampaignCard({
           <p className="line-clamp-4 text-[11px] text-white/80 whitespace-pre-wrap">{campaign.ai_pitch}</p>
         </div>
       )}
+      {Array.isArray(campaign.sequence_steps) && campaign.sequence_steps.length > 0 && (
+        <div className="mt-3 space-y-1.5">
+          <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-white/60">
+            <ListOrdered className="h-3 w-3" /> Sequentie ({campaign.sequence_steps.length} stappen)
+          </div>
+          {campaign.sequence_steps.map((s, i) => (
+            <div key={i} className="rounded border border-white/10 bg-black/40 p-2">
+              <div className="flex items-center justify-between text-[10px] text-white/50">
+                <span>Dag {s.day} · {s.channel}</span>
+                {s.subject && <span className="truncate font-medium text-white/70">{s.subject}</span>}
+              </div>
+              <p className="mt-1 line-clamp-2 text-[11px] text-white/75 whitespace-pre-wrap">{s.body}</p>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3">
         <span className="text-[11px] text-white/40">Limiet: {campaign.daily_limit}/dag</span>
         <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onGenerateSequence}
+            className="h-7 text-xs hover:bg-[#ff2bd6]/10"
+            style={{ color: ACCENT }}
+            title="Genereer een 3-staps AI-sequentie"
+          >
+            <Sparkles className="mr-1 h-3.5 w-3.5" />
+            Sequentie
+          </Button>
           <Button
             variant="ghost"
             size="sm"

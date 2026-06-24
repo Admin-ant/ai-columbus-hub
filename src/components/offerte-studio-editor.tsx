@@ -12,7 +12,12 @@ import {
   Image as ImageIcon,
   BookmarkPlus,
   Wand2,
+  Share2,
+  Copy,
 } from "lucide-react";
+
+import { useServerFn } from "@tanstack/react-start";
+import { createShareToken } from "@/lib/studio-public.functions";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -72,8 +77,27 @@ export function OfferteStudioEditor({ kind, id }: Props) {
   const [approved, setApproved] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
   const dirty = useRef(false);
+  const [shareToken, setShareToken] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const createTok = useServerFn(createShareToken);
 
   const table = kind === "quote" ? "studio_quotes" : "quote_templates";
+
+  async function share() {
+    if (kind !== "quote") return;
+    setSharing(true);
+    try {
+      const { token } = await createTok({ data: { id } });
+      setShareToken(token);
+      const url = `${window.location.origin}/q/${token}`;
+      await navigator.clipboard.writeText(url).catch(() => undefined);
+      toast.success("Deel-link gekopieerd naar klembord");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Mislukt");
+    } finally {
+      setSharing(false);
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -101,6 +125,7 @@ export function OfferteStudioEditor({ kind, id }: Props) {
           Array.isArray(q.sections) && q.sections.length ? q.sections : buildDefaultSections(),
         );
         setApproved(q.status === "approved");
+        setShareToken((q as unknown as { public_token?: string | null }).public_token ?? null);
       } else {
         const t = data as unknown as TemplateRow;
         setTitle(t.name);
@@ -289,6 +314,24 @@ export function OfferteStudioEditor({ kind, id }: Props) {
               title="Opslaan als sjabloon"
             >
               <BookmarkPlus className="mr-1 h-4 w-4" /> Als sjabloon
+            </Button>
+          )}
+          {kind === "quote" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={share}
+              disabled={sharing}
+              className="hover:bg-white/10"
+              style={{ color: shareToken ? styles.accent : "rgba(255,255,255,0.8)" }}
+              title={shareToken ? "Deel-link kopiëren" : "Deel-link genereren"}
+            >
+              {shareToken ? (
+                <Copy className="mr-1 h-4 w-4" />
+              ) : (
+                <Share2 className="mr-1 h-4 w-4" />
+              )}
+              {shareToken ? "Deel-link" : "Delen"}
             </Button>
           )}
           <Button
