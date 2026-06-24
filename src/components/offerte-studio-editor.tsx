@@ -76,6 +76,8 @@ export function OfferteStudioEditor({ kind, id }: Props) {
   const [cover, setCover] = useState<string | null>(null);
   const [theme, setTheme] = useState<StudioTheme>(DEFAULT_THEME);
   const [sections, setSections] = useState<StudioSection[]>(buildDefaultSections());
+  const [packages, setPackages] = useState<StudioPackage[]>([]);
+  const [videoUrl, setVideoUrl] = useState<string>("");
   const [approved, setApproved] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
   const dirty = useRef(false);
