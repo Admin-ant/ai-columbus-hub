@@ -128,6 +128,7 @@ function InvoicesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>{t("invoices.number")}</TableHead>
+                <TableHead>Klant</TableHead>
                 <TableHead>{t("invoices.issue_date")}</TableHead>
                 <TableHead>{t("invoices.due_date")}</TableHead>
                 <TableHead className="text-right">{t("invoices.amount")}</TableHead>
