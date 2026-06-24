@@ -720,6 +720,15 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AttachmentsDialog
+        orgId={orgId}
+        expenseId={attachExpenseId}
+        expense={expenses.find(e => e.id === attachExpenseId) ?? null}
+        userId={userId}
+        onClose={() => setAttachExpenseId(null)}
+        onChanged={() => void load()}
+      />
     </div>
   );
 }
@@ -730,5 +739,158 @@ function Stat({ label, value, accent = "" }: { label: string; value: string; acc
       <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className={`mt-1 text-2xl font-semibold tabular-nums ${accent}`}>{value}</div>
     </div>
+  );
+}
+
+type AttachmentRow = {
+  id: string;
+  storage_path: string;
+  file_name: string;
+  mime_type: string | null;
+  size_bytes: number | null;
+  created_at: string;
+  uploaded_by: string | null;
+};
+
+function AttachmentsDialog({
+  orgId, expenseId, expense, userId, onClose, onChanged,
+}: {
+  orgId: string;
+  expenseId: string | null;
+  expense: ExpenseRow | null;
+  userId: string | null;
+  onClose: () => void;
+  onChanged: () => void;
+}) {
+  const [items, setItems] = useState<AttachmentRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  const refresh = useCallback(async () => {
+    if (!expenseId) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("expense_attachments")
+      .select("id,storage_path,file_name,mime_type,size_bytes,created_at,uploaded_by")
+      .eq("expense_id", expenseId)
+      .order("created_at", { ascending: false });
+    if (error) toast.error(error.message);
+    setItems((data ?? []) as AttachmentRow[]);
+    setLoading(false);
+  }, [expenseId]);
+
+  useEffect(() => { if (expenseId) void refresh(); else setItems([]); }, [expenseId, refresh]);
+
+  async function handleFiles(files: FileList | null) {
+    if (!files || !expenseId) return;
+    setUploading(true);
+    for (const file of Array.from(files)) {
+      if (file.size > 25 * 1024 * 1024) {
+        toast.error(`${file.name} is groter dan 25 MB`);
+        continue;
+      }
+      const safe = file.name.replace(/[^\w.\-]+/g, "_");
+      const path = `${orgId}/${expenseId}/${Date.now()}-${safe}`;
+      const up = await supabase.storage.from("expense-attachments").upload(path, file, {
+        contentType: file.type || undefined,
+        upsert: false,
+      });
+      if (up.error) { toast.error(`${file.name}: ${up.error.message}`); continue; }
+      const ins = await supabase.from("expense_attachments").insert({
+        organization_id: orgId,
+        expense_id: expenseId,
+        storage_path: path,
+        file_name: file.name,
+        mime_type: file.type || null,
+        size_bytes: file.size,
+        uploaded_by: userId,
+      });
+      if (ins.error) {
+        toast.error(`${file.name}: ${ins.error.message}`);
+        await supabase.storage.from("expense-attachments").remove([path]);
+      }
+    }
+    setUploading(false);
+    toast.success("Bijlage(n) opgeslagen");
+    await refresh();
+    onChanged();
+  }
+
+  async function openAttachment(a: AttachmentRow) {
+    const { data, error } = await supabase.storage
+      .from("expense-attachments")
+      .createSignedUrl(a.storage_path, 60 * 5);
+    if (error || !data?.signedUrl) { toast.error(error?.message ?? "Kan bestand niet openen"); return; }
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  }
+
+  async function removeAttachment(a: AttachmentRow) {
+    if (!confirm(`Bijlage "${a.file_name}" verwijderen?`)) return;
+    await supabase.storage.from("expense-attachments").remove([a.storage_path]);
+    const { error } = await supabase.from("expense_attachments").delete().eq("id", a.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Verwijderd");
+    await refresh();
+    onChanged();
+  }
+
+  return (
+    <Dialog open={!!expenseId} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Bijlagen{expense ? ` — ${expense.supplier}` : ""}</DialogTitle>
+        </DialogHeader>
+
+        <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-muted-foreground/30 bg-muted/30 p-6 text-sm hover:bg-muted/50">
+          <Upload className="h-5 w-5 text-muted-foreground" />
+          <span className="text-muted-foreground">
+            {uploading ? "Bezig met uploaden…" : "Klik of sleep bestanden hier (PDF, JPG, PNG — max 25 MB)"}
+          </span>
+          <input
+            type="file"
+            multiple
+            accept="application/pdf,image/*"
+            className="hidden"
+            disabled={uploading}
+            onChange={(e) => { void handleFiles(e.target.files); e.target.value = ""; }}
+          />
+        </label>
+
+        <div className="max-h-72 overflow-y-auto rounded-md border">
+          {loading ? (
+            <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Laden…
+            </div>
+          ) : items.length === 0 ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">Nog geen bijlagen.</div>
+          ) : (
+            <ul className="divide-y">
+              {items.map(a => (
+                <li key={a.id} className="flex items-center gap-3 px-3 py-2">
+                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <button
+                    onClick={() => openAttachment(a)}
+                    className="flex-1 truncate text-left text-sm font-medium text-primary hover:underline"
+                    title={a.file_name}
+                  >
+                    {a.file_name}
+                  </button>
+                  <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                    {a.size_bytes ? `${(a.size_bytes / 1024).toFixed(0)} KB` : ""}
+                  </span>
+                  <Button variant="ghost" size="sm" onClick={() => removeAttachment(a)} title="Verwijder">
+                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Sluiten</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
