@@ -1,10 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Plus, Loader2, Trash2, FileText, Sparkles, Link2, Wand2, HelpCircle, AlertTriangle } from "lucide-react";
+import { Plus, Loader2, Trash2, FileText, Sparkles, Link2, Wand2, HelpCircle, AlertTriangle, MoreHorizontal, Download, RefreshCw, Ban, RotateCcw, Settings2, CheckCircle2, Send } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { buildDefaultSections, DEFAULT_THEME, type StudioSection, type StudioTheme, type StudioPackage } from "@/lib/offerte-studio";
+import { revokeQuoteLink, restoreQuoteLink, regenerateQuoteToken, updateQuoteSettings, markQuoteSent } from "@/lib/quote-admin.functions";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
