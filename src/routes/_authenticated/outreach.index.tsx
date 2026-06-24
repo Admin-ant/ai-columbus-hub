@@ -528,12 +528,14 @@ function CampaignCard({
   onToggle,
   onDelete,
   onGenerateSequence,
+  onGenerateVariants,
 }: {
   campaign: Campaign;
   targetCount: number;
   onToggle: () => void;
   onDelete: () => void;
   onGenerateSequence: () => void;
+  onGenerateVariants: () => void;
 }) {
   const channelIcon =
     campaign.channel === "linkedin" ? Linkedin : campaign.channel === "cold-call" ? Phone : Mail;
