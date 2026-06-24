@@ -382,11 +382,13 @@ function TargetCard({
   campaign,
   onMove,
   onDelete,
+  onCreateQuote,
 }: {
   row: TargetRow;
   campaign: Campaign | null;
   onMove: (id: string, stage: Stage) => void;
   onDelete: (id: string) => void;
+  onCreateQuote: () => void;
 }) {
   return (
     <div className="group rounded-md border border-white/10 bg-black/40 p-3 transition-all hover:border-[#ff2bd6]/50">
@@ -426,6 +428,15 @@ function TargetCard({
           ))}
         </SelectContent>
       </Select>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onCreateQuote}
+        className="mt-2 h-7 w-full justify-start text-[11px] hover:bg-[#ff2bd6]/10"
+        style={{ color: ACCENT }}
+      >
+        <FileSignature className="mr-1 h-3 w-3" /> Maak offerte
+      </Button>
     </div>
   );
 }
