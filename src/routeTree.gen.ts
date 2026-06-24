@@ -26,6 +26,7 @@ import { Route as AuthenticatedAdministratieRouteImport } from './routes/_authen
 import { Route as AuthenticatedOutreachIndexRouteImport } from './routes/_authenticated/outreach.index'
 import { Route as AuthenticatedOfferteStudioIndexRouteImport } from './routes/_authenticated/offerte-studio.index'
 import { Route as AuthenticatedNetqloudIndexRouteImport } from './routes/_authenticated/netqloud.index'
+import { Route as AuthenticatedAnalyticsIndexRouteImport } from './routes/_authenticated/analytics.index'
 import { Route as AuthenticatedAiColumbusIndexRouteImport } from './routes/_authenticated/ai-columbus.index'
 import { Route as AcceptQuoteTokenRouteImport } from './routes/accept.quote.$token'
 import { Route as AuthenticatedNetqloudServersRouteImport } from './routes/_authenticated/netqloud.servers'
@@ -132,6 +133,12 @@ const AuthenticatedNetqloudIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedNetqloudRoute,
+  } as any)
+const AuthenticatedAnalyticsIndexRoute =
+  AuthenticatedAnalyticsIndexRouteImport.update({
+    id: '/analytics/',
+    path: '/analytics/',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAiColumbusIndexRoute =
   AuthenticatedAiColumbusIndexRouteImport.update({
@@ -261,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
+  '/analytics/': typeof AuthenticatedAnalyticsIndexRoute
   '/netqloud/': typeof AuthenticatedNetqloudIndexRoute
   '/offerte-studio/': typeof AuthenticatedOfferteStudioIndexRoute
   '/outreach/': typeof AuthenticatedOutreachIndexRoute
@@ -294,6 +302,7 @@ export interface FileRoutesByTo {
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/ai-columbus': typeof AuthenticatedAiColumbusIndexRoute
+  '/analytics': typeof AuthenticatedAnalyticsIndexRoute
   '/netqloud': typeof AuthenticatedNetqloudIndexRoute
   '/offerte-studio': typeof AuthenticatedOfferteStudioIndexRoute
   '/outreach': typeof AuthenticatedOutreachIndexRoute
@@ -331,6 +340,7 @@ export interface FileRoutesById {
   '/_authenticated/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/_authenticated/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
+  '/_authenticated/analytics/': typeof AuthenticatedAnalyticsIndexRoute
   '/_authenticated/netqloud/': typeof AuthenticatedNetqloudIndexRoute
   '/_authenticated/offerte-studio/': typeof AuthenticatedOfferteStudioIndexRoute
   '/_authenticated/outreach/': typeof AuthenticatedOutreachIndexRoute
@@ -368,6 +378,7 @@ export interface FileRouteTypes {
     | '/netqloud/servers'
     | '/accept/quote/$token'
     | '/ai-columbus/'
+    | '/analytics/'
     | '/netqloud/'
     | '/offerte-studio/'
     | '/outreach/'
@@ -401,6 +412,7 @@ export interface FileRouteTypes {
     | '/netqloud/servers'
     | '/accept/quote/$token'
     | '/ai-columbus'
+    | '/analytics'
     | '/netqloud'
     | '/offerte-studio'
     | '/outreach'
@@ -437,6 +449,7 @@ export interface FileRouteTypes {
     | '/_authenticated/netqloud/servers'
     | '/accept/quote/$token'
     | '/_authenticated/ai-columbus/'
+    | '/_authenticated/analytics/'
     | '/_authenticated/netqloud/'
     | '/_authenticated/offerte-studio/'
     | '/_authenticated/outreach/'
@@ -575,6 +588,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/netqloud/'
       preLoaderRoute: typeof AuthenticatedNetqloudIndexRouteImport
       parentRoute: typeof AuthenticatedNetqloudRoute
+    }
+    '/_authenticated/analytics/': {
+      id: '/_authenticated/analytics/'
+      path: '/analytics'
+      fullPath: '/analytics/'
+      preLoaderRoute: typeof AuthenticatedAnalyticsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ai-columbus/': {
       id: '/_authenticated/ai-columbus/'
@@ -806,6 +826,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedQuotesRoute: typeof AuthenticatedQuotesRoute
   AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedAnalyticsIndexRoute: typeof AuthenticatedAnalyticsIndexRoute
   AuthenticatedOfferteStudioIndexRoute: typeof AuthenticatedOfferteStudioIndexRoute
   AuthenticatedOutreachIndexRoute: typeof AuthenticatedOutreachIndexRoute
   AuthenticatedOfferteStudioQIdRoute: typeof AuthenticatedOfferteStudioQIdRoute
@@ -823,6 +844,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedQuotesRoute: AuthenticatedQuotesRoute,
   AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedAnalyticsIndexRoute: AuthenticatedAnalyticsIndexRoute,
   AuthenticatedOfferteStudioIndexRoute: AuthenticatedOfferteStudioIndexRoute,
   AuthenticatedOutreachIndexRoute: AuthenticatedOutreachIndexRoute,
   AuthenticatedOfferteStudioQIdRoute: AuthenticatedOfferteStudioQIdRoute,
