@@ -1689,6 +1689,9 @@ export type Database = {
       }
       quotes: {
         Row: {
+          accepted_at: string | null
+          accepted_by_name: string | null
+          accepted_ip: string | null
           client_id: string | null
           content_json: Json
           created_at: string
@@ -1701,11 +1704,15 @@ export type Database = {
           signature_svg: string | null
           signed_at: string | null
           status: Database["public"]["Enums"]["quote_status"]
+          terms_accepted_at: string | null
           title: string
           total_amount: number
           updated_at: string
         }
         Insert: {
+          accepted_at?: string | null
+          accepted_by_name?: string | null
+          accepted_ip?: string | null
           client_id?: string | null
           content_json?: Json
           created_at?: string
@@ -1718,11 +1725,15 @@ export type Database = {
           signature_svg?: string | null
           signed_at?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
+          terms_accepted_at?: string | null
           title: string
           total_amount?: number
           updated_at?: string
         }
         Update: {
+          accepted_at?: string | null
+          accepted_by_name?: string | null
+          accepted_ip?: string | null
           client_id?: string | null
           content_json?: Json
           created_at?: string
@@ -1735,6 +1746,7 @@ export type Database = {
           signature_svg?: string | null
           signed_at?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
+          terms_accepted_at?: string | null
           title?: string
           total_amount?: number
           updated_at?: string
@@ -1954,6 +1966,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_quote_by_token: {
+        Args: {
+          _name: string
+          _signature_svg: string
+          _terms: boolean
+          _token: string
+        }
+        Returns: string
+      }
       next_invoice_number: { Args: { _org_id: string }; Returns: string }
       post_expense_journal:
         | { Args: { _expense_id: string }; Returns: string }
