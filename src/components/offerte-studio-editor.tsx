@@ -324,6 +324,18 @@ export function OfferteStudioEditor({ kind, id }: Props) {
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => setAiOpen(true)}
+              className="hover:bg-white/10"
+              style={{ color: styles.accent }}
+              title="Genereer offerte met AI"
+            >
+              <Sparkles className="mr-1 h-4 w-4" /> AI
+            </Button>
+          )}
+          {kind === "quote" && (
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={saveAsTemplate}
               className="text-white/80 hover:text-white hover:bg-white/10"
               title="Opslaan als sjabloon"
