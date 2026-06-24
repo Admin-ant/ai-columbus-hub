@@ -57,7 +57,7 @@ export const getPublicQuote = createServerFn({ method: "GET" })
     const { data: q, error } = await sb
       .from("quotes")
       .select(
-        "id, title, content_json, total_amount, status, signature_svg, signed_at, mollie_payment_id, public_token, organization_id, created_at, accepted_at, accepted_by_name, intro_video_url, intro_message, revoked_at, last_viewed_at, sent_at",
+        "id, title, content_json, total_amount, status, signature_svg, signed_at, mollie_payment_id, mollie_checkout_url, paid_at, payer_email, payer_company, payer_kvk, payer_vat, public_token, organization_id, created_at, accepted_at, accepted_by_name, intro_video_url, intro_message, revoked_at, last_viewed_at, sent_at",
       )
       .eq("public_token", data.token)
       .maybeSingle();

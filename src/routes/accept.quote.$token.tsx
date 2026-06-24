@@ -25,8 +25,8 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import {
   getPublicQuote,
   signPublicQuote,
-  payPublicQuote,
 } from "@/lib/public-quote.functions";
+import { createMolliePayment } from "@/lib/mollie.functions";
 
 export const Route = createFileRoute("/accept/quote/$token")({
   head: () => ({
@@ -70,13 +70,17 @@ function AcceptQuotePage() {
   const qc = useQueryClient();
   const getFn = useServerFn(getPublicQuote);
   const signFn = useServerFn(signPublicQuote);
-  const payFn = useServerFn(payPublicQuote);
+  const payFn = useServerFn(createMolliePayment);
   const [signature, setSignature] = useState<string | null>(null);
   const [signOpen, setSignOpen] = useState(false);
   const [signerName, setSignerName] = useState("");
   const [typed, setTyped] = useState("");
   const [signTab, setSignTab] = useState<"typen" | "tekenen">("typen");
   const [terms, setTerms] = useState(false);
+  const [payerEmail, setPayerEmail] = useState("");
+  const [payerCompany, setPayerCompany] = useState("");
+  const [payerKvk, setPayerKvk] = useState("");
+  const [payerVat, setPayerVat] = useState("");
 
   const eur = useMemo(
     () =>
@@ -116,10 +120,18 @@ function AcceptQuotePage() {
   });
 
   const pay = useMutation({
-    mutationFn: () => payFn({ data: { token } }),
+    mutationFn: () =>
+      payFn({
+        data: {
+          token,
+          email: payerEmail.trim(),
+          company: payerCompany.trim(),
+          kvk: payerKvk.trim() || null,
+          vat: payerVat.trim() || null,
+        },
+      }),
     onSuccess: (r) => {
-      toast.success(t("accept.paid_ok", { number: r.invoice_number ?? "" }));
-      qc.invalidateQueries({ queryKey: ["public-quote", token] });
+      window.location.href = r.checkoutUrl;
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -154,11 +166,14 @@ function AcceptQuotePage() {
     intro_video_url?: string | null;
     intro_message?: string | null;
   };
+  const qPaid = quote as typeof quote & { paid_at?: string | null };
   const isRevoked = !!qExt.revoked_at;
-  const isPaid = quote.status === "approved_paid";
+  const isPaid = !!qPaid.paid_at || quote.status === "approved_paid";
   const isSigned = quote.status === "signed" || isPaid;
   const brand = organization?.brand_color ?? "#0f172a";
   const videoEmbed = qExt.intro_video_url ? normalizeVideoUrl(qExt.intro_video_url) : null;
+  const payerValid =
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payerEmail.trim()) && payerCompany.trim().length >= 2;
 
   const eventMeta: Record<string, { label: string; icon: typeof Eye; tone: string }> = {
     viewed: { label: t("accept.event.viewed") || "Bekeken", icon: Eye, tone: "text-muted-foreground" },
@@ -334,23 +349,72 @@ function AcceptQuotePage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-base">
-                    <CreditCard className="h-4 w-4" /> {t("accept.payment")}
+                    <CreditCard className="h-4 w-4" /> Betaal met iDEAL
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-sm text-muted-foreground">
-                    {t("accept.payment_desc")}
+                    Vul je bedrijfsgegevens in en betaal direct via iDEAL. Je ontvangt automatisch de factuur per e-mail.
                   </p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="payer-email">E-mailadres <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="payer-email"
+                        type="email"
+                        value={payerEmail}
+                        onChange={(e) => setPayerEmail(e.target.value)}
+                        placeholder="naam@bedrijf.nl"
+                        maxLength={255}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="payer-company">Bedrijfsnaam <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="payer-company"
+                        value={payerCompany}
+                        onChange={(e) => setPayerCompany(e.target.value)}
+                        placeholder="Bedrijfsnaam B.V."
+                        maxLength={160}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="payer-kvk">KvK-nummer</Label>
+                      <Input
+                        id="payer-kvk"
+                        value={payerKvk}
+                        onChange={(e) => setPayerKvk(e.target.value)}
+                        placeholder="12345678"
+                        maxLength={40}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="payer-vat">BTW-nummer</Label>
+                      <Input
+                        id="payer-vat"
+                        value={payerVat}
+                        onChange={(e) => setPayerVat(e.target.value)}
+                        placeholder="NL123456789B01"
+                        maxLength={40}
+                      />
+                    </div>
+                  </div>
                   <Button
                     onClick={() => pay.mutate()}
-                    disabled={pay.isPending}
+                    disabled={pay.isPending || !payerValid}
                     style={{ background: brand }}
                   >
                     {pay.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     <ShieldCheck className="mr-2 h-4 w-4" />
-                    {t("accept.pay_button", { amount: eur.format(Number(quote.total_amount ?? 0)) })}
+                    Betaal {eur.format(Number(quote.total_amount ?? 0))} via iDEAL
                   </Button>
-                  <p className="text-xs text-muted-foreground">{t("accept.mock_note")}</p>
+                  {!payerValid && (
+                    <p className="text-xs text-muted-foreground">
+                      Vul een geldig e-mailadres en bedrijfsnaam in om verder te gaan.
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             )}
