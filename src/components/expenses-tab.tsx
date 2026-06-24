@@ -905,6 +905,7 @@ function AttachmentsDialog({
     await supabase.storage.from("expense-attachments").remove([a.storage_path]);
     const { error } = await supabase.from("expense_attachments").delete().eq("id", a.id);
     if (error) { toast.error(error.message); return; }
+    await logAudit("deleted", { attachment_id: a.id, previous_file_name: a.file_name, previous_storage_path: a.storage_path });
     toast.success("Verwijderd");
     await refresh();
     onChanged();
