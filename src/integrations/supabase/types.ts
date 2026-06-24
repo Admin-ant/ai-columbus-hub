@@ -1452,6 +1452,47 @@ export type Database = {
           },
         ]
       }
+      studio_quote_events: {
+        Row: {
+          duration_ms: number | null
+          event_type: string
+          id: string
+          metadata: Json
+          occurred_at: string
+          organization_id: string
+          quote_id: string
+          section_key: string | null
+        }
+        Insert: {
+          duration_ms?: number | null
+          event_type: string
+          id?: string
+          metadata?: Json
+          occurred_at?: string
+          organization_id: string
+          quote_id: string
+          section_key?: string | null
+        }
+        Update: {
+          duration_ms?: number | null
+          event_type?: string
+          id?: string
+          metadata?: Json
+          occurred_at?: string
+          organization_id?: string
+          quote_id?: string
+          section_key?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_quote_events_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "studio_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       studio_quotes: {
         Row: {
           accepted_at: string | null
@@ -1462,16 +1503,23 @@ export type Database = {
           cover_image_url: string | null
           created_at: string
           created_by: string | null
+          followup_count: number
+          followup_sent_at: string | null
           id: string
+          intro_video_url: string | null
+          last_viewed_at: string | null
           organization_id: string
           outreach_target_id: string | null
+          packages: Json
           public_token: string | null
           sections: Json
+          selected_package_id: string | null
           status: string
           template_id: string | null
           theme: Json
           title: string
           updated_at: string
+          view_count: number
         }
         Insert: {
           accepted_at?: string | null
@@ -1482,16 +1530,23 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string
           created_by?: string | null
+          followup_count?: number
+          followup_sent_at?: string | null
           id?: string
+          intro_video_url?: string | null
+          last_viewed_at?: string | null
           organization_id: string
           outreach_target_id?: string | null
+          packages?: Json
           public_token?: string | null
           sections?: Json
+          selected_package_id?: string | null
           status?: string
           template_id?: string | null
           theme?: Json
           title: string
           updated_at?: string
+          view_count?: number
         }
         Update: {
           accepted_at?: string | null
@@ -1502,16 +1557,23 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string
           created_by?: string | null
+          followup_count?: number
+          followup_sent_at?: string | null
           id?: string
+          intro_video_url?: string | null
+          last_viewed_at?: string | null
           organization_id?: string
           outreach_target_id?: string | null
+          packages?: Json
           public_token?: string | null
           sections?: Json
+          selected_package_id?: string | null
           status?: string
           template_id?: string | null
           theme?: Json
           title?: string
           updated_at?: string
+          view_count?: number
         }
         Relationships: [
           {
