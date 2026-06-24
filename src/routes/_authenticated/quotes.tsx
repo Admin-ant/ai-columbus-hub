@@ -78,7 +78,16 @@ function QuotesPage() {
   const [title, setTitle] = useState("");
   const [clientId, setClientId] = useState<string>("");
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
-  const [templates, setTemplates] = useState<{ id: string; name: string }[]>([]);
+  type TemplateRow = {
+    id: string;
+    name: string;
+    description: string | null;
+    cover_image_url: string | null;
+    theme: StudioTheme;
+    sections: StudioSection[];
+    packages: StudioPackage[];
+  };
+  const [templates, setTemplates] = useState<TemplateRow[]>([]);
   const [templateId, setTemplateId] = useState<string>("");
   const [lines, setLines] = useState<LineItem[]>([{ description: "", quantity: 1, unit_price: 0 }]);
 
