@@ -334,9 +334,10 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
                         </Button>
                       )}
                       {!posted && (
-                        <Button variant="ghost" size="sm" title="Boek in journaal" onClick={() => postToJournal(e.id)}>
+                        <Button variant="ghost" size="sm" title="Voorvertoning journaal" onClick={() => setPreviewId(e.id)}>
                           <BookOpen className="h-3.5 w-3.5" />
                         </Button>
+
                       )}
                       <Button variant="ghost" size="sm" title="Verwijder" onClick={() => deleteExpense(e.id)}>
                         <Trash2 className="h-3.5 w-3.5 text-destructive" />
