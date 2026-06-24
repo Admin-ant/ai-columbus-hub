@@ -13,6 +13,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as QTokenRouteImport } from './routes/q.$token'
 import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated/teams'
 import { Route as AuthenticatedQuotesRouteImport } from './routes/_authenticated/quotes'
@@ -71,6 +72,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const TTokenRoute = TTokenRouteImport.update({
+  id: '/t/$token',
+  path: '/t/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const QTokenRoute = QTokenRouteImport.update({
   id: '/q/$token',
@@ -310,6 +316,7 @@ export interface FileRoutesByFullPath {
   '/quotes': typeof AuthenticatedQuotesRoute
   '/teams': typeof AuthenticatedTeamsRoute
   '/q/$token': typeof QTokenRoute
+  '/t/$token': typeof TTokenRoute
   '/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
   '/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenRouteWithChildren
   '/ai-columbus/leads': typeof AuthenticatedAiColumbusLeadsRoute
@@ -351,6 +358,7 @@ export interface FileRoutesByTo {
   '/quotes': typeof AuthenticatedQuotesRoute
   '/teams': typeof AuthenticatedTeamsRoute
   '/q/$token': typeof QTokenRoute
+  '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
   '/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenRouteWithChildren
@@ -397,6 +405,7 @@ export interface FileRoutesById {
   '/_authenticated/quotes': typeof AuthenticatedQuotesRoute
   '/_authenticated/teams': typeof AuthenticatedTeamsRoute
   '/q/$token': typeof QTokenRoute
+  '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
   '/_authenticated/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenRouteWithChildren
@@ -444,6 +453,7 @@ export interface FileRouteTypes {
     | '/quotes'
     | '/teams'
     | '/q/$token'
+    | '/t/$token'
     | '/ai-columbus/instellingen'
     | '/ai-columbus/klanten'
     | '/ai-columbus/leads'
@@ -485,6 +495,7 @@ export interface FileRouteTypes {
     | '/quotes'
     | '/teams'
     | '/q/$token'
+    | '/t/$token'
     | '/'
     | '/ai-columbus/instellingen'
     | '/ai-columbus/klanten'
@@ -530,6 +541,7 @@ export interface FileRouteTypes {
     | '/_authenticated/quotes'
     | '/_authenticated/teams'
     | '/q/$token'
+    | '/t/$token'
     | '/_authenticated/'
     | '/_authenticated/ai-columbus/instellingen'
     | '/_authenticated/ai-columbus/klanten'
@@ -566,6 +578,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   QTokenRoute: typeof QTokenRoute
+  TTokenRoute: typeof TTokenRoute
   AcceptQuoteTokenRoute: typeof AcceptQuoteTokenRoute
   QuoteTokenPdfRoute: typeof QuoteTokenPdfRoute
   ApiPublicHooksMollieRoute: typeof ApiPublicHooksMollieRoute
@@ -604,6 +617,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/t/$token': {
+      id: '/t/$token'
+      path: '/t/$token'
+      fullPath: '/t/$token'
+      preLoaderRoute: typeof TTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/q/$token': {
       id: '/q/$token'
@@ -1026,6 +1046,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   QTokenRoute: QTokenRoute,
+  TTokenRoute: TTokenRoute,
   AcceptQuoteTokenRoute: AcceptQuoteTokenRoute,
   QuoteTokenPdfRoute: QuoteTokenPdfRoute,
   ApiPublicHooksMollieRoute: ApiPublicHooksMollieRoute,

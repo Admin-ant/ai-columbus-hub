@@ -24,7 +24,7 @@ type TemplateData = {
 const previewQuery = (token: string) =>
   queryOptions({
     queryKey: ["template-preview", token],
-    queryFn: () => getPublicTemplatePreview({ data: { token } }) as Promise<TemplateData>,
+    queryFn: () => getPublicTemplatePreview({ data: { token } }) as unknown as Promise<TemplateData>,
     staleTime: 60_000,
   });
 
