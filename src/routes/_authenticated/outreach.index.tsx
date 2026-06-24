@@ -648,6 +648,16 @@ function CampaignCard({
           <Button
             variant="ghost"
             size="sm"
+            onClick={onGenerateVariants}
+            className="h-7 text-xs hover:bg-white/10"
+            title="Genereer 3 A/B pitchvarianten"
+          >
+            <FlaskConical className="mr-1 h-3.5 w-3.5" />
+            A/B
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             className="h-7 text-xs hover:bg-white/10"
             onClick={onToggle}
           >
