@@ -924,7 +924,20 @@ function AttachmentsDialog({
     <Dialog open={!!expenseId} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Bijlagen{expense ? ` — ${expense.supplier}` : ""}</DialogTitle>
+          <div className="flex items-center justify-between gap-2">
+            <DialogTitle>Bijlagen{expense ? ` — ${expense.supplier}` : ""}</DialogTitle>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void downloadAll()}
+              disabled={items.length === 0 || uploading}
+              className="gap-1"
+            >
+              <DownloadCloud className="h-4 w-4" />
+              Download alles{items.length > 0 ? ` (${items.length})` : ""}
+            </Button>
+          </div>
         </DialogHeader>
 
         <label
