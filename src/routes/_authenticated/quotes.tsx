@@ -96,6 +96,27 @@ function QuotesPage() {
   const [templates, setTemplates] = useState<TemplateRow[]>([]);
   const [templateId, setTemplateId] = useState<string>("");
   const [lines, setLines] = useState<LineItem[]>([{ description: "", quantity: 1, unit_price: 0 }]);
+  type QuoteExt = Quote & {
+    public_token: string;
+    accepted_at: string | null;
+    accepted_by_name: string | null;
+    signed_at: string | null;
+    revoked_at: string | null;
+    sent_at: string | null;
+    last_viewed_at: string | null;
+    intro_video_url: string | null;
+    intro_message: string | null;
+    notify_email: string | null;
+    client_email: string | null;
+    followup_enabled: boolean;
+    followup_after_days: number;
+  };
+  const [settingsQuote, setSettingsQuote] = useState<QuoteExt | null>(null);
+  const revokeFn = useServerFn(revokeQuoteLink);
+  const restoreFn = useServerFn(restoreQuoteLink);
+  const regenFn = useServerFn(regenerateQuoteToken);
+  const updateSettingsFn = useServerFn(updateQuoteSettings);
+  const markSentFn = useServerFn(markQuoteSent);
 
   const eur = useMemo(
     () =>
