@@ -155,9 +155,10 @@ function ClientDetailPage() {
     if (error) { toast.error(error.message); setInvoices(prev); return; }
     await writeLog(invoiceId, source, {
       projectId: autoProjectId,
-      note: autoProjectId ? `Project ook automatisch gekoppeld op naam-match` : null,
+      note: autoProjectId ? `Project ook automatisch gekoppeld op naam-match` : undefined,
     });
     toast.success(autoProjectId ? "Factuur + project gekoppeld" : "Factuur gekoppeld aan klant");
+
   }
 
   async function linkAllNameMatches() {
