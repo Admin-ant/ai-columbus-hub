@@ -82,6 +82,24 @@ function ClientDetailPage() {
     toast.success("Project verwijderd");
   }
 
+  async function linkInvoice(invoiceId: string) {
+    const prev = invoices;
+    setInvoices(list => list.map(i => i.id === invoiceId ? { ...i, client_id: clientId } : i));
+    const { error } = await supabase.from("invoices").update({ client_id: clientId }).eq("id", invoiceId);
+    if (error) { toast.error(error.message); setInvoices(prev); return; }
+    toast.success("Factuur gekoppeld aan klant");
+  }
+
+  async function linkAllNameMatches() {
+    const ids = invoices.filter(i => !i.client_id).map(i => i.id);
+    if (ids.length === 0) return;
+    const prev = invoices;
+    setInvoices(list => list.map(i => ids.includes(i.id) ? { ...i, client_id: clientId } : i));
+    const { error } = await supabase.from("invoices").update({ client_id: clientId }).in("id", ids);
+    if (error) { toast.error(error.message); setInvoices(prev); return; }
+    toast.success(`${ids.length} factuur/facturen gekoppeld`);
+  }
+
   if (loading) {
     return <div className="flex items-center justify-center py-16 text-sm text-muted-foreground"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Laden…</div>;
   }
@@ -267,6 +285,35 @@ function ClientDetailPage() {
             <Stat label="Betaald" value={EUR.format(totalPaid / 100)} accent="text-emerald-600" />
             <Stat label="Openstaand" value={EUR.format(totalOpen / 100)} accent={totalOpen > 0 ? "text-orange-600" : ""} />
           </div>
+
+          {(() => {
+            const linkedCount = invoices.filter(i => i.client_id === clientId).length;
+            const nameOnlyCount = invoices.filter(i => !i.client_id).length;
+            if (invoices.length === 0) return null;
+            return (
+              <div className={`flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3 text-sm ${nameOnlyCount > 0 ? "border-orange-300 bg-orange-50 dark:bg-orange-950/20" : "border-emerald-300 bg-emerald-50 dark:bg-emerald-950/20"}`}>
+                <div className="flex items-center gap-2">
+                  {nameOnlyCount > 0 ? (
+                    <>
+                      <Unlink className="h-4 w-4 text-orange-600" />
+                      <span><strong>{nameOnlyCount}</strong> factuur/facturen alleen via naam-match gevonden. <strong>{linkedCount}</strong> automatisch gekoppeld.</span>
+                    </>
+                  ) : (
+                    <>
+                      <Link2 className="h-4 w-4 text-emerald-600" />
+                      <span>Alle <strong>{linkedCount}</strong> factuur/facturen zijn automatisch gekoppeld via klant-ID.</span>
+                    </>
+                  )}
+                </div>
+                {nameOnlyCount > 0 && (
+                  <Button size="sm" variant="outline" onClick={linkAllNameMatches}>
+                    <Link2 className="mr-2 h-3.5 w-3.5" /> Alles koppelen
+                  </Button>
+                )}
+              </div>
+            );
+          })()}
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base"><FileText className="h-4 w-4" /> Facturen</CardTitle>
@@ -279,28 +326,48 @@ function ClientDetailPage() {
                   <thead className="bg-muted/50 text-left">
                     <tr>
                       <th className="px-4 py-2 font-medium">Nummer</th>
+                      <th className="px-4 py-2 font-medium">Koppeling</th>
                       <th className="px-4 py-2 font-medium">Datum</th>
                       <th className="px-4 py-2 font-medium">Vervalt</th>
                       <th className="px-4 py-2 font-medium">Status</th>
                       <th className="px-4 py-2 text-right font-medium">Totaal</th>
+                      <th className="px-4 py-2 text-right font-medium">Acties</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {invoices.map(i => (
-                      <tr key={i.id} className="border-t">
-                        <td className="px-4 py-2 font-medium">{i.invoice_number}</td>
-                        <td className="px-4 py-2 text-muted-foreground">{i.issue_date ?? "—"}</td>
-                        <td className="px-4 py-2 text-muted-foreground">{i.due_date ?? "—"}</td>
-                        <td className="px-4 py-2"><Badge variant={i.status === "paid" ? "default" : "outline"}>{i.status}</Badge></td>
-                        <td className="px-4 py-2 text-right">{EUR.format(Number(i.total_cents) / 100)}</td>
-                      </tr>
-                    ))}
+                    {invoices.map(i => {
+                      const linked = i.client_id === clientId;
+                      return (
+                        <tr key={i.id} className="border-t">
+                          <td className="px-4 py-2 font-medium">{i.invoice_number}</td>
+                          <td className="px-4 py-2">
+                            {linked ? (
+                              <Badge variant="default" className="gap-1"><Link2 className="h-3 w-3" /> Auto-gekoppeld</Badge>
+                            ) : (
+                              <Badge variant="secondary" className="gap-1 border-orange-300 text-orange-700"><Unlink className="h-3 w-3" /> Naam-match</Badge>
+                            )}
+                          </td>
+                          <td className="px-4 py-2 text-muted-foreground">{i.issue_date ?? "—"}</td>
+                          <td className="px-4 py-2 text-muted-foreground">{i.due_date ?? "—"}</td>
+                          <td className="px-4 py-2"><Badge variant={i.status === "paid" ? "default" : "outline"}>{i.status}</Badge></td>
+                          <td className="px-4 py-2 text-right">{EUR.format(Number(i.total_cents) / 100)}</td>
+                          <td className="px-4 py-2 text-right">
+                            {!linked && (
+                              <Button variant="ghost" size="sm" title="Koppelen aan deze klant" onClick={() => linkInvoice(i.id)}>
+                                <Link2 className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               )}
             </CardContent>
           </Card>
         </TabsContent>
+
       </Tabs>
     </div>
   );
