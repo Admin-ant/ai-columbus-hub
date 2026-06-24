@@ -338,6 +338,7 @@ function OutreachDashboard() {
                     targetCount={targets.filter((t) => t.campaign_id === c.id).length}
                     onToggle={() => toggleCampaign(c)}
                     onDelete={() => deleteCampaign(c.id)}
+                    onGenerateSequence={() => generateSequence(c)}
                   />
                 ))}
               </div>
