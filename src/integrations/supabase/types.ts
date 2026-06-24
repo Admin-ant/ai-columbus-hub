@@ -189,6 +189,86 @@ export type Database = {
           },
         ]
       }
+      crm_activities: {
+        Row: {
+          body: string | null
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          done: boolean
+          done_at: string | null
+          due_at: string | null
+          id: string
+          kind: string
+          organization_id: string
+          quote_id: string | null
+          target_id: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          done?: boolean
+          done_at?: string | null
+          due_at?: string | null
+          id?: string
+          kind: string
+          organization_id: string
+          quote_id?: string | null
+          target_id?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          done?: boolean
+          done_at?: string | null
+          due_at?: string | null
+          id?: string
+          kind?: string
+          organization_id?: string
+          quote_id?: string | null
+          target_id?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_activities_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activities_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activities_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "studio_quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activities_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "outreach_targets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expense_attachment_audit: {
         Row: {
           action: string
@@ -393,6 +473,56 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forecast_snapshots: {
+        Row: {
+          best_case_cents: number
+          breakdown: Json
+          commit_cents: number
+          created_at: string
+          created_by: string | null
+          id: string
+          organization_id: string
+          period_end: string
+          period_start: string
+          updated_at: string
+          weighted_value_cents: number
+        }
+        Insert: {
+          best_case_cents?: number
+          breakdown?: Json
+          commit_cents?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id: string
+          period_end: string
+          period_start: string
+          updated_at?: string
+          weighted_value_cents?: number
+        }
+        Update: {
+          best_case_cents?: number
+          breakdown?: Json
+          commit_cents?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id?: string
+          period_end?: string
+          period_start?: string
+          updated_at?: string
+          weighted_value_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forecast_snapshots_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -913,7 +1043,12 @@ export type Database = {
       }
       organizations: {
         Row: {
+          brand_accent_color: string | null
           brand_color: string | null
+          brand_custom_domain: string | null
+          brand_font: string | null
+          brand_logo_url: string | null
+          brand_primary_color: string | null
           created_at: string
           id: string
           invoice_prefix: string
@@ -925,7 +1060,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          brand_accent_color?: string | null
           brand_color?: string | null
+          brand_custom_domain?: string | null
+          brand_font?: string | null
+          brand_logo_url?: string | null
+          brand_primary_color?: string | null
           created_at?: string
           id?: string
           invoice_prefix: string
@@ -937,7 +1077,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          brand_accent_color?: string | null
           brand_color?: string | null
+          brand_custom_domain?: string | null
+          brand_font?: string | null
+          brand_logo_url?: string | null
+          brand_primary_color?: string | null
           created_at?: string
           id?: string
           invoice_prefix?: string
@@ -1393,6 +1538,57 @@ export type Database = {
           },
         ]
       }
+      quote_comments: {
+        Row: {
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+          mentions: string[]
+          organization_id: string
+          quote_id: string
+          resolved: boolean
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          mentions?: string[]
+          organization_id: string
+          quote_id: string
+          resolved?: boolean
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          mentions?: string[]
+          organization_id?: string
+          quote_id?: string
+          resolved?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_comments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_comments_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "studio_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quote_status_events: {
         Row: {
           created_at: string
@@ -1611,6 +1807,7 @@ export type Database = {
           accepted_by_name: string | null
           accepted_signature: string | null
           ai_brief: string | null
+          ai_winloss: Json | null
           approved_at: string | null
           client_name: string | null
           cover_image_url: string | null
@@ -1622,6 +1819,9 @@ export type Database = {
           intro_video_url: string | null
           last_viewed_at: string | null
           organization_id: string
+          outcome: string | null
+          outcome_at: string | null
+          outcome_reason: string | null
           outreach_target_id: string | null
           packages: Json
           public_token: string | null
@@ -1633,12 +1833,14 @@ export type Database = {
           title: string
           updated_at: string
           view_count: number
+          win_probability: number | null
         }
         Insert: {
           accepted_at?: string | null
           accepted_by_name?: string | null
           accepted_signature?: string | null
           ai_brief?: string | null
+          ai_winloss?: Json | null
           approved_at?: string | null
           client_name?: string | null
           cover_image_url?: string | null
@@ -1650,6 +1852,9 @@ export type Database = {
           intro_video_url?: string | null
           last_viewed_at?: string | null
           organization_id: string
+          outcome?: string | null
+          outcome_at?: string | null
+          outcome_reason?: string | null
           outreach_target_id?: string | null
           packages?: Json
           public_token?: string | null
@@ -1661,12 +1866,14 @@ export type Database = {
           title: string
           updated_at?: string
           view_count?: number
+          win_probability?: number | null
         }
         Update: {
           accepted_at?: string | null
           accepted_by_name?: string | null
           accepted_signature?: string | null
           ai_brief?: string | null
+          ai_winloss?: Json | null
           approved_at?: string | null
           client_name?: string | null
           cover_image_url?: string | null
@@ -1678,6 +1885,9 @@ export type Database = {
           intro_video_url?: string | null
           last_viewed_at?: string | null
           organization_id?: string
+          outcome?: string | null
+          outcome_at?: string | null
+          outcome_reason?: string | null
           outreach_target_id?: string | null
           packages?: Json
           public_token?: string | null
@@ -1689,6 +1899,7 @@ export type Database = {
           title?: string
           updated_at?: string
           view_count?: number
+          win_probability?: number | null
         }
         Relationships: [
           {
