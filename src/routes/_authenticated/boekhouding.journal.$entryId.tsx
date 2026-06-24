@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, FileText, Receipt, ScrollText, Download, Eye, EyeOff, History } from "lucide-react";
+import { ArrowLeft, Loader2, FileText, Receipt, ScrollText, Download, Eye, EyeOff, History, Paperclip } from "lucide-react";
 
 
 import { supabase } from "@/integrations/supabase/client";
@@ -44,6 +44,7 @@ interface EntryDetail {
   organization_id: string;
   invoice_id: string | null;
   quote_id: string | null;
+  expense_id: string | null;
   created_at: string;
   invoices: {
     id: string;
@@ -65,6 +66,15 @@ interface EntryDetail {
     total_cents: number | null;
   } | null;
   journal_lines: LineRow[];
+}
+
+interface AttachmentRow {
+  id: string;
+  storage_path: string;
+  file_name: string;
+  mime_type: string | null;
+  size_bytes: number | null;
+  created_at: string;
 }
 
 interface ExportLogRow {
@@ -96,6 +106,7 @@ function JournalDetailPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const lastUrlRef = useRef<string | null>(null);
   const [history, setHistory] = useState<ExportLogRow[]>([]);
+  const [attachments, setAttachments] = useState<AttachmentRow[]>([]);
 
   const loadHistory = useCallback(async () => {
     const { data, error } = await supabase
@@ -119,7 +130,7 @@ function JournalDetailPage() {
       const { data, error } = await supabase
         .from("journal_entries")
         .select(
-          `id, entry_date, description, source, organization_id, invoice_id, quote_id, created_at,
+          `id, entry_date, description, source, organization_id, invoice_id, quote_id, expense_id, created_at,
            invoices(id, invoice_number, client_name, status, subtotal_cents, vat_cents, total_cents, issue_date, due_date, quote_id),
            quotes(id, quote_number, client_name, status, total_cents),
            journal_lines(id, debit_cents, credit_cents, description,
@@ -129,13 +140,32 @@ function JournalDetailPage() {
         .maybeSingle();
       if (cancelled) return;
       if (error) toast.error(error.message);
-      setEntry((data as unknown as EntryDetail) ?? null);
+      const e = (data as unknown as EntryDetail) ?? null;
+      setEntry(e);
+      if (e?.expense_id) {
+        const { data: atts } = await supabase
+          .from("expense_attachments")
+          .select("id,storage_path,file_name,mime_type,size_bytes,created_at")
+          .eq("expense_id", e.expense_id)
+          .order("created_at", { ascending: false });
+        if (!cancelled) setAttachments((atts ?? []) as AttachmentRow[]);
+      } else {
+        setAttachments([]);
+      }
       setLoading(false);
     })();
     return () => {
       cancelled = true;
     };
   }, [entryId]);
+
+  async function openAttachment(a: AttachmentRow) {
+    const { data, error } = await supabase.storage
+      .from("expense-attachments")
+      .createSignedUrl(a.storage_path, 60 * 5);
+    if (error || !data?.signedUrl) { toast.error(error?.message ?? "Kan bestand niet openen"); return; }
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  }
 
   const pdfData: JournalPdfData | null = useMemo(() => {
     if (!entry) return null;
@@ -441,6 +471,42 @@ function JournalDetailPage() {
           </TableBody>
         </Table>
       </div>
+
+      {entry.expense_id && (
+        <div className="rounded-lg border bg-card">
+          <div className="flex items-center justify-between border-b px-4 py-2.5 text-sm font-semibold">
+            <span className="flex items-center gap-2">
+              <Paperclip className="h-4 w-4 text-muted-foreground" /> Bijlagen
+            </span>
+            <span className="text-xs font-normal text-muted-foreground">
+              {attachments.length === 0 ? "Geen bijlagen" : `${attachments.length} bestand${attachments.length === 1 ? "" : "en"}`}
+            </span>
+          </div>
+          {attachments.length === 0 ? (
+            <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+              Geen factuur- of bonbijlagen gekoppeld. Voeg deze toe vanuit de Uitgaven-tab.
+            </div>
+          ) : (
+            <ul className="divide-y">
+              {attachments.map(a => (
+                <li key={a.id} className="flex items-center gap-3 px-4 py-2.5">
+                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <button
+                    onClick={() => void openAttachment(a)}
+                    className="flex-1 truncate text-left text-sm font-medium text-primary hover:underline"
+                    title={a.file_name}
+                  >
+                    {a.file_name}
+                  </button>
+                  <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                    {a.size_bytes ? `${(a.size_bytes / 1024).toFixed(0)} KB` : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       <div className="rounded-lg border bg-card">
         <div className="flex items-center justify-between border-b px-4 py-2.5 text-sm font-semibold">
