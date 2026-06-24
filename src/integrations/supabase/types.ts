@@ -1584,7 +1584,7 @@ export type Database = {
             foreignKeyName: "quote_comments_quote_id_fkey"
             columns: ["quote_id"]
             isOneToOne: false
-            referencedRelation: "studio_quotes"
+            referencedRelation: "quotes"
             referencedColumns: ["id"]
           },
         ]
