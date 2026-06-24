@@ -751,6 +751,83 @@ function QuotesPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!settingsQuote} onOpenChange={(o) => !o && setSettingsQuote(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Instellingen — {settingsQuote?.title}</DialogTitle>
+            <DialogDescription>Personaliseer de publieke offerte en automatische follow-ups.</DialogDescription>
+          </DialogHeader>
+          {settingsQuote && (
+            <SettingsForm
+              q={settingsQuote}
+              onSave={async (patch) => {
+                try {
+                  await updateSettingsFn({ data: { id: settingsQuote.id, ...patch } });
+                  toast.success("Opgeslagen");
+                  setSettingsQuote(null);
+                  load();
+                } catch (e) { toast.error((e as Error).message); }
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+    </div>
+  );
+}
+
+function SettingsForm({ q, onSave }: {
+  q: { intro_video_url: string | null; intro_message: string | null; notify_email: string | null; client_email: string | null; followup_enabled: boolean; followup_after_days: number };
+  onSave: (patch: { intro_video_url?: string | null; intro_message?: string | null; notify_email?: string | null; client_email?: string | null; followup_enabled?: boolean; followup_after_days?: number }) => void;
+}) {
+  const [video, setVideo] = useState(q.intro_video_url ?? "");
+  const [msg, setMsg] = useState(q.intro_message ?? "");
+  const [notify, setNotify] = useState(q.notify_email ?? "");
+  const [clientEmail, setClientEmail] = useState(q.client_email ?? "");
+  const [enabled, setEnabled] = useState(q.followup_enabled ?? true);
+  const [days, setDays] = useState(q.followup_after_days ?? 3);
+  return (
+    <div className="space-y-4">
+      <div>
+        <Label>Persoonlijke video-intro (Loom/YouTube/Vimeo embed of MP4-URL)</Label>
+        <Input value={video} onChange={(e) => setVideo(e.target.value)} placeholder="https://www.loom.com/embed/..." />
+      </div>
+      <div>
+        <Label>Persoonlijke boodschap</Label>
+        <Textarea value={msg} onChange={(e) => setMsg(e.target.value)} rows={3} placeholder="Hi, hierbij onze offerte..." />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label>E-mail klant (follow-ups)</Label>
+          <Input value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} placeholder="klant@bedrijf.nl" type="email" />
+        </div>
+        <div>
+          <Label>Notificatie naar (jij)</Label>
+          <Input value={notify} onChange={(e) => setNotify(e.target.value)} placeholder="jij@bedrijf.nl" type="email" />
+        </div>
+      </div>
+      <div className="flex items-center justify-between rounded-md border p-3">
+        <div>
+          <div className="text-sm font-medium">Automatische follow-up e-mails</div>
+          <div className="text-xs text-muted-foreground">Stuur herinneringen als de klant niet bekijkt of ondertekent.</div>
+        </div>
+        <Switch checked={enabled} onCheckedChange={setEnabled} />
+      </div>
+      <div>
+        <Label>Eerste follow-up na (dagen)</Label>
+        <Input type="number" min={1} max={60} value={days} onChange={(e) => setDays(parseInt(e.target.value || "3", 10))} />
+      </div>
+      <DialogFooter>
+        <Button onClick={() => onSave({
+          intro_video_url: video.trim() || null,
+          intro_message: msg.trim() || null,
+          notify_email: notify.trim() || null,
+          client_email: clientEmail.trim() || null,
+          followup_enabled: enabled,
+          followup_after_days: days,
+        })}>Opslaan</Button>
+      </DialogFooter>
     </div>
   );
 }
