@@ -76,6 +76,14 @@ type Campaign = {
   ai_pitch: string | null;
   notes: string | null;
   created_at: string;
+  sequence_steps?: SequenceStep[];
+};
+
+export type SequenceStep = {
+  day: number;
+  channel: "email" | "linkedin" | "cold-call";
+  subject?: string;
+  body: string;
 };
 
 type TargetRow = {
