@@ -17,6 +17,9 @@ import {
   PauseCircle,
   FileSignature,
   ListOrdered,
+  Search,
+  FlaskConical,
+  Copy,
 } from "lucide-react";
 import { buildDefaultSections, DEFAULT_THEME } from "@/lib/offerte-studio";
 
@@ -47,6 +50,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { useServerFn } from "@tanstack/react-start";
 import { askAssistant } from "@/lib/ai-assistant.functions";
+import { researchLead, generatePitchVariants, type PitchVariant } from "@/lib/ai-power.functions";
 
 export const Route = createFileRoute("/_authenticated/outreach/")({
   head: () => ({ meta: [{ title: "Cold Outreach" }] }),
@@ -77,6 +81,7 @@ type Campaign = {
   notes: string | null;
   created_at: string;
   sequence_steps?: SequenceStep[];
+  pitch_variants?: PitchVariant[];
 };
 
 export type SequenceStep = {
@@ -97,13 +102,51 @@ type TargetRow = {
   stage: Stage;
   last_contact_at: string | null;
   notes: string | null;
+  research_summary?: string | null;
+  research_at?: string | null;
 };
 
 function OutreachDashboard() {
   const { user } = useAuth();
   const { currentOrganizationId, currentOrganization, loading: wsLoading } = useWorkspace();
   const ask = useServerFn(askAssistant);
+  const research = useServerFn(researchLead);
+  const genVariants = useServerFn(generatePitchVariants);
   const navigate = useNavigate();
+
+  async function runResearch(t: TargetRow) {
+    const website = prompt(
+      `Website van ${t.company}? (optioneel — laat leeg om alleen met bedrijfsnaam te werken)`,
+      "",
+    );
+    if (website === null) return;
+    const url = website.trim();
+    const safeUrl = url
+      ? url.startsWith("http")
+        ? url
+        : `https://${url}`
+      : undefined;
+    toast.loading("AI research…", { id: "rs" });
+    try {
+      await research({ data: { target_id: t.id, website: safeUrl } });
+      toast.success("Research klaar", { id: "rs" });
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Mislukt", { id: "rs" });
+    }
+  }
+
+  async function runVariants(c: Campaign) {
+    toast.loading("A/B varianten genereren…", { id: "ab" });
+    try {
+      await genVariants({ data: { campaign_id: c.id } });
+      toast.success("Varianten opgeslagen", { id: "ab" });
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Mislukt", { id: "ab" });
+    }
+  }
+
 
   async function createQuoteFromTarget(t: TargetRow) {
     if (!currentOrganizationId) return;
@@ -313,6 +356,7 @@ function OutreachDashboard() {
                               onMove={moveTarget}
                               onDelete={deleteTarget}
                               onCreateQuote={() => createQuoteFromTarget(t)}
+                              onResearch={() => runResearch(t)}
                             />
                           ))
                         )}
@@ -339,6 +383,7 @@ function OutreachDashboard() {
                     onToggle={() => toggleCampaign(c)}
                     onDelete={() => deleteCampaign(c.id)}
                     onGenerateSequence={() => generateSequence(c)}
+                    onGenerateVariants={() => runVariants(c)}
                   />
                 ))}
               </div>
@@ -383,13 +428,16 @@ function TargetCard({
   onMove,
   onDelete,
   onCreateQuote,
+  onResearch,
 }: {
   row: TargetRow;
   campaign: Campaign | null;
   onMove: (id: string, stage: Stage) => void;
   onDelete: (id: string) => void;
   onCreateQuote: () => void;
+  onResearch: () => void;
 }) {
+  const [showResearch, setShowResearch] = useState(false);
   return (
     <div className="group rounded-md border border-white/10 bg-black/40 p-3 transition-all hover:border-[#ff2bd6]/50">
       <div className="flex items-start justify-between gap-2">
@@ -408,12 +456,20 @@ function TargetCard({
           <Trash2 className="h-3 w-3" />
         </Button>
       </div>
-      <div className="mt-2 flex flex-wrap gap-1 text-[10px] text-white/50">
+      <div className="mt-2 flex flex-wrap items-center gap-1 text-[10px] text-white/50">
         {row.email && <Mail className="h-3 w-3" />}
         {row.linkedin_url && <Linkedin className="h-3 w-3" />}
         {row.phone && <Phone className="h-3 w-3" />}
         {campaign && (
           <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px]">{campaign.name}</span>
+        )}
+        {row.research_summary && (
+          <span
+            className="rounded px-1.5 py-0.5 text-[10px]"
+            style={{ background: `${ACCENT}22`, color: ACCENT }}
+          >
+            ✨ research
+          </span>
         )}
       </div>
       <Select value={row.stage} onValueChange={(v) => onMove(row.id, v as Stage)}>
@@ -428,15 +484,40 @@ function TargetCard({
           ))}
         </SelectContent>
       </Select>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onCreateQuote}
-        className="mt-2 h-7 w-full justify-start text-[11px] hover:bg-[#ff2bd6]/10"
-        style={{ color: ACCENT }}
-      >
-        <FileSignature className="mr-1 h-3 w-3" /> Maak offerte
-      </Button>
+      <div className="mt-2 flex gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onResearch}
+          className="h-7 flex-1 justify-start text-[11px] hover:bg-white/10"
+          title="AI research op deze prospect"
+        >
+          <Search className="mr-1 h-3 w-3" /> Research
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onCreateQuote}
+          className="h-7 flex-1 justify-start text-[11px] hover:bg-[#ff2bd6]/10"
+          style={{ color: ACCENT }}
+        >
+          <FileSignature className="mr-1 h-3 w-3" /> Offerte
+        </Button>
+      </div>
+      {row.research_summary && (
+        <button
+          type="button"
+          onClick={() => setShowResearch((v) => !v)}
+          className="mt-2 w-full text-left text-[10px] text-white/40 hover:text-white/70"
+        >
+          {showResearch ? "▾ Verberg research" : "▸ Toon research"}
+        </button>
+      )}
+      {showResearch && row.research_summary && (
+        <pre className="mt-1 max-h-48 overflow-auto rounded border border-white/10 bg-black/60 p-2 text-[10px] leading-snug text-white/80 whitespace-pre-wrap">
+          {row.research_summary}
+        </pre>
+      )}
     </div>
   );
 }
@@ -447,12 +528,14 @@ function CampaignCard({
   onToggle,
   onDelete,
   onGenerateSequence,
+  onGenerateVariants,
 }: {
   campaign: Campaign;
   targetCount: number;
   onToggle: () => void;
   onDelete: () => void;
   onGenerateSequence: () => void;
+  onGenerateVariants: () => void;
 }) {
   const channelIcon =
     campaign.channel === "linkedin" ? Linkedin : campaign.channel === "cold-call" ? Phone : Mail;
@@ -512,6 +595,42 @@ function CampaignCard({
           ))}
         </div>
       )}
+      {Array.isArray(campaign.pitch_variants) && campaign.pitch_variants.length > 0 && (
+        <div className="mt-3 space-y-1.5">
+          <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-white/60">
+            <FlaskConical className="h-3 w-3" /> A/B varianten ({campaign.pitch_variants.length})
+          </div>
+          {campaign.pitch_variants.map((v) => (
+            <div key={v.id} className="rounded border border-white/10 bg-black/40 p-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-semibold text-white/90">{v.label}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const txt = v.subject ? `${v.subject}\n\n${v.body}` : v.body;
+                    navigator.clipboard.writeText(txt).then(() => toast.success("Gekopieerd"));
+                  }}
+                  className="text-white/40 hover:text-white"
+                  title="Kopieer"
+                >
+                  <Copy className="h-3 w-3" />
+                </button>
+              </div>
+              {v.angle && (
+                <div className="text-[10px] uppercase tracking-wider" style={{ color: ACCENT }}>
+                  {v.angle}
+                </div>
+              )}
+              {v.subject && (
+                <div className="mt-1 text-[10px] text-white/60">Onderwerp: {v.subject}</div>
+              )}
+              <p className="mt-1 line-clamp-3 text-[11px] text-white/75 whitespace-pre-wrap">
+                {v.body}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3">
         <span className="text-[11px] text-white/40">Limiet: {campaign.daily_limit}/dag</span>
         <div className="flex gap-1">
@@ -525,6 +644,16 @@ function CampaignCard({
           >
             <Sparkles className="mr-1 h-3.5 w-3.5" />
             Sequentie
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onGenerateVariants}
+            className="h-7 text-xs hover:bg-white/10"
+            title="Genereer 3 A/B pitchvarianten"
+          >
+            <FlaskConical className="mr-1 h-3.5 w-3.5" />
+            A/B
           </Button>
           <Button
             variant="ghost"

@@ -14,10 +14,12 @@ import {
   Wand2,
   Share2,
   Copy,
+  Sparkles,
 } from "lucide-react";
 
 import { useServerFn } from "@tanstack/react-start";
 import { createShareToken } from "@/lib/studio-public.functions";
+import { AIQuoteGeneratorDialog } from "@/components/ai-quote-generator-dialog";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -83,6 +85,7 @@ export function OfferteStudioEditor({ kind, id }: Props) {
   const dirty = useRef(false);
   const [shareToken, setShareToken] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
   const createTok = useServerFn(createShareToken);
 
   const table = kind === "quote" ? "studio_quotes" : "quote_templates";
@@ -317,6 +320,18 @@ export function OfferteStudioEditor({ kind, id }: Props) {
             <ChevronRight className="h-4 w-4" />
           </Button>
           <div className="mx-2 h-5 w-px bg-white/10" />
+          {kind === "quote" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setAiOpen(true)}
+              className="hover:bg-white/10"
+              style={{ color: styles.accent }}
+              title="Genereer offerte met AI"
+            >
+              <Sparkles className="mr-1 h-4 w-4" /> AI
+            </Button>
+          )}
           {kind === "quote" && (
             <Button
               variant="ghost"
@@ -617,6 +632,21 @@ export function OfferteStudioEditor({ kind, id }: Props) {
           />
         </main>
       </div>
+
+      {kind === "quote" && (
+        <AIQuoteGeneratorDialog
+          open={aiOpen}
+          onOpenChange={setAiOpen}
+          defaultClient={client}
+          onResult={(d) => {
+            setTitle(d.title);
+            if (d.client) setClient(d.client);
+            setSections(d.sections);
+            setPackages(d.packages);
+            mark();
+          }}
+        />
+      )}
     </div>
   );
 }

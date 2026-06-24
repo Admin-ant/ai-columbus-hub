@@ -962,6 +962,7 @@ export type Database = {
           name: string
           notes: string | null
           organization_id: string
+          pitch_variants: Json
           sequence_steps: Json
           status: string
           updated_at: string
@@ -977,6 +978,7 @@ export type Database = {
           name: string
           notes?: string | null
           organization_id: string
+          pitch_variants?: Json
           sequence_steps?: Json
           status?: string
           updated_at?: string
@@ -992,6 +994,7 @@ export type Database = {
           name?: string
           notes?: string | null
           organization_id?: string
+          pitch_variants?: Json
           sequence_steps?: Json
           status?: string
           updated_at?: string
@@ -1020,6 +1023,9 @@ export type Database = {
           notes: string | null
           organization_id: string
           phone: string | null
+          pitch_variant_id: string | null
+          research_at: string | null
+          research_summary: string | null
           stage: string
           updated_at: string
         }
@@ -1036,6 +1042,9 @@ export type Database = {
           notes?: string | null
           organization_id: string
           phone?: string | null
+          pitch_variant_id?: string | null
+          research_at?: string | null
+          research_summary?: string | null
           stage?: string
           updated_at?: string
         }
@@ -1052,6 +1061,9 @@ export type Database = {
           notes?: string | null
           organization_id?: string
           phone?: string | null
+          pitch_variant_id?: string | null
+          research_at?: string | null
+          research_summary?: string | null
           stage?: string
           updated_at?: string
         }
@@ -1498,6 +1510,7 @@ export type Database = {
           accepted_at: string | null
           accepted_by_name: string | null
           accepted_signature: string | null
+          ai_brief: string | null
           approved_at: string | null
           client_name: string | null
           cover_image_url: string | null
@@ -1525,6 +1538,7 @@ export type Database = {
           accepted_at?: string | null
           accepted_by_name?: string | null
           accepted_signature?: string | null
+          ai_brief?: string | null
           approved_at?: string | null
           client_name?: string | null
           cover_image_url?: string | null
@@ -1552,6 +1566,7 @@ export type Database = {
           accepted_at?: string | null
           accepted_by_name?: string | null
           accepted_signature?: string | null
+          ai_brief?: string | null
           approved_at?: string | null
           client_name?: string | null
           cover_image_url?: string | null
