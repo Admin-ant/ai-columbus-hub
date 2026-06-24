@@ -474,6 +474,8 @@ function TargetCard({
   onDelete,
   onCreateQuote,
   onResearch,
+  onSendNow,
+  onStartSequence,
 }: {
   row: TargetRow;
   campaign: Campaign | null;
@@ -481,6 +483,8 @@ function TargetCard({
   onDelete: (id: string) => void;
   onCreateQuote: () => void;
   onResearch: () => void;
+  onSendNow: () => void;
+  onStartSequence: () => void;
 }) {
   const [showResearch, setShowResearch] = useState(false);
   return (
