@@ -15,6 +15,7 @@ import {
   Receipt,
   FileSignature,
   Package,
+  Wand2,
 } from "lucide-react";
 
 import {
