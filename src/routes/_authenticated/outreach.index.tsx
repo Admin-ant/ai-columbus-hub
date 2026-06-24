@@ -325,6 +325,12 @@ function OutreachDashboard() {
             </p>
           </div>
           <div className="flex gap-2">
+            <ImportCsvDialog
+              campaigns={campaigns}
+              orgId={currentOrganizationId}
+              importFn={importFn}
+              onDone={load}
+            />
             <NewTargetDialog
               campaigns={campaigns}
               orgId={currentOrganizationId}
