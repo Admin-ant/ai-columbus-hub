@@ -428,13 +428,16 @@ function TargetCard({
   onMove,
   onDelete,
   onCreateQuote,
+  onResearch,
 }: {
   row: TargetRow;
   campaign: Campaign | null;
   onMove: (id: string, stage: Stage) => void;
   onDelete: (id: string) => void;
   onCreateQuote: () => void;
+  onResearch: () => void;
 }) {
+  const [showResearch, setShowResearch] = useState(false);
   return (
     <div className="group rounded-md border border-white/10 bg-black/40 p-3 transition-all hover:border-[#ff2bd6]/50">
       <div className="flex items-start justify-between gap-2">
@@ -453,12 +456,20 @@ function TargetCard({
           <Trash2 className="h-3 w-3" />
         </Button>
       </div>
-      <div className="mt-2 flex flex-wrap gap-1 text-[10px] text-white/50">
+      <div className="mt-2 flex flex-wrap items-center gap-1 text-[10px] text-white/50">
         {row.email && <Mail className="h-3 w-3" />}
         {row.linkedin_url && <Linkedin className="h-3 w-3" />}
         {row.phone && <Phone className="h-3 w-3" />}
         {campaign && (
           <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px]">{campaign.name}</span>
+        )}
+        {row.research_summary && (
+          <span
+            className="rounded px-1.5 py-0.5 text-[10px]"
+            style={{ background: `${ACCENT}22`, color: ACCENT }}
+          >
+            ✨ research
+          </span>
         )}
       </div>
       <Select value={row.stage} onValueChange={(v) => onMove(row.id, v as Stage)}>
@@ -473,15 +484,40 @@ function TargetCard({
           ))}
         </SelectContent>
       </Select>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onCreateQuote}
-        className="mt-2 h-7 w-full justify-start text-[11px] hover:bg-[#ff2bd6]/10"
-        style={{ color: ACCENT }}
-      >
-        <FileSignature className="mr-1 h-3 w-3" /> Maak offerte
-      </Button>
+      <div className="mt-2 flex gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onResearch}
+          className="h-7 flex-1 justify-start text-[11px] hover:bg-white/10"
+          title="AI research op deze prospect"
+        >
+          <Search className="mr-1 h-3 w-3" /> Research
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onCreateQuote}
+          className="h-7 flex-1 justify-start text-[11px] hover:bg-[#ff2bd6]/10"
+          style={{ color: ACCENT }}
+        >
+          <FileSignature className="mr-1 h-3 w-3" /> Offerte
+        </Button>
+      </div>
+      {row.research_summary && (
+        <button
+          type="button"
+          onClick={() => setShowResearch((v) => !v)}
+          className="mt-2 w-full text-left text-[10px] text-white/40 hover:text-white/70"
+        >
+          {showResearch ? "▾ Verberg research" : "▸ Toon research"}
+        </button>
+      )}
+      {showResearch && row.research_summary && (
+        <pre className="mt-1 max-h-48 overflow-auto rounded border border-white/10 bg-black/60 p-2 text-[10px] leading-snug text-white/80 whitespace-pre-wrap">
+          {row.research_summary}
+        </pre>
+      )}
     </div>
   );
 }
