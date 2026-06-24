@@ -400,6 +400,8 @@ function OutreachDashboard() {
                               onDelete={deleteTarget}
                               onCreateQuote={() => createQuoteFromTarget(t)}
                               onResearch={() => runResearch(t)}
+                              onSendNow={() => sendNow(t)}
+                              onStartSequence={() => startSequence(t)}
                             />
                           ))
                         )}
