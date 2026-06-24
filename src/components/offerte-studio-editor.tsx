@@ -205,7 +205,15 @@ export function OfferteStudioEditor({ kind, id }: Props) {
           Array.isArray(t.sections) && t.sections.length ? t.sections : buildDefaultSections(),
         );
         setPackages(Array.isArray(t.packages) ? (t.packages as StudioPackage[]) : []);
+        try {
+          const info = await getTplInfo({ data: { id } });
+          setTplPreviewToken(info.token);
+          setTplPreviewExpires(info.expires_at);
+        } catch {
+          /* ignore */
+        }
       }
+
       setLoading(false);
     }
     load();
