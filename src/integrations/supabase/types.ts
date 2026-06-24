@@ -272,6 +272,7 @@ export type Database = {
           issue_date: string
           organization_id: string
           paid_at: string | null
+          project_id: string | null
           quote_id: string | null
           sent_at: string | null
           status: Database["public"]["Enums"]["invoice_status"]
@@ -292,6 +293,7 @@ export type Database = {
           issue_date?: string
           organization_id: string
           paid_at?: string | null
+          project_id?: string | null
           quote_id?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
@@ -312,6 +314,7 @@ export type Database = {
           issue_date?: string
           organization_id?: string
           paid_at?: string | null
+          project_id?: string | null
           quote_id?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
@@ -333,6 +336,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
           {
@@ -890,6 +900,7 @@ export type Database = {
       }
       quotes: {
         Row: {
+          client_id: string | null
           content_json: Json
           created_at: string
           created_by: string | null
@@ -906,6 +917,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          client_id?: string | null
           content_json?: Json
           created_at?: string
           created_by?: string | null
@@ -922,6 +934,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          client_id?: string | null
           content_json?: Json
           created_at?: string
           created_by?: string | null
@@ -938,6 +951,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "quotes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quotes_lead_id_fkey"
             columns: ["lead_id"]

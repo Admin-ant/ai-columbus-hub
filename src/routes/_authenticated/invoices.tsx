@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -128,6 +128,7 @@ function InvoicesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>{t("invoices.number")}</TableHead>
+                <TableHead>Klant</TableHead>
                 <TableHead>{t("invoices.issue_date")}</TableHead>
                 <TableHead>{t("invoices.due_date")}</TableHead>
                 <TableHead className="text-right">{t("invoices.amount")}</TableHead>
@@ -138,6 +139,15 @@ function InvoicesPage() {
               {invoices.map((inv) => (
                 <TableRow key={inv.id}>
                   <TableCell className="font-mono text-sm">{inv.invoice_number}</TableCell>
+                  <TableCell className="text-sm">
+                    {inv.client_id ? (
+                      <Link to="/ai-columbus/klanten/$clientId" params={{ clientId: inv.client_id }} className="text-primary hover:underline">
+                        {inv.client_name ?? "Klant"}
+                      </Link>
+                    ) : (
+                      <span className="text-muted-foreground">{inv.client_name ?? "—"}</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {new Date(inv.issue_date).toLocaleDateString(i18n.resolvedLanguage ?? "nl")}
                   </TableCell>

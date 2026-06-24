@@ -74,6 +74,8 @@ function QuotesPage() {
   const [saving, setSaving] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [title, setTitle] = useState("");
+  const [clientId, setClientId] = useState<string>("");
+  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
   const [lines, setLines] = useState<LineItem[]>([{ description: "", quantity: 1, unit_price: 0 }]);
 
   const eur = useMemo(
@@ -93,17 +95,18 @@ function QuotesPage() {
   async function load() {
     if (!currentOrganizationId) {
       setQuotes([]);
+      setClients([]);
       setLoading(false);
       return;
     }
     setLoading(true);
-    const { data, error } = await supabase
-      .from("quotes")
-      .select("*")
-      .eq("organization_id", currentOrganizationId)
-      .order("created_at", { ascending: false });
+    const [{ data, error }, { data: cs }] = await Promise.all([
+      supabase.from("quotes").select("*").eq("organization_id", currentOrganizationId).order("created_at", { ascending: false }),
+      supabase.from("clients").select("id,name").eq("organization_id", currentOrganizationId).order("name"),
+    ]);
     if (error) toast.error(error.message);
     setQuotes((data ?? []) as Quote[]);
+    setClients((cs ?? []) as { id: string; name: string }[]);
     setLoading(false);
   }
 
@@ -124,12 +127,14 @@ function QuotesPage() {
       total_amount: total,
       status: "draft",
       created_by: user?.id ?? null,
-    });
+      client_id: clientId || null,
+    } as never);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success(t("quotes.created"));
     setOpen(false);
     setTitle("");
+    setClientId("");
     setLines([{ description: "", quantity: 1, unit_price: 0 }]);
     load();
   }
@@ -156,6 +161,11 @@ function QuotesPage() {
     if (numErr || !numData) return toast.error(numErr?.message ?? "RPC error");
     const due = new Date();
     due.setDate(due.getDate() + 30);
+    const qAny = q as Quote & { client_id?: string | null };
+    let cName: string | null = null;
+    if (qAny.client_id) {
+      cName = clients.find((c) => c.id === qAny.client_id)?.name ?? null;
+    }
     const { error } = await supabase.from("invoices").insert({
       organization_id: currentOrganizationId,
       quote_id: q.id,
@@ -163,10 +173,13 @@ function QuotesPage() {
       amount: q.total_amount,
       status: "draft",
       due_date: due.toISOString().slice(0, 10),
-    });
+      client_id: qAny.client_id ?? null,
+      client_name: cName,
+    } as never);
     if (error) return toast.error(error.message);
     toast.success(t("invoices.created", { number: String(numData) }));
   }
+
 
   return (
     <div className="space-y-6">
@@ -198,6 +211,19 @@ function QuotesPage() {
                 <div className="space-y-1.5">
                   <Label htmlFor="q-title">{t("quotes.field_title")}</Label>
                   <Input id="q-title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label>Klant (optioneel)</Label>
+                  <Select value={clientId || "__none"} onValueChange={(v) => setClientId(v === "__none" ? "" : v)}>
+                    <SelectTrigger><SelectValue placeholder="Geen klant" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">Geen klant</SelectItem>
+                      {clients.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">
