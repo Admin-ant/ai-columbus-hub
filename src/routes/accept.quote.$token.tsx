@@ -53,6 +53,11 @@ function AcceptQuotePage() {
   const signFn = useServerFn(signPublicQuote);
   const payFn = useServerFn(payPublicQuote);
   const [signature, setSignature] = useState<string | null>(null);
+  const [signOpen, setSignOpen] = useState(false);
+  const [signerName, setSignerName] = useState("");
+  const [typed, setTyped] = useState("");
+  const [signTab, setSignTab] = useState<"typen" | "tekenen">("typen");
+  const [terms, setTerms] = useState(false);
 
   const eur = useMemo(
     () =>
