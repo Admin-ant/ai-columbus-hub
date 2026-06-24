@@ -33,6 +33,15 @@ type Counters = {
   accepted: number;
 };
 
+type HeatRow = {
+  quote_id: string;
+  title: string;
+  total_ms: number;
+  views: number;
+  top_section: string | null;
+  top_section_ms: number;
+};
+
 function AnalyticsDashboard() {
   const { currentOrganizationId, currentOrganization, loading: wsLoading } = useWorkspace();
   const [loading, setLoading] = useState(true);
