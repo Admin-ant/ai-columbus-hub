@@ -553,6 +553,28 @@ function TargetCard({
           <FileSignature className="mr-1 h-3 w-3" /> Offerte
         </Button>
       </div>
+      {row.email && (
+        <div className="mt-1 flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onSendNow}
+            className="h-7 flex-1 justify-start text-[11px] hover:bg-white/10"
+            title="Stuur direct e-mail"
+          >
+            <Send className="mr-1 h-3 w-3" /> Verstuur
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onStartSequence}
+            className="h-7 flex-1 justify-start text-[11px] hover:bg-white/10"
+            title="Start sequentie van de campagne"
+          >
+            <CalendarClock className="mr-1 h-3 w-3" /> Sequentie
+          </Button>
+        </div>
+      )}
       {row.research_summary && (
         <button
           type="button"
