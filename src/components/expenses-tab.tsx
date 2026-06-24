@@ -865,6 +865,7 @@ function AttachmentsDialog({
 
   async function replaceAttachment(a: AttachmentRow, file: File) {
     if (!expenseId) return;
+    if (!confirm(`Weet je zeker dat je "${a.file_name}" wilt vervangen door "${file.name}"? De oude bijlage wordt verwijderd.`)) return;
     if (file.size > 25 * 1024 * 1024) { toast.error("Bestand groter dan 25 MB"); return; }
     const safe = file.name.replace(/[^\w.\-]+/g, "_");
     const path = `${orgId}/${expenseId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safe}`;
