@@ -355,6 +355,22 @@ function QuotesPage() {
                       </div>
                     );
                   })()}
+                  {templateId && (() => {
+                    const tpl = templates.find((x) => x.id === templateId);
+                    if (!tpl || tpl.packages.length > 0) return null;
+                    return (
+                      <div
+                        role="alert"
+                        className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-200"
+                      >
+                        <span className="mt-0.5">⚠️</span>
+                        <div>
+                          <div className="font-semibold">Dit template heeft geen pakketten</div>
+                          <div className="opacity-90">De offerte wordt aangemaakt zonder prijstabel. Je kunt later in de Offerte Studio pakketten met prijzen toevoegen.</div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   {templateId && (
                     <p className="text-xs text-muted-foreground">
                       Opent direct in de Offerte Studio met alle pagina&apos;s, branding en pakketten van dit template.
