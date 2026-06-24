@@ -103,6 +103,51 @@ function OutreachDashboard() {
   const { user } = useAuth();
   const { currentOrganizationId, currentOrganization, loading: wsLoading } = useWorkspace();
   const ask = useServerFn(askAssistant);
+  const navigate = useNavigate();
+
+  async function createQuoteFromTarget(t: TargetRow) {
+    if (!currentOrganizationId) return;
+    const { data, error } = await supabase
+      .from("studio_quotes")
+      .insert({
+        organization_id: currentOrganizationId,
+        title: `Offerte ${t.company}`,
+        client_name: t.company,
+        outreach_target_id: t.id,
+        theme: DEFAULT_THEME as never,
+        sections: buildDefaultSections() as never,
+        status: "draft",
+        created_by: user?.id ?? null,
+      } as never)
+      .select("id")
+      .single();
+    if (error) return toast.error(error.message);
+    toast.success("Offerte aangemaakt vanuit prospect");
+    if (data) navigate({ to: "/offerte-studio/q/$id", params: { id: data.id } });
+  }
+
+  async function generateSequence(c: Campaign) {
+    toast.loading("AI sequentie genereren…", { id: "seq" });
+    try {
+      const { reply } = await ask({
+        data: {
+          task: "generic",
+          context: `Maak een 3-staps cold-outreach sequentie als JSON-array voor campagne "${c.name}" (kanaal ${c.channel}, doel: ${c.goal ?? "afspraak inplannen"}). Elk object: {"day": number, "channel": "email"|"linkedin"|"cold-call", "subject": string, "body": string}. Dag 1 = intro, dag 4 = waarde-follow-up, dag 8 = laatste kans. Schrijf in het Nederlands, kort, persoonlijk, geen clichés. Antwoord met UITSLUITEND geldige JSON, geen toelichting of markdown.`,
+        },
+      });
+      const cleaned = reply.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+      const parsed = JSON.parse(cleaned) as SequenceStep[];
+      const { error } = await supabase
+        .from("outreach_campaigns")
+        .update({ sequence_steps: parsed as never })
+        .eq("id", c.id);
+      if (error) throw new Error(error.message);
+      toast.success("Sequentie opgeslagen", { id: "seq" });
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Genereren mislukt", { id: "seq" });
+    }
+  }
 
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [targets, setTargets] = useState<TargetRow[]>([]);
