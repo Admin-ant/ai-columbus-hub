@@ -15,7 +15,7 @@ export const getPublicStudioQuote = createServerFn({ method: "GET" })
     const { data: q, error } = await sb
       .from("studio_quotes")
       .select(
-        "id, title, client_name, cover_image_url, theme, sections, status, accepted_at, accepted_by_name, accepted_signature, organization_id, created_at",
+        "id, title, client_name, cover_image_url, theme, sections, status, accepted_at, accepted_by_name, accepted_signature, organization_id, created_at, intro_video_url, packages, selected_package_id",
       )
       .eq("public_token", data.token)
       .maybeSingle();
@@ -28,7 +28,85 @@ export const getPublicStudioQuote = createServerFn({ method: "GET" })
       .eq("id", q.organization_id)
       .maybeSingle();
 
+    // Throttled "viewed" event — at most once per hour per quote.
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { data: recent } = await sb
+      .from("studio_quote_events")
+      .select("id")
+      .eq("quote_id", q.id)
+      .eq("event_type", "viewed")
+      .gte("occurred_at", oneHourAgo)
+      .maybeSingle();
+    if (!recent) {
+      await sb.from("studio_quote_events").insert({
+        quote_id: q.id,
+        organization_id: q.organization_id,
+        event_type: "viewed",
+      });
+      await sb
+        .from("studio_quotes")
+        .update({
+          last_viewed_at: new Date().toISOString(),
+          view_count: ((q as { view_count?: number }).view_count ?? 0) + 1,
+        })
+        .eq("id", q.id);
+    }
+
     return { quote: q, organization: org };
+  });
+
+export const trackSectionView = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z
+      .object({
+        token: z.string().min(10).max(128),
+        section_key: z.string().min(1).max(64),
+        duration_ms: z.number().int().min(0).max(60 * 60 * 1000),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const sb = await loadAdmin();
+    const { data: q } = await sb
+      .from("studio_quotes")
+      .select("id, organization_id")
+      .eq("public_token", data.token)
+      .maybeSingle();
+    if (!q) return { ok: false };
+    await sb.from("studio_quote_events").insert({
+      quote_id: q.id,
+      organization_id: q.organization_id,
+      event_type: "section_view",
+      section_key: data.section_key,
+      duration_ms: data.duration_ms,
+    });
+    return { ok: true };
+  });
+
+export const selectPackage = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z.object({ token: z.string().min(10).max(128), package_id: z.string().min(1).max(80) }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const sb = await loadAdmin();
+    const { data: q } = await sb
+      .from("studio_quotes")
+      .select("id, organization_id")
+      .eq("public_token", data.token)
+      .maybeSingle();
+    if (!q) throw new Error("Offerte niet gevonden");
+    const { error } = await sb
+      .from("studio_quotes")
+      .update({ selected_package_id: data.package_id })
+      .eq("id", q.id);
+    if (error) throw new Error(error.message);
+    await sb.from("studio_quote_events").insert({
+      quote_id: q.id,
+      organization_id: q.organization_id,
+      event_type: "package_selected",
+      metadata: { package_id: data.package_id },
+    });
+    return { ok: true };
   });
 
 export const acceptPublicStudioQuote = createServerFn({ method: "POST" })
@@ -45,7 +123,7 @@ export const acceptPublicStudioQuote = createServerFn({ method: "POST" })
     const sb = await loadAdmin();
     const { data: q, error: e1 } = await sb
       .from("studio_quotes")
-      .select("id, status, accepted_at")
+      .select("id, organization_id, status, accepted_at")
       .eq("public_token", data.token)
       .maybeSingle();
     if (e1) throw new Error(e1.message);
@@ -63,6 +141,13 @@ export const acceptPublicStudioQuote = createServerFn({ method: "POST" })
       })
       .eq("id", q.id);
     if (error) throw new Error(error.message);
+
+    await sb.from("studio_quote_events").insert({
+      quote_id: q.id,
+      organization_id: q.organization_id,
+      event_type: "accepted",
+      metadata: { name: data.name },
+    });
     return { ok: true };
   });
 

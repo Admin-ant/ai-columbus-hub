@@ -8,6 +8,8 @@ import {
   CheckCircle2,
   Sparkles,
   Loader2,
+  Flame,
+  Eye,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +33,15 @@ type Counters = {
   accepted: number;
 };
 
+type HeatRow = {
+  quote_id: string;
+  title: string;
+  total_ms: number;
+  views: number;
+  top_section: string | null;
+  top_section_ms: number;
+};
+
 function AnalyticsDashboard() {
   const { currentOrganizationId, currentOrganization, loading: wsLoading } = useWorkspace();
   const [loading, setLoading] = useState(true);
@@ -44,6 +55,7 @@ function AnalyticsDashboard() {
     shared: 0,
     accepted: 0,
   });
+  const [heatmap, setHeatmap] = useState<HeatRow[]>([]);
 
   useEffect(() => {
     async function load() {
@@ -61,7 +73,7 @@ function AnalyticsDashboard() {
           .eq("organization_id", org),
         supabase
           .from("studio_quotes")
-          .select("status,public_token,accepted_at")
+          .select("id,title,status,public_token,accepted_at")
           .eq("organization_id", org),
       ]);
 
@@ -81,6 +93,50 @@ function AnalyticsDashboard() {
         shared: quotes.filter((x) => x.public_token).length,
         accepted: quotes.filter((x) => x.accepted_at).length,
       });
+
+      // Heatmap: aggregate section_view events per quote.
+      const ev = await supabase
+        .from("studio_quote_events")
+        .select("quote_id,section_key,duration_ms,event_type")
+        .eq("organization_id", org)
+        .eq("event_type", "section_view")
+        .order("occurred_at", { ascending: false })
+        .limit(2000);
+      const byQuote = new Map<string, { total: number; bySec: Map<string, number>; views: number }>();
+      for (const e of ev.data ?? []) {
+        const key = e.quote_id as string;
+        const ms = (e.duration_ms as number) ?? 0;
+        const sec = (e.section_key as string) ?? "?";
+        if (!byQuote.has(key)) byQuote.set(key, { total: 0, bySec: new Map(), views: 0 });
+        const b = byQuote.get(key)!;
+        b.total += ms;
+        b.views += 1;
+        b.bySec.set(sec, (b.bySec.get(sec) ?? 0) + ms);
+      }
+      const heat: HeatRow[] = [];
+      for (const qr of quotes) {
+        const b = byQuote.get(qr.id as string);
+        if (!b) continue;
+        let topSec: string | null = null;
+        let topMs = 0;
+        b.bySec.forEach((ms, sec) => {
+          if (ms > topMs) {
+            topMs = ms;
+            topSec = sec;
+          }
+        });
+        heat.push({
+          quote_id: qr.id as string,
+          title: (qr.title as string) ?? "Offerte",
+          total_ms: b.total,
+          views: b.views,
+          top_section: topSec,
+          top_section_ms: topMs,
+        });
+      }
+      heat.sort((a, b) => b.total_ms - a.total_ms);
+      setHeatmap(heat.slice(0, 8));
+
       setLoading(false);
     }
     if (!wsLoading) load();
@@ -144,6 +200,53 @@ function AnalyticsDashboard() {
                 ]}
               />
             </Section>
+
+            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5">
+              <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-white/80">
+                <Flame className="h-4 w-4" style={{ color: ACCENT }} />
+                Heatmap — wat lezen klanten écht?
+              </div>
+              {heatmap.length === 0 ? (
+                <div className="rounded border border-dashed border-white/10 p-6 text-center text-xs text-white/40">
+                  Nog geen weergavedata. Deel een offerte-link om de heatmap op te bouwen.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {heatmap.map((h) => {
+                    const max = Math.max(1, ...heatmap.map((x) => x.total_ms));
+                    const pct = Math.round((h.total_ms / max) * 100);
+                    return (
+                      <div key={h.quote_id} className="rounded border border-white/5 bg-black/30 p-3">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="truncate font-semibold text-white">{h.title}</span>
+                          <span className="flex items-center gap-2 tabular-nums text-white/50">
+                            <Eye className="h-3 w-3" /> {h.views}
+                            <span className="text-white/30">·</span>
+                            <span>{Math.round(h.total_ms / 1000)}s</span>
+                          </span>
+                        </div>
+                        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/5">
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${pct}%`,
+                              background: `linear-gradient(90deg, ${ACCENT}, ${ACCENT}88)`,
+                              boxShadow: `0 0 12px ${ACCENT}66`,
+                            }}
+                          />
+                        </div>
+                        {h.top_section && (
+                          <div className="mt-1 text-[10px] text-white/40">
+                            Hotspot:{" "}
+                            <span className="text-white/70">{h.top_section}</span> ({Math.round(h.top_section_ms / 1000)}s)
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>

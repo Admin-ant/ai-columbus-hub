@@ -28,7 +28,9 @@ import { Input } from "@/components/ui/input";
 import {
   buildDefaultSections,
   DEFAULT_THEME,
+  newPackage,
   SECTION_DEFS,
+  type StudioPackage,
   type StudioSection,
   type StudioTheme,
 } from "@/lib/offerte-studio";
@@ -74,6 +76,8 @@ export function OfferteStudioEditor({ kind, id }: Props) {
   const [cover, setCover] = useState<string | null>(null);
   const [theme, setTheme] = useState<StudioTheme>(DEFAULT_THEME);
   const [sections, setSections] = useState<StudioSection[]>(buildDefaultSections());
+  const [packages, setPackages] = useState<StudioPackage[]>([]);
+  const [videoUrl, setVideoUrl] = useState<string>("");
   const [approved, setApproved] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
   const dirty = useRef(false);
@@ -126,6 +130,12 @@ export function OfferteStudioEditor({ kind, id }: Props) {
         );
         setApproved(q.status === "approved");
         setShareToken((q as unknown as { public_token?: string | null }).public_token ?? null);
+        const extra = q as unknown as {
+          packages?: unknown;
+          intro_video_url?: string | null;
+        };
+        setPackages(Array.isArray(extra.packages) ? (extra.packages as StudioPackage[]) : []);
+        setVideoUrl(extra.intro_video_url ?? "");
       } else {
         const t = data as unknown as TemplateRow;
         setTitle(t.name);
@@ -169,6 +179,8 @@ export function OfferteStudioEditor({ kind, id }: Props) {
             sections: sections as never,
             status: approved ? "approved" : "draft",
             approved_at: approved ? new Date().toISOString() : null,
+            packages: packages as never,
+            intro_video_url: videoUrl.trim() || null,
           }
         : {
             name: title,
@@ -444,6 +456,135 @@ export function OfferteStudioEditor({ kind, id }: Props) {
               />
             </label>
           </div>
+
+          {kind === "quote" && (
+            <>
+              <div className="mt-4 px-2 py-1.5 text-[10px] uppercase tracking-wider text-white/40">
+                Intro video
+              </div>
+              <div className="px-2">
+                <Input
+                  value={videoUrl}
+                  onChange={(e) => {
+                    setVideoUrl(e.target.value);
+                    mark();
+                  }}
+                  placeholder="YouTube / Loom / Vimeo URL"
+                  className="h-8 border-white/10 bg-white/5 text-xs text-white placeholder:text-white/40"
+                />
+              </div>
+
+              <div className="mt-4 flex items-center justify-between px-2 py-1.5">
+                <span className="text-[10px] uppercase tracking-wider text-white/40">
+                  Pakketten
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPackages((p) => [...p, newPackage(`Pakket ${p.length + 1}`)]);
+                    mark();
+                  }}
+                  className="rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/80 hover:bg-white/10"
+                  style={{ color: styles.accent }}
+                >
+                  + Nieuw
+                </button>
+              </div>
+              <div className="space-y-3 px-2">
+                {packages.length === 0 && (
+                  <div className="rounded border border-dashed border-white/10 p-2 text-[11px] text-white/40">
+                    Voeg pakketten toe zodat klanten een optie kunnen kiezen in de offerte.
+                  </div>
+                )}
+                {packages.map((p, i) => (
+                  <div
+                    key={p.id}
+                    className="space-y-1.5 rounded border border-white/10 bg-white/[0.02] p-2"
+                  >
+                    <Input
+                      value={p.name}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setPackages((arr) => arr.map((x, j) => (j === i ? { ...x, name: v } : x)));
+                        mark();
+                      }}
+                      className="h-7 border-white/10 bg-black/30 text-xs text-white"
+                      placeholder="Naam"
+                    />
+                    <div className="flex gap-1">
+                      <Input
+                        type="number"
+                        value={p.price_eur}
+                        onChange={(e) => {
+                          const v = Number(e.target.value) || 0;
+                          setPackages((arr) =>
+                            arr.map((x, j) => (j === i ? { ...x, price_eur: v } : x)),
+                          );
+                          mark();
+                        }}
+                        className="h-7 border-white/10 bg-black/30 text-xs text-white"
+                        placeholder="€"
+                      />
+                      <select
+                        value={p.billing}
+                        onChange={(e) => {
+                          const v = e.target.value as StudioPackage["billing"];
+                          setPackages((arr) =>
+                            arr.map((x, j) => (j === i ? { ...x, billing: v } : x)),
+                          );
+                          mark();
+                        }}
+                        className="h-7 rounded border border-white/10 bg-black/30 px-1 text-[10px] text-white"
+                      >
+                        <option value="eenmalig">eenmalig</option>
+                        <option value="per maand">/ mnd</option>
+                        <option value="per jaar">/ jr</option>
+                      </select>
+                    </div>
+                    <textarea
+                      value={p.features.join("\n")}
+                      onChange={(e) => {
+                        const v = e.target.value.split("\n");
+                        setPackages((arr) =>
+                          arr.map((x, j) => (j === i ? { ...x, features: v } : x)),
+                        );
+                        mark();
+                      }}
+                      placeholder="1 feature per regel"
+                      rows={3}
+                      className="w-full resize-none rounded border border-white/10 bg-black/30 px-2 py-1 text-[11px] text-white outline-none"
+                    />
+                    <div className="flex items-center justify-between">
+                      <label className="flex items-center gap-1 text-[10px] text-white/60">
+                        <input
+                          type="checkbox"
+                          checked={!!p.highlighted}
+                          onChange={(e) => {
+                            const v = e.target.checked;
+                            setPackages((arr) =>
+                              arr.map((x, j) => (j === i ? { ...x, highlighted: v } : x)),
+                            );
+                            mark();
+                          }}
+                        />
+                        Aanbevolen
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPackages((arr) => arr.filter((_, j) => j !== i));
+                          mark();
+                        }}
+                        className="text-[10px] text-white/40 hover:text-red-400"
+                      >
+                        Verwijder
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </aside>
 
         {/* Stage */}

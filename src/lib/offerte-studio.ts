@@ -27,6 +27,17 @@ export type StudioTheme = {
   fg: string;
 };
 
+export type StudioPackageFeature = string;
+
+export type StudioPackage = {
+  id: string;
+  name: string;
+  price_eur: number;
+  billing: "eenmalig" | "per maand" | "per jaar";
+  features: StudioPackageFeature[];
+  highlighted?: boolean;
+};
+
 export const DEFAULT_THEME: StudioTheme = {
   accent: "#ff2bd6",
   bg: "#0a0a0a",
@@ -57,6 +68,54 @@ export function buildDefaultSections(): StudioSection[] {
   }));
 }
 
+export function newPackage(name = "Pakket"): StudioPackage {
+  return {
+    id: cryptoId(),
+    name,
+    price_eur: 0,
+    billing: "eenmalig",
+    features: ["Feature 1", "Feature 2"],
+  };
+}
+
+function cryptoId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return Math.random().toString(36).slice(2);
+}
+
+export function toEmbedUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    // YouTube
+    if (u.hostname.includes("youtu.be")) {
+      const id = u.pathname.replace("/", "");
+      return `https://www.youtube.com/embed/${id}`;
+    }
+    if (u.hostname.includes("youtube.com")) {
+      const id = u.searchParams.get("v");
+      if (id) return `https://www.youtube.com/embed/${id}`;
+      if (u.pathname.startsWith("/embed/")) return url;
+    }
+    // Loom
+    if (u.hostname.includes("loom.com")) {
+      const m = u.pathname.match(/\/share\/([a-z0-9]+)/i);
+      if (m) return `https://www.loom.com/embed/${m[1]}`;
+      return url;
+    }
+    // Vimeo
+    if (u.hostname.includes("vimeo.com")) {
+      const id = u.pathname.replace(/\//g, "");
+      if (/^\d+$/.test(id)) return `https://player.vimeo.com/video/${id}`;
+    }
+    return url;
+  } catch {
+    return null;
+  }
+}
+
 function defaultHeading(key: StudioSectionKey): string {
   switch (key) {
     case "cover": return "Offerte voor [Klant]";
@@ -83,7 +142,7 @@ function defaultBody(key: StudioSectionKey): string {
     case "investering": return "Een transparant overzicht van de investering en betalingsvoorwaarden.";
     case "over-ons": return "Korte introductie van het team en de aanpak.";
     case "contact": return "Heb je vragen? Wij staan klaar om mee te denken.";
-    case "reviews": return "“Strakke samenwerking en bovenverwachts resultaat.” — Tevreden klant";
+    case "reviews": return "\"Strakke samenwerking en bovenverwachts resultaat.\" — Tevreden klant";
     case "sfeer-impressie": return "Een visuele indruk van eerder werk en stijl.";
     case "afsluiter": return "We kijken ernaar uit van je te horen.";
   }

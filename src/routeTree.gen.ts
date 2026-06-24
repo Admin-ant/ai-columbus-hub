@@ -39,6 +39,7 @@ import { Route as AuthenticatedAiColumbusLogsRouteImport } from './routes/_authe
 import { Route as AuthenticatedAiColumbusLeadsRouteImport } from './routes/_authenticated/ai-columbus.leads'
 import { Route as AuthenticatedAiColumbusKlantenRouteImport } from './routes/_authenticated/ai-columbus.klanten'
 import { Route as AuthenticatedAiColumbusInstellingenRouteImport } from './routes/_authenticated/ai-columbus.instellingen'
+import { Route as ApiPublicHooksStudioFollowupsRouteImport } from './routes/api/public/hooks/studio-followups'
 import { Route as AuthenticatedOfferteStudioTIdRouteImport } from './routes/_authenticated/offerte-studio.t.$id'
 import { Route as AuthenticatedOfferteStudioQIdRouteImport } from './routes/_authenticated/offerte-studio.q.$id'
 import { Route as AuthenticatedBoekhoudingJournalEntryIdRouteImport } from './routes/_authenticated/boekhouding.journal.$entryId'
@@ -211,6 +212,12 @@ const AuthenticatedAiColumbusInstellingenRoute =
     path: '/instellingen',
     getParentRoute: () => AuthenticatedAiColumbusRoute,
   } as any)
+const ApiPublicHooksStudioFollowupsRoute =
+  ApiPublicHooksStudioFollowupsRouteImport.update({
+    id: '/api/public/hooks/studio-followups',
+    path: '/api/public/hooks/studio-followups',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedOfferteStudioTIdRoute =
   AuthenticatedOfferteStudioTIdRouteImport.update({
     id: '/offerte-studio/t/$id',
@@ -277,6 +284,7 @@ export interface FileRoutesByFullPath {
   '/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
   '/offerte-studio/q/$id': typeof AuthenticatedOfferteStudioQIdRoute
   '/offerte-studio/t/$id': typeof AuthenticatedOfferteStudioTIdRoute
+  '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -311,6 +319,7 @@ export interface FileRoutesByTo {
   '/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
   '/offerte-studio/q/$id': typeof AuthenticatedOfferteStudioQIdRoute
   '/offerte-studio/t/$id': typeof AuthenticatedOfferteStudioTIdRoute
+  '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -349,6 +358,7 @@ export interface FileRoutesById {
   '/_authenticated/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
   '/_authenticated/offerte-studio/q/$id': typeof AuthenticatedOfferteStudioQIdRoute
   '/_authenticated/offerte-studio/t/$id': typeof AuthenticatedOfferteStudioTIdRoute
+  '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -387,6 +397,7 @@ export interface FileRouteTypes {
     | '/boekhouding/journal/$entryId'
     | '/offerte-studio/q/$id'
     | '/offerte-studio/t/$id'
+    | '/api/public/hooks/studio-followups'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -421,6 +432,7 @@ export interface FileRouteTypes {
     | '/boekhouding/journal/$entryId'
     | '/offerte-studio/q/$id'
     | '/offerte-studio/t/$id'
+    | '/api/public/hooks/studio-followups'
   id:
     | '__root__'
     | '/_authenticated'
@@ -458,6 +470,7 @@ export interface FileRouteTypes {
     | '/_authenticated/boekhouding/journal/$entryId'
     | '/_authenticated/offerte-studio/q/$id'
     | '/_authenticated/offerte-studio/t/$id'
+    | '/api/public/hooks/studio-followups'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -466,6 +479,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   QTokenRoute: typeof QTokenRoute
   AcceptQuoteTokenRoute: typeof AcceptQuoteTokenRoute
+  ApiPublicHooksStudioFollowupsRoute: typeof ApiPublicHooksStudioFollowupsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -680,6 +694,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAiColumbusInstellingenRouteImport
       parentRoute: typeof AuthenticatedAiColumbusRoute
     }
+    '/api/public/hooks/studio-followups': {
+      id: '/api/public/hooks/studio-followups'
+      path: '/api/public/hooks/studio-followups'
+      fullPath: '/api/public/hooks/studio-followups'
+      preLoaderRoute: typeof ApiPublicHooksStudioFollowupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/offerte-studio/t/$id': {
       id: '/_authenticated/offerte-studio/t/$id'
       path: '/offerte-studio/t/$id'
@@ -860,6 +881,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   QTokenRoute: QTokenRoute,
   AcceptQuoteTokenRoute: AcceptQuoteTokenRoute,
+  ApiPublicHooksStudioFollowupsRoute: ApiPublicHooksStudioFollowupsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -2,17 +2,21 @@ import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, CheckCircle2, Sparkles, PenLine } from "lucide-react";
+import { Loader2, CheckCircle2, Sparkles, PenLine, Check, PlayCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   acceptPublicStudioQuote,
   getPublicStudioQuote,
+  selectPackage,
+  trackSectionView,
 } from "@/lib/studio-public.functions";
 import {
   DEFAULT_THEME,
   SECTION_DEFS,
+  toEmbedUrl,
+  type StudioPackage,
   type StudioSection,
   type StudioTheme,
 } from "@/lib/offerte-studio";
@@ -43,17 +47,22 @@ function PublicQuote() {
   const { token } = useParams({ from: "/q/$token" });
   const get = useServerFn(getPublicStudioQuote);
   const accept = useServerFn(acceptPublicStudioQuote);
+  const pickPackage = useServerFn(selectPackage);
+  const track = useServerFn(trackSectionView);
   const [data, setData] = useState<Loaded | null>(null);
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState(false);
   const [signerName, setSignerName] = useState("");
   const [sig, setSig] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
     try {
       const res = await get({ data: { token } });
       setData(res);
+      const q = res.quote as { selected_package_id?: string | null };
+      setSelected(q.selected_package_id ?? null);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Onbekende fout");
     } finally {
@@ -65,6 +74,52 @@ function PublicQuote() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  // Heatmap tracking — measure time per section using IntersectionObserver.
+  const enterMap = useRef<Map<string, number>>(new Map());
+  useEffect(() => {
+    if (!data) return;
+    const nodes = document.querySelectorAll<HTMLElement>("[data-section-key]");
+    if (!nodes.length) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          const key = e.target.getAttribute("data-section-key")!;
+          if (e.isIntersecting) {
+            enterMap.current.set(key, performance.now());
+          } else {
+            const t = enterMap.current.get(key);
+            if (t) {
+              const ms = Math.round(performance.now() - t);
+              enterMap.current.delete(key);
+              if (ms > 800) {
+                track({ data: { token, section_key: key, duration_ms: ms } }).catch(() => {});
+              }
+            }
+          }
+        }
+      },
+      { threshold: 0.5 },
+    );
+    nodes.forEach((n) => obs.observe(n));
+    const flush = () => {
+      const now = performance.now();
+      enterMap.current.forEach((t, key) => {
+        const ms = Math.round(now - t);
+        if (ms > 800) {
+          navigator.sendBeacon?.(
+            "",
+            new Blob([JSON.stringify({ token, section_key: key, duration_ms: ms })]),
+          );
+        }
+      });
+    };
+    window.addEventListener("beforeunload", flush);
+    return () => {
+      obs.disconnect();
+      window.removeEventListener("beforeunload", flush);
+    };
+  }, [data, token, track]);
 
   if (loading) {
     return (
@@ -79,6 +134,12 @@ function PublicQuote() {
   const sections: StudioSection[] = Array.isArray(data.quote.sections)
     ? (data.quote.sections as unknown as StudioSection[])
     : [];
+  const rawPackages = (data.quote as unknown as { packages?: unknown }).packages;
+  const packages: StudioPackage[] = Array.isArray(rawPackages)
+    ? (rawPackages as unknown as StudioPackage[])
+    : [];
+  const videoUrl = (data.quote as unknown as { intro_video_url?: string | null }).intro_video_url;
+  const embed = toEmbedUrl(videoUrl);
   const cover = data.quote.cover_image_url;
   const accepted = !!data.quote.accepted_at;
 
@@ -87,6 +148,7 @@ function PublicQuote() {
       <div className="mx-auto max-w-4xl px-4 py-10">
         <div
           className="relative overflow-hidden rounded-2xl border shadow-2xl"
+          data-section-key="cover"
           style={{
             borderColor: "rgba(255,255,255,0.08)",
             background: cover
@@ -115,14 +177,41 @@ function PublicQuote() {
           </div>
         </div>
 
+        {/* Persoonlijke video intro */}
+        {embed && (
+          <div
+            className="mt-10 overflow-hidden rounded-2xl border"
+            data-section-key="intro-video"
+            style={{ borderColor: `${theme.accent}40`, boxShadow: `0 0 32px ${theme.accent}22` }}
+          >
+            <div className="flex items-center gap-2 border-b border-white/10 bg-black/30 px-5 py-3">
+              <PlayCircle className="h-4 w-4" style={{ color: theme.accent }} />
+              <span className="text-[10px] uppercase tracking-[0.25em]" style={{ color: theme.accent }}>
+                Persoonlijke intro
+              </span>
+            </div>
+            <div className="aspect-video w-full">
+              <iframe
+                src={embed}
+                title="Intro video"
+                className="h-full w-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          </div>
+        )}
+
         <div className="mt-10 space-y-10">
           {SECTION_DEFS.map((def, idx) => {
             if (def.key === "cover") return null;
             const sec = sections.find((s) => s.key === def.key);
             if (!sec) return null;
+            const isInvestering = def.key === "investering" && packages.length > 0;
             return (
               <section
                 key={def.key}
+                data-section-key={def.key}
                 className="rounded-xl border bg-white/[0.02] p-8"
                 style={{ borderColor: "rgba(255,255,255,0.08)" }}
               >
@@ -142,6 +231,78 @@ function PublicQuote() {
                 <div className="mt-4 whitespace-pre-wrap text-base leading-relaxed text-white/85">
                   {sec.body}
                 </div>
+
+                {isInvestering && (
+                  <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {packages.map((p) => {
+                      const isSel = selected === p.id;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          disabled={accepted}
+                          onClick={async () => {
+                            setSelected(p.id);
+                            try {
+                              await pickPackage({ data: { token, package_id: p.id } });
+                            } catch (e) {
+                              toast.error(e instanceof Error ? e.message : "Mislukt");
+                            }
+                          }}
+                          className="group relative overflow-hidden rounded-xl border p-5 text-left transition-all hover:scale-[1.02]"
+                          style={{
+                            borderColor: isSel ? theme.accent : "rgba(255,255,255,0.1)",
+                            background: isSel
+                              ? `linear-gradient(180deg, ${theme.accent}1a, transparent)`
+                              : "rgba(255,255,255,0.02)",
+                            boxShadow: isSel ? `0 0 32px ${theme.accent}44` : undefined,
+                          }}
+                        >
+                          {p.highlighted && !isSel && (
+                            <div
+                              className="absolute right-3 top-3 rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider"
+                              style={{ background: `${theme.accent}33`, color: theme.accent }}
+                            >
+                              Aanbevolen
+                            </div>
+                          )}
+                          {isSel && (
+                            <div
+                              className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full"
+                              style={{ background: theme.accent }}
+                            >
+                              <Check className="h-4 w-4 text-black" />
+                            </div>
+                          )}
+                          <div className="text-sm font-semibold text-white">{p.name}</div>
+                          <div className="mt-2 flex items-baseline gap-1">
+                            <span
+                              className="text-3xl font-bold tracking-tight"
+                              style={{ color: isSel ? theme.accent : "#fff" }}
+                            >
+                              €{p.price_eur.toLocaleString("nl-NL")}
+                            </span>
+                            <span className="text-xs text-white/50">{p.billing}</span>
+                          </div>
+                          <ul className="mt-4 space-y-1.5">
+                            {p.features.map((f, i) => (
+                              <li
+                                key={i}
+                                className="flex items-start gap-2 text-xs text-white/75"
+                              >
+                                <Check
+                                  className="mt-0.5 h-3 w-3 shrink-0"
+                                  style={{ color: theme.accent }}
+                                />
+                                {f}
+                              </li>
+                            ))}
+                          </ul>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </section>
             );
           })}
@@ -149,6 +310,7 @@ function PublicQuote() {
 
         <div
           className="mt-12 overflow-hidden rounded-2xl border"
+          data-section-key="akkoord"
           style={{
             borderColor: accepted ? `${theme.accent}66` : "rgba(255,255,255,0.08)",
             boxShadow: accepted ? `0 0 32px ${theme.accent}44` : undefined,
@@ -173,8 +335,9 @@ function PublicQuote() {
               </div>
               <h3 className="mt-2 text-2xl font-bold">Akkoord op deze offerte</h3>
               <p className="mt-2 text-sm text-white/70">
-                Vul je naam in en plaats je handtekening om het voorstel digitaal te
-                accepteren.
+                {packages.length > 0 && !selected
+                  ? "Kies eerst een pakket hierboven, vul dan je naam en handtekening in."
+                  : "Vul je naam in en plaats je handtekening om het voorstel digitaal te accepteren."}
               </p>
 
               <div className="mt-5 space-y-4">
@@ -186,7 +349,12 @@ function PublicQuote() {
                 />
                 <SignaturePad accent={theme.accent} onChange={setSig} />
                 <Button
-                  disabled={accepting || !signerName.trim() || !sig}
+                  disabled={
+                    accepting ||
+                    !signerName.trim() ||
+                    !sig ||
+                    (packages.length > 0 && !selected)
+                  }
                   onClick={async () => {
                     setAccepting(true);
                     try {
