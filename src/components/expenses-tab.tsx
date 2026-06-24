@@ -350,6 +350,70 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={!!previewId} onOpenChange={(o) => !o && setPreviewId(null)}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader><DialogTitle>Journaalvoorvertoning</DialogTitle></DialogHeader>
+          {previewExpense && (() => {
+            const e = previewExpense;
+            const paid = e.status === "paid" || !!e.paid_at;
+            const tegen = paid ? { code: "1100", name: "Bank" } : { code: "1700", name: "Crediteuren" };
+            const lines = [
+              { acc: "4000", name: `Kosten algemeen${e.category ? ` (${e.category})` : ""}`, debit: e.amount_cents, credit: 0 },
+              ...(e.vat_cents > 0 ? [{ acc: "1500", name: `Te vorderen BTW ${e.vat_rate ?? 21}%`, debit: e.vat_cents, credit: 0 }] : []),
+              { acc: tegen.code, name: tegen.name, debit: 0, credit: e.total_cents },
+            ];
+            const totalDebit = lines.reduce((s, l) => s + l.debit, 0);
+            const totalCredit = lines.reduce((s, l) => s + l.credit, 0);
+            return (
+              <div className="space-y-3">
+                <div className="rounded-md border bg-muted/40 p-3 text-sm">
+                  <div className="font-medium">{e.supplier}</div>
+                  {e.description && <div className="text-xs text-muted-foreground">{e.description}</div>}
+                  <div className="mt-1 text-xs text-muted-foreground">Datum {e.expense_date} · Status {STATUS_LABEL[e.status] ?? e.status}</div>
+                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-20">Rek.</TableHead>
+                      <TableHead>Omschrijving</TableHead>
+                      <TableHead className="text-right">Debet</TableHead>
+                      <TableHead className="text-right">Credit</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {lines.map((l, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="font-mono text-xs">{l.acc}</TableCell>
+                        <TableCell className="text-sm">{l.name}</TableCell>
+                        <TableCell className="text-right tabular-nums">{l.debit ? EUR(l.debit) : "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums">{l.credit ? EUR(l.credit) : "—"}</TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow className="border-t font-semibold">
+                      <TableCell colSpan={2}>Totaal</TableCell>
+                      <TableCell className="text-right tabular-nums">{EUR(totalDebit)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{EUR(totalCredit)}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+                <div className={`text-xs ${totalDebit === totalCredit ? "text-emerald-600" : "text-destructive"}`}>
+                  {totalDebit === totalCredit ? "✓ Journaalpost is in balans" : "✗ Niet in balans"}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Tegenrekening op basis van status: {paid ? "betaald → Bank (1100)" : "open → Crediteuren (1700)"}.
+                </p>
+              </div>
+            );
+          })()}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreviewId(null)}>Annuleren</Button>
+            <Button onClick={() => previewId && postToJournal(previewId)}>
+              <BookOpen className="mr-2 h-4 w-4" /> Bevestigen en boeken
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
