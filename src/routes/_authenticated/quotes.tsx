@@ -288,6 +288,73 @@ function QuotesPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {templateId && (() => {
+                    const tpl = templates.find((x) => x.id === templateId);
+                    if (!tpl) return null;
+                    const eurFmt = (n: number) => eur.format(n);
+                    return (
+                      <div
+                        className="mt-2 rounded-lg border overflow-hidden"
+                        style={{ background: tpl.theme?.bg ?? "#0a0a0a", color: tpl.theme?.fg ?? "#fff" }}
+                      >
+                        <div
+                          className="px-4 py-3 text-xs font-semibold tracking-wide uppercase"
+                          style={{ background: tpl.theme?.accent ?? "#ff2bd6", color: "#000" }}
+                        >
+                          Preview · {tpl.name}
+                        </div>
+                        <div className="p-4 space-y-3">
+                          {tpl.description && (
+                            <p className="text-sm opacity-80">{tpl.description}</p>
+                          )}
+                          <div>
+                            <div className="text-[10px] uppercase tracking-wider opacity-60 mb-1">Pagina&apos;s</div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {(tpl.sections.length > 0 ? tpl.sections : buildDefaultSections()).map((s) => (
+                                <span
+                                  key={s.key}
+                                  className="text-[11px] px-2 py-0.5 rounded-full border"
+                                  style={{ borderColor: tpl.theme?.accent ?? "#ff2bd6" }}
+                                >
+                                  {s.label}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          {tpl.packages.length > 0 ? (
+                            <div>
+                              <div className="text-[10px] uppercase tracking-wider opacity-60 mb-2">Pakketten</div>
+                              <div className="grid gap-2 sm:grid-cols-3">
+                                {tpl.packages.map((p) => (
+                                  <div
+                                    key={p.id}
+                                    className="rounded-md p-3 border"
+                                    style={{
+                                      borderColor: p.highlighted ? (tpl.theme?.accent ?? "#ff2bd6") : "rgba(255,255,255,0.15)",
+                                      background: p.highlighted ? "rgba(255,255,255,0.06)" : "transparent",
+                                    }}
+                                  >
+                                    <div className="text-sm font-semibold">{p.name}</div>
+                                    <div className="text-lg font-bold tabular-nums">
+                                      {eurFmt(p.price_eur)}
+                                      <span className="text-[11px] font-normal opacity-70"> /{p.billing}</span>
+                                    </div>
+                                    <ul className="mt-1.5 space-y-0.5">
+                                      {p.features.slice(0, 4).map((f, i) => (
+                                        <li key={i} className="text-[11px] opacity-80">• {f}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-[11px] opacity-60 italic">Geen pakketten — je kunt ze later in de Studio toevoegen.</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
                   {templateId && (
                     <p className="text-xs text-muted-foreground">
                       Opent direct in de Offerte Studio met alle pagina&apos;s, branding en pakketten van dit template.
