@@ -78,7 +78,16 @@ function QuotesPage() {
   const [title, setTitle] = useState("");
   const [clientId, setClientId] = useState<string>("");
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
-  const [templates, setTemplates] = useState<{ id: string; name: string }[]>([]);
+  type TemplateRow = {
+    id: string;
+    name: string;
+    description: string | null;
+    cover_image_url: string | null;
+    theme: StudioTheme;
+    sections: StudioSection[];
+    packages: StudioPackage[];
+  };
+  const [templates, setTemplates] = useState<TemplateRow[]>([]);
   const [templateId, setTemplateId] = useState<string>("");
   const [lines, setLines] = useState<LineItem[]>([{ description: "", quantity: 1, unit_price: 0 }]);
 
@@ -108,12 +117,24 @@ function QuotesPage() {
     const [{ data, error }, { data: cs }, { data: tpls }] = await Promise.all([
       supabase.from("quotes").select("*").eq("organization_id", currentOrganizationId).order("created_at", { ascending: false }),
       supabase.from("clients").select("id,name").eq("organization_id", currentOrganizationId).order("name"),
-      supabase.from("quote_templates").select("id,name").eq("organization_id", currentOrganizationId).order("name"),
+      supabase.from("quote_templates").select("id,name,description,cover_image_url,theme,sections,packages").eq("organization_id", currentOrganizationId).order("name"),
     ]);
     if (error) toast.error(error.message);
     setQuotes((data ?? []) as Quote[]);
     setClients((cs ?? []) as { id: string; name: string }[]);
-    setTemplates((tpls ?? []) as { id: string; name: string }[]);
+    const rows: TemplateRow[] = (tpls ?? []).map((r) => {
+      const x = r as unknown as Record<string, unknown>;
+      return {
+        id: String(x.id),
+        name: String(x.name),
+        description: (x.description as string | null) ?? null,
+        cover_image_url: (x.cover_image_url as string | null) ?? null,
+        theme: (x.theme as StudioTheme) ?? DEFAULT_THEME,
+        sections: Array.isArray(x.sections) ? (x.sections as StudioSection[]) : [],
+        packages: Array.isArray(x.packages) ? (x.packages as StudioPackage[]) : [],
+      };
+    });
+    setTemplates(rows);
     setLoading(false);
   }
 
@@ -130,15 +151,12 @@ function QuotesPage() {
 
     // If a Studio template is selected → create a studio_quote and open editor
     if (templateId) {
-      const { data: full } = await supabase
-        .from("quote_templates")
-        .select("sections,theme,cover_image_url,packages")
-        .eq("id", templateId)
-        .maybeSingle();
-      const sections = ((full?.sections as unknown as StudioSection[]) ?? buildDefaultSections());
-      const theme = ((full?.theme as unknown as StudioTheme) ?? DEFAULT_THEME);
-      const packages = ((full?.packages as unknown as StudioPackage[]) ?? []);
-      const cover = full?.cover_image_url ?? null;
+      const tpl = templates.find((x) => x.id === templateId);
+      const sections = (tpl?.sections && tpl.sections.length > 0 ? tpl.sections : buildDefaultSections());
+      const theme = (tpl?.theme ?? DEFAULT_THEME);
+      // Safe fallback: ook zonder packages wordt de offerte aangemaakt
+      const packages = (tpl?.packages ?? []);
+      const cover = tpl?.cover_image_url ?? null;
       const clientName = clientId ? clients.find((c) => c.id === clientId)?.name ?? null : null;
       const { data: row, error: insErr } = await supabase
         .from("studio_quotes")
@@ -249,7 +267,7 @@ function QuotesPage() {
                 {t("quotes.new_quote")}
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{t("quotes.new_quote")}</DialogTitle>
                 <DialogDescription>{currentOrganization?.name}</DialogDescription>
@@ -270,6 +288,73 @@ function QuotesPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {templateId && (() => {
+                    const tpl = templates.find((x) => x.id === templateId);
+                    if (!tpl) return null;
+                    const eurFmt = (n: number) => eur.format(n);
+                    return (
+                      <div
+                        className="mt-2 rounded-lg border overflow-hidden"
+                        style={{ background: tpl.theme?.bg ?? "#0a0a0a", color: tpl.theme?.fg ?? "#fff" }}
+                      >
+                        <div
+                          className="px-4 py-3 text-xs font-semibold tracking-wide uppercase"
+                          style={{ background: tpl.theme?.accent ?? "#ff2bd6", color: "#000" }}
+                        >
+                          Preview · {tpl.name}
+                        </div>
+                        <div className="p-4 space-y-3">
+                          {tpl.description && (
+                            <p className="text-sm opacity-80">{tpl.description}</p>
+                          )}
+                          <div>
+                            <div className="text-[10px] uppercase tracking-wider opacity-60 mb-1">Pagina&apos;s</div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {(tpl.sections.length > 0 ? tpl.sections : buildDefaultSections()).map((s) => (
+                                <span
+                                  key={s.key}
+                                  className="text-[11px] px-2 py-0.5 rounded-full border"
+                                  style={{ borderColor: tpl.theme?.accent ?? "#ff2bd6" }}
+                                >
+                                  {s.label}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          {tpl.packages.length > 0 ? (
+                            <div>
+                              <div className="text-[10px] uppercase tracking-wider opacity-60 mb-2">Pakketten</div>
+                              <div className="grid gap-2 sm:grid-cols-3">
+                                {tpl.packages.map((p) => (
+                                  <div
+                                    key={p.id}
+                                    className="rounded-md p-3 border"
+                                    style={{
+                                      borderColor: p.highlighted ? (tpl.theme?.accent ?? "#ff2bd6") : "rgba(255,255,255,0.15)",
+                                      background: p.highlighted ? "rgba(255,255,255,0.06)" : "transparent",
+                                    }}
+                                  >
+                                    <div className="text-sm font-semibold">{p.name}</div>
+                                    <div className="text-lg font-bold tabular-nums">
+                                      {eurFmt(p.price_eur)}
+                                      <span className="text-[11px] font-normal opacity-70"> /{p.billing}</span>
+                                    </div>
+                                    <ul className="mt-1.5 space-y-0.5">
+                                      {p.features.slice(0, 4).map((f, i) => (
+                                        <li key={i} className="text-[11px] opacity-80">• {f}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-[11px] opacity-60 italic">Geen pakketten — je kunt ze later in de Studio toevoegen.</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
                   {templateId && (
                     <p className="text-xs text-muted-foreground">
                       Opent direct in de Offerte Studio met alle pagina&apos;s, branding en pakketten van dit template.
