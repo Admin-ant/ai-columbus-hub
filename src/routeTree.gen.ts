@@ -41,6 +41,7 @@ import { Route as AuthenticatedAiColumbusKlantenRouteImport } from './routes/_au
 import { Route as AuthenticatedAiColumbusInstellingenRouteImport } from './routes/_authenticated/ai-columbus.instellingen'
 import { Route as ApiPublicHooksStudioFollowupsRouteImport } from './routes/api/public/hooks/studio-followups'
 import { Route as ApiPublicHooksOutreachSequenceRouteImport } from './routes/api/public/hooks/outreach-sequence'
+import { Route as ApiPublicHooksOutreachReplyRouteImport } from './routes/api/public/hooks/outreach-reply'
 import { Route as AuthenticatedOfferteStudioTIdRouteImport } from './routes/_authenticated/offerte-studio.t.$id'
 import { Route as AuthenticatedOfferteStudioQIdRouteImport } from './routes/_authenticated/offerte-studio.q.$id'
 import { Route as AuthenticatedBoekhoudingJournalEntryIdRouteImport } from './routes/_authenticated/boekhouding.journal.$entryId'
@@ -225,6 +226,12 @@ const ApiPublicHooksOutreachSequenceRoute =
     path: '/api/public/hooks/outreach-sequence',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksOutreachReplyRoute =
+  ApiPublicHooksOutreachReplyRouteImport.update({
+    id: '/api/public/hooks/outreach-reply',
+    path: '/api/public/hooks/outreach-reply',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedOfferteStudioTIdRoute =
   AuthenticatedOfferteStudioTIdRouteImport.update({
     id: '/offerte-studio/t/$id',
@@ -291,6 +298,7 @@ export interface FileRoutesByFullPath {
   '/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
   '/offerte-studio/q/$id': typeof AuthenticatedOfferteStudioQIdRoute
   '/offerte-studio/t/$id': typeof AuthenticatedOfferteStudioTIdRoute
+  '/api/public/hooks/outreach-reply': typeof ApiPublicHooksOutreachReplyRoute
   '/api/public/hooks/outreach-sequence': typeof ApiPublicHooksOutreachSequenceRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
 }
@@ -327,6 +335,7 @@ export interface FileRoutesByTo {
   '/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
   '/offerte-studio/q/$id': typeof AuthenticatedOfferteStudioQIdRoute
   '/offerte-studio/t/$id': typeof AuthenticatedOfferteStudioTIdRoute
+  '/api/public/hooks/outreach-reply': typeof ApiPublicHooksOutreachReplyRoute
   '/api/public/hooks/outreach-sequence': typeof ApiPublicHooksOutreachSequenceRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
 }
@@ -367,6 +376,7 @@ export interface FileRoutesById {
   '/_authenticated/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
   '/_authenticated/offerte-studio/q/$id': typeof AuthenticatedOfferteStudioQIdRoute
   '/_authenticated/offerte-studio/t/$id': typeof AuthenticatedOfferteStudioTIdRoute
+  '/api/public/hooks/outreach-reply': typeof ApiPublicHooksOutreachReplyRoute
   '/api/public/hooks/outreach-sequence': typeof ApiPublicHooksOutreachSequenceRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
 }
@@ -407,6 +417,7 @@ export interface FileRouteTypes {
     | '/boekhouding/journal/$entryId'
     | '/offerte-studio/q/$id'
     | '/offerte-studio/t/$id'
+    | '/api/public/hooks/outreach-reply'
     | '/api/public/hooks/outreach-sequence'
     | '/api/public/hooks/studio-followups'
   fileRoutesByTo: FileRoutesByTo
@@ -443,6 +454,7 @@ export interface FileRouteTypes {
     | '/boekhouding/journal/$entryId'
     | '/offerte-studio/q/$id'
     | '/offerte-studio/t/$id'
+    | '/api/public/hooks/outreach-reply'
     | '/api/public/hooks/outreach-sequence'
     | '/api/public/hooks/studio-followups'
   id:
@@ -482,6 +494,7 @@ export interface FileRouteTypes {
     | '/_authenticated/boekhouding/journal/$entryId'
     | '/_authenticated/offerte-studio/q/$id'
     | '/_authenticated/offerte-studio/t/$id'
+    | '/api/public/hooks/outreach-reply'
     | '/api/public/hooks/outreach-sequence'
     | '/api/public/hooks/studio-followups'
   fileRoutesById: FileRoutesById
@@ -492,6 +505,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   QTokenRoute: typeof QTokenRoute
   AcceptQuoteTokenRoute: typeof AcceptQuoteTokenRoute
+  ApiPublicHooksOutreachReplyRoute: typeof ApiPublicHooksOutreachReplyRoute
   ApiPublicHooksOutreachSequenceRoute: typeof ApiPublicHooksOutreachSequenceRoute
   ApiPublicHooksStudioFollowupsRoute: typeof ApiPublicHooksStudioFollowupsRoute
 }
@@ -722,6 +736,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksOutreachSequenceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/outreach-reply': {
+      id: '/api/public/hooks/outreach-reply'
+      path: '/api/public/hooks/outreach-reply'
+      fullPath: '/api/public/hooks/outreach-reply'
+      preLoaderRoute: typeof ApiPublicHooksOutreachReplyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/offerte-studio/t/$id': {
       id: '/_authenticated/offerte-studio/t/$id'
       path: '/offerte-studio/t/$id'
@@ -902,6 +923,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   QTokenRoute: QTokenRoute,
   AcceptQuoteTokenRoute: AcceptQuoteTokenRoute,
+  ApiPublicHooksOutreachReplyRoute: ApiPublicHooksOutreachReplyRoute,
   ApiPublicHooksOutreachSequenceRoute: ApiPublicHooksOutreachSequenceRoute,
   ApiPublicHooksStudioFollowupsRoute: ApiPublicHooksStudioFollowupsRoute,
 }
