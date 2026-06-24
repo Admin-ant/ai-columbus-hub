@@ -81,6 +81,7 @@ type Campaign = {
   notes: string | null;
   created_at: string;
   sequence_steps?: SequenceStep[];
+  pitch_variants?: PitchVariant[];
 };
 
 export type SequenceStep = {
