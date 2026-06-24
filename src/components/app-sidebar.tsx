@@ -18,6 +18,7 @@ import {
   Wand2,
   Megaphone,
   Rocket,
+  ClipboardList,
 } from "lucide-react";
 
 import {
