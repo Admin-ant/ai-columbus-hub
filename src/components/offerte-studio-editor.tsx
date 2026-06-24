@@ -130,6 +130,12 @@ export function OfferteStudioEditor({ kind, id }: Props) {
         );
         setApproved(q.status === "approved");
         setShareToken((q as unknown as { public_token?: string | null }).public_token ?? null);
+        const extra = q as unknown as {
+          packages?: unknown;
+          intro_video_url?: string | null;
+        };
+        setPackages(Array.isArray(extra.packages) ? (extra.packages as StudioPackage[]) : []);
+        setVideoUrl(extra.intro_video_url ?? "");
       } else {
         const t = data as unknown as TemplateRow;
         setTitle(t.name);
