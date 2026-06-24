@@ -55,6 +55,11 @@ import { useWorkspace } from "@/hooks/use-workspace";
 import { useServerFn } from "@tanstack/react-start";
 import { askAssistant } from "@/lib/ai-assistant.functions";
 import { researchLead, generatePitchVariants, type PitchVariant } from "@/lib/ai-power.functions";
+import {
+  bulkImportTargets,
+  sendOutreachEmail,
+  scheduleSequence,
+} from "@/lib/outreach.functions";
 
 export const Route = createFileRoute("/_authenticated/outreach/")({
   head: () => ({ meta: [{ title: "Cold Outreach" }] }),
