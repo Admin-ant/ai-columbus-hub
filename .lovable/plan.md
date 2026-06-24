@@ -13,11 +13,15 @@ Dit is veel werk (15+ grote features). Ik splits het in **4 rondes** zodat elke 
 5. **Follow-up mails na X dagen** — `quote_followups` config per offerte (dagen + aan/uit), pg_cron job die `/api/public/hooks/quote-followups` triggert, mail bij niet-bekeken/niet-ondertekend, log in `email_send_log`.
 6. **Video-intro publieke offerte** — `intro_video_url` veld (Loom/YouTube/MP4 embed) bovenaan `accept.quote.$token`.
 
+## Ronde 1 — Offerte-flow afmaken ✅
+
+Klaar (zie eerdere commit): statusbadge+datum, PDF-download, e-mailnotificatie bij ondertekening, link vernieuwen/intrekken, follow-up mails, video-intro.
+
 ## Ronde 2 — Betalen + CRM-samenwerking
 
-7. **iDEAL via Stripe (Lovable built-in)** — `enable_stripe_payments`, checkout session bij accepteren, webhook update `quotes.paid_at`. Stripe ondersteunt iDEAL native.
-8. **CRM-activiteiten pagina** — `/crm/activities` met CRUD, filters (type, assignee, status, datum), Kanban + lijstweergave, koppeling aan leads/clients.
-9. **Team comments + @mentions** — `comments` tabel (polymorphic op prospects/campagnes), mention-parser, notificatie (in-app + e-mail) aan getagde user.
+7. **iDEAL via Stripe** — wacht op jouw bevestiging om Stripe Payments te activeren.
+8. **CRM-activiteiten pagina** ✅ — `/crm/activities` met kanban (Te laat / Vandaag / Komend / Geen datum / Afgerond) + lijstweergave, filters op type/status, CRUD-dialog.
+9. **Team comments + @mentions** ✅ — opmerkingen-dialog op elke offerte (acties-menu → "Team-opmerkingen"), `@naam` autocomplete uit org-leden, e-mailnotificatie naar genoemde collega's via Resend, opgelost-markeren.
 
 ## Ronde 3 — Enterprise & analytics
 
