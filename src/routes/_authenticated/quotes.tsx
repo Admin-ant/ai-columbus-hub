@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Plus, Loader2, Trash2, FileText, Sparkles, Link2 } from "lucide-react";
+import { Plus, Loader2, Trash2, FileText, Sparkles, Link2, Wand2 } from "lucide-react";
+import { buildDefaultSections, DEFAULT_THEME, type StudioSection, type StudioTheme, type StudioPackage } from "@/lib/offerte-studio";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
