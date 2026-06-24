@@ -267,7 +267,7 @@ function QuotesPage() {
                 {t("quotes.new_quote")}
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{t("quotes.new_quote")}</DialogTitle>
                 <DialogDescription>{currentOrganization?.name}</DialogDescription>
