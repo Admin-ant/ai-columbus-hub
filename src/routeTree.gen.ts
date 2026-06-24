@@ -29,6 +29,7 @@ import { Route as AuthenticatedOfferteStudioIndexRouteImport } from './routes/_a
 import { Route as AuthenticatedNetqloudIndexRouteImport } from './routes/_authenticated/netqloud.index'
 import { Route as AuthenticatedAnalyticsIndexRouteImport } from './routes/_authenticated/analytics.index'
 import { Route as AuthenticatedAiColumbusIndexRouteImport } from './routes/_authenticated/ai-columbus.index'
+import { Route as QuoteTokenPdfRouteImport } from './routes/quote.$token.pdf'
 import { Route as AcceptQuoteTokenRouteImport } from './routes/accept.quote.$token'
 import { Route as AuthenticatedNetqloudServersRouteImport } from './routes/_authenticated/netqloud.servers'
 import { Route as AuthenticatedNetqloudKlantenRouteImport } from './routes/_authenticated/netqloud.klanten'
@@ -155,6 +156,11 @@ const AuthenticatedAiColumbusIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedAiColumbusRoute,
   } as any)
+const QuoteTokenPdfRoute = QuoteTokenPdfRouteImport.update({
+  id: '/quote/$token/pdf',
+  path: '/quote/$token/pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AcceptQuoteTokenRoute = AcceptQuoteTokenRouteImport.update({
   id: '/accept/quote/$token',
   path: '/accept/quote/$token',
@@ -295,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
+  '/quote/$token/pdf': typeof QuoteTokenPdfRoute
   '/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
   '/analytics/': typeof AuthenticatedAnalyticsIndexRoute
   '/netqloud/': typeof AuthenticatedNetqloudIndexRoute
@@ -333,6 +340,7 @@ export interface FileRoutesByTo {
   '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
+  '/quote/$token/pdf': typeof QuoteTokenPdfRoute
   '/ai-columbus': typeof AuthenticatedAiColumbusIndexRoute
   '/analytics': typeof AuthenticatedAnalyticsIndexRoute
   '/netqloud': typeof AuthenticatedNetqloudIndexRoute
@@ -375,6 +383,7 @@ export interface FileRoutesById {
   '/_authenticated/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/_authenticated/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
+  '/quote/$token/pdf': typeof QuoteTokenPdfRoute
   '/_authenticated/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
   '/_authenticated/analytics/': typeof AuthenticatedAnalyticsIndexRoute
   '/_authenticated/netqloud/': typeof AuthenticatedNetqloudIndexRoute
@@ -417,6 +426,7 @@ export interface FileRouteTypes {
     | '/netqloud/klanten'
     | '/netqloud/servers'
     | '/accept/quote/$token'
+    | '/quote/$token/pdf'
     | '/ai-columbus/'
     | '/analytics/'
     | '/netqloud/'
@@ -455,6 +465,7 @@ export interface FileRouteTypes {
     | '/netqloud/klanten'
     | '/netqloud/servers'
     | '/accept/quote/$token'
+    | '/quote/$token/pdf'
     | '/ai-columbus'
     | '/analytics'
     | '/netqloud'
@@ -496,6 +507,7 @@ export interface FileRouteTypes {
     | '/_authenticated/netqloud/klanten'
     | '/_authenticated/netqloud/servers'
     | '/accept/quote/$token'
+    | '/quote/$token/pdf'
     | '/_authenticated/ai-columbus/'
     | '/_authenticated/analytics/'
     | '/_authenticated/netqloud/'
@@ -517,6 +529,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   QTokenRoute: typeof QTokenRoute
   AcceptQuoteTokenRoute: typeof AcceptQuoteTokenRoute
+  QuoteTokenPdfRoute: typeof QuoteTokenPdfRoute
   ApiPublicHooksOutreachReplyRoute: typeof ApiPublicHooksOutreachReplyRoute
   ApiPublicHooksOutreachSequenceRoute: typeof ApiPublicHooksOutreachSequenceRoute
   ApiPublicHooksStudioFollowupsRoute: typeof ApiPublicHooksStudioFollowupsRoute
@@ -663,6 +676,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/ai-columbus/'
       preLoaderRoute: typeof AuthenticatedAiColumbusIndexRouteImport
       parentRoute: typeof AuthenticatedAiColumbusRoute
+    }
+    '/quote/$token/pdf': {
+      id: '/quote/$token/pdf'
+      path: '/quote/$token/pdf'
+      fullPath: '/quote/$token/pdf'
+      preLoaderRoute: typeof QuoteTokenPdfRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/accept/quote/$token': {
       id: '/accept/quote/$token'
@@ -944,6 +964,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   QTokenRoute: QTokenRoute,
   AcceptQuoteTokenRoute: AcceptQuoteTokenRoute,
+  QuoteTokenPdfRoute: QuoteTokenPdfRoute,
   ApiPublicHooksOutreachReplyRoute: ApiPublicHooksOutreachReplyRoute,
   ApiPublicHooksOutreachSequenceRoute: ApiPublicHooksOutreachSequenceRoute,
   ApiPublicHooksStudioFollowupsRoute: ApiPublicHooksStudioFollowupsRoute,
