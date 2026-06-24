@@ -150,15 +150,14 @@ export const analyzeWinLoss = createServerFn({ method: "POST" })
 
     const prompt = `Offerte: ${q.title}\nKlant: ${q.client_name ?? "?"}\nViews: ${q.view_count}\nFollowups: ${q.followup_count}\nBrief: ${q.ai_brief ?? "geen"}\nPakketten: ${JSON.stringify(q.packages)}\nResultaat: ${data.outcome}\nReden: ${data.reason ?? "—"}`;
 
-    let analysis: Record<string, unknown> = {};
+    let analysisJson = "{}";
     try {
-      const raw = await aiJson(
+      analysisJson = await aiJson(
         "Je bent een sales-coach. Analyseer waarom deze offerte is gewonnen of verloren. Antwoord in JSON: {summary, strengths:[], weaknesses:[], lessons:[], next_actions:[]}.",
         prompt,
       );
-      analysis = JSON.parse(raw) as Record<string, unknown>;
     } catch (e) {
-      analysis = { error: String(e) };
+      analysisJson = JSON.stringify({ error: String(e) });
     }
 
     const { error: updErr } = await context.supabase
@@ -167,12 +166,12 @@ export const analyzeWinLoss = createServerFn({ method: "POST" })
         outcome: data.outcome,
         outcome_reason: data.reason ?? null,
         outcome_at: new Date().toISOString(),
-        ai_winloss: analysis as never,
+        ai_winloss: JSON.parse(analysisJson),
       })
       .eq("id", data.quote_id);
     if (updErr) throw updErr;
 
-    return analysis;
+    return { analysis_json: analysisJson };
   });
 
 /* ============ White-label branding ============ */
