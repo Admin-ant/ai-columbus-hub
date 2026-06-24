@@ -1644,6 +1644,7 @@ export type Database = {
           is_default: boolean
           name: string
           organization_id: string
+          packages: Json
           sections: Json
           theme: Json
           updated_at: string
@@ -1657,6 +1658,7 @@ export type Database = {
           is_default?: boolean
           name: string
           organization_id: string
+          packages?: Json
           sections?: Json
           theme?: Json
           updated_at?: string
@@ -1670,6 +1672,7 @@ export type Database = {
           is_default?: boolean
           name?: string
           organization_id?: string
+          packages?: Json
           sections?: Json
           theme?: Json
           updated_at?: string

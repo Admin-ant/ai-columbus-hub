@@ -1,0 +1,1 @@
+ALTER TABLE public.quote_templates ADD COLUMN IF NOT EXISTS packages jsonb NOT NULL DEFAULT '[]'::jsonb;
