@@ -125,6 +125,7 @@ export function OfferteStudioEditor({ kind, id }: Props) {
           Array.isArray(q.sections) && q.sections.length ? q.sections : buildDefaultSections(),
         );
         setApproved(q.status === "approved");
+        setShareToken((q as unknown as { public_token?: string | null }).public_token ?? null);
       } else {
         const t = data as unknown as TemplateRow;
         setTitle(t.name);
