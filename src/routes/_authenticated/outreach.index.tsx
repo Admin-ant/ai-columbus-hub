@@ -1035,3 +1035,143 @@ function Empty({ text }: { text: string }) {
     </div>
   );
 }
+
+function parseCsv(text: string): Array<Record<string, string>> {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length === 0) return [];
+  const splitLine = (l: string): string[] => {
+    const out: string[] = [];
+    let cur = "";
+    let inQ = false;
+    for (let i = 0; i < l.length; i++) {
+      const ch = l[i];
+      if (ch === '"') {
+        if (inQ && l[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else inQ = !inQ;
+      } else if ((ch === "," || ch === ";" || ch === "\t") && !inQ) {
+        out.push(cur);
+        cur = "";
+      } else cur += ch;
+    }
+    out.push(cur);
+    return out.map((s) => s.trim());
+  };
+  const headers = splitLine(lines[0]).map((h) => h.toLowerCase().replace(/[^a-z0-9_]/g, "_"));
+  return lines.slice(1).map((l) => {
+    const cells = splitLine(l);
+    const obj: Record<string, string> = {};
+    headers.forEach((h, i) => (obj[h] = cells[i] ?? ""));
+    return obj;
+  });
+}
+
+function ImportCsvDialog({
+  campaigns,
+  orgId,
+  importFn,
+  onDone,
+}: {
+  campaigns: Campaign[];
+  orgId: string | null;
+  importFn: ReturnType<typeof useServerFn<typeof bulkImportTargets>>;
+  onDone: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [campaignId, setCampaignId] = useState<string>("");
+  const [busy, setBusy] = useState(false);
+
+  function fieldOf(row: Record<string, string>, keys: string[]): string {
+    for (const k of keys) {
+      if (row[k] && row[k].length > 0) return row[k];
+    }
+    return "";
+  }
+
+  async function handleImport() {
+    if (!orgId) return toast.error("Geen organisatie");
+    const parsed = parseCsv(text);
+    if (parsed.length === 0) return toast.error("Geen rijen gevonden");
+    const rows = parsed
+      .map((r) => ({
+        company: fieldOf(r, ["company", "bedrijf", "organization", "name"]),
+        contact_name: fieldOf(r, ["contact_name", "contact", "naam", "first_name", "full_name"]) || null,
+        email: fieldOf(r, ["email", "e_mail", "mail"]) || null,
+        phone: fieldOf(r, ["phone", "telefoon", "tel"]) || null,
+        linkedin_url: fieldOf(r, ["linkedin", "linkedin_url"]) || null,
+        notes: fieldOf(r, ["notes", "notitie"]) || null,
+      }))
+      .filter((r) => r.company);
+    if (rows.length === 0) return toast.error("Geen geldige rijen — vereist kolom: company");
+    setBusy(true);
+    try {
+      const res = await importFn({
+        data: {
+          organization_id: orgId,
+          campaign_id: campaignId || null,
+          rows,
+        },
+      });
+      toast.success(`${res.inserted} prospects geïmporteerd`);
+      setOpen(false);
+      setText("");
+      onDone();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Import mislukt");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="border-white/20 bg-white/5 text-white hover:bg-white/10">
+          <Upload className="mr-2 h-4 w-4" /> CSV import
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl border-white/10 bg-[#0a0a0a] text-white">
+        <DialogHeader>
+          <DialogTitle>CSV bulk import</DialogTitle>
+          <DialogDescription className="text-white/60">
+            Plak CSV (kop verplicht). Herkende kolommen: company, contact_name, email, phone, linkedin_url, notes.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs text-white/70">Campagne (optioneel)</Label>
+            <Select value={campaignId} onValueChange={setCampaignId}>
+              <SelectTrigger className="border-white/10 bg-white/5">
+                <SelectValue placeholder="Geen campagne" />
+              </SelectTrigger>
+              <SelectContent>
+                {campaigns.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={"company,contact_name,email\nAcme BV,Jan Jansen,jan@acme.nl"}
+            className="min-h-[220px] border-white/10 bg-black/40 font-mono text-xs"
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setOpen(false)}>
+            Annuleren
+          </Button>
+          <Button onClick={handleImport} disabled={busy} style={{ background: ACCENT, color: "white" }}>
+            {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+            Importeer
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
