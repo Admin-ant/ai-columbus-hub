@@ -360,15 +360,11 @@ function AcceptQuotePage() {
         setTerms={setTerms}
         submitting={sign.isPending}
         onSubmit={() => {
-          // Build effective signature_svg from active tab
           const eff = computeSignature(signTab, typed, signature);
           if (!signerName.trim()) return toast.error("Naam is verplicht");
           if (!eff) return toast.error("Handtekening is verplicht");
           if (!terms) return toast.error("Akkoord met voorwaarden is verplicht");
-          setSignature(eff);
-          // mutate uses signature state; ensure we pass it directly via setSignature, but mutate reads current via closure
-          // So call signFn directly to avoid stale state:
-          sign.mutate();
+          sign.mutate({ signature_svg: eff, name: signerName.trim() });
         }}
       />
     </div>
