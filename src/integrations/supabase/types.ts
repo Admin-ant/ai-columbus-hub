@@ -1204,6 +1204,56 @@ export type Database = {
           },
         ]
       }
+      quote_templates: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_default: boolean
+          name: string
+          organization_id: string
+          sections: Json
+          theme: Json
+          updated_at: string
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          name: string
+          organization_id: string
+          sections?: Json
+          theme?: Json
+          updated_at?: string
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          name?: string
+          organization_id?: string
+          sections?: Json
+          theme?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quotes: {
         Row: {
           client_id: string | null
@@ -1276,6 +1326,69 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      studio_quotes: {
+        Row: {
+          approved_at: string | null
+          client_name: string | null
+          cover_image_url: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          organization_id: string
+          sections: Json
+          status: string
+          template_id: string | null
+          theme: Json
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          client_name?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id: string
+          sections?: Json
+          status?: string
+          template_id?: string | null
+          theme?: Json
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          client_name?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id?: string
+          sections?: Json
+          status?: string
+          template_id?: string | null
+          theme?: Json
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_quotes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_quotes_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "quote_templates"
             referencedColumns: ["id"]
           },
         ]
