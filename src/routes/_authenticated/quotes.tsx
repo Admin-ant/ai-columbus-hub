@@ -608,7 +608,19 @@ function QuotesPage() {
                       )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {new Date(q.created_at).toLocaleDateString(i18n.resolvedLanguage ?? "nl")}
+                      <div>{new Date(q.created_at).toLocaleDateString(i18n.resolvedLanguage ?? "nl")}</div>
+                      {(() => {
+                        const paidAt = (q as Quote & { paid_at?: string | null }).paid_at;
+                        return paidAt ? (
+                          <Badge variant="outline" className="mt-1 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
+                            ✓ Betaald · {new Date(paidAt).toLocaleDateString(i18n.resolvedLanguage ?? "nl")}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="mt-1 bg-muted text-muted-foreground">
+                            Niet betaald
+                          </Badge>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">{eur.format(Number(q.total_amount))}</TableCell>
                     <TableCell>
