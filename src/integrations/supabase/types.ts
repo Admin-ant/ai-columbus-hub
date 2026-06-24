@@ -189,6 +189,66 @@ export type Database = {
           },
         ]
       }
+      expense_attachment_audit: {
+        Row: {
+          action: string
+          actor_id: string | null
+          attachment_id: string | null
+          created_at: string
+          expense_id: string
+          file_name: string | null
+          id: string
+          note: string | null
+          organization_id: string
+          previous_file_name: string | null
+          previous_storage_path: string | null
+          storage_path: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          attachment_id?: string | null
+          created_at?: string
+          expense_id: string
+          file_name?: string | null
+          id?: string
+          note?: string | null
+          organization_id: string
+          previous_file_name?: string | null
+          previous_storage_path?: string | null
+          storage_path?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          attachment_id?: string | null
+          created_at?: string
+          expense_id?: string
+          file_name?: string | null
+          id?: string
+          note?: string | null
+          organization_id?: string
+          previous_file_name?: string | null
+          previous_storage_path?: string | null
+          storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_attachment_audit_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_attachment_audit_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expense_attachments: {
         Row: {
           created_at: string
