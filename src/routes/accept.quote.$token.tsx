@@ -248,15 +248,15 @@ function AcceptQuotePage() {
                   </div>
                 ) : (
                   <>
-                    <SignaturePad onChange={setSignature} />
+                    <p className="text-sm text-muted-foreground">
+                      Klik op de knop hieronder om de offerte digitaal goed te keuren en te ondertekenen.
+                    </p>
                     <Button
-                      onClick={() => sign.mutate()}
-                      disabled={!signature || sign.isPending}
+                      onClick={() => setSignOpen(true)}
                       style={{ background: brand }}
                     >
-                      {sign.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       <FileSignature className="mr-2 h-4 w-4" />
-                      {t("accept.sign_button")}
+                      Offerte goedkeuren
                     </Button>
                   </>
                 )}
