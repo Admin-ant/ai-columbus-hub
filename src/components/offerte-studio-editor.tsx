@@ -372,11 +372,23 @@ export function OfferteStudioEditor({ kind, id }: Props) {
           <Button
             variant="ghost"
             size="sm"
+            onClick={() => setShowPreview((v) => !v)}
+            className="hover:bg-white/10"
+            style={{ color: showPreview ? styles.accent : "rgba(255,255,255,0.8)" }}
+            title={showPreview ? "Preview verbergen" : "Live preview tonen"}
+          >
+            {showPreview ? <EyeOff className="mr-1 h-4 w-4" /> : <Eye className="mr-1 h-4 w-4" />}
+            Preview
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => window.print()}
             className="text-white/80 hover:text-white hover:bg-white/10"
           >
             <Printer className="mr-1 h-4 w-4" /> Printen
           </Button>
+
           {kind === "quote" && (
             <Button
               variant="ghost"
