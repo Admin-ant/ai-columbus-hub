@@ -16,6 +16,7 @@ import {
   FileSignature,
   Package,
   Wand2,
+  Megaphone,
 } from "lucide-react";
 
 import {
