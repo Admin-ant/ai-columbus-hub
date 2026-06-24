@@ -777,3 +777,148 @@ function SectionStage({
   );
 }
 
+function embedUrl(url: string): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("youtube.com")) {
+      const v = u.searchParams.get("v");
+      if (v) return `https://www.youtube.com/embed/${v}`;
+    }
+    if (u.hostname === "youtu.be") {
+      return `https://www.youtube.com/embed/${u.pathname.slice(1)}`;
+    }
+    if (u.hostname.includes("loom.com") && u.pathname.includes("/share/")) {
+      return url.replace("/share/", "/embed/");
+    }
+    if (u.hostname.includes("vimeo.com")) {
+      const id = u.pathname.split("/").filter(Boolean)[0];
+      if (id && /^\d+$/.test(id)) return `https://player.vimeo.com/video/${id}`;
+    }
+    return url;
+  } catch {
+    return null;
+  }
+}
+
+function LivePreview({
+  title,
+  client,
+  cover,
+  theme,
+  sections,
+  packages,
+  videoUrl,
+  activeKey,
+  onJump,
+}: {
+  title: string;
+  client: string;
+  cover: string | null;
+  theme: StudioTheme;
+  sections: StudioSection[];
+  packages: StudioPackage[];
+  videoUrl: string;
+  activeKey: string;
+  onJump: (key: string) => void;
+}) {
+  const accent = theme.accent;
+  const video = embedUrl(videoUrl);
+  return (
+    <div style={{ background: theme.bg, color: theme.fg }} className="min-h-full">
+      {/* Cover */}
+      <div
+        className="relative flex min-h-[280px] flex-col justify-end px-6 py-8"
+        style={{
+          background: cover
+            ? `linear-gradient(180deg, rgba(0,0,0,0.3), rgba(0,0,0,0.75)), url(${cover}) center/cover`
+            : `radial-gradient(circle at 80% 10%, ${accent}33, transparent 55%), #0d0d0d`,
+        }}
+      >
+        <div className="text-[10px] uppercase tracking-[0.25em]" style={{ color: accent }}>
+          Offerte
+        </div>
+        <div className="mt-2 text-2xl font-bold tracking-tight text-white">
+          {title || "Naamloos"}
+        </div>
+        {client && <div className="mt-1 text-sm text-white/70">Voor {client}</div>}
+      </div>
+
+      {video && (
+        <div className="border-y" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+          <div className="relative aspect-video">
+            <iframe
+              src={video}
+              className="absolute inset-0 h-full w-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              title="Intro"
+            />
+          </div>
+        </div>
+      )}
+
+      {sections.map((s) => (
+        <button
+          key={s.key}
+          type="button"
+          onClick={() => onJump(s.key)}
+          className="block w-full cursor-pointer border-b px-6 py-6 text-left transition-colors hover:bg-white/[0.02]"
+          style={{
+            borderColor: "rgba(255,255,255,0.06)",
+            background: activeKey === s.key ? `${accent}0d` : "transparent",
+          }}
+        >
+          <div className="text-[10px] uppercase tracking-[0.25em]" style={{ color: accent }}>
+            {s.label}
+          </div>
+          <div className="mt-1.5 text-lg font-semibold text-white">
+            {s.heading || <span className="text-white/30">Titel…</span>}
+          </div>
+          {s.body && (
+            <div className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-white/75">
+              {s.body}
+            </div>
+          )}
+        </button>
+      ))}
+
+      {packages.length > 0 && (
+        <div className="px-6 py-6">
+          <div className="text-[10px] uppercase tracking-[0.25em]" style={{ color: accent }}>
+            Pakketten
+          </div>
+          <div className="mt-3 grid gap-3">
+            {packages.map((p) => (
+              <div
+                key={p.id}
+                className="rounded-lg border p-3"
+                style={{
+                  borderColor: p.highlighted ? accent : "rgba(255,255,255,0.1)",
+                  background: p.highlighted ? `${accent}14` : "rgba(255,255,255,0.02)",
+                }}
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <div className="text-sm font-semibold text-white">{p.name}</div>
+                  <div className="text-sm font-semibold" style={{ color: accent }}>
+                    € {p.price_eur.toLocaleString("nl-NL")}{" "}
+                    <span className="text-[10px] font-normal text-white/50">{p.billing}</span>
+                  </div>
+                </div>
+                {p.features.filter(Boolean).length > 0 && (
+                  <ul className="mt-2 space-y-0.5 text-xs text-white/70">
+                    {p.features.filter(Boolean).map((f, i) => (
+                      <li key={i}>• {f}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
