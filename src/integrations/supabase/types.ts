@@ -199,6 +199,8 @@ export type Database = {
           description: string | null
           expense_date: string
           id: string
+          journal_error: string | null
+          journal_status: string
           notes: string | null
           organization_id: string
           paid_at: string | null
@@ -221,6 +223,8 @@ export type Database = {
           description?: string | null
           expense_date?: string
           id?: string
+          journal_error?: string | null
+          journal_status?: string
           notes?: string | null
           organization_id: string
           paid_at?: string | null
@@ -243,6 +247,8 @@ export type Database = {
           description?: string | null
           expense_date?: string
           id?: string
+          journal_error?: string | null
+          journal_status?: string
           notes?: string | null
           organization_id?: string
           paid_at?: string | null
@@ -524,6 +530,8 @@ export type Database = {
           invoice_id: string | null
           organization_id: string
           quote_id: string | null
+          reversed_by_entry_id: string | null
+          reverses_entry_id: string | null
           source: string
         }
         Insert: {
@@ -536,6 +544,8 @@ export type Database = {
           invoice_id?: string | null
           organization_id: string
           quote_id?: string | null
+          reversed_by_entry_id?: string | null
+          reverses_entry_id?: string | null
           source?: string
         }
         Update: {
@@ -548,6 +558,8 @@ export type Database = {
           invoice_id?: string | null
           organization_id?: string
           quote_id?: string | null
+          reversed_by_entry_id?: string | null
+          reverses_entry_id?: string | null
           source?: string
         }
         Relationships: [
@@ -577,6 +589,20 @@ export type Database = {
             columns: ["quote_id"]
             isOneToOne: false
             referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_reversed_by_entry_id_fkey"
+            columns: ["reversed_by_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_reverses_entry_id_fkey"
+            columns: ["reverses_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
             referencedColumns: ["id"]
           },
         ]
@@ -1170,8 +1196,17 @@ export type Database = {
     }
     Functions: {
       next_invoice_number: { Args: { _org_id: string }; Returns: string }
-      post_expense_journal: { Args: { _expense_id: string }; Returns: string }
+      post_expense_journal:
+        | { Args: { _expense_id: string }; Returns: string }
+        | {
+            Args: { _counter_code?: string; _expense_id: string }
+            Returns: string
+          }
       post_invoice_journal: { Args: { _invoice_id: string }; Returns: string }
+      reverse_expense_journal: {
+        Args: { _expense_id: string; _reason?: string }
+        Returns: string
+      }
       seed_default_chart: { Args: { _org: string }; Returns: undefined }
     }
     Enums: {
