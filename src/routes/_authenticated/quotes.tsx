@@ -69,6 +69,7 @@ function QuotesPage() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const { currentOrganizationId, currentOrganization, loading: wsLoading } = useWorkspace();
+  const navigate = useNavigate();
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -77,6 +78,8 @@ function QuotesPage() {
   const [title, setTitle] = useState("");
   const [clientId, setClientId] = useState<string>("");
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [templates, setTemplates] = useState<{ id: string; name: string }[]>([]);
+  const [templateId, setTemplateId] = useState<string>("");
   const [lines, setLines] = useState<LineItem[]>([{ description: "", quantity: 1, unit_price: 0 }]);
 
   const eur = useMemo(
