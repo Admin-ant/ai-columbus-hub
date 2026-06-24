@@ -77,8 +77,27 @@ export function OfferteStudioEditor({ kind, id }: Props) {
   const [approved, setApproved] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
   const dirty = useRef(false);
+  const [shareToken, setShareToken] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const createTok = useServerFn(createShareToken);
 
   const table = kind === "quote" ? "studio_quotes" : "quote_templates";
+
+  async function share() {
+    if (kind !== "quote") return;
+    setSharing(true);
+    try {
+      const { token } = await createTok({ data: { id } });
+      setShareToken(token);
+      const url = `${window.location.origin}/q/${token}`;
+      await navigator.clipboard.writeText(url).catch(() => undefined);
+      toast.success("Deel-link gekopieerd naar klembord");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Mislukt");
+    } finally {
+      setSharing(false);
+    }
+  }
 
   useEffect(() => {
     let active = true;
