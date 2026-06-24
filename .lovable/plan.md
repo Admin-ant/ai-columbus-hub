@@ -1,66 +1,54 @@
-## Multi-tenant Partner Portal — Implementatieplan
+# Volledig uitvoeringsplan
 
-Groot project. Ik stel voor het in 6 fases te bouwen, met na elke fase een werkend resultaat zodat we kunnen bijsturen. Hieronder de scope per fase + een paar keuzes die ik graag eerst bevestig.
-
----
-
-### Te bevestigen voor ik begin
-
-1. **Bestaande data** — er zijn al tabellen `leads`, `clients`, `user_roles` (zonder `organization_id`). Mag ik die migreren? Alle bestaande leads en rollen koppel ik dan standaard aan **AI van Columbus** (huidige situatie). Akkoord?
-2. **Holding-admin** — wordt je huidige admin (`ah.hogervorst@gmail.com`) automatisch `holding_admin` voor beide organisaties?
-3. **Mollie & Telnyx** — alleen mock/stubs in deze ronde (geen echte API keys nodig), correct?
-4. **AI Assistant** — alleen UI-panel met placeholders, of meteen koppelen aan Lovable AI Gateway (Gemini gratis tot 6 okt)?
+Dit is veel werk (15+ grote features). Ik splits het in **4 rondes** zodat elke ronde getest en gereviewd kan worden voor we doorgaan. Na jouw "ga" pak ik Ronde 1 op; daarna meld ik me terug en starten we de volgende.
 
 ---
 
-### Fase 1 — Database & multi-tenancy fundering
-- Migratie: `organizations` tabel + seed "AI van Columbus" en "Netqloud"
-- `user_roles` uitbreiden met `organization_id` + nieuwe enum `holding_admin` / `company_staff`
-- `leads.organization_id` toevoegen (backfill → AI van Columbus)
-- Nieuwe tabellen: `quotes`, `invoices` (met per-org invoice nummering)
-- RLS-policies via `has_org_access(user, org)` security-definer functie — strikte scheiding
-- GRANTs + update-triggers per tabel
+## Ronde 1 — Offerte-flow afmaken
 
-### Fase 2 — Workspace context & taal
-- `WorkspaceProvider` (currentOrganizationId, currentLanguage NL/EN, persistent in localStorage)
-- Org-switcher dropdown in header (alleen zichtbaar voor holding_admin)
-- i18n setup met `react-i18next` — NL = default, EN secundair
-- Taalswitch in header; alle bestaande UI-strings naar vertaalbestanden
+1. **Statusbadge + datum in admin-quoteslijst** — kleur per status (concept/verzonden/bekeken/ondertekend/verlopen) + relatieve datum.
+2. **PDF-download ondertekende offerte** — server function rendert HTML→PDF met handtekening-SVG, naam, akkoord-timestamp, voorwaarden.
+3. **E-mailnotificatie bij ondertekening** — via Lovable Emails (app emails), template met bevestiging + downloadlink.
+4. **Link vernieuwen / intrekken** — `revoked_at` veld + acties in admin; publieke pagina toont "ingetrokken" status.
+5. **Follow-up mails na X dagen** — `quote_followups` config per offerte (dagen + aan/uit), pg_cron job die `/api/public/hooks/quote-followups` triggert, mail bij niet-bekeken/niet-ondertekend, log in `email_send_log`.
+6. **Video-intro publieke offerte** — `intro_video_url` veld (Loom/YouTube/MP4 embed) bovenaan `accept.quote.$token`.
 
-### Fase 3 — Lead funnel kanban
-- Nieuwe route `/leads` (per-org gefilterd via context)
-- Kanban met 5 kolommen (Nieuw, Contact opgenomen, Offerte verzonden, Gewonnen, Verloren)
-- Drag & drop via `@dnd-kit` (al populair, lichtgewicht) — status update naar DB
-- Bestaande lead-stages map ik naar de nieuwe set
+## Ronde 2 — Betalen + CRM-samenwerking
 
-### Fase 4 — Quotes & invoices
-- Quote-builder: titel, regels (line items in JSON), totaal, status
-- Per-org template/branding (logo, kleur, prefix) uit `organizations`
-- Invoice nummering: sequence per org via DB-functie `next_invoice_number(org_id)`
-- Stub hooks `useAccountingSync()` en `useTelnyxWebhook()` (lege implementaties met TODO)
+7. **iDEAL via Stripe (Lovable built-in)** — `enable_stripe_payments`, checkout session bij accepteren, webhook update `quotes.paid_at`. Stripe ondersteunt iDEAL native.
+8. **CRM-activiteiten pagina** — `/crm/activities` met CRUD, filters (type, assignee, status, datum), Kanban + lijstweergave, koppeling aan leads/clients.
+9. **Team comments + @mentions** — `comments` tabel (polymorphic op prospects/campagnes), mention-parser, notificatie (in-app + e-mail) aan getagde user.
 
-### Fase 5 — Publieke accept-pagina + Mollie mock
-- Publieke route `/accept/quote/:id` (geen auth, RLS policy "select via signed token")
-- Canvas-handtekening component (react-signature-canvas of eigen canvas)
-- "Sign & Pay" → mock Mollie iDEAL flow → status `approved_paid` → auto invoice aanmaken via server function
+## Ronde 3 — Enterprise & analytics
 
-### Fase 6 — AI Assistant paneel
-- Side-panel component met context-aware suggesties
-- Placeholders: "Genereer offerte uit lead-notities", "Controleer factuurregels"
-- Hook-structuur klaar voor Lovable AI / OpenAI / Anthropic
+10. **RBAC `/enterprise`** — `_authenticated/enterprise` layout met `has_role('admin'|'enterprise')` gate, redirect anders.
+11. **Forecast dashboard** — per team & maand op basis van deal-stage × waarschijnlijkheid, grafiek + tabel + CSV-export.
+12. **Win/Loss AI formulier + log** — formulier (deal, uitkomst, ruwe notities), Lovable AI vat reden samen, opslag in `win_loss_log`, trends-overzicht.
+13. **Heatmap per offerte** — `quote_section_views` (sectie-id + dwell time via IntersectionObserver), admin-view rendert kleurschaal per sectie.
+
+## Ronde 4 — Platform-features
+
+14. **Templates marketplace** — `marketplace_templates` (AI prompts + outreach sequences), org-scoped private + workspace-shared, kopieer-naar-mijn-org actie.
+15. **White-label** — `organizations.branding` (logo, kleuren, custom subdomein), middleware detecteert host → laadt branding, publieke offerte/portal respecteren.
+16. **Resend outreach-integratie** — connector via gateway, send vanuit sequences, log per campaign + prospect in `outreach_messages` met provider message-id, bounce/complaint webhook.
 
 ---
 
-### Technische details
-- TanStack Start server functions voor alle writes (RLS via `requireSupabaseAuth`)
-- Publieke quote-route gebruikt server-publishable client + signed-token policy
-- Mollie/Telnyx als stub server fns die nu een mock-response teruggeven
-- i18n: `react-i18next` + `i18next-browser-languagedetector`
-- Kanban: `@dnd-kit/core` + `@dnd-kit/sortable`
+## Belangrijke beslissingen die ik nu voor je maak (zeg het als je liever anders wil)
 
----
+- **iDEAL provider**: **Stripe built-in** (geen eigen account/keys nodig, snelste). Mollie zou een eigen API key vereisen.
+- **Follow-up timing default**: **3 dagen** na verzenden als niet bekeken, **7 dagen** als bekeken maar niet ondertekend. Per offerte aanpasbaar.
+- **PDF-rendering**: server function met `@react-pdf/renderer` (werkt in Workers).
+- **Video-intro**: ondersteunt Loom/YouTube/Vimeo embed-URL + directe MP4. Geen upload-flow deze ronde.
+- **Mentions notificatie**: in-app badge + e-mail (geen push).
+- **White-label subdomein**: `*.jouwdomein.nl` patroon; root-domein blijft platform. DNS-instructies krijg je per organisatie.
 
-### Voorstel
-Mag ik **Fase 1 + 2** in deze ronde bouwen (fundering + tenant switching + taal)? Dat is ~1 grote migratie + ~10 bestanden. Daarna laat ik je testen en gaan we per fase verder. Zo voorkomen we een onoverzichtelijke berg wijzigingen in één keer.
+## Wat ik buiten scope houd
 
-Of geef aan welke fases je in welke volgorde wilt.
+- Marketing/bulk mails (verboden volgens email-richtlijnen — alleen transactioneel).
+- De externe DigitalOcean-link die je deelde — geen actie tenzij je zegt wat je daarmee wil.
+- Native mobile / app stores.
+
+## Bevestiging
+
+Reageer met **"ga"** dan start ik Ronde 1. Of noem een ronde/feature die je eerst wil.
