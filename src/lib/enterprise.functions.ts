@@ -120,6 +120,57 @@ export const addQuoteComment = createServerFn({ method: "POST" })
       .select()
       .single();
     if (error) throw error;
+
+    // Best-effort mention notifications
+    if (data.mentions && data.mentions.length > 0) {
+      try {
+        const apiKey = process.env.RESEND_API_KEY;
+        const from = process.env.OUTREACH_FROM_EMAIL;
+        if (apiKey && from) {
+          const { data: targets } = await context.supabase
+            .from("profiles")
+            .select("id, email, display_name")
+            .in("id", data.mentions);
+          const { data: author } = await context.supabase
+            .from("profiles")
+            .select("display_name, email")
+            .eq("id", context.userId)
+            .maybeSingle();
+          const { data: q } = await context.supabase
+            .from("quotes")
+            .select("title, public_token")
+            .eq("id", data.quote_id)
+            .maybeSingle();
+          const authorName = author?.display_name || author?.email || "Een collega";
+          const title = q?.title || "een offerte";
+          const safeBody = data.body.replace(/[<>]/g, "");
+          await Promise.all(
+            (targets ?? [])
+              .filter((p) => p.email)
+              .map((p) =>
+                fetch("https://api.resend.com/emails", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+                  body: JSON.stringify({
+                    from,
+                    to: [p.email],
+                    subject: `${authorName} heeft je genoemd in "${title}"`,
+                    html: `<div style="font-family:Inter,Arial,sans-serif;max-width:560px">
+                      <h2 style="margin:0 0 12px">Je bent genoemd 💬</h2>
+                      <p><strong>${authorName}</strong> noemde jou in een opmerking op offerte <strong>${title}</strong>:</p>
+                      <blockquote style="border-left:3px solid #0f172a;padding:8px 12px;color:#333;background:#f6f7f9">${safeBody}</blockquote>
+                      <p style="color:#888;font-size:12px;margin-top:24px">Open de offerte in het platform om te reageren.</p>
+                    </div>`,
+                  }),
+                }).catch(() => null),
+              ),
+          );
+        }
+      } catch {
+        // mentions notification best-effort
+      }
+    }
+
     return row;
   });
 
