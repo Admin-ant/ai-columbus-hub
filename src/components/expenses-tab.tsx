@@ -132,8 +132,12 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
     const { error } = await supabase.rpc("post_expense_journal", { _expense_id: id });
     if (error) { toast.error(error.message); return; }
     toast.success("Uitgave geboekt in journaal");
+    setPreviewId(null);
     void load();
   }
+
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const previewExpense = useMemo(() => expenses.find(e => e.id === previewId) ?? null, [expenses, previewId]);
 
   async function markPaid(id: string) {
     const { error } = await supabase.from("expenses").update({
