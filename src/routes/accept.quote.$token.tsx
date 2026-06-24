@@ -1,16 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { CheckCircle2, Loader2, ShieldCheck, FileSignature, CreditCard, Eye, Receipt, ScrollText, Clock } from "lucide-react";
+import { CheckCircle2, Loader2, ShieldCheck, FileSignature, CreditCard, Eye, Receipt, ScrollText, Clock, X, PenLine } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { LanguageSwitcher } from "@/components/language-switcher";
-import { SignaturePad } from "@/components/signature-pad";
 import {
   getPublicQuote,
   signPublicQuote,
