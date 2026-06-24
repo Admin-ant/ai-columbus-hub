@@ -674,6 +674,9 @@ function QuotesPage() {
                             <DropdownMenuItem onClick={() => setSettingsQuote(q)}>
                               <Settings2 className="mr-2 h-4 w-4" /> Instellingen & follow-up
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setCommentsQuote(q)}>
+                              <MessageSquare className="mr-2 h-4 w-4" /> Team-opmerkingen
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={async () => {
                               try {
