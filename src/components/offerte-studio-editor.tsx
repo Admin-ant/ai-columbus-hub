@@ -316,6 +316,24 @@ export function OfferteStudioEditor({ kind, id }: Props) {
               <BookmarkPlus className="mr-1 h-4 w-4" /> Als sjabloon
             </Button>
           )}
+          {kind === "quote" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={share}
+              disabled={sharing}
+              className="hover:bg-white/10"
+              style={{ color: shareToken ? styles.accent : "rgba(255,255,255,0.8)" }}
+              title={shareToken ? "Deel-link kopiëren" : "Deel-link genereren"}
+            >
+              {shareToken ? (
+                <Copy className="mr-1 h-4 w-4" />
+              ) : (
+                <Share2 className="mr-1 h-4 w-4" />
+              )}
+              {shareToken ? "Deel-link" : "Delen"}
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
