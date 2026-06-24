@@ -179,6 +179,8 @@ export function OfferteStudioEditor({ kind, id }: Props) {
             sections: sections as never,
             status: approved ? "approved" : "draft",
             approved_at: approved ? new Date().toISOString() : null,
+            packages: packages as never,
+            intro_video_url: videoUrl.trim() || null,
           }
         : {
             name: title,
