@@ -536,6 +536,18 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
                   <TableCell className="text-right tabular-nums font-medium">{EUR(e.total_cents)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        title="Bijlagen"
+                        onClick={() => setAttachExpenseId(e.id)}
+                        className="relative"
+                      >
+                        <Paperclip className="h-3.5 w-3.5" />
+                        {(attachmentCounts.get(e.id) ?? 0) > 0 && (
+                          <span className="ml-1 text-[10px] font-semibold tabular-nums">{attachmentCounts.get(e.id)}</span>
+                        )}
+                      </Button>
                       {e.status !== "paid" && (
                         <Button variant="ghost" size="sm" title="Markeer als betaald" onClick={() => markPaid(e.id)}>
                           <Receipt className="h-3.5 w-3.5" />
