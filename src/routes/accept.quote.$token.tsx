@@ -204,6 +204,32 @@ function AcceptQuotePage() {
           </Badge>
         </div>
 
+        {(videoEmbed || qExt.intro_message) && (
+          <Card className="overflow-hidden border-2" style={{ borderColor: brand }}>
+            <CardContent className="space-y-3 p-4">
+              {qExt.intro_message && (
+                <p className="text-sm leading-relaxed">{qExt.intro_message}</p>
+              )}
+              {videoEmbed && (
+                videoEmbed.type === "iframe" ? (
+                  <div className="aspect-video w-full overflow-hidden rounded-md bg-black">
+                    <iframe
+                      src={videoEmbed.url}
+                      className="h-full w-full"
+                      allow="autoplay; fullscreen; encrypted-media"
+                      allowFullScreen
+                      title="Video introductie"
+                    />
+                  </div>
+                ) : (
+                  <video src={videoEmbed.url} controls className="w-full rounded-md" />
+                )
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+
         <Card>
           <CardHeader>
             <CardTitle className="text-base">{t("quotes.line_items")}</CardTitle>
