@@ -102,6 +102,8 @@ type TargetRow = {
   stage: Stage;
   last_contact_at: string | null;
   notes: string | null;
+  research_summary?: string | null;
+  research_at?: string | null;
 };
 
 function OutreachDashboard() {
