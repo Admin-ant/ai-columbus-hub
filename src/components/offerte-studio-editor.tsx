@@ -97,8 +97,11 @@ export function OfferteStudioEditor({ kind, id }: Props) {
   const [aiOpen, setAiOpen] = useState(false);
   const [showPreview, setShowPreview] = useState(true);
   const createTok = useServerFn(createShareToken);
-
-
+  const createTplTok = useServerFn(createTemplatePreviewToken);
+  const revokeTplTok = useServerFn(revokeTemplatePreviewToken);
+  const getTplInfo = useServerFn(getTemplatePreviewInfo);
+  const [tplPreviewToken, setTplPreviewToken] = useState<string | null>(null);
+  const [tplPreviewExpires, setTplPreviewExpires] = useState<string | null>(null);
 
   const table = kind === "quote" ? "studio_quotes" : "quote_templates";
 
@@ -117,6 +120,47 @@ export function OfferteStudioEditor({ kind, id }: Props) {
       setSharing(false);
     }
   }
+
+  async function shareTemplatePreview() {
+    if (kind !== "template") return;
+    setSharing(true);
+    try {
+      let token = tplPreviewToken;
+      let expires = tplPreviewExpires;
+      if (!token) {
+        const res = await createTplTok({ data: { id, hours: 72 } });
+        token = res.token;
+        expires = res.expires_at;
+        setTplPreviewToken(token);
+        setTplPreviewExpires(expires);
+      }
+      const url = `${window.location.origin}/t/${token}`;
+      await navigator.clipboard.writeText(url).catch(() => undefined);
+      toast.success(
+        expires
+          ? `Preview-link gekopieerd. Verloopt ${new Date(expires).toLocaleString("nl-NL")}`
+          : "Preview-link gekopieerd",
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Mislukt");
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  async function revokeTemplatePreview() {
+    if (kind !== "template" || !tplPreviewToken) return;
+    if (!confirm("Preview-link intrekken? Bestaande link werkt daarna niet meer.")) return;
+    try {
+      await revokeTplTok({ data: { id } });
+      setTplPreviewToken(null);
+      setTplPreviewExpires(null);
+      toast.success("Preview-link ingetrokken");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Mislukt");
+    }
+  }
+
 
   useEffect(() => {
     let active = true;
