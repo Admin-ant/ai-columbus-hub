@@ -130,7 +130,7 @@ function OutreachDashboard() {
     ]);
     if (c.error) toast.error(c.error.message);
     if (t.error) toast.error(t.error.message);
-    setCampaigns((c.data ?? []) as Campaign[]);
+    setCampaigns((c.data ?? []) as unknown as Campaign[]);
     setTargets((t.data ?? []) as TargetRow[]);
     setLoading(false);
   }
