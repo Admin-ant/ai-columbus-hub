@@ -151,15 +151,12 @@ function QuotesPage() {
 
     // If a Studio template is selected → create a studio_quote and open editor
     if (templateId) {
-      const { data: full } = await supabase
-        .from("quote_templates")
-        .select("sections,theme,cover_image_url,packages")
-        .eq("id", templateId)
-        .maybeSingle();
-      const sections = ((full?.sections as unknown as StudioSection[]) ?? buildDefaultSections());
-      const theme = ((full?.theme as unknown as StudioTheme) ?? DEFAULT_THEME);
-      const packages = ((full?.packages as unknown as StudioPackage[]) ?? []);
-      const cover = full?.cover_image_url ?? null;
+      const tpl = templates.find((x) => x.id === templateId);
+      const sections = (tpl?.sections && tpl.sections.length > 0 ? tpl.sections : buildDefaultSections());
+      const theme = (tpl?.theme ?? DEFAULT_THEME);
+      // Safe fallback: ook zonder packages wordt de offerte aangemaakt
+      const packages = (tpl?.packages ?? []);
+      const cover = tpl?.cover_image_url ?? null;
       const clientName = clientId ? clients.find((c) => c.id === clientId)?.name ?? null : null;
       const { data: row, error: insErr } = await supabase
         .from("studio_quotes")
