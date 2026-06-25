@@ -198,8 +198,10 @@ function randToken(n = 40) {
 }
 
 export const createShareToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertStudioQuoteAccess(context.userId, data.id);
     const sb = await loadAdmin();
     const { data: existing } = await sb
       .from("studio_quotes")
@@ -217,6 +219,7 @@ export const createShareToken = createServerFn({ method: "POST" })
   });
 
 export const createTemplatePreviewToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z
       .object({
@@ -225,7 +228,8 @@ export const createTemplatePreviewToken = createServerFn({ method: "POST" })
       })
       .parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertTemplateAccess(context.userId, data.id);
     const sb = await loadAdmin();
     const token = randToken();
     const expiresAt = new Date(Date.now() + data.hours * 3600 * 1000).toISOString();
@@ -241,8 +245,10 @@ export const createTemplatePreviewToken = createServerFn({ method: "POST" })
   });
 
 export const revokeTemplatePreviewToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertTemplateAccess(context.userId, data.id);
     const sb = await loadAdmin();
     const { error } = await sb
       .from("quote_templates")
@@ -256,8 +262,10 @@ export const revokeTemplatePreviewToken = createServerFn({ method: "POST" })
   });
 
 export const getTemplatePreviewInfo = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertTemplateAccess(context.userId, data.id);
     const sb = await loadAdmin();
     const { data: row } = await sb
       .from("quote_templates")
