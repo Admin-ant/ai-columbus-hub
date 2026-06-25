@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo } from "react";
 import { getPublicQuote } from "@/lib/public-quote.functions";
+import { sanitizeSignatureSvg } from "@/lib/signature-svg";
 
 export const Route = createFileRoute("/quote/$token/pdf")({
   head: () => ({
