@@ -622,15 +622,18 @@ function InvoicesTab({
     if (lines.some((l) => !l.description.trim())) return toast.error(t("acc.inv.line_required"));
     setSaving(true);
 
-    const { data: numData, error: numErr } = await (
-      supabase.rpc as unknown as (
-        fn: string,
-        args: Record<string, unknown>,
-      ) => Promise<{ data: string | null; error: { message: string } | null }>
-    )("next_invoice_number", { org_id: orgId });
-    if (numErr || !numData) {
+    let numData: string | null = null;
+    try {
+      const { nextInvoiceNumber } = await import("@/lib/bookkeeping.functions");
+      const res = await nextInvoiceNumber({ data: { org_id: orgId } });
+      numData = res.number;
+    } catch (e) {
       setSaving(false);
-      return toast.error(numErr?.message ?? "RPC error");
+      return toast.error(e instanceof Error ? e.message : "RPC error");
+    }
+    if (!numData) {
+      setSaving(false);
+      return toast.error("RPC error");
     }
 
     const { data: inv, error: invErr } = await supabase
@@ -687,14 +690,13 @@ function InvoicesTab({
     if (error) return toast.error(error.message);
 
     if (status === "sent" || status === "paid") {
-      const { error: rpcErr } = await (
-        supabase.rpc as unknown as (
-          fn: string,
-          args: Record<string, unknown>,
-        ) => Promise<{ data: unknown; error: { message: string } | null }>
-      )("post_invoice_journal", { _invoice_id: id });
-      if (rpcErr) toast.error(rpcErr.message);
-      else toast.success(t("acc.inv.posted"));
+      try {
+        const { postInvoiceJournal } = await import("@/lib/bookkeeping.functions");
+        await postInvoiceJournal({ data: { invoice_id: id } });
+        toast.success(t("acc.inv.posted"));
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "RPC error");
+      }
     }
     void reload();
   }

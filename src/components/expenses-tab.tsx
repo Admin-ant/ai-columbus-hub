@@ -197,10 +197,13 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
   async function postToJournal(id: string, code: string) {
     // Optimistisch: zet status op pending
     await supabase.from("expenses").update({ journal_status: "pending" }).eq("id", id);
-    const { error } = await supabase.rpc("post_expense_journal", { _expense_id: id, _counter_code: code || undefined });
-    if (error) {
-      await supabase.from("expenses").update({ journal_status: "error", journal_error: error.message }).eq("id", id);
-      toast.error(error.message);
+    try {
+      const { postExpenseJournal } = await import("@/lib/bookkeeping.functions");
+      await postExpenseJournal({ data: { expense_id: id, counter_code: code || undefined } });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Fout bij boeken";
+      await supabase.from("expenses").update({ journal_status: "error", journal_error: msg }).eq("id", id);
+      toast.error(msg);
       void load();
       return;
     }
@@ -211,8 +214,13 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
   }
 
   async function reverseJournal(id: string) {
-    const { error } = await supabase.rpc("reverse_expense_journal", { _expense_id: id, _reason: reverseReason || undefined });
-    if (error) { toast.error(error.message); return; }
+    try {
+      const { reverseExpenseJournal } = await import("@/lib/bookkeeping.functions");
+      await reverseExpenseJournal({ data: { expense_id: id, reason: reverseReason || undefined } });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Fout");
+      return;
+    }
     toast.success("Boeking teruggedraaid");
     setReverseId(null);
     setReverseReason("");
