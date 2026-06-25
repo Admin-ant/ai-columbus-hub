@@ -11,11 +11,13 @@ export const Route = createFileRoute("/api/public/hooks/outreach-reply")({
     handlers: {
       POST: async ({ request }) => {
         const secret = process.env.RESEND_WEBHOOK_SECRET;
-        if (secret) {
-          const provided = request.headers.get("x-webhook-secret");
-          if (provided !== secret) {
-            return new Response("Unauthorized", { status: 401 });
-          }
+        if (!secret) {
+          console.error("[outreach-reply] RESEND_WEBHOOK_SECRET is not configured");
+          return new Response("Webhook secret not configured", { status: 503 });
+        }
+        const provided = request.headers.get("x-webhook-secret");
+        if (provided !== secret) {
+          return new Response("Unauthorized", { status: 401 });
         }
 
         let payload: unknown;
