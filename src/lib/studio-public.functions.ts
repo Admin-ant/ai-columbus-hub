@@ -130,12 +130,15 @@ export const acceptPublicStudioQuote = createServerFn({ method: "POST" })
     if (!q) throw new Error("Offerte niet gevonden");
     if (q.accepted_at) throw new Error("Deze offerte is al geaccepteerd");
 
+    const { sanitizeSignatureSvg } = await import("./signature-svg");
+    const safeSig = sanitizeSignatureSvg(data.signature_svg);
+    if (!safeSig) throw new Error("Ongeldige handtekening");
     const { error } = await sb
       .from("studio_quotes")
       .update({
         accepted_at: new Date().toISOString(),
         accepted_by_name: data.name,
-        accepted_signature: data.signature_svg,
+        accepted_signature: safeSig,
         status: "approved",
         approved_at: new Date().toISOString(),
       })
