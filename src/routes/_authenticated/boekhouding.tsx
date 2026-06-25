@@ -622,15 +622,18 @@ function InvoicesTab({
     if (lines.some((l) => !l.description.trim())) return toast.error(t("acc.inv.line_required"));
     setSaving(true);
 
-    const { data: numData, error: numErr } = await (
-      supabase.rpc as unknown as (
-        fn: string,
-        args: Record<string, unknown>,
-      ) => Promise<{ data: string | null; error: { message: string } | null }>
-    )("next_invoice_number", { org_id: orgId });
-    if (numErr || !numData) {
+    let numData: string | null = null;
+    try {
+      const { nextInvoiceNumber } = await import("@/lib/bookkeeping.functions");
+      const res = await nextInvoiceNumber({ data: { org_id: orgId } });
+      numData = res.number;
+    } catch (e) {
       setSaving(false);
-      return toast.error(numErr?.message ?? "RPC error");
+      return toast.error(e instanceof Error ? e.message : "RPC error");
+    }
+    if (!numData) {
+      setSaving(false);
+      return toast.error("RPC error");
     }
 
     const { data: inv, error: invErr } = await supabase
