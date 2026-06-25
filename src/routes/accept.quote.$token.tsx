@@ -27,6 +27,7 @@ import {
   signPublicQuote,
 } from "@/lib/public-quote.functions";
 import { createMolliePayment } from "@/lib/mollie.functions";
+import { sanitizeSignatureSvg } from "@/lib/signature-svg";
 
 export const Route = createFileRoute("/accept/quote/$token")({
   head: () => ({
@@ -319,7 +320,7 @@ function AcceptQuotePage() {
                   <div className="rounded-md border bg-white p-3">
                     <div
                       className="max-h-[180px] [&_svg]:h-auto [&_svg]:w-full"
-                      dangerouslySetInnerHTML={{ __html: quote.signature_svg }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeSignatureSvg(quote.signature_svg) }}
                     />
                     <div className="mt-2 text-xs text-muted-foreground">
                       {t("accept.signed_on")}{" "}

@@ -55,7 +55,14 @@ async function sendFollowupEmail(opts: {
 export const Route = createFileRoute("/api/public/hooks/quote-followups")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const cronSecret = process.env.CRON_SECRET;
+        if (!cronSecret) {
+          return new Response("Cron secret not configured", { status: 503 });
+        }
+        if (request.headers.get("x-cron-secret") !== cronSecret) {
+          return new Response("Unauthorized", { status: 401 });
+        }
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
         // Pull candidates: sent, not accepted, not revoked, followups enabled,

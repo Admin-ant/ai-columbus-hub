@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo } from "react";
 import { getPublicQuote } from "@/lib/public-quote.functions";
+import { sanitizeSignatureSvg } from "@/lib/signature-svg";
 
 export const Route = createFileRoute("/quote/$token/pdf")({
   head: () => ({
@@ -117,7 +118,7 @@ function QuotePrintPage() {
               {quote.signature_svg ? (
                 <div
                   className="rounded border bg-white p-2 [&_svg]:h-auto [&_svg]:w-full"
-                  dangerouslySetInnerHTML={{ __html: quote.signature_svg }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeSignatureSvg(quote.signature_svg) }}
                 />
               ) : (
                 <div className="text-gray-400">—</div>

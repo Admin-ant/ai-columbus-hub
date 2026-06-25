@@ -138,10 +138,13 @@ export const signPublicQuote = createServerFn({ method: "POST" })
     if (q.status === "approved_paid") throw new Error("Offerte is al betaald");
 
     const nowIso = new Date().toISOString();
+    const { sanitizeSignatureSvg } = await import("./signature-svg");
+    const safeSig = sanitizeSignatureSvg(data.signature_svg);
+    if (!safeSig) throw new Error("Ongeldige handtekening");
     const { error } = await sb
       .from("quotes")
       .update({
-        signature_svg: data.signature_svg,
+        signature_svg: safeSig,
         signed_at: nowIso,
         accepted_at: nowIso,
         accepted_by_name: data.name,

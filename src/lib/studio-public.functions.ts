@@ -1,5 +1,42 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+async function assertStudioQuoteAccess(userId: string, quoteId: string) {
+  const sb = await loadAdmin();
+  const { data: q } = await sb
+    .from("studio_quotes")
+    .select("organization_id")
+    .eq("id", quoteId)
+    .maybeSingle();
+  if (!q) throw new Error("Offerte niet gevonden");
+  const { data: m } = await sb
+    .from("organization_members")
+    .select("user_id")
+    .eq("organization_id", q.organization_id)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!m) throw new Error("Geen toegang");
+  return q.organization_id as string;
+}
+
+async function assertTemplateAccess(userId: string, templateId: string) {
+  const sb = await loadAdmin();
+  const { data: t } = await sb
+    .from("quote_templates")
+    .select("organization_id")
+    .eq("id", templateId)
+    .maybeSingle();
+  if (!t) throw new Error("Sjabloon niet gevonden");
+  const { data: m } = await sb
+    .from("organization_members")
+    .select("user_id")
+    .eq("organization_id", t.organization_id)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!m) throw new Error("Geen toegang");
+  return t.organization_id as string;
+}
 
 const TokenSchema = z.object({ token: z.string().min(10).max(128) });
 
@@ -130,12 +167,15 @@ export const acceptPublicStudioQuote = createServerFn({ method: "POST" })
     if (!q) throw new Error("Offerte niet gevonden");
     if (q.accepted_at) throw new Error("Deze offerte is al geaccepteerd");
 
+    const { sanitizeSignatureSvg } = await import("./signature-svg");
+    const safeSig = sanitizeSignatureSvg(data.signature_svg);
+    if (!safeSig) throw new Error("Ongeldige handtekening");
     const { error } = await sb
       .from("studio_quotes")
       .update({
         accepted_at: new Date().toISOString(),
         accepted_by_name: data.name,
-        accepted_signature: data.signature_svg,
+        accepted_signature: safeSig,
         status: "approved",
         approved_at: new Date().toISOString(),
       })
@@ -158,8 +198,10 @@ function randToken(n = 40) {
 }
 
 export const createShareToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertStudioQuoteAccess(context.userId, data.id);
     const sb = await loadAdmin();
     const { data: existing } = await sb
       .from("studio_quotes")
@@ -177,6 +219,7 @@ export const createShareToken = createServerFn({ method: "POST" })
   });
 
 export const createTemplatePreviewToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z
       .object({
@@ -185,7 +228,8 @@ export const createTemplatePreviewToken = createServerFn({ method: "POST" })
       })
       .parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertTemplateAccess(context.userId, data.id);
     const sb = await loadAdmin();
     const token = randToken();
     const expiresAt = new Date(Date.now() + data.hours * 3600 * 1000).toISOString();
@@ -201,8 +245,10 @@ export const createTemplatePreviewToken = createServerFn({ method: "POST" })
   });
 
 export const revokeTemplatePreviewToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertTemplateAccess(context.userId, data.id);
     const sb = await loadAdmin();
     const { error } = await sb
       .from("quote_templates")
@@ -216,8 +262,10 @@ export const revokeTemplatePreviewToken = createServerFn({ method: "POST" })
   });
 
 export const getTemplatePreviewInfo = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertTemplateAccess(context.userId, data.id);
     const sb = await loadAdmin();
     const { data: row } = await sb
       .from("quote_templates")

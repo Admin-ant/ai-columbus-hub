@@ -312,6 +312,12 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
     URL.revokeObjectURL(url);
   }
 
+  function escapeHtml(s: unknown): string {
+    return String(s ?? "").replace(/[&<>"']/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] ?? c),
+    );
+  }
+
   function exportPreviewPDF() {
     if (!previewExpense) return;
     const e = previewExpense;
@@ -335,15 +341,15 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
       .meta{color:#6b7280;font-size:12px}.tot{font-weight:600;border-top:2px solid #111}
       .balanced{color:#059669}.unbalanced{color:#dc2626}</style></head><body>
       <h1>Journaalvoorvertoning</h1>
-      <div class="meta">${e.expense_date} · ${e.supplier}${e.reference ? ` · ${e.reference}` : ""}</div>
-      <div>${e.description ?? ""}</div>
+      <div class="meta">${escapeHtml(e.expense_date)} · ${escapeHtml(e.supplier)}${e.reference ? ` · ${escapeHtml(e.reference)}` : ""}</div>
+      <div>${escapeHtml(e.description ?? "")}</div>
       <h2>Boekingsregels</h2>
       <table><thead><tr><th>Rek.</th><th>Omschrijving</th><th class="r">Debet</th><th class="r">Credit</th></tr></thead><tbody>
-      ${lines.map(l => `<tr><td>${l.acc}</td><td>${l.name}</td><td class="r">${l.debit ? EUR(l.debit) : "—"}</td><td class="r">${l.credit ? EUR(l.credit) : "—"}</td></tr>`).join("")}
+      ${lines.map(l => `<tr><td>${escapeHtml(l.acc)}</td><td>${escapeHtml(l.name)}</td><td class="r">${l.debit ? EUR(l.debit) : "—"}</td><td class="r">${l.credit ? EUR(l.credit) : "—"}</td></tr>`).join("")}
       <tr class="tot"><td colspan="2">Totaal</td><td class="r">${EUR(totalDebit)}</td><td class="r">${EUR(totalCredit)}</td></tr>
       </tbody></table>
       <p class="${totalDebit === totalCredit ? "balanced" : "unbalanced"}">${totalDebit === totalCredit ? "✓ In balans" : "✗ Niet in balans"}</p>
-      <p class="meta">Tegenrekening: ${code} — ${acc?.name ?? ""} (${e.status === "paid" || e.paid_at ? "auto: betaald → Bank" : "auto: open → Crediteuren"})</p>
+      <p class="meta">Tegenrekening: ${escapeHtml(code)} — ${escapeHtml(acc?.name ?? "")} (${e.status === "paid" || e.paid_at ? "auto: betaald → Bank" : "auto: open → Crediteuren"})</p>
       <script>window.print();</script></body></html>`);
     w.document.close();
   }
