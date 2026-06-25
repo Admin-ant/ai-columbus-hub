@@ -27,6 +27,7 @@ import {
   signPublicQuote,
 } from "@/lib/public-quote.functions";
 import { createMolliePayment } from "@/lib/mollie.functions";
+import { sanitizeSignatureSvg } from "@/lib/signature-svg";
 
 export const Route = createFileRoute("/accept/quote/$token")({
   head: () => ({
