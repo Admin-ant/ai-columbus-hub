@@ -1,5 +1,42 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+async function assertStudioQuoteAccess(userId: string, quoteId: string) {
+  const sb = await loadAdmin();
+  const { data: q } = await sb
+    .from("studio_quotes")
+    .select("organization_id")
+    .eq("id", quoteId)
+    .maybeSingle();
+  if (!q) throw new Error("Offerte niet gevonden");
+  const { data: m } = await sb
+    .from("organization_members")
+    .select("user_id")
+    .eq("organization_id", q.organization_id)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!m) throw new Error("Geen toegang");
+  return q.organization_id as string;
+}
+
+async function assertTemplateAccess(userId: string, templateId: string) {
+  const sb = await loadAdmin();
+  const { data: t } = await sb
+    .from("quote_templates")
+    .select("organization_id")
+    .eq("id", templateId)
+    .maybeSingle();
+  if (!t) throw new Error("Sjabloon niet gevonden");
+  const { data: m } = await sb
+    .from("organization_members")
+    .select("user_id")
+    .eq("organization_id", t.organization_id)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!m) throw new Error("Geen toegang");
+  return t.organization_id as string;
+}
 
 const TokenSchema = z.object({ token: z.string().min(10).max(128) });
 
