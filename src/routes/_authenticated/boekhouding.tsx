@@ -690,14 +690,13 @@ function InvoicesTab({
     if (error) return toast.error(error.message);
 
     if (status === "sent" || status === "paid") {
-      const { error: rpcErr } = await (
-        supabase.rpc as unknown as (
-          fn: string,
-          args: Record<string, unknown>,
-        ) => Promise<{ data: unknown; error: { message: string } | null }>
-      )("post_invoice_journal", { _invoice_id: id });
-      if (rpcErr) toast.error(rpcErr.message);
-      else toast.success(t("acc.inv.posted"));
+      try {
+        const { postInvoiceJournal } = await import("@/lib/bookkeeping.functions");
+        await postInvoiceJournal({ data: { invoice_id: id } });
+        toast.success(t("acc.inv.posted"));
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "RPC error");
+      }
     }
     void reload();
   }
