@@ -245,14 +245,15 @@ function QuotesPage() {
 
   async function convertToInvoice(q: Quote) {
     if (!currentOrganizationId) return;
-    const { data: numData, error: numErr } = await (supabase.rpc as unknown as (
-      fn: string,
-      args: Record<string, unknown>,
-    ) => Promise<{ data: string | null; error: { message: string } | null }>)(
-      "next_invoice_number",
-      { org_id: currentOrganizationId },
-    );
-    if (numErr || !numData) return toast.error(numErr?.message ?? "RPC error");
+    let numData: string | null = null;
+    try {
+      const { nextInvoiceNumber } = await import("@/lib/bookkeeping.functions");
+      const res = await nextInvoiceNumber({ data: { org_id: currentOrganizationId } });
+      numData = res.number;
+    } catch (e) {
+      return toast.error(e instanceof Error ? e.message : "RPC error");
+    }
+    if (!numData) return toast.error("RPC error");
     const due = new Date();
     due.setDate(due.getDate() + 30);
     const qAny = q as Quote & { client_id?: string | null };
