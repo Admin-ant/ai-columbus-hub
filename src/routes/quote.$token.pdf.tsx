@@ -118,7 +118,7 @@ function QuotePrintPage() {
               {quote.signature_svg ? (
                 <div
                   className="rounded border bg-white p-2 [&_svg]:h-auto [&_svg]:w-full"
-                  dangerouslySetInnerHTML={{ __html: quote.signature_svg }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeSignatureSvg(quote.signature_svg) }}
                 />
               ) : (
                 <div className="text-gray-400">—</div>
