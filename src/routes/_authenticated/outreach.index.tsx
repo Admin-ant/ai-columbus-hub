@@ -586,15 +586,17 @@ function TargetCard({
   onDelete,
   onCreateQuote,
   onResearch,
+  onPersonalize,
   onSendNow,
   onStartSequence,
 }: {
-  row: TargetRow;
+  row: TargetRow & { personalized_at?: string | null };
   campaign: Campaign | null;
   onMove: (id: string, stage: Stage) => void;
   onDelete: (id: string) => void;
   onCreateQuote: () => void;
   onResearch: () => void;
+  onPersonalize: () => void;
   onSendNow: () => void;
   onStartSequence: () => void;
 }) {
