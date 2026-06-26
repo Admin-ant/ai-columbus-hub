@@ -135,9 +135,9 @@ export const sendMail = createServerFn({ method: "POST" })
         await context.supabase.from("crm_activities").insert({
           organization_id: data.organization_id,
           client_id: data.client_id,
-          type: "email_sent",
+          kind: "email_sent",
           title: data.subject,
-          description: data.body.slice(0, 500),
+          body: data.body.slice(0, 1000),
           created_by: context.userId,
         } as never);
       }
