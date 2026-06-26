@@ -1,6 +1,17 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2, Save, Star, Mail, Linkedin, MessageCircle, Eye } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Save,
+  Star,
+  Mail,
+  Linkedin,
+  MessageCircle,
+  Eye,
+  History,
+  RotateCcw,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,11 +45,25 @@ const SAMPLE = {
   sender_name: "Jouw Naam",
 };
 
+type TemplateVersion = {
+  id: string;
+  template_id: string;
+  version: number;
+  name: string;
+  description: string | null;
+  subject: string | null;
+  body: string;
+  created_at: string;
+  created_by: string | null;
+};
+
 export function TemplatesManager({ organizationId }: { organizationId: string | null }) {
   const [templates, setTemplates] = useState<OutreachTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<OutreachTemplate | null>(null);
   const [channel, setChannel] = useState<TemplateChannel>("email");
+  const [versions, setVersions] = useState<TemplateVersion[]>([]);
+  const [previewVersion, setPreviewVersion] = useState<TemplateVersion | null>(null);
 
   async function load() {
     if (!organizationId) {
@@ -62,6 +87,26 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organizationId]);
+
+  async function loadVersions(templateId: string) {
+    const { data, error } = await supabase
+      .from("outreach_template_versions")
+      .select("*")
+      .eq("template_id", templateId)
+      .order("version", { ascending: false });
+    if (error) {
+      toast.error(error.message);
+      setVersions([]);
+      return;
+    }
+    setVersions((data ?? []) as TemplateVersion[]);
+  }
+
+  useEffect(() => {
+    setPreviewVersion(null);
+    if (editing) loadVersions(editing.id);
+    else setVersions([]);
+  }, [editing?.id]);
 
   async function createNew(ch: TemplateChannel) {
     if (!organizationId) return;
@@ -96,8 +141,9 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
       })
       .eq("id", editing.id);
     if (error) return toast.error(error.message);
-    toast.success("Opgeslagen");
-    load();
+    toast.success("Opgeslagen — nieuwe versie aangemaakt");
+    await load();
+    await loadVersions(editing.id);
   }
 
   async function remove(id: string) {
@@ -110,7 +156,6 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
 
   async function setDefault(t: OutreachTemplate) {
     if (!organizationId) return;
-    // unset others of same channel, set this
     await supabase
       .from("outreach_message_templates")
       .update({ is_default: false })
@@ -130,10 +175,24 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
     setEditing({ ...editing, body: editing.body + token });
   }
 
+  function restoreVersion(v: TemplateVersion) {
+    if (!editing) return;
+    setEditing({
+      ...editing,
+      name: v.name,
+      description: v.description,
+      subject: v.subject,
+      body: v.body,
+    });
+    setPreviewVersion(null);
+    toast.message(`Versie ${v.version} geladen — klik op Opslaan om te bevestigen`);
+  }
+
   const visible = templates.filter((t) => t.channel === channel);
+  const preview = previewVersion ?? editing;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[280px_1fr_280px]">
+    <div className="grid gap-4 xl:grid-cols-[240px_1fr_280px_240px] lg:grid-cols-[240px_1fr_280px]">
       {/* List */}
       <div className="space-y-3">
         <Tabs value={channel} onValueChange={(v) => setChannel(v as TemplateChannel)}>
@@ -263,6 +322,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                       type="button"
                       onClick={() => insertToken(t)}
                       className="rounded border border-white/15 bg-white/5 px-1.5 py-0.5 text-[10px] text-white/70 hover:bg-white/10"
+                      title={`Variabele ${t} invoegen`}
                     >
                       {t}
                     </button>
@@ -287,22 +347,30 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
 
       {/* Preview */}
       <div className="space-y-2">
-        <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-white/60">
-          <Eye className="h-3.5 w-3.5" /> Preview
+        <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-white/60">
+          <span className="flex items-center gap-1.5">
+            <Eye className="h-3.5 w-3.5" />
+            Preview
+          </span>
+          {previewVersion && (
+            <Badge variant="outline" className="text-[9px] border-amber-400/40 text-amber-300">
+              v{previewVersion.version}
+            </Badge>
+          )}
         </div>
-        {editing ? (
+        {preview ? (
           <div className="rounded-lg border border-white/10 bg-black/30 p-3 text-xs text-white/80">
-            {editing.subject && (
+            {preview.subject && (
               <>
                 <div className="mb-2 text-[10px] uppercase tracking-wider text-white/40">Onderwerp</div>
                 <div className="mb-3 font-medium text-white">
-                  {renderTokens(editing.subject, SAMPLE)}
+                  {renderTokens(preview.subject, SAMPLE)}
                 </div>
               </>
             )}
             <div className="mb-1 text-[10px] uppercase tracking-wider text-white/40">Inhoud</div>
             <div className="whitespace-pre-wrap text-white/85">
-              {renderTokens(editing.body, SAMPLE)}
+              {renderTokens(preview.body, SAMPLE)}
             </div>
           </div>
         ) : (
@@ -311,8 +379,89 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
           </div>
         )}
         <div className="text-[10px] text-white/40">
-          Tokens worden automatisch ingevuld vanuit prospect-data.
+          Variabelen ({TEMPLATE_TOKENS.join(", ")}) worden automatisch ingevuld vanuit prospect-data.
         </div>
+      </div>
+
+      {/* Version history */}
+      <div className="space-y-2 xl:block hidden">
+        <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-white/60">
+          <History className="h-3.5 w-3.5" /> Versies
+        </div>
+        {!editing ? (
+          <div className="rounded border border-dashed border-white/10 p-3 text-center text-xs text-white/40">
+            Selecteer een sjabloon
+          </div>
+        ) : versions.length === 0 ? (
+          <div className="rounded border border-dashed border-white/10 p-3 text-center text-xs text-white/40">
+            Nog geen versies
+          </div>
+        ) : (
+          <div className="space-y-1 max-h-[60vh] overflow-y-auto pr-1">
+            {versions.map((v, idx) => {
+              const isCurrent = idx === 0;
+              const isPreviewing = previewVersion?.id === v.id;
+              return (
+                <div
+                  key={v.id}
+                  className={`rounded-md border p-2 transition ${
+                    isPreviewing
+                      ? "border-amber-400/60 bg-amber-400/10"
+                      : "border-white/10 bg-white/5"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Badge
+                        variant="outline"
+                        className={`text-[9px] px-1.5 ${
+                          isCurrent
+                            ? "border-emerald-400/40 text-emerald-300"
+                            : "border-white/15 text-white/60"
+                        }`}
+                      >
+                        v{v.version}
+                      </Badge>
+                      {isCurrent && (
+                        <span className="text-[9px] uppercase tracking-wider text-emerald-300/80">
+                          huidig
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-white/40 shrink-0">
+                      {new Date(v.created_at).toLocaleString("nl-NL", {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })}
+                    </span>
+                  </div>
+                  <div className="mt-1 truncate text-[11px] text-white/70">{v.name}</div>
+                  {v.subject && (
+                    <div className="truncate text-[10px] text-white/40">{v.subject}</div>
+                  )}
+                  <div className="mt-1.5 flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewVersion(isPreviewing ? null : v)}
+                      className="rounded border border-white/15 bg-white/5 px-1.5 py-0.5 text-[10px] text-white/70 hover:bg-white/10"
+                    >
+                      {isPreviewing ? "Sluit preview" : "Preview"}
+                    </button>
+                    {!isCurrent && (
+                      <button
+                        type="button"
+                        onClick={() => restoreVersion(v)}
+                        className="inline-flex items-center gap-1 rounded border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[10px] text-amber-200 hover:bg-amber-400/20"
+                      >
+                        <RotateCcw className="h-2.5 w-2.5" /> Herstel
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
