@@ -27,10 +27,16 @@ async function sendResend(opts: {
   body: string;
   from: string;
   logId: string;
+  baseUrl: string;
+  trackingSecret: string | null;
 }): Promise<{ id: string }> {
   const key = process.env.RESEND_API_KEY;
   if (!key) throw new Error("RESEND_API_KEY ontbreekt");
-  const html = `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111;white-space:pre-wrap">${opts.body.replace(/</g, "&lt;")}</div>`;
+  let html = `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111;white-space:pre-wrap">${opts.body.replace(/</g, "&lt;")}</div>`;
+  if (opts.trackingSecret) {
+    const sig = signTrackingId(opts.logId, opts.trackingSecret);
+    html = injectTracking({ html, messageId: opts.logId, signature: sig, baseUrl: opts.baseUrl });
+  }
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
