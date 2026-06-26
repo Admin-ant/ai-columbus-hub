@@ -58,6 +58,8 @@ import {
   bulkImportTargets,
   sendOutreachEmail,
   scheduleSequence,
+  personalizeForTarget,
+  bulkPersonalize,
 } from "@/lib/outreach.functions";
 import { OutreachAnalyticsTab } from "@/components/outreach/analytics-tab";
 import { OutreachInboxTab } from "@/components/outreach/inbox-tab";
