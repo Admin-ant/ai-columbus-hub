@@ -175,8 +175,11 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                           </Badge>
                         )}
                       </div>
+                      {t.description && (
+                        <div className="mt-1 truncate text-[11px] text-white/60 italic">{t.description}</div>
+                      )}
                       {t.subject && (
-                        <div className="mt-1 truncate text-[11px] text-white/50">{t.subject}</div>
+                        <div className="mt-0.5 truncate text-[11px] text-white/40">{t.subject}</div>
                       )}
                     </div>
                   );
