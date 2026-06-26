@@ -68,6 +68,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
     const row = {
       organization_id: organizationId,
       name: `Nieuw ${CHANNEL_LABEL[ch]} sjabloon`,
+      description: "",
       channel: ch,
       subject: ch === "email" ? "Onderwerp {{company}}" : null,
       body: `Hi {{contact_name}},\n\n`,
