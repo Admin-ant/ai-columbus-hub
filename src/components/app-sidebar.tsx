@@ -19,6 +19,7 @@ import {
   Megaphone,
   Rocket,
   ClipboardList,
+  Mail,
 } from "lucide-react";
 
 import {
