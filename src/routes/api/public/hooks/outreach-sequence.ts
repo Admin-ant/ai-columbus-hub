@@ -108,7 +108,7 @@ export const Route = createFileRoute("/api/public/hooks/outreach-sequence")({
             }
             const { data: campData } = await supabaseAdmin
               .from("outreach_campaigns")
-              .select("id, name, status, sequence_steps")
+              .select("id, name, status, sequence_steps, timezone, send_window_start, send_window_end")
               .eq("id", t.campaign_id)
               .single();
             const camp = campData as unknown as CampaignRow | null;
@@ -116,10 +116,26 @@ export const Route = createFileRoute("/api/public/hooks/outreach-sequence")({
               skipped++;
               continue;
             }
+
+            // Respect send window (using campaign timezone)
+            const tz = camp.timezone ?? "Europe/Amsterdam";
+            const startH = camp.send_window_start ?? 8;
+            const endH = camp.send_window_end ?? 18;
+            const localHour = Number(
+              new Intl.DateTimeFormat("en-GB", {
+                timeZone: tz,
+                hour: "2-digit",
+                hour12: false,
+              }).format(new Date()),
+            );
+            if (Number.isFinite(localHour) && (localHour < startH || localHour >= endH)) {
+              skipped++;
+              continue;
+            }
+
             const steps = camp.sequence_steps ?? [];
             const step = steps[t.sequence_step_index];
             if (!step) {
-              // sequence finished
               await supabaseAdmin
                 .from("outreach_targets")
                 .update({ next_send_at: null } as never)
@@ -128,7 +144,6 @@ export const Route = createFileRoute("/api/public/hooks/outreach-sequence")({
               continue;
             }
             if (step.channel !== "email") {
-              // not email — advance anyway, leave for manual handling
               await supabaseAdmin
                 .from("outreach_targets")
                 .update({
@@ -144,8 +159,14 @@ export const Route = createFileRoute("/api/public/hooks/outreach-sequence")({
               company: t.company,
               contact_name: t.contact_name ?? t.company,
             };
-            const subject = render(step.subject ?? `Even kort, ${t.company}`, vars);
-            const body = render(step.body, vars);
+            // First step: prefer AI-personalized content if available
+            const usePersonalized = t.sequence_step_index === 0 && t.personalized_body;
+            const subject = usePersonalized
+              ? render(t.personalized_subject ?? step.subject ?? `Even kort, ${t.company}`, vars)
+              : render(step.subject ?? `Even kort, ${t.company}`, vars);
+            const body = usePersonalized
+              ? render(t.personalized_body ?? step.body, vars)
+              : render(step.body, vars);
 
             const { data: logRow } = await supabaseAdmin
               .from("outreach_messages")
