@@ -239,16 +239,37 @@ export function AppSidebar() {
             <SidebarGroupLabel>Beheer</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {visibleAdmin.map((item) => (
-                  <SidebarMenuItem key={item.url}>
-                    <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                      <Link to={item.url} className="flex items-center gap-2">
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {visibleAdmin.map((item) => {
+                  const isAdministratie = item.url === "/administratie";
+                  const showSub =
+                    isAdministratie &&
+                    (currentPath === "/administratie" ||
+                      administratieSubItems.some((s) => currentPath === s.url));
+                  return (
+                    <SidebarMenuItem key={item.url}>
+                      <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                        <Link to={item.url} className="flex items-center gap-2">
+                          <item.icon className="h-4 w-4" />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                      {showSub && (
+                        <SidebarMenuSub>
+                          {administratieSubItems.map((s) => (
+                            <SidebarMenuSubItem key={s.url}>
+                              <SidebarMenuSubButton asChild isActive={isActive(s.url)}>
+                                <Link to={s.url} className="flex items-center gap-2">
+                                  <s.icon className="h-3.5 w-3.5" />
+                                  <span>{s.title}</span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          ))}
+                        </SidebarMenuSub>
+                      )}
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
