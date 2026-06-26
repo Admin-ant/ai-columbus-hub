@@ -45,6 +45,7 @@ import { Route as AuthenticatedAiColumbusKlantenRouteImport } from './routes/_au
 import { Route as AuthenticatedAiColumbusInstellingenRouteImport } from './routes/_authenticated/ai-columbus.instellingen'
 import { Route as ApiPublicHooksStudioFollowupsRouteImport } from './routes/api/public/hooks/studio-followups'
 import { Route as ApiPublicHooksQuoteFollowupsRouteImport } from './routes/api/public/hooks/quote-followups'
+import { Route as ApiPublicHooksOutreachTrackRouteImport } from './routes/api/public/hooks/outreach-track'
 import { Route as ApiPublicHooksOutreachSequenceRouteImport } from './routes/api/public/hooks/outreach-sequence'
 import { Route as ApiPublicHooksOutreachReplyRouteImport } from './routes/api/public/hooks/outreach-reply'
 import { Route as ApiPublicHooksMollieRouteImport } from './routes/api/public/hooks/mollie'
@@ -253,6 +254,12 @@ const ApiPublicHooksQuoteFollowupsRoute =
     path: '/api/public/hooks/quote-followups',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksOutreachTrackRoute =
+  ApiPublicHooksOutreachTrackRouteImport.update({
+    id: '/api/public/hooks/outreach-track',
+    path: '/api/public/hooks/outreach-track',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksOutreachSequenceRoute =
   ApiPublicHooksOutreachSequenceRouteImport.update({
     id: '/api/public/hooks/outreach-sequence',
@@ -343,6 +350,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/mollie': typeof ApiPublicHooksMollieRoute
   '/api/public/hooks/outreach-reply': typeof ApiPublicHooksOutreachReplyRoute
   '/api/public/hooks/outreach-sequence': typeof ApiPublicHooksOutreachSequenceRoute
+  '/api/public/hooks/outreach-track': typeof ApiPublicHooksOutreachTrackRoute
   '/api/public/hooks/quote-followups': typeof ApiPublicHooksQuoteFollowupsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
 }
@@ -386,6 +394,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/mollie': typeof ApiPublicHooksMollieRoute
   '/api/public/hooks/outreach-reply': typeof ApiPublicHooksOutreachReplyRoute
   '/api/public/hooks/outreach-sequence': typeof ApiPublicHooksOutreachSequenceRoute
+  '/api/public/hooks/outreach-track': typeof ApiPublicHooksOutreachTrackRoute
   '/api/public/hooks/quote-followups': typeof ApiPublicHooksQuoteFollowupsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
 }
@@ -433,6 +442,7 @@ export interface FileRoutesById {
   '/api/public/hooks/mollie': typeof ApiPublicHooksMollieRoute
   '/api/public/hooks/outreach-reply': typeof ApiPublicHooksOutreachReplyRoute
   '/api/public/hooks/outreach-sequence': typeof ApiPublicHooksOutreachSequenceRoute
+  '/api/public/hooks/outreach-track': typeof ApiPublicHooksOutreachTrackRoute
   '/api/public/hooks/quote-followups': typeof ApiPublicHooksQuoteFollowupsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
 }
@@ -480,6 +490,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/mollie'
     | '/api/public/hooks/outreach-reply'
     | '/api/public/hooks/outreach-sequence'
+    | '/api/public/hooks/outreach-track'
     | '/api/public/hooks/quote-followups'
     | '/api/public/hooks/studio-followups'
   fileRoutesByTo: FileRoutesByTo
@@ -523,6 +534,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/mollie'
     | '/api/public/hooks/outreach-reply'
     | '/api/public/hooks/outreach-sequence'
+    | '/api/public/hooks/outreach-track'
     | '/api/public/hooks/quote-followups'
     | '/api/public/hooks/studio-followups'
   id:
@@ -569,6 +581,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/mollie'
     | '/api/public/hooks/outreach-reply'
     | '/api/public/hooks/outreach-sequence'
+    | '/api/public/hooks/outreach-track'
     | '/api/public/hooks/quote-followups'
     | '/api/public/hooks/studio-followups'
   fileRoutesById: FileRoutesById
@@ -584,6 +597,7 @@ export interface RootRouteChildren {
   ApiPublicHooksMollieRoute: typeof ApiPublicHooksMollieRoute
   ApiPublicHooksOutreachReplyRoute: typeof ApiPublicHooksOutreachReplyRoute
   ApiPublicHooksOutreachSequenceRoute: typeof ApiPublicHooksOutreachSequenceRoute
+  ApiPublicHooksOutreachTrackRoute: typeof ApiPublicHooksOutreachTrackRoute
   ApiPublicHooksQuoteFollowupsRoute: typeof ApiPublicHooksQuoteFollowupsRoute
   ApiPublicHooksStudioFollowupsRoute: typeof ApiPublicHooksStudioFollowupsRoute
 }
@@ -842,6 +856,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksQuoteFollowupsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/outreach-track': {
+      id: '/api/public/hooks/outreach-track'
+      path: '/api/public/hooks/outreach-track'
+      fullPath: '/api/public/hooks/outreach-track'
+      preLoaderRoute: typeof ApiPublicHooksOutreachTrackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/outreach-sequence': {
       id: '/api/public/hooks/outreach-sequence'
       path: '/api/public/hooks/outreach-sequence'
@@ -1052,6 +1073,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksMollieRoute: ApiPublicHooksMollieRoute,
   ApiPublicHooksOutreachReplyRoute: ApiPublicHooksOutreachReplyRoute,
   ApiPublicHooksOutreachSequenceRoute: ApiPublicHooksOutreachSequenceRoute,
+  ApiPublicHooksOutreachTrackRoute: ApiPublicHooksOutreachTrackRoute,
   ApiPublicHooksQuoteFollowupsRoute: ApiPublicHooksQuoteFollowupsRoute,
   ApiPublicHooksStudioFollowupsRoute: ApiPublicHooksStudioFollowupsRoute,
 }
