@@ -328,59 +328,201 @@ function MailPage() {
           </div>
 
           {/* List */}
-          <div className="space-y-1 max-h-[78vh] overflow-y-auto pr-1">
-            {loading ? (
-              <div className="flex items-center justify-center py-8 text-white/60">
-                <Loader2 className="h-5 w-5 animate-spin" />
-              </div>
-            ) : items.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-white/10 p-6 text-center text-xs text-white/40">
-                Geen berichten
-              </div>
-            ) : (
-              items.map((m) => {
-                const isSelected = m.id === selectedId;
-                const isUnread = folder === "inbox" && !m.read_at;
-                const who =
-                  folder === "sent"
-                    ? `Aan: ${m.to_emails.join(", ")}`
-                    : m.from_name ?? m.from_email ?? "—";
-                const when = m.received_at ?? m.sent_at ?? m.created_at;
-                return (
-                  <button
-                    key={m.id}
-                    onClick={() => onSelect(m)}
-                    className={`w-full rounded-md border p-2.5 text-left transition ${
-                      isSelected
-                        ? "border-[#ff2bd6]/60 bg-[#ff2bd6]/10"
-                        : "border-white/10 bg-white/5 hover:bg-white/10"
-                    }`}
+          <div className="flex flex-col max-h-[78vh]">
+            {/* Bulk toolbar */}
+            <div className="mb-2 flex items-center justify-between gap-2 rounded-md border border-white/10 bg-white/5 px-2 py-1.5">
+              <label className="flex items-center gap-2 text-[11px] text-white/70 cursor-pointer">
+                <Checkbox
+                  checked={items.length > 0 && bulkIds.size === items.length}
+                  onCheckedChange={(v) => {
+                    if (v) setBulkIds(new Set(items.map((i) => i.id)));
+                    else setBulkIds(new Set());
+                  }}
+                />
+                {bulkIds.size > 0 ? `${bulkIds.size} geselecteerd` : "Selecteer alles"}
+              </label>
+              {bulkIds.size > 0 && (
+                <div className="flex items-center gap-1">
+                  {folder === "inbox" && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={bulkBusy}
+                        onClick={async () => {
+                          setBulkBusy(true);
+                          try {
+                            await bulkUpdate({ data: { ids: Array.from(bulkIds), action: "mark_read" } });
+                            toast.success("Gemarkeerd als gelezen");
+                            setBulkIds(new Set());
+                            load();
+                          } catch (e) {
+                            toast.error(e instanceof Error ? e.message : "Mislukt");
+                          } finally {
+                            setBulkBusy(false);
+                          }
+                        }}
+                        className="h-7 px-2 text-[11px] text-white/80 hover:bg-white/10"
+                      >
+                        <CheckCheck className="mr-1 h-3 w-3" /> Gelezen
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={bulkBusy}
+                        onClick={async () => {
+                          setBulkBusy(true);
+                          try {
+                            await bulkUpdate({ data: { ids: Array.from(bulkIds), action: "mark_unread" } });
+                            toast.success("Gemarkeerd als ongelezen");
+                            setBulkIds(new Set());
+                            load();
+                          } catch (e) {
+                            toast.error(e instanceof Error ? e.message : "Mislukt");
+                          } finally {
+                            setBulkBusy(false);
+                          }
+                        }}
+                        className="h-7 px-2 text-[11px] text-white/80 hover:bg-white/10"
+                      >
+                        <EyeOff className="mr-1 h-3 w-3" /> Ongelezen
+                      </Button>
+                    </>
+                  )}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={bulkBusy}
+                        className="h-7 px-2 text-[11px] text-white/80 hover:bg-white/10"
+                      >
+                        <FolderInput className="mr-1 h-3 w-3" /> Verplaats
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-[#111] border-white/10 text-white">
+                      {(["inbox", "sent", "draft"] as Folder[])
+                        .filter((f) => f !== folder)
+                        .map((f) => (
+                          <DropdownMenuItem
+                            key={f}
+                            onClick={async () => {
+                              setBulkBusy(true);
+                              try {
+                                await bulkUpdate({
+                                  data: { ids: Array.from(bulkIds), action: "move", folder: f },
+                                });
+                                toast.success(`Verplaatst naar ${f}`);
+                                setBulkIds(new Set());
+                                load();
+                              } catch (e) {
+                                toast.error(e instanceof Error ? e.message : "Mislukt");
+                              } finally {
+                                setBulkBusy(false);
+                              }
+                            }}
+                          >
+                            Naar {f === "inbox" ? "Inbox" : f === "sent" ? "Verzonden" : "Concepten"}
+                          </DropdownMenuItem>
+                        ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={bulkBusy}
+                    onClick={async () => {
+                      if (!confirm(`${bulkIds.size} bericht(en) verwijderen?`)) return;
+                      setBulkBusy(true);
+                      try {
+                        await bulkUpdate({ data: { ids: Array.from(bulkIds), action: "delete" } });
+                        toast.success("Verwijderd");
+                        if (selectedId && bulkIds.has(selectedId)) setSelectedId(null);
+                        setBulkIds(new Set());
+                        load();
+                      } catch (e) {
+                        toast.error(e instanceof Error ? e.message : "Mislukt");
+                      } finally {
+                        setBulkBusy(false);
+                      }
+                    }}
+                    className="h-7 px-2 text-[11px] text-rose-300 hover:bg-rose-500/10"
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className={`truncate text-xs font-medium ${isUnread ? "text-white" : "text-white/70"}`}>
-                        {who}
+                    <Trash2 className="mr-1 h-3 w-3" /> Verwijder
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1 overflow-y-auto pr-1">
+              {loading ? (
+                <div className="flex items-center justify-center py-8 text-white/60">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                </div>
+              ) : items.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-white/10 p-6 text-center text-xs text-white/40">
+                  Geen berichten
+                </div>
+              ) : (
+                items.map((m) => {
+                  const isSelected = m.id === selectedId;
+                  const isUnread = folder === "inbox" && !m.read_at;
+                  const isChecked = bulkIds.has(m.id);
+                  const who =
+                    folder === "sent"
+                      ? `Aan: ${m.to_emails.join(", ")}`
+                      : m.from_name ?? m.from_email ?? "—";
+                  const when = m.received_at ?? m.sent_at ?? m.created_at;
+                  return (
+                    <div
+                      key={m.id}
+                      className={`flex gap-2 rounded-md border p-2.5 transition ${
+                        isSelected
+                          ? "border-[#ff2bd6]/60 bg-[#ff2bd6]/10"
+                          : "border-white/10 bg-white/5 hover:bg-white/10"
+                      }`}
+                    >
+                      <div className="pt-0.5">
+                        <Checkbox
+                          checked={isChecked}
+                          onCheckedChange={(v) => {
+                            setBulkIds((cur) => {
+                              const n = new Set(cur);
+                              if (v) n.add(m.id);
+                              else n.delete(m.id);
+                              return n;
+                            });
+                          }}
+                        />
                       </div>
-                      {isUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#ff2bd6]" />}
+                      <button onClick={() => onSelect(m)} className="flex-1 min-w-0 text-left">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className={`truncate text-xs font-medium ${isUnread ? "text-white" : "text-white/70"}`}>
+                            {who}
+                          </div>
+                          {isUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#ff2bd6]" />}
+                        </div>
+                        <div className="mt-0.5 truncate text-[12px] text-white/80">
+                          {m.subject ?? "(geen onderwerp)"}
+                        </div>
+                        <div className="mt-1 flex items-center justify-between gap-2">
+                          <span className="truncate text-[11px] text-white/40">
+                            {(m.body_text ?? "").slice(0, 60)}
+                          </span>
+                          <span className="text-[10px] text-white/40 shrink-0">
+                            {when ? new Date(when).toLocaleString("nl-NL", { dateStyle: "short", timeStyle: "short" }) : ""}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex items-center gap-2">
+                          <StatusBadge m={m} />
+                          {m.attachments?.length > 0 && <Paperclip className="h-3 w-3 text-white/40" />}
+                        </div>
+                      </button>
                     </div>
-                    <div className="mt-0.5 truncate text-[12px] text-white/80">
-                      {m.subject ?? "(geen onderwerp)"}
-                    </div>
-                    <div className="mt-1 flex items-center justify-between gap-2">
-                      <span className="truncate text-[11px] text-white/40">
-                        {(m.body_text ?? "").slice(0, 60)}
-                      </span>
-                      <span className="text-[10px] text-white/40 shrink-0">
-                        {when ? new Date(when).toLocaleString("nl-NL", { dateStyle: "short", timeStyle: "short" }) : ""}
-                      </span>
-                    </div>
-                    <div className="mt-1 flex items-center gap-2">
-                      <StatusBadge m={m} />
-                      {m.attachments?.length > 0 && <Paperclip className="h-3 w-3 text-white/40" />}
-                    </div>
-                  </button>
-                );
-              })
-            )}
+                  );
+                })
+              )}
+            </div>
           </div>
 
           {/* Detail */}
