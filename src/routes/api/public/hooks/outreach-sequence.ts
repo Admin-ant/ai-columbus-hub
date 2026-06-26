@@ -1,10 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { injectTracking, signTrackingId } from "@/lib/outreach-tracking";
 
 type CampaignRow = {
   id: string;
   name: string | null;
   status: string;
-  sequence_steps: Array<{ day: number; channel: string; subject?: string; body: string }> | null;
+  sequence_steps: Array<{
+    day: number;
+    channel: string;
+    subject?: string;
+    body: string;
+    stop_on_reply?: boolean;
+  }> | null;
+  timezone?: string | null;
+  send_window_start?: number | null;
+  send_window_end?: number | null;
 };
 
 type TargetRow = {
@@ -18,6 +28,9 @@ type TargetRow = {
   next_send_at: string | null;
   paused: boolean;
   stage: string;
+  personalized_subject?: string | null;
+  personalized_body?: string | null;
+  active_variant_id?: string | null;
 };
 
 async function sendResend(opts: {
@@ -26,10 +39,16 @@ async function sendResend(opts: {
   body: string;
   from: string;
   logId: string;
+  baseUrl: string;
+  trackingSecret: string | null;
 }): Promise<{ id: string }> {
   const key = process.env.RESEND_API_KEY;
   if (!key) throw new Error("RESEND_API_KEY ontbreekt");
-  const html = `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111;white-space:pre-wrap">${opts.body.replace(/</g, "&lt;")}</div>`;
+  let html = `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111;white-space:pre-wrap">${opts.body.replace(/</g, "&lt;")}</div>`;
+  if (opts.trackingSecret) {
+    const sig = signTrackingId(opts.logId, opts.trackingSecret);
+    html = injectTracking({ html, messageId: opts.logId, signature: sig, baseUrl: opts.baseUrl });
+  }
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
@@ -89,7 +108,7 @@ export const Route = createFileRoute("/api/public/hooks/outreach-sequence")({
             }
             const { data: campData } = await supabaseAdmin
               .from("outreach_campaigns")
-              .select("id, name, status, sequence_steps")
+              .select("id, name, status, sequence_steps, timezone, send_window_start, send_window_end")
               .eq("id", t.campaign_id)
               .single();
             const camp = campData as unknown as CampaignRow | null;
@@ -97,10 +116,26 @@ export const Route = createFileRoute("/api/public/hooks/outreach-sequence")({
               skipped++;
               continue;
             }
+
+            // Respect send window (using campaign timezone)
+            const tz = camp.timezone ?? "Europe/Amsterdam";
+            const startH = camp.send_window_start ?? 8;
+            const endH = camp.send_window_end ?? 18;
+            const localHour = Number(
+              new Intl.DateTimeFormat("en-GB", {
+                timeZone: tz,
+                hour: "2-digit",
+                hour12: false,
+              }).format(new Date()),
+            );
+            if (Number.isFinite(localHour) && (localHour < startH || localHour >= endH)) {
+              skipped++;
+              continue;
+            }
+
             const steps = camp.sequence_steps ?? [];
             const step = steps[t.sequence_step_index];
             if (!step) {
-              // sequence finished
               await supabaseAdmin
                 .from("outreach_targets")
                 .update({ next_send_at: null } as never)
@@ -109,7 +144,6 @@ export const Route = createFileRoute("/api/public/hooks/outreach-sequence")({
               continue;
             }
             if (step.channel !== "email") {
-              // not email — advance anyway, leave for manual handling
               await supabaseAdmin
                 .from("outreach_targets")
                 .update({
@@ -125,8 +159,14 @@ export const Route = createFileRoute("/api/public/hooks/outreach-sequence")({
               company: t.company,
               contact_name: t.contact_name ?? t.company,
             };
-            const subject = render(step.subject ?? `Even kort, ${t.company}`, vars);
-            const body = render(step.body, vars);
+            // First step: prefer AI-personalized content if available
+            const usePersonalized = t.sequence_step_index === 0 && t.personalized_body;
+            const subject = usePersonalized
+              ? render(t.personalized_subject ?? step.subject ?? `Even kort, ${t.company}`, vars)
+              : render(step.subject ?? `Even kort, ${t.company}`, vars);
+            const body = usePersonalized
+              ? render(t.personalized_body ?? step.body, vars)
+              : render(step.body, vars);
 
             const { data: logRow } = await supabaseAdmin
               .from("outreach_messages")
@@ -140,6 +180,7 @@ export const Route = createFileRoute("/api/public/hooks/outreach-sequence")({
                 subject,
                 body,
                 status: "queued",
+                variant_id: t.active_variant_id ?? null,
               } as never)
               .select("id")
               .single();
@@ -157,6 +198,8 @@ export const Route = createFileRoute("/api/public/hooks/outreach-sequence")({
                 body,
                 from: fromEmail,
                 logId,
+                baseUrl: new URL(request.url).origin,
+                trackingSecret: cronSecret,
               });
               await supabaseAdmin
                 .from("outreach_messages")

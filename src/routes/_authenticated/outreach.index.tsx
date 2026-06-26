@@ -58,7 +58,12 @@ import {
   bulkImportTargets,
   sendOutreachEmail,
   scheduleSequence,
+  personalizeForTarget,
+  bulkPersonalize,
 } from "@/lib/outreach.functions";
+import { OutreachAnalyticsTab } from "@/components/outreach/analytics-tab";
+import { OutreachInboxTab } from "@/components/outreach/inbox-tab";
+import { SequenceBuilder } from "@/components/outreach/sequence-builder";
 
 export const Route = createFileRoute("/_authenticated/outreach/")({
   head: () => ({ meta: [{ title: "Cold Outreach" }] }),
@@ -112,6 +117,8 @@ type TargetRow = {
   notes: string | null;
   research_summary?: string | null;
   research_at?: string | null;
+  personalized_at?: string | null;
+  personalized_subject?: string | null;
 };
 
 function OutreachDashboard() {
@@ -123,7 +130,40 @@ function OutreachDashboard() {
   const sendEmailFn = useServerFn(sendOutreachEmail);
   const scheduleSeqFn = useServerFn(scheduleSequence);
   const importFn = useServerFn(bulkImportTargets);
+  const personalizeFn = useServerFn(personalizeForTarget);
+  const bulkPersonalizeFn = useServerFn(bulkPersonalize);
   const navigate = useNavigate();
+  const [unreadInbox, setUnreadInbox] = useState(0);
+  const [builderCampaignId, setBuilderCampaignId] = useState<string | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  async function runPersonalize(t: TargetRow) {
+    toast.loading("AI personaliseren…", { id: "pz" });
+    try {
+      await personalizeFn({ data: { target_id: t.id } });
+      toast.success("Gepersonaliseerd", { id: "pz" });
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Mislukt", { id: "pz" });
+    }
+  }
+
+  async function runBulkPersonalize() {
+    const ids = targets.filter((t) => t.stage === "nieuw" && t.email).map((t) => t.id).slice(0, 50);
+    if (ids.length === 0) return toast.error("Geen nieuwe prospects met e-mail");
+    if (!confirm(`AI personaliseer ${ids.length} prospect(s)? Dit kan even duren.`)) return;
+    setBulkBusy(true);
+    toast.loading(`Bezig met ${ids.length} prospects…`, { id: "bp" });
+    try {
+      const r = await bulkPersonalizeFn({ data: { target_ids: ids } });
+      toast.success(`${r.personalized} gepersonaliseerd, ${r.failed} fout`, { id: "bp" });
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Mislukt", { id: "bp" });
+    } finally {
+      setBulkBusy(false);
+    }
+  }
 
   async function sendNow(t: TargetRow) {
     if (!t.email) return toast.error("Geen e-mailadres");
@@ -324,6 +364,16 @@ function OutreachDashboard() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-[#ff2bd6]/40 text-[#ff2bd6] hover:bg-[#ff2bd6]/10"
+              onClick={runBulkPersonalize}
+              disabled={bulkBusy}
+            >
+              <Sparkles className="mr-1 h-4 w-4" />
+              {bulkBusy ? "Bezig…" : "AI personaliseer nieuwe"}
+            </Button>
             <ImportCsvDialog
               campaigns={campaigns}
               orgId={currentOrganizationId}
@@ -358,8 +408,17 @@ function OutreachDashboard() {
             <TabsTrigger value="pipeline" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-white">
               Pipeline
             </TabsTrigger>
+            <TabsTrigger value="inbox" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-white">
+              Inbox{unreadInbox > 0 ? ` (${unreadInbox})` : ""}
+            </TabsTrigger>
             <TabsTrigger value="campaigns" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-white">
               Campagnes ({campaigns.length})
+            </TabsTrigger>
+            <TabsTrigger value="sequences" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-white">
+              Sequences
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-white">
+              Analytics
             </TabsTrigger>
           </TabsList>
 
@@ -399,6 +458,7 @@ function OutreachDashboard() {
                               onDelete={deleteTarget}
                               onCreateQuote={() => createQuoteFromTarget(t)}
                               onResearch={() => runResearch(t)}
+                              onPersonalize={() => runPersonalize(t)}
                               onSendNow={() => sendNow(t)}
                               onStartSequence={() => startSequence(t)}
                             />
@@ -432,6 +492,62 @@ function OutreachDashboard() {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="inbox" className="mt-4">
+            <OutreachInboxTab
+              organizationId={currentOrganizationId}
+              campaignNames={Object.fromEntries(campaigns.map((c) => [c.id, c.name]))}
+              onUnreadChange={setUnreadInbox}
+            />
+          </TabsContent>
+
+          <TabsContent value="sequences" className="mt-4">
+            {campaigns.length === 0 ? (
+              <Empty text="Maak eerst een campagne aan." />
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs text-white/60">Campagne:</Label>
+                  <Select
+                    value={builderCampaignId ?? campaigns[0]?.id ?? ""}
+                    onValueChange={setBuilderCampaignId}
+                  >
+                    <SelectTrigger className="w-[280px] bg-white/5 border-white/10 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {campaigns.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {(() => {
+                  const active = campaigns.find(
+                    (c) => c.id === (builderCampaignId ?? campaigns[0]?.id),
+                  );
+                  if (!active) return null;
+                  return (
+                    <SequenceBuilder
+                      key={active.id}
+                      campaignId={active.id}
+                      initialSteps={(active.sequence_steps ?? []) as never}
+                      onSaved={() => load()}
+                    />
+                  );
+                })()}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="analytics" className="mt-4">
+            <OutreachAnalyticsTab
+              organizationId={currentOrganizationId}
+              campaignNames={Object.fromEntries(campaigns.map((c) => [c.id, c.name]))}
+            />
           </TabsContent>
         </Tabs>
       </div>
@@ -473,15 +589,17 @@ function TargetCard({
   onDelete,
   onCreateQuote,
   onResearch,
+  onPersonalize,
   onSendNow,
   onStartSequence,
 }: {
-  row: TargetRow;
+  row: TargetRow & { personalized_at?: string | null };
   campaign: Campaign | null;
   onMove: (id: string, stage: Stage) => void;
   onDelete: (id: string) => void;
   onCreateQuote: () => void;
   onResearch: () => void;
+  onPersonalize: () => void;
   onSendNow: () => void;
   onStartSequence: () => void;
 }) {
@@ -550,6 +668,19 @@ function TargetCard({
           style={{ color: ACCENT }}
         >
           <FileSignature className="mr-1 h-3 w-3" /> Offerte
+        </Button>
+      </div>
+      <div className="mt-1 flex gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onPersonalize}
+          className="h-7 flex-1 justify-start text-[11px] hover:bg-[#ff2bd6]/10"
+          style={{ color: ACCENT }}
+          title="AI personaliseer onderwerp + body voor deze prospect"
+        >
+          <Sparkles className="mr-1 h-3 w-3" />
+          {row.personalized_at ? "Re-personaliseer" : "Personaliseer"}
         </Button>
       </div>
       {row.email && (
