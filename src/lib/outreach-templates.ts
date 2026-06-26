@@ -28,6 +28,7 @@ export type OutreachTemplate = {
   id: string;
   organization_id: string;
   name: string;
+  description: string | null;
   channel: TemplateChannel;
   subject: string | null;
   body: string;

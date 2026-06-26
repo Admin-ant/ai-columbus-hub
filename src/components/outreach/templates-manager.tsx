@@ -68,6 +68,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
     const row = {
       organization_id: organizationId,
       name: `Nieuw ${CHANNEL_LABEL[ch]} sjabloon`,
+      description: "",
       channel: ch,
       subject: ch === "email" ? "Onderwerp {{company}}" : null,
       body: `Hi {{contact_name}},\n\n`,
@@ -89,6 +90,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
       .from("outreach_message_templates")
       .update({
         name: editing.name,
+        description: editing.description,
         subject: editing.subject,
         body: editing.body,
       })
@@ -173,8 +175,11 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                           </Badge>
                         )}
                       </div>
+                      {t.description && (
+                        <div className="mt-1 truncate text-[11px] text-white/60 italic">{t.description}</div>
+                      )}
                       {t.subject && (
-                        <div className="mt-1 truncate text-[11px] text-white/50">{t.subject}</div>
+                        <div className="mt-0.5 truncate text-[11px] text-white/40">{t.subject}</div>
                       )}
                     </div>
                   );
@@ -228,6 +233,15 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
+            </div>
+            <div>
+              <Label className="text-[11px] text-white/60">Beschrijving</Label>
+              <Input
+                value={editing.description ?? ""}
+                onChange={(e) => setEditing({ ...editing, description: e.target.value })}
+                placeholder="Korte omschrijving — wanneer gebruik je dit sjabloon?"
+                className="bg-white/5 border-white/10 text-white"
+              />
             </div>
             {editing.channel === "email" && (
               <div>
