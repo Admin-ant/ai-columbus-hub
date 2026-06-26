@@ -1,0 +1,1 @@
+ALTER TABLE public.outreach_message_templates ADD COLUMN IF NOT EXISTS description text;
