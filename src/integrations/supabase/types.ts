@@ -1108,8 +1108,11 @@ export type Database = {
           notes: string | null
           organization_id: string
           pitch_variants: Json
+          send_window_end: number | null
+          send_window_start: number | null
           sequence_steps: Json
           status: string
+          timezone: string | null
           updated_at: string
         }
         Insert: {
@@ -1124,8 +1127,11 @@ export type Database = {
           notes?: string | null
           organization_id: string
           pitch_variants?: Json
+          send_window_end?: number | null
+          send_window_start?: number | null
           sequence_steps?: Json
           status?: string
+          timezone?: string | null
           updated_at?: string
         }
         Update: {
@@ -1140,8 +1146,11 @@ export type Database = {
           notes?: string | null
           organization_id?: string
           pitch_variants?: Json
+          send_window_end?: number | null
+          send_window_start?: number | null
           sequence_steps?: Json
           status?: string
+          timezone?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1159,61 +1168,82 @@ export type Database = {
           body: string | null
           campaign_id: string | null
           channel: string
+          clicked_at: string | null
           created_at: string
           direction: string
           error: string | null
+          handled_at: string | null
+          handled_by: string | null
           id: string
+          opened_at: string | null
           organization_id: string
           provider_message_id: string | null
+          read_at: string | null
           received_at: string | null
           reply_classification: string | null
           sent_at: string | null
           sentiment: string | null
+          snooze_until: string | null
           status: string
           step_index: number | null
           subject: string | null
           target_id: string
           updated_at: string
+          variant_id: string | null
         }
         Insert: {
           body?: string | null
           campaign_id?: string | null
           channel?: string
+          clicked_at?: string | null
           created_at?: string
           direction?: string
           error?: string | null
+          handled_at?: string | null
+          handled_by?: string | null
           id?: string
+          opened_at?: string | null
           organization_id: string
           provider_message_id?: string | null
+          read_at?: string | null
           received_at?: string | null
           reply_classification?: string | null
           sent_at?: string | null
           sentiment?: string | null
+          snooze_until?: string | null
           status?: string
           step_index?: number | null
           subject?: string | null
           target_id: string
           updated_at?: string
+          variant_id?: string | null
         }
         Update: {
           body?: string | null
           campaign_id?: string | null
           channel?: string
+          clicked_at?: string | null
           created_at?: string
           direction?: string
           error?: string | null
+          handled_at?: string | null
+          handled_by?: string | null
           id?: string
+          opened_at?: string | null
           organization_id?: string
           provider_message_id?: string | null
+          read_at?: string | null
           received_at?: string | null
           reply_classification?: string | null
           sent_at?: string | null
           sentiment?: string | null
+          snooze_until?: string | null
           status?: string
           step_index?: number | null
           subject?: string | null
           target_id?: string
           updated_at?: string
+          variant_id?: string | null
         }
         Relationships: [
           {
@@ -1241,6 +1271,7 @@ export type Database = {
       }
       outreach_targets: {
         Row: {
+          active_variant_id: string | null
           campaign_id: string | null
           company: string
           contact_name: string | null
@@ -1255,6 +1286,9 @@ export type Database = {
           notes: string | null
           organization_id: string
           paused: boolean
+          personalized_at: string | null
+          personalized_body: string | null
+          personalized_subject: string | null
           phone: string | null
           pitch_variant_id: string | null
           reply_classification: string | null
@@ -1265,6 +1299,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          active_variant_id?: string | null
           campaign_id?: string | null
           company: string
           contact_name?: string | null
@@ -1279,6 +1314,9 @@ export type Database = {
           notes?: string | null
           organization_id: string
           paused?: boolean
+          personalized_at?: string | null
+          personalized_body?: string | null
+          personalized_subject?: string | null
           phone?: string | null
           pitch_variant_id?: string | null
           reply_classification?: string | null
@@ -1289,6 +1327,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          active_variant_id?: string | null
           campaign_id?: string | null
           company?: string
           contact_name?: string | null
@@ -1303,6 +1342,9 @@ export type Database = {
           notes?: string | null
           organization_id?: string
           paused?: boolean
+          personalized_at?: string | null
+          personalized_body?: string | null
+          personalized_subject?: string | null
           phone?: string | null
           pitch_variant_id?: string | null
           reply_classification?: string | null

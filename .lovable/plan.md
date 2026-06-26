@@ -1,58 +1,90 @@
-# Volledig uitvoeringsplan
+## Cold Outreach v2 — grote uitbreiding
 
-Dit is veel werk (15+ grote features). Ik splits het in **4 rondes** zodat elke ronde getest en gereviewd kan worden voor we doorgaan. Na jouw "ga" pak ik Ronde 1 op; daarna meld ik me terug en starten we de volgende.
+Vier samenhangende verbeteringen aan de bestaande Outreach-module, met nieuwe componenten, server functions en DB-uitbreidingen. RLS-policies blijven org-scoped zoals nu.
 
----
+### 1. AI-personalisatie per lead
 
-## Ronde 1 — Offerte-flow afmaken
+- Nieuwe server fn `personalizeForTarget` die per prospect een opener + body genereert op basis van `outreach_targets.research_summary`, campagne-pitch en gekozen variant.
+- Bulk-actie "AI personaliseer geselecteerden" in de leadtabel — schrijft naar nieuwe kolommen `outreach_targets.personalized_subject` / `personalized_body` / `personalized_at`.
+- Cron `outreach-sequence` gebruikt eerst personalized velden, valt terug op sequence-step template.
+- Knop "Research + Personaliseer" combineert bestaande `researchLead` met nieuwe personalisatie.
 
-1. **Statusbadge + datum in admin-quoteslijst** — kleur per status (concept/verzonden/bekeken/ondertekend/verlopen) + relatieve datum.
-2. **PDF-download ondertekende offerte** — server function rendert HTML→PDF met handtekening-SVG, naam, akkoord-timestamp, voorwaarden.
-3. **E-mailnotificatie bij ondertekening** — via Lovable Emails (app emails), template met bevestiging + downloadlink.
-4. **Link vernieuwen / intrekken** — `revoked_at` veld + acties in admin; publieke pagina toont "ingetrokken" status.
-5. **Follow-up mails na X dagen** — `quote_followups` config per offerte (dagen + aan/uit), pg_cron job die `/api/public/hooks/quote-followups` triggert, mail bij niet-bekeken/niet-ondertekend, log in `email_send_log`.
-6. **Video-intro publieke offerte** — `intro_video_url` veld (Loom/YouTube/MP4 embed) bovenaan `accept.quote.$token`.
+### 2. Sequence-builder UX
 
-## Ronde 1 — Offerte-flow afmaken ✅
+- Nieuwe component `<SequenceBuilder>` (drag-and-drop met `@dnd-kit/sortable`, al aanwezig).
+- Per stap: kanaal (email / linkedin / cold-call / wait), delay (dagen), subject + body met `{{variabelen}}` token-picker, en condities:
+  - `if_no_reply` (default)
+  - `if_opened`
+  - `if_clicked`
+  - `stop_on_reply` toggle per stap
+- Live preview-paneel rechts (rendert met sample-vars).
+- Sla op in bestaande `outreach_campaigns.sequence_steps` (jsonb) — schema breidt uit met `condition` en `wait_days` velden, backwards compatible.
+- Nieuw kolom `outreach_campaigns.timezone` + verzendvenster (`send_window_start` / `send_window_end`).
 
-Klaar (zie eerdere commit): statusbadge+datum, PDF-download, e-mailnotificatie bij ondertekening, link vernieuwen/intrekken, follow-up mails, video-intro.
+### 3. Inbox & reply management
 
-## Ronde 2 — Betalen + CRM-samenwerking
+- Nieuwe route `/_authenticated/outreach/inbox` met unified inbox: alle `outreach_messages` direction=inbound, gegroepeerd per thread (target_id).
+- Filters: status (unread/read/snoozed/done), classificatie (positive/interested/needs_followup/...), campagne.
+- Per thread: volledige historie, quick-reply box met AI-suggesties (3 varianten via nieuwe `suggestReplyDrafts` server fn), snooze tot datum, "markeer als afspraak ingepland" → maakt `crm_activities` rij.
+- Nieuwe kolommen `outreach_messages`: `read_at`, `snooze_until`, `handled_at`, `handled_by`.
+- Realtime updates via Supabase channel op `outreach_messages`.
+- Sidebar krijgt unread badge.
 
-7. **iDEAL via Stripe** — wacht op jouw bevestiging om Stripe Payments te activeren.
-8. **CRM-activiteiten pagina** ✅ — `/crm/activities` met kanban (Te laat / Vandaag / Komend / Geen datum / Afgerond) + lijstweergave, filters op type/status, CRUD-dialog.
-9. **Team comments + @mentions** ✅ — opmerkingen-dialog op elke offerte (acties-menu → "Team-opmerkingen"), `@naam` autocomplete uit org-leden, e-mailnotificatie naar genoemde collega's via Resend, opgelost-markeren.
+### 4. Analytics & A/B inzichten
 
-## Ronde 3 — Enterprise & analytics
+- Nieuwe tab "Analytics" op outreach-pagina met KPI-cards: verzonden, open rate, reply rate, positive reply rate, geboekte gesprekken — per gekozen tijdvenster (7/30/90 dagen).
+- Per-campagne tabel met dezelfde metrics + winnaar-variant.
+- Per-variant breakdown (uit `outreach_campaigns.pitch_variants`): impressions, replies, positive %, met confidence-indicator.
+- Per-stap funnel (welke stap genereert reacties).
+- Voor open/click tracking: nieuwe kolommen `outreach_messages.opened_at`, `clicked_at` + nieuwe publieke route `/api/public/hooks/outreach-track/:type/:logId` (1x1 pixel voor open, redirect voor click), gesigneerd met HMAC over logId. Email HTML krijgt automatisch tracking-pixel + link-rewriting bij verzenden.
 
-10. **RBAC `/enterprise`** — `_authenticated/enterprise` layout met `has_role('admin'|'enterprise')` gate, redirect anders.
-11. **Forecast dashboard** — per team & maand op basis van deal-stage × waarschijnlijkheid, grafiek + tabel + CSV-export.
-12. **Win/Loss AI formulier + log** — formulier (deal, uitkomst, ruwe notities), Lovable AI vat reden samen, opslag in `win_loss_log`, trends-overzicht.
-13. **Heatmap per offerte** — `quote_section_views` (sectie-id + dwell time via IntersectionObserver), admin-view rendert kleurschaal per sectie.
+### Technische uitwerking
 
-## Ronde 4 — Platform-features
+**DB-migration** (één migration):
 
-14. **Templates marketplace** — `marketplace_templates` (AI prompts + outreach sequences), org-scoped private + workspace-shared, kopieer-naar-mijn-org actie.
-15. **White-label** — `organizations.branding` (logo, kleuren, custom subdomein), middleware detecteert host → laadt branding, publieke offerte/portal respecteren.
-16. **Resend outreach-integratie** — connector via gateway, send vanuit sequences, log per campaign + prospect in `outreach_messages` met provider message-id, bounce/complaint webhook.
+```sql
+ALTER TABLE public.outreach_targets
+  ADD COLUMN personalized_subject text,
+  ADD COLUMN personalized_body text,
+  ADD COLUMN personalized_at timestamptz,
+  ADD COLUMN active_variant_id text;
 
----
+ALTER TABLE public.outreach_campaigns
+  ADD COLUMN timezone text DEFAULT 'Europe/Amsterdam',
+  ADD COLUMN send_window_start smallint DEFAULT 8,
+  ADD COLUMN send_window_end smallint DEFAULT 18;
 
-## Belangrijke beslissingen die ik nu voor je maak (zeg het als je liever anders wil)
+ALTER TABLE public.outreach_messages
+  ADD COLUMN read_at timestamptz,
+  ADD COLUMN snooze_until timestamptz,
+  ADD COLUMN handled_at timestamptz,
+  ADD COLUMN handled_by uuid,
+  ADD COLUMN opened_at timestamptz,
+  ADD COLUMN clicked_at timestamptz,
+  ADD COLUMN variant_id text;
 
-- **iDEAL provider**: **Stripe built-in** (geen eigen account/keys nodig, snelste). Mollie zou een eigen API key vereisen.
-- **Follow-up timing default**: **3 dagen** na verzenden als niet bekeken, **7 dagen** als bekeken maar niet ondertekend. Per offerte aanpasbaar.
-- **PDF-rendering**: server function met `@react-pdf/renderer` (werkt in Workers).
-- **Video-intro**: ondersteunt Loom/YouTube/Vimeo embed-URL + directe MP4. Geen upload-flow deze ronde.
-- **Mentions notificatie**: in-app badge + e-mail (geen push).
-- **White-label subdomein**: `*.jouwdomein.nl` patroon; root-domein blijft platform. DNS-instructies krijg je per organisatie.
+CREATE INDEX IF NOT EXISTS idx_outreach_messages_inbox
+  ON public.outreach_messages(organization_id, direction, received_at DESC)
+  WHERE direction = 'inbound';
+```
 
-## Wat ik buiten scope houd
+**Nieuwe / aangepaste bestanden**
 
-- Marketing/bulk mails (verboden volgens email-richtlijnen — alleen transactioneel).
-- De externe DigitalOcean-link die je deelde — geen actie tenzij je zegt wat je daarmee wil.
-- Native mobile / app stores.
+- `src/lib/outreach.functions.ts` — `personalizeForTarget`, `bulkPersonalize`, `suggestReplyDrafts`, `markMessageHandled`, `snoozeMessage`.
+- `src/lib/outreach-tracking.ts` — HMAC helpers, link-rewriting.
+- `src/routes/api/public/hooks/outreach-track.$type.$id.ts` — pixel + click redirect.
+- `src/routes/api/public/hooks/outreach-sequence.ts` — uitgebreid met send-window respect, personalized fallback, conditional steps, tracking-injection.
+- `src/routes/_authenticated/outreach.inbox.tsx` — nieuwe inbox-route.
+- `src/components/outreach/sequence-builder.tsx` — drag-drop editor.
+- `src/components/outreach/analytics-tab.tsx` — KPI dashboard.
+- `src/components/outreach/inbox-thread.tsx` — thread-view met reply-box.
+- `src/routes/_authenticated/outreach.index.tsx` — nieuwe tabs (Pipeline / Campagnes / Analytics), gebruikt nieuwe builder/components.
+- `src/components/app-sidebar.tsx` — unread badge voor inbox.
 
-## Bevestiging
+**Tracking-secret**: hergebruikt `CRON_SECRET` voor HMAC; geen nieuwe secret.
 
-Reageer met **"ga"** dan start ik Ronde 1. Of noem een ronde/feature die je eerst wil.
+### Scope-grenzen (uitgesloten)
+
+- Geen LinkedIn-automation (alleen handmatig afvinken).
+- Geen calendaring-integratie (alleen "afspraak ingepland" toggle).
+- Geen multi-mailbox / dedicated IP setup — `OUTREACH_FROM_EMAIL` blijft enkele bron.
