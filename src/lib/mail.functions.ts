@@ -176,3 +176,40 @@ export const getAttachmentUrl = createServerFn({ method: "POST" })
     if (error || !signed) throw new Error(error?.message ?? "URL mislukt");
     return { url: signed.signedUrl };
   });
+
+export const deleteAttachment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({ message_id: z.string().uuid(), path: z.string() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase
+      .from("mail_messages")
+      .select("attachments")
+      .eq("id", data.message_id)
+      .single();
+    if (error || !row) throw new Error(error?.message ?? "Niet gevonden");
+    const list = ((row as { attachments: Array<{ path: string }> }).attachments ?? []).filter(
+      (a) => a.path !== data.path,
+    );
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.storage.from("mail-attachments").remove([data.path]);
+    const { error: upErr } = await context.supabase
+      .from("mail_messages")
+      .update({ attachments: list } as never)
+      .eq("id", data.message_id);
+    if (upErr) throw new Error(upErr.message);
+    return { ok: true };
+  });
+
+export const deleteMail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("mail_messages")
+      .delete()
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
