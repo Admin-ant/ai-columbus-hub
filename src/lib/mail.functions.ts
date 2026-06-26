@@ -131,7 +131,8 @@ export const sendMail = createServerFn({ method: "POST" })
         bcc: data.bcc,
         subject: data.subject,
         html,
-        text: data.body,
+        text: fullBody,
+        replyTo,
         headers: { "X-Mail-Message-Id": id },
         attachments: att.length ? att : undefined,
       });
