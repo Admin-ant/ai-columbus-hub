@@ -19,6 +19,7 @@ import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedQuotesRouteImport } from './routes/_authenticated/quotes'
 import { Route as AuthenticatedProductenRouteImport } from './routes/_authenticated/producten'
 import { Route as AuthenticatedNetqloudRouteImport } from './routes/_authenticated/netqloud'
+import { Route as AuthenticatedMailRouteImport } from './routes/_authenticated/mail'
 import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
 import { Route as AuthenticatedGebruikersRouteImport } from './routes/_authenticated/gebruikers'
 import { Route as AuthenticatedEnterpriseRouteImport } from './routes/_authenticated/enterprise'
@@ -50,6 +51,7 @@ import { Route as ApiPublicHooksOutreachTrackRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksOutreachSequenceRouteImport } from './routes/api/public/hooks/outreach-sequence'
 import { Route as ApiPublicHooksOutreachReplyRouteImport } from './routes/api/public/hooks/outreach-reply'
 import { Route as ApiPublicHooksMollieRouteImport } from './routes/api/public/hooks/mollie'
+import { Route as ApiPublicHooksMailInboundRouteImport } from './routes/api/public/hooks/mail-inbound'
 import { Route as AuthenticatedOfferteStudioTIdRouteImport } from './routes/_authenticated/offerte-studio.t.$id'
 import { Route as AuthenticatedOfferteStudioQIdRouteImport } from './routes/_authenticated/offerte-studio.q.$id'
 import { Route as AuthenticatedBoekhoudingJournalEntryIdRouteImport } from './routes/_authenticated/boekhouding.journal.$entryId'
@@ -103,6 +105,11 @@ const AuthenticatedProductenRoute = AuthenticatedProductenRouteImport.update({
 const AuthenticatedNetqloudRoute = AuthenticatedNetqloudRouteImport.update({
   id: '/netqloud',
   path: '/netqloud',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMailRoute = AuthenticatedMailRouteImport.update({
+  id: '/mail',
+  path: '/mail',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedInvoicesRoute = AuthenticatedInvoicesRouteImport.update({
@@ -284,6 +291,12 @@ const ApiPublicHooksMollieRoute = ApiPublicHooksMollieRouteImport.update({
   path: '/api/public/hooks/mollie',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksMailInboundRoute =
+  ApiPublicHooksMailInboundRouteImport.update({
+    id: '/api/public/hooks/mail-inbound',
+    path: '/api/public/hooks/mail-inbound',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedOfferteStudioTIdRoute =
   AuthenticatedOfferteStudioTIdRouteImport.update({
     id: '/offerte-studio/t/$id',
@@ -325,6 +338,7 @@ export interface FileRoutesByFullPath {
   '/enterprise': typeof AuthenticatedEnterpriseRoute
   '/gebruikers': typeof AuthenticatedGebruikersRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
+  '/mail': typeof AuthenticatedMailRoute
   '/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
   '/producten': typeof AuthenticatedProductenRoute
   '/quotes': typeof AuthenticatedQuotesRoute
@@ -355,6 +369,7 @@ export interface FileRoutesByFullPath {
   '/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
   '/offerte-studio/q/$id': typeof AuthenticatedOfferteStudioQIdRoute
   '/offerte-studio/t/$id': typeof AuthenticatedOfferteStudioTIdRoute
+  '/api/public/hooks/mail-inbound': typeof ApiPublicHooksMailInboundRoute
   '/api/public/hooks/mollie': typeof ApiPublicHooksMollieRoute
   '/api/public/hooks/outreach-reply': typeof ApiPublicHooksOutreachReplyRoute
   '/api/public/hooks/outreach-sequence': typeof ApiPublicHooksOutreachSequenceRoute
@@ -370,6 +385,7 @@ export interface FileRoutesByTo {
   '/enterprise': typeof AuthenticatedEnterpriseRoute
   '/gebruikers': typeof AuthenticatedGebruikersRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
+  '/mail': typeof AuthenticatedMailRoute
   '/producten': typeof AuthenticatedProductenRoute
   '/quotes': typeof AuthenticatedQuotesRoute
   '/teams': typeof AuthenticatedTeamsRoute
@@ -400,6 +416,7 @@ export interface FileRoutesByTo {
   '/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
   '/offerte-studio/q/$id': typeof AuthenticatedOfferteStudioQIdRoute
   '/offerte-studio/t/$id': typeof AuthenticatedOfferteStudioTIdRoute
+  '/api/public/hooks/mail-inbound': typeof ApiPublicHooksMailInboundRoute
   '/api/public/hooks/mollie': typeof ApiPublicHooksMollieRoute
   '/api/public/hooks/outreach-reply': typeof ApiPublicHooksOutreachReplyRoute
   '/api/public/hooks/outreach-sequence': typeof ApiPublicHooksOutreachSequenceRoute
@@ -418,6 +435,7 @@ export interface FileRoutesById {
   '/_authenticated/enterprise': typeof AuthenticatedEnterpriseRoute
   '/_authenticated/gebruikers': typeof AuthenticatedGebruikersRoute
   '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
+  '/_authenticated/mail': typeof AuthenticatedMailRoute
   '/_authenticated/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
   '/_authenticated/producten': typeof AuthenticatedProductenRoute
   '/_authenticated/quotes': typeof AuthenticatedQuotesRoute
@@ -449,6 +467,7 @@ export interface FileRoutesById {
   '/_authenticated/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
   '/_authenticated/offerte-studio/q/$id': typeof AuthenticatedOfferteStudioQIdRoute
   '/_authenticated/offerte-studio/t/$id': typeof AuthenticatedOfferteStudioTIdRoute
+  '/api/public/hooks/mail-inbound': typeof ApiPublicHooksMailInboundRoute
   '/api/public/hooks/mollie': typeof ApiPublicHooksMollieRoute
   '/api/public/hooks/outreach-reply': typeof ApiPublicHooksOutreachReplyRoute
   '/api/public/hooks/outreach-sequence': typeof ApiPublicHooksOutreachSequenceRoute
@@ -468,6 +487,7 @@ export interface FileRouteTypes {
     | '/enterprise'
     | '/gebruikers'
     | '/invoices'
+    | '/mail'
     | '/netqloud'
     | '/producten'
     | '/quotes'
@@ -498,6 +518,7 @@ export interface FileRouteTypes {
     | '/boekhouding/journal/$entryId'
     | '/offerte-studio/q/$id'
     | '/offerte-studio/t/$id'
+    | '/api/public/hooks/mail-inbound'
     | '/api/public/hooks/mollie'
     | '/api/public/hooks/outreach-reply'
     | '/api/public/hooks/outreach-sequence'
@@ -513,6 +534,7 @@ export interface FileRouteTypes {
     | '/enterprise'
     | '/gebruikers'
     | '/invoices'
+    | '/mail'
     | '/producten'
     | '/quotes'
     | '/teams'
@@ -543,6 +565,7 @@ export interface FileRouteTypes {
     | '/boekhouding/journal/$entryId'
     | '/offerte-studio/q/$id'
     | '/offerte-studio/t/$id'
+    | '/api/public/hooks/mail-inbound'
     | '/api/public/hooks/mollie'
     | '/api/public/hooks/outreach-reply'
     | '/api/public/hooks/outreach-sequence'
@@ -560,6 +583,7 @@ export interface FileRouteTypes {
     | '/_authenticated/enterprise'
     | '/_authenticated/gebruikers'
     | '/_authenticated/invoices'
+    | '/_authenticated/mail'
     | '/_authenticated/netqloud'
     | '/_authenticated/producten'
     | '/_authenticated/quotes'
@@ -591,6 +615,7 @@ export interface FileRouteTypes {
     | '/_authenticated/boekhouding/journal/$entryId'
     | '/_authenticated/offerte-studio/q/$id'
     | '/_authenticated/offerte-studio/t/$id'
+    | '/api/public/hooks/mail-inbound'
     | '/api/public/hooks/mollie'
     | '/api/public/hooks/outreach-reply'
     | '/api/public/hooks/outreach-sequence'
@@ -607,6 +632,7 @@ export interface RootRouteChildren {
   TTokenRoute: typeof TTokenRoute
   AcceptQuoteTokenRoute: typeof AcceptQuoteTokenRoute
   QuoteTokenPdfRoute: typeof QuoteTokenPdfRoute
+  ApiPublicHooksMailInboundRoute: typeof ApiPublicHooksMailInboundRoute
   ApiPublicHooksMollieRoute: typeof ApiPublicHooksMollieRoute
   ApiPublicHooksOutreachReplyRoute: typeof ApiPublicHooksOutreachReplyRoute
   ApiPublicHooksOutreachSequenceRoute: typeof ApiPublicHooksOutreachSequenceRoute
@@ -685,6 +711,13 @@ declare module '@tanstack/react-router' {
       path: '/netqloud'
       fullPath: '/netqloud'
       preLoaderRoute: typeof AuthenticatedNetqloudRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mail': {
+      id: '/_authenticated/mail'
+      path: '/mail'
+      fullPath: '/mail'
+      preLoaderRoute: typeof AuthenticatedMailRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/invoices': {
@@ -904,6 +937,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksMollieRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/mail-inbound': {
+      id: '/api/public/hooks/mail-inbound'
+      path: '/api/public/hooks/mail-inbound'
+      fullPath: '/api/public/hooks/mail-inbound'
+      preLoaderRoute: typeof ApiPublicHooksMailInboundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/offerte-studio/t/$id': {
       id: '/_authenticated/offerte-studio/t/$id'
       path: '/offerte-studio/t/$id'
@@ -1046,6 +1086,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEnterpriseRoute: typeof AuthenticatedEnterpriseRoute
   AuthenticatedGebruikersRoute: typeof AuthenticatedGebruikersRoute
   AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
+  AuthenticatedMailRoute: typeof AuthenticatedMailRoute
   AuthenticatedNetqloudRoute: typeof AuthenticatedNetqloudRouteWithChildren
   AuthenticatedProductenRoute: typeof AuthenticatedProductenRoute
   AuthenticatedQuotesRoute: typeof AuthenticatedQuotesRoute
@@ -1067,6 +1108,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEnterpriseRoute: AuthenticatedEnterpriseRoute,
   AuthenticatedGebruikersRoute: AuthenticatedGebruikersRoute,
   AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
+  AuthenticatedMailRoute: AuthenticatedMailRoute,
   AuthenticatedNetqloudRoute: AuthenticatedNetqloudRouteWithChildren,
   AuthenticatedProductenRoute: AuthenticatedProductenRoute,
   AuthenticatedQuotesRoute: AuthenticatedQuotesRoute,
@@ -1092,6 +1134,7 @@ const rootRouteChildren: RootRouteChildren = {
   TTokenRoute: TTokenRoute,
   AcceptQuoteTokenRoute: AcceptQuoteTokenRoute,
   QuoteTokenPdfRoute: QuoteTokenPdfRoute,
+  ApiPublicHooksMailInboundRoute: ApiPublicHooksMailInboundRoute,
   ApiPublicHooksMollieRoute: ApiPublicHooksMollieRoute,
   ApiPublicHooksOutreachReplyRoute: ApiPublicHooksOutreachReplyRoute,
   ApiPublicHooksOutreachSequenceRoute: ApiPublicHooksOutreachSequenceRoute,

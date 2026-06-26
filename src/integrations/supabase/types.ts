@@ -1009,6 +1009,115 @@ export type Database = {
           },
         ]
       }
+      mail_messages: {
+        Row: {
+          attachments: Json
+          bcc_emails: string[]
+          body_html: string | null
+          body_text: string | null
+          cc_emails: string[]
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          error: string | null
+          folder: string
+          from_email: string | null
+          from_name: string | null
+          id: string
+          in_reply_to: string | null
+          lead_id: string | null
+          message_id: string | null
+          organization_id: string
+          provider_message_id: string | null
+          read_at: string | null
+          received_at: string | null
+          sent_at: string | null
+          status: string
+          subject: string | null
+          thread_id: string | null
+          to_emails: string[]
+          updated_at: string
+        }
+        Insert: {
+          attachments?: Json
+          bcc_emails?: string[]
+          body_html?: string | null
+          body_text?: string | null
+          cc_emails?: string[]
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          folder?: string
+          from_email?: string | null
+          from_name?: string | null
+          id?: string
+          in_reply_to?: string | null
+          lead_id?: string | null
+          message_id?: string | null
+          organization_id: string
+          provider_message_id?: string | null
+          read_at?: string | null
+          received_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          thread_id?: string | null
+          to_emails?: string[]
+          updated_at?: string
+        }
+        Update: {
+          attachments?: Json
+          bcc_emails?: string[]
+          body_html?: string | null
+          body_text?: string | null
+          cc_emails?: string[]
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          folder?: string
+          from_email?: string | null
+          from_name?: string | null
+          id?: string
+          in_reply_to?: string | null
+          lead_id?: string | null
+          message_id?: string | null
+          organization_id?: string
+          provider_message_id?: string | null
+          read_at?: string | null
+          received_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          thread_id?: string | null
+          to_emails?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mail_messages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mail_messages_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mail_messages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           created_at: string
