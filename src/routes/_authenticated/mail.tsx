@@ -40,8 +40,17 @@ import {
   deleteAttachment,
   deleteMail,
   sendMail,
+  bulkUpdateMail,
 } from "@/lib/mail.functions";
 import { renderTokens } from "@/lib/outreach-templates";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { CheckCheck, Eye, EyeOff, FolderInput, MoreHorizontal } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/mail")({
   head: () => ({ meta: [{ title: "Mail" }] }),
