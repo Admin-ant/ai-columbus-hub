@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -23,7 +23,19 @@ import {
   Upload,
   Send,
   CalendarClock,
+  Video,
+  MapPin,
+  FileText,
 } from "lucide-react";
+import {
+  DndContext,
+  PointerSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
 import { buildDefaultSections, DEFAULT_THEME } from "@/lib/offerte-studio";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -64,6 +76,10 @@ import {
 import { OutreachAnalyticsTab } from "@/components/outreach/analytics-tab";
 import { OutreachInboxTab } from "@/components/outreach/inbox-tab";
 import { SequenceBuilder } from "@/components/outreach/sequence-builder";
+import { SendOutreachDialog } from "@/components/outreach/send-outreach-dialog";
+import { DemoPromptDialog } from "@/components/outreach/demo-prompt-dialog";
+import { NL_PROVINCES } from "@/lib/outreach-templates";
+
 
 export const Route = createFileRoute("/_authenticated/outreach/")({
   head: () => ({ meta: [{ title: "Cold Outreach" }] }),
@@ -119,6 +135,9 @@ type TargetRow = {
   research_at?: string | null;
   personalized_at?: string | null;
   personalized_subject?: string | null;
+  province?: string | null;
+  demo_type?: "online" | "onsite" | null;
+  demo_at?: string | null;
 };
 
 function OutreachDashboard() {
@@ -136,6 +155,9 @@ function OutreachDashboard() {
   const [unreadInbox, setUnreadInbox] = useState(0);
   const [builderCampaignId, setBuilderCampaignId] = useState<string | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [sendDialogTarget, setSendDialogTarget] = useState<TargetRow | null>(null);
+  const [demoDialogTarget, setDemoDialogTarget] = useState<TargetRow | null>(null);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
   async function runPersonalize(t: TargetRow) {
     toast.loading("AI personaliseren…", { id: "pz" });
@@ -316,6 +338,8 @@ function OutreachDashboard() {
   }, [targets, campaigns]);
 
   async function moveTarget(id: string, stage: Stage) {
+    const prev = targets.find((t) => t.id === id);
+    if (prev && prev.stage === stage) return;
     setTargets((cur) => cur.map((t) => (t.id === id ? { ...t, stage } : t)));
     const { error } = await supabase
       .from("outreach_targets")
@@ -324,7 +348,24 @@ function OutreachDashboard() {
     if (error) {
       toast.error(error.message);
       load();
+      return;
     }
+    // Side-effects per target stage
+    const fresh = prev ? { ...prev, stage } : null;
+    if (fresh && stage === "aangeschreven") {
+      setSendDialogTarget(fresh);
+    } else if (fresh && stage === "gesprek" && !fresh.demo_at) {
+      setDemoDialogTarget(fresh);
+    }
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const overId = event.over?.id;
+    const activeId = event.active.id;
+    if (!overId || typeof overId !== "string" || typeof activeId !== "string") return;
+    const stage = overId as Stage;
+    if (!STAGES.some((s) => s.key === stage)) return;
+    moveTarget(activeId, stage);
   }
 
   async function deleteTarget(id: string) {
@@ -363,7 +404,17 @@ function OutreachDashboard() {
               {currentOrganization?.name ?? ""} — pipeline & campagnes
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Link to="/outreach/templates">
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-white/20 bg-white/5 text-white hover:bg-white/10"
+              >
+                <FileText className="mr-1 h-4 w-4" />
+                Mail templates
+              </Button>
+            </Link>
             <Button
               variant="outline"
               size="sm"
@@ -382,6 +433,11 @@ function OutreachDashboard() {
             />
             <NewTargetDialog
               campaigns={campaigns}
+              orgId={currentOrganizationId}
+              userId={user?.id ?? null}
+              onCreated={load}
+            />
+            <NewProvincialCampaignButton
               orgId={currentOrganizationId}
               userId={user?.id ?? null}
               onCreated={load}
@@ -426,49 +482,40 @@ function OutreachDashboard() {
             {loading ? (
               <Loading />
             ) : (
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-                {STAGES.map((s) => {
-                  const items = targets.filter((t) => t.stage === s.key);
-                  return (
-                    <div key={s.key} className="rounded-lg border border-white/10 bg-white/5 p-3">
-                      <div className="mb-3 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="h-2 w-2 rounded-full"
-                            style={{ background: s.color, boxShadow: `0 0 8px ${s.color}` }}
-                          />
-                          <span className="text-xs font-semibold uppercase tracking-wider text-white/80">
-                            {s.label}
-                          </span>
-                        </div>
-                        <span className="text-xs text-white/50">{items.length}</span>
-                      </div>
-                      <div className="space-y-2">
+              <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                  {STAGES.map((s) => {
+                    const items = targets.filter((t) => t.stage === s.key);
+                    return (
+                      <DroppableColumn key={s.key} stage={s.key} color={s.color} label={s.label} count={items.length}>
                         {items.length === 0 ? (
                           <div className="rounded border border-dashed border-white/10 p-3 text-center text-[11px] text-white/40">
-                            Leeg
+                            Sleep hier
                           </div>
                         ) : (
                           items.map((t) => (
-                            <TargetCard
-                              key={t.id}
-                              row={t}
-                              campaign={campaigns.find((c) => c.id === t.campaign_id) ?? null}
-                              onMove={moveTarget}
-                              onDelete={deleteTarget}
-                              onCreateQuote={() => createQuoteFromTarget(t)}
-                              onResearch={() => runResearch(t)}
-                              onPersonalize={() => runPersonalize(t)}
-                              onSendNow={() => sendNow(t)}
-                              onStartSequence={() => startSequence(t)}
-                            />
+                            <DraggableCard key={t.id} id={t.id}>
+                              <TargetCard
+                                row={t}
+                                campaign={campaigns.find((c) => c.id === t.campaign_id) ?? null}
+                                onMove={moveTarget}
+                                onDelete={deleteTarget}
+                                onCreateQuote={() => createQuoteFromTarget(t)}
+                                onResearch={() => runResearch(t)}
+                                onPersonalize={() => runPersonalize(t)}
+                                onSendNow={() => sendNow(t)}
+                                onStartSequence={() => startSequence(t)}
+                                onOpenSend={() => setSendDialogTarget(t)}
+                                onOpenDemo={() => setDemoDialogTarget(t)}
+                              />
+                            </DraggableCard>
                           ))
                         )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                      </DroppableColumn>
+                    );
+                  })}
+                </div>
+              </DndContext>
             )}
           </TabsContent>
 
@@ -551,6 +598,34 @@ function OutreachDashboard() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <SendOutreachDialog
+        open={!!sendDialogTarget}
+        onOpenChange={(o) => !o && setSendDialogTarget(null)}
+        target={sendDialogTarget}
+        organizationId={currentOrganizationId}
+        onSend={async ({ subject, body }) => {
+          if (!sendDialogTarget) return;
+          await sendEmailFn({
+            data: {
+              target_id: sendDialogTarget.id,
+              override_subject: subject,
+              override_body: body,
+            },
+          });
+          load();
+        }}
+      />
+
+      <DemoPromptDialog
+        open={!!demoDialogTarget}
+        onOpenChange={(o) => !o && setDemoDialogTarget(null)}
+        targetId={demoDialogTarget?.id ?? null}
+        targetCompany={demoDialogTarget?.company}
+        initialType={demoDialogTarget?.demo_type ?? null}
+        initialAt={demoDialogTarget?.demo_at ?? null}
+        onSaved={load}
+      />
     </div>
   );
 }
@@ -592,6 +667,8 @@ function TargetCard({
   onPersonalize,
   onSendNow,
   onStartSequence,
+  onOpenSend,
+  onOpenDemo,
 }: {
   row: TargetRow & { personalized_at?: string | null };
   campaign: Campaign | null;
@@ -602,8 +679,19 @@ function TargetCard({
   onPersonalize: () => void;
   onSendNow: () => void;
   onStartSequence: () => void;
+  onOpenSend?: () => void;
+  onOpenDemo?: () => void;
 }) {
   const [showResearch, setShowResearch] = useState(false);
+  const demoLabel = row.demo_at
+    ? new Date(row.demo_at).toLocaleString("nl-NL", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
   return (
     <div className="group rounded-md border border-white/10 bg-black/40 p-3 transition-all hover:border-[#ff2bd6]/50">
       <div className="flex items-start justify-between gap-2">
@@ -626,6 +714,11 @@ function TargetCard({
         {row.email && <Mail className="h-3 w-3" />}
         {row.linkedin_url && <Linkedin className="h-3 w-3" />}
         {row.phone && <Phone className="h-3 w-3" />}
+        {row.province && (
+          <span className="rounded bg-blue-500/15 text-blue-200 px-1.5 py-0.5 text-[10px]">
+            {row.province}
+          </span>
+        )}
         {campaign && (
           <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px]">{campaign.name}</span>
         )}
@@ -638,6 +731,42 @@ function TargetCard({
           </span>
         )}
       </div>
+      {(row.stage === "gesprek" || row.stage === "gewonnen") && row.demo_at && (
+        <button
+          type="button"
+          onClick={onOpenDemo}
+          className="mt-2 flex w-full items-center gap-1.5 rounded-md border border-purple-500/30 bg-purple-500/10 px-2 py-1.5 text-[11px] font-medium text-purple-200 hover:bg-purple-500/20"
+        >
+          {row.demo_type === "onsite" ? (
+            <MapPin className="h-3 w-3" />
+          ) : (
+            <Video className="h-3 w-3" />
+          )}
+          <span className="truncate">
+            {row.demo_type === "onsite" ? "Op locatie" : "Teams"} · {demoLabel}
+          </span>
+        </button>
+      )}
+      {row.stage === "gesprek" && !row.demo_at && onOpenDemo && (
+        <button
+          type="button"
+          onClick={onOpenDemo}
+          className="mt-2 flex w-full items-center gap-1.5 rounded-md border border-dashed border-white/20 px-2 py-1.5 text-[11px] text-white/60 hover:bg-white/5"
+        >
+          <CalendarClock className="h-3 w-3" /> Demo plannen
+        </button>
+      )}
+      {onOpenSend && row.stage !== "verloren" && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onOpenSend}
+          className="mt-2 h-7 w-full justify-start text-[11px] hover:bg-white/10"
+          title="Open bericht-sjablonen"
+        >
+          <Mail className="mr-1 h-3 w-3" /> Aanschrijven (templates)
+        </Button>
+      )}
       <Select value={row.stage} onValueChange={(v) => onMove(row.id, v as Stage)}>
         <SelectTrigger className="mt-2 h-7 border-white/10 bg-white/5 text-xs">
           <SelectValue />

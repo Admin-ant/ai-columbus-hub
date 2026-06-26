@@ -1108,6 +1108,7 @@ export type Database = {
           notes: string | null
           organization_id: string
           pitch_variants: Json
+          province: string | null
           send_window_end: number | null
           send_window_start: number | null
           sequence_steps: Json
@@ -1127,6 +1128,7 @@ export type Database = {
           notes?: string | null
           organization_id: string
           pitch_variants?: Json
+          province?: string | null
           send_window_end?: number | null
           send_window_start?: number | null
           sequence_steps?: Json
@@ -1146,6 +1148,7 @@ export type Database = {
           notes?: string | null
           organization_id?: string
           pitch_variants?: Json
+          province?: string | null
           send_window_end?: number | null
           send_window_start?: number | null
           sequence_steps?: Json
@@ -1156,6 +1159,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "outreach_campaigns_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      outreach_message_templates: {
+        Row: {
+          body: string
+          channel: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_default: boolean
+          name: string
+          organization_id: string
+          subject: string | null
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          channel: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_default?: boolean
+          name: string
+          organization_id: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_default?: boolean
+          name?: string
+          organization_id?: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outreach_message_templates_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -1277,6 +1327,8 @@ export type Database = {
           contact_name: string | null
           created_at: string
           created_by: string | null
+          demo_at: string | null
+          demo_type: string | null
           email: string | null
           id: string
           last_contact_at: string | null
@@ -1291,6 +1343,7 @@ export type Database = {
           personalized_subject: string | null
           phone: string | null
           pitch_variant_id: string | null
+          province: string | null
           reply_classification: string | null
           research_at: string | null
           research_summary: string | null
@@ -1305,6 +1358,8 @@ export type Database = {
           contact_name?: string | null
           created_at?: string
           created_by?: string | null
+          demo_at?: string | null
+          demo_type?: string | null
           email?: string | null
           id?: string
           last_contact_at?: string | null
@@ -1319,6 +1374,7 @@ export type Database = {
           personalized_subject?: string | null
           phone?: string | null
           pitch_variant_id?: string | null
+          province?: string | null
           reply_classification?: string | null
           research_at?: string | null
           research_summary?: string | null
@@ -1333,6 +1389,8 @@ export type Database = {
           contact_name?: string | null
           created_at?: string
           created_by?: string | null
+          demo_at?: string | null
+          demo_type?: string | null
           email?: string | null
           id?: string
           last_contact_at?: string | null
@@ -1347,6 +1405,7 @@ export type Database = {
           personalized_subject?: string | null
           phone?: string | null
           pitch_variant_id?: string | null
+          province?: string | null
           reply_classification?: string | null
           research_at?: string | null
           research_summary?: string | null
@@ -2093,6 +2152,10 @@ export type Database = {
         Returns: string
       }
       seed_default_chart: { Args: { _org: string }; Returns: undefined }
+      seed_outreach_default_templates: {
+        Args: { p_org_id: string }
+        Returns: undefined
+      }
       track_quote_view: { Args: { _token: string }; Returns: undefined }
     }
     Enums: {
