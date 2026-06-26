@@ -231,6 +231,15 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                 </Button>
               </div>
             </div>
+            <div>
+              <Label className="text-[11px] text-white/60">Beschrijving</Label>
+              <Input
+                value={editing.description ?? ""}
+                onChange={(e) => setEditing({ ...editing, description: e.target.value })}
+                placeholder="Korte omschrijving — wanneer gebruik je dit sjabloon?"
+                className="bg-white/5 border-white/10 text-white"
+              />
+            </div>
             {editing.channel === "email" && (
               <div>
                 <Label className="text-[11px] text-white/60">Onderwerp</Label>
