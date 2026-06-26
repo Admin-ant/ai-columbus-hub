@@ -361,8 +361,17 @@ function OutreachDashboard() {
             <TabsTrigger value="pipeline" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-white">
               Pipeline
             </TabsTrigger>
+            <TabsTrigger value="inbox" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-white">
+              Inbox{unreadInbox > 0 ? ` (${unreadInbox})` : ""}
+            </TabsTrigger>
             <TabsTrigger value="campaigns" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-white">
               Campagnes ({campaigns.length})
+            </TabsTrigger>
+            <TabsTrigger value="sequences" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-white">
+              Sequences
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-white">
+              Analytics
             </TabsTrigger>
           </TabsList>
 
