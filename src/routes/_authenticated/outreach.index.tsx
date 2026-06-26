@@ -1107,9 +1107,22 @@ function NewTargetDialog({
               <Label>LinkedIn URL</Label>
               <Input value={form.linkedin_url} onChange={(e) => setForm({ ...form, linkedin_url: e.target.value })} />
             </div>
-            <div className="space-y-1.5 col-span-2">
+            <div className="space-y-1.5">
+              <Label>Provincie</Label>
+              <Select value={form.province} onValueChange={(v) => setForm({ ...form, province: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecteer provincie" />
+                </SelectTrigger>
+                <SelectContent>
+                  {NL_PROVINCES.map((p) => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
               <Label>Campagne</Label>
-              <Select value={form.campaign_id} onValueChange={(v) => setForm({ ...form, campaign_id: v })}>
+              <Select value={form.campaign_id} onValueChange={onCampaignChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Geen campagne" />
                 </SelectTrigger>
@@ -1119,6 +1132,40 @@ function NewTargetDialog({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="col-span-2 rounded-md border border-white/10 bg-white/5 p-3 space-y-3">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-white/60 flex items-center gap-1.5">
+                <CalendarClock className="h-3.5 w-3.5" /> Demo inplannen (optioneel)
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Type</Label>
+                  <Select
+                    value={form.demo_type}
+                    onValueChange={(v) => setForm({ ...form, demo_type: v as "online" | "onsite" })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Geen demo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="online">
+                        <span className="inline-flex items-center gap-2"><Video className="h-3.5 w-3.5" /> Online (Teams)</span>
+                      </SelectItem>
+                      <SelectItem value="onsite">
+                        <span className="inline-flex items-center gap-2"><MapPin className="h-3.5 w-3.5" /> Op locatie</span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Datum &amp; tijd</Label>
+                  <Input
+                    type="datetime-local"
+                    value={form.demo_at}
+                    onChange={(e) => setForm({ ...form, demo_at: e.target.value })}
+                  />
+                </div>
+              </div>
             </div>
             <div className="space-y-1.5 col-span-2">
               <Label>Notities</Label>
