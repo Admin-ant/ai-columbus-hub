@@ -1015,10 +1015,15 @@ export type Database = {
           bcc_emails: string[]
           body_html: string | null
           body_text: string | null
+          bounce_reason: string | null
+          bounce_type: string | null
+          bounced_at: string | null
           cc_emails: string[]
           client_id: string | null
+          complained_at: string | null
           created_at: string
           created_by: string | null
+          delivered_at: string | null
           error: string | null
           folder: string
           from_email: string | null
@@ -1043,10 +1048,15 @@ export type Database = {
           bcc_emails?: string[]
           body_html?: string | null
           body_text?: string | null
+          bounce_reason?: string | null
+          bounce_type?: string | null
+          bounced_at?: string | null
           cc_emails?: string[]
           client_id?: string | null
+          complained_at?: string | null
           created_at?: string
           created_by?: string | null
+          delivered_at?: string | null
           error?: string | null
           folder?: string
           from_email?: string | null
@@ -1071,10 +1081,15 @@ export type Database = {
           bcc_emails?: string[]
           body_html?: string | null
           body_text?: string | null
+          bounce_reason?: string | null
+          bounce_type?: string | null
+          bounced_at?: string | null
           cc_emails?: string[]
           client_id?: string | null
+          complained_at?: string | null
           created_at?: string
           created_by?: string | null
+          delivered_at?: string | null
           error?: string | null
           folder?: string
           from_email?: string | null
@@ -1113,6 +1128,74 @@ export type Database = {
             foreignKeyName: "mail_messages_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mail_settings: {
+        Row: {
+          created_at: string
+          default_email_template_id: string | null
+          default_linkedin_template_id: string | null
+          default_whatsapp_template_id: string | null
+          from_email: string | null
+          from_name: string | null
+          organization_id: string
+          reply_to: string | null
+          signature: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_email_template_id?: string | null
+          default_linkedin_template_id?: string | null
+          default_whatsapp_template_id?: string | null
+          from_email?: string | null
+          from_name?: string | null
+          organization_id: string
+          reply_to?: string | null
+          signature?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_email_template_id?: string | null
+          default_linkedin_template_id?: string | null
+          default_whatsapp_template_id?: string | null
+          from_email?: string | null
+          from_name?: string | null
+          organization_id?: string
+          reply_to?: string | null
+          signature?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mail_settings_default_email_template_id_fkey"
+            columns: ["default_email_template_id"]
+            isOneToOne: false
+            referencedRelation: "outreach_message_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mail_settings_default_linkedin_template_id_fkey"
+            columns: ["default_linkedin_template_id"]
+            isOneToOne: false
+            referencedRelation: "outreach_message_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mail_settings_default_whatsapp_template_id_fkey"
+            columns: ["default_whatsapp_template_id"]
+            isOneToOne: false
+            referencedRelation: "outreach_message_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mail_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
