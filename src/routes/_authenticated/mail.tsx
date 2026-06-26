@@ -131,10 +131,14 @@ function MailPage() {
     threadId: string | null;
   } | null>(null);
 
+  const [bulkIds, setBulkIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+
   const markRead = useServerFn(markMailRead);
   const getUrl = useServerFn(getAttachmentUrl);
   const delAttach = useServerFn(deleteAttachment);
   const delMail = useServerFn(deleteMail);
+  const bulkUpdate = useServerFn(bulkUpdateMail);
 
   const load = async () => {
     if (!currentOrganizationId) return;
