@@ -582,10 +582,10 @@ export const markMessageHandled = createServerFn({ method: "POST" })
       const tgt = target as { company: string; contact_name: string | null } | null;
       await context.supabase.from("crm_activities").insert({
         organization_id: m.organization_id,
-        type: "meeting",
-        subject: `Afspraak met ${tgt?.contact_name ?? tgt?.company ?? "prospect"}`,
-        notes: "Aangemaakt vanuit cold-outreach inbox",
-        outreach_target_id: m.target_id,
+        kind: "meeting",
+        title: `Afspraak met ${tgt?.contact_name ?? tgt?.company ?? "prospect"}`,
+        body: "Aangemaakt vanuit cold-outreach inbox",
+        target_id: m.target_id,
         created_by: context.userId,
       } as never);
     }
