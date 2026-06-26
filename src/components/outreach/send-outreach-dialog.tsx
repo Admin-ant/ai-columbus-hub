@@ -36,7 +36,7 @@ type Target = {
   email: string | null;
   phone: string | null;
   linkedin_url: string | null;
-  province: string | null;
+  province?: string | null;
 };
 
 type Props = {
