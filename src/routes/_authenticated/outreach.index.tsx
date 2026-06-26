@@ -127,6 +127,8 @@ function OutreachDashboard() {
   const scheduleSeqFn = useServerFn(scheduleSequence);
   const importFn = useServerFn(bulkImportTargets);
   const navigate = useNavigate();
+  const [unreadInbox, setUnreadInbox] = useState(0);
+  const [builderCampaignId, setBuilderCampaignId] = useState<string | null>(null);
 
   async function sendNow(t: TargetRow) {
     if (!t.email) return toast.error("Geen e-mailadres");
