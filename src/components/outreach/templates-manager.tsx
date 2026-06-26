@@ -90,6 +90,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
       .from("outreach_message_templates")
       .update({
         name: editing.name,
+        description: editing.description,
         subject: editing.subject,
         body: editing.body,
       })
