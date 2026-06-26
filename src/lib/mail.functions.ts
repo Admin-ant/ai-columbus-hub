@@ -229,3 +229,42 @@ export const deleteMail = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+const BULK_SCHEMA = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(500),
+  action: z.enum(["mark_read", "mark_unread", "delete", "move"]),
+  folder: z.enum(["inbox", "sent", "draft"]).optional(),
+});
+
+export const bulkUpdateMail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => BULK_SCHEMA.parse(d))
+  .handler(async ({ data, context }) => {
+    if (data.action === "delete") {
+      const { error } = await context.supabase
+        .from("mail_messages")
+        .delete()
+        .in("id", data.ids);
+      if (error) throw new Error(error.message);
+      return { ok: true, count: data.ids.length };
+    }
+    if (data.action === "move") {
+      if (!data.folder) throw new Error("folder ontbreekt");
+      const { error } = await context.supabase
+        .from("mail_messages")
+        .update({ folder: data.folder } as never)
+        .in("id", data.ids);
+      if (error) throw new Error(error.message);
+      return { ok: true, count: data.ids.length };
+    }
+    const patch =
+      data.action === "mark_read"
+        ? { read_at: new Date().toISOString() }
+        : { read_at: null };
+    const { error } = await context.supabase
+      .from("mail_messages")
+      .update(patch as never)
+      .in("id", data.ids);
+    if (error) throw new Error(error.message);
+    return { ok: true, count: data.ids.length };
+  });
