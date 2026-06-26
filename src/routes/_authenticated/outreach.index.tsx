@@ -668,6 +668,19 @@ function TargetCard({
           <FileSignature className="mr-1 h-3 w-3" /> Offerte
         </Button>
       </div>
+      <div className="mt-1 flex gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onPersonalize}
+          className="h-7 flex-1 justify-start text-[11px] hover:bg-[#ff2bd6]/10"
+          style={{ color: ACCENT }}
+          title="AI personaliseer onderwerp + body voor deze prospect"
+        >
+          <Sparkles className="mr-1 h-3 w-3" />
+          {row.personalized_at ? "Re-personaliseer" : "Personaliseer"}
+        </Button>
+      </div>
       {row.email && (
         <div className="mt-1 flex gap-1">
           <Button
