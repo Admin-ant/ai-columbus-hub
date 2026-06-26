@@ -1,90 +1,75 @@
-## Cold Outreach v2 — grote uitbreiding
+## Doel
+Cold Outreach uitbreiden naar een provincie-gebaseerde recruitment-pipeline met herbruikbare mail/LinkedIn/WhatsApp templates, drag-and-drop kanban, en een demo-planner.
 
-Vier samenhangende verbeteringen aan de bestaande Outreach-module, met nieuwe componenten, server functions en DB-uitbreidingen. RLS-policies blijven org-scoped zoals nu.
+## 1. Database (1 migratie)
 
-### 1. AI-personalisatie per lead
+**Nieuwe tabel `outreach_message_templates`** (per organization):
+- `name`, `channel` (email/linkedin/whatsapp), `subject`, `body`, `is_default` (bool, per channel)
+- RLS + GRANTs op org-membership
 
-- Nieuwe server fn `personalizeForTarget` die per prospect een opener + body genereert op basis van `outreach_targets.research_summary`, campagne-pitch en gekozen variant.
-- Bulk-actie "AI personaliseer geselecteerden" in de leadtabel — schrijft naar nieuwe kolommen `outreach_targets.personalized_subject` / `personalized_body` / `personalized_at`.
-- Cron `outreach-sequence` gebruikt eerst personalized velden, valt terug op sequence-step template.
-- Knop "Research + Personaliseer" combineert bestaande `researchLead` met nieuwe personalisatie.
+**Uitbreiden bestaande tabellen:**
+- `outreach_targets`: `province` (text), `demo_type` (online/onsite/null), `demo_at` (timestamptz)
+- `outreach_campaigns`: `province` (text, optioneel)
 
-### 2. Sequence-builder UX
+**Seed** (in migratie): 3 default templates per nieuwe organisatie via een trigger op `organizations` insert, en backfill voor bestaande orgs:
+- Sjabloon 1 — Email recruitment ("Halveer de screeningstijd voor {{company}} in {{province}} 🚀")
+- Sjabloon 2 — LinkedIn ("…sterk vertegenwoordigd in de {{province}} recruitmentmarkt…")
+- Sjabloon 3 — WhatsApp opvolging
 
-- Nieuwe component `<SequenceBuilder>` (drag-and-drop met `@dnd-kit/sortable`, al aanwezig).
-- Per stap: kanaal (email / linkedin / cold-call / wait), delay (dagen), subject + body met `{{variabelen}}` token-picker, en condities:
-  - `if_no_reply` (default)
-  - `if_opened`
-  - `if_clicked`
-  - `stop_on_reply` toggle per stap
-- Live preview-paneel rechts (rendert met sample-vars).
-- Sla op in bestaande `outreach_campaigns.sequence_steps` (jsonb) — schema breidt uit met `condition` en `wait_days` velden, backwards compatible.
-- Nieuw kolom `outreach_campaigns.timezone` + verzendvenster (`send_window_start` / `send_window_end`).
+## 2. Templates pagina (nieuw)
 
-### 3. Inbox & reply management
+**Route**: `src/routes/_authenticated/outreach.templates.tsx`
+- Sidebar-item "Templates" onder Outreach
+- Lijst per kanaal (email / linkedin / whatsapp) met aanmaken/bewerken/verwijderen
+- Tokens-picker: `{{contact_name}}` `{{company}}` `{{province}}` `{{sender_name}}`
+- Live preview met sample vars
+- Knop "Markeer als standaard" per kanaal
 
-- Nieuwe route `/_authenticated/outreach/inbox` met unified inbox: alle `outreach_messages` direction=inbound, gegroepeerd per thread (target_id).
-- Filters: status (unread/read/snoozed/done), classificatie (positive/interested/needs_followup/...), campagne.
-- Per thread: volledige historie, quick-reply box met AI-suggesties (3 varianten via nieuwe `suggestReplyDrafts` server fn), snooze tot datum, "markeer als afspraak ingepland" → maakt `crm_activities` rij.
-- Nieuwe kolommen `outreach_messages`: `read_at`, `snooze_until`, `handled_at`, `handled_by`.
-- Realtime updates via Supabase channel op `outreach_messages`.
-- Sidebar krijgt unread badge.
+## 3. Pipeline UX (uitbreiden `outreach.index.tsx`)
 
-### 4. Analytics & A/B inzichten
+### "+ Prospect" modal uitbreiden
+Bestaande `NewTargetDialog` krijgt:
+- **Provincie**-dropdown (12 NL provincies, verplicht als gekoppelde campagne een provincie heeft)
+- **Telefoonnummer** veld (al deels aanwezig, zichtbaar maken)
+- Sectie **"Demo inplannen"** (optioneel): demo-type select (Teams/Op locatie) + datetime-input
 
-- Nieuwe tab "Analytics" op outreach-pagina met KPI-cards: verzonden, open rate, reply rate, positive reply rate, geboekte gesprekken — per gekozen tijdvenster (7/30/90 dagen).
-- Per-campagne tabel met dezelfde metrics + winnaar-variant.
-- Per-variant breakdown (uit `outreach_campaigns.pitch_variants`): impressions, replies, positive %, met confidence-indicator.
-- Per-stap funnel (welke stap genereert reacties).
-- Voor open/click tracking: nieuwe kolommen `outreach_messages.opened_at`, `clicked_at` + nieuwe publieke route `/api/public/hooks/outreach-track/:type/:logId` (1x1 pixel voor open, redirect voor click), gesigneerd met HMAC over logId. Email HTML krijgt automatisch tracking-pixel + link-rewriting bij verzenden.
+### Drag-and-drop kanban
+- `@dnd-kit/core` toevoegen (`bun add @dnd-kit/core @dnd-kit/sortable`)
+- Kolommen worden `<DroppableColumn>`, kaarten `<DraggableCard>`
+- Drop op nieuwe stage → `moveTarget()` (bestaat al)
 
-### Technische uitwerking
+### Move-to-AANGESCHREVEN dialog
+- Bij drop op "aangeschreven": open `<SendOutreachDialog>` met:
+  - Tabs: Email / LinkedIn
+  - Templates voor org geladen, tokens (`{{province}}` etc.) automatisch ingevuld vanuit target
+  - "Kopieer tekst" knop per kanaal
+  - Email: directe `mailto:` link, knop "Verstuur via systeem" (gebruikt bestaande `sendOutreachEmail`)
+  - LinkedIn: open `linkedin_url` in nieuwe tab
 
-**DB-migration** (één migration):
+### Move-to-GESPREK
+- Als geen demo gepland → prompt voor demo-type + datum
+- Kaart toont prominent badge: `📹 Teams — di 30 jun 14:00` of `📍 Op locatie — …`
 
-```sql
-ALTER TABLE public.outreach_targets
-  ADD COLUMN personalized_subject text,
-  ADD COLUMN personalized_body text,
-  ADD COLUMN personalized_at timestamptz,
-  ADD COLUMN active_variant_id text;
+### "+ Provinciale campagne" snelactie
+Nieuwe knop naast "Nieuwe campagne": opent dropdown met 12 provincies → maakt campagne `"Recruitment {{Provincie}}"` met `province` ingevuld en koppelt automatisch de 3 default templates als `sequence_steps`.
 
-ALTER TABLE public.outreach_campaigns
-  ADD COLUMN timezone text DEFAULT 'Europe/Amsterdam',
-  ADD COLUMN send_window_start smallint DEFAULT 8,
-  ADD COLUMN send_window_end smallint DEFAULT 18;
+## 4. Bestanden
 
-ALTER TABLE public.outreach_messages
-  ADD COLUMN read_at timestamptz,
-  ADD COLUMN snooze_until timestamptz,
-  ADD COLUMN handled_at timestamptz,
-  ADD COLUMN handled_by uuid,
-  ADD COLUMN opened_at timestamptz,
-  ADD COLUMN clicked_at timestamptz,
-  ADD COLUMN variant_id text;
+**Nieuw:**
+- `supabase/migrations/<ts>_outreach_templates_province.sql`
+- `src/routes/_authenticated/outreach.templates.tsx`
+- `src/components/outreach/templates-manager.tsx`
+- `src/components/outreach/send-outreach-dialog.tsx`
+- `src/components/outreach/pipeline-board.tsx` (dnd wrapper)
+- `src/lib/outreach-templates.ts` (render-tokens helper, constants NL_PROVINCES)
 
-CREATE INDEX IF NOT EXISTS idx_outreach_messages_inbox
-  ON public.outreach_messages(organization_id, direction, received_at DESC)
-  WHERE direction = 'inbound';
-```
+**Bewerken:**
+- `src/routes/_authenticated/outreach.index.tsx` (kanban → DnD, prospect-modal uitbreiden, gesprek-badge)
+- `src/components/app-sidebar.tsx` (Templates sub-item)
+- `src/lib/outreach.functions.ts` (`createProvincialCampaign` server fn)
 
-**Nieuwe / aangepaste bestanden**
+## 5. Buiten scope
+- Geen aparte WhatsApp-verzending (alleen template + "kopieer" + `wa.me/` link)
+- Geen calendar-sync voor demo's (alleen opslaan + tonen op kaart); export naar `crm_activities` mag
 
-- `src/lib/outreach.functions.ts` — `personalizeForTarget`, `bulkPersonalize`, `suggestReplyDrafts`, `markMessageHandled`, `snoozeMessage`.
-- `src/lib/outreach-tracking.ts` — HMAC helpers, link-rewriting.
-- `src/routes/api/public/hooks/outreach-track.$type.$id.ts` — pixel + click redirect.
-- `src/routes/api/public/hooks/outreach-sequence.ts` — uitgebreid met send-window respect, personalized fallback, conditional steps, tracking-injection.
-- `src/routes/_authenticated/outreach.inbox.tsx` — nieuwe inbox-route.
-- `src/components/outreach/sequence-builder.tsx` — drag-drop editor.
-- `src/components/outreach/analytics-tab.tsx` — KPI dashboard.
-- `src/components/outreach/inbox-thread.tsx` — thread-view met reply-box.
-- `src/routes/_authenticated/outreach.index.tsx` — nieuwe tabs (Pipeline / Campagnes / Analytics), gebruikt nieuwe builder/components.
-- `src/components/app-sidebar.tsx` — unread badge voor inbox.
-
-**Tracking-secret**: hergebruikt `CRON_SECRET` voor HMAC; geen nieuwe secret.
-
-### Scope-grenzen (uitgesloten)
-
-- Geen LinkedIn-automation (alleen handmatig afvinken).
-- Geen calendaring-integratie (alleen "afspraak ingepland" toggle).
-- Geen multi-mailbox / dedicated IP setup — `OUTREACH_FROM_EMAIL` blijft enkele bron.
+Eerst de migratie indienen voor goedkeuring, daarna code.

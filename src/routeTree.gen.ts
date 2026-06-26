@@ -32,6 +32,7 @@ import { Route as AuthenticatedAnalyticsIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedAiColumbusIndexRouteImport } from './routes/_authenticated/ai-columbus.index'
 import { Route as QuoteTokenPdfRouteImport } from './routes/quote.$token.pdf'
 import { Route as AcceptQuoteTokenRouteImport } from './routes/accept.quote.$token'
+import { Route as AuthenticatedOutreachTemplatesRouteImport } from './routes/_authenticated/outreach.templates'
 import { Route as AuthenticatedNetqloudServersRouteImport } from './routes/_authenticated/netqloud.servers'
 import { Route as AuthenticatedNetqloudKlantenRouteImport } from './routes/_authenticated/netqloud.klanten'
 import { Route as AuthenticatedNetqloudInstellingenRouteImport } from './routes/_authenticated/netqloud.instellingen'
@@ -176,6 +177,12 @@ const AcceptQuoteTokenRoute = AcceptQuoteTokenRouteImport.update({
   path: '/accept/quote/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedOutreachTemplatesRoute =
+  AuthenticatedOutreachTemplatesRouteImport.update({
+    id: '/outreach/templates',
+    path: '/outreach/templates',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedNetqloudServersRoute =
   AuthenticatedNetqloudServersRouteImport.update({
     id: '/servers',
@@ -335,6 +342,7 @@ export interface FileRoutesByFullPath {
   '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
+  '/outreach/templates': typeof AuthenticatedOutreachTemplatesRoute
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/quote/$token/pdf': typeof QuoteTokenPdfRoute
   '/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
@@ -379,6 +387,7 @@ export interface FileRoutesByTo {
   '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
+  '/outreach/templates': typeof AuthenticatedOutreachTemplatesRoute
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/quote/$token/pdf': typeof QuoteTokenPdfRoute
   '/ai-columbus': typeof AuthenticatedAiColumbusIndexRoute
@@ -427,6 +436,7 @@ export interface FileRoutesById {
   '/_authenticated/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/_authenticated/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/_authenticated/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
+  '/_authenticated/outreach/templates': typeof AuthenticatedOutreachTemplatesRoute
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/quote/$token/pdf': typeof QuoteTokenPdfRoute
   '/_authenticated/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
@@ -475,6 +485,7 @@ export interface FileRouteTypes {
     | '/netqloud/instellingen'
     | '/netqloud/klanten'
     | '/netqloud/servers'
+    | '/outreach/templates'
     | '/accept/quote/$token'
     | '/quote/$token/pdf'
     | '/ai-columbus/'
@@ -519,6 +530,7 @@ export interface FileRouteTypes {
     | '/netqloud/instellingen'
     | '/netqloud/klanten'
     | '/netqloud/servers'
+    | '/outreach/templates'
     | '/accept/quote/$token'
     | '/quote/$token/pdf'
     | '/ai-columbus'
@@ -566,6 +578,7 @@ export interface FileRouteTypes {
     | '/_authenticated/netqloud/instellingen'
     | '/_authenticated/netqloud/klanten'
     | '/_authenticated/netqloud/servers'
+    | '/_authenticated/outreach/templates'
     | '/accept/quote/$token'
     | '/quote/$token/pdf'
     | '/_authenticated/ai-columbus/'
@@ -764,6 +777,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/accept/quote/$token'
       preLoaderRoute: typeof AcceptQuoteTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/outreach/templates': {
+      id: '/_authenticated/outreach/templates'
+      path: '/outreach/templates'
+      fullPath: '/outreach/templates'
+      preLoaderRoute: typeof AuthenticatedOutreachTemplatesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/netqloud/servers': {
       id: '/_authenticated/netqloud/servers'
@@ -1032,6 +1052,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedCrmActivitiesRoute: typeof AuthenticatedCrmActivitiesRoute
+  AuthenticatedOutreachTemplatesRoute: typeof AuthenticatedOutreachTemplatesRoute
   AuthenticatedAnalyticsIndexRoute: typeof AuthenticatedAnalyticsIndexRoute
   AuthenticatedOfferteStudioIndexRoute: typeof AuthenticatedOfferteStudioIndexRoute
   AuthenticatedOutreachIndexRoute: typeof AuthenticatedOutreachIndexRoute
@@ -1052,6 +1073,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedCrmActivitiesRoute: AuthenticatedCrmActivitiesRoute,
+  AuthenticatedOutreachTemplatesRoute: AuthenticatedOutreachTemplatesRoute,
   AuthenticatedAnalyticsIndexRoute: AuthenticatedAnalyticsIndexRoute,
   AuthenticatedOfferteStudioIndexRoute: AuthenticatedOfferteStudioIndexRoute,
   AuthenticatedOutreachIndexRoute: AuthenticatedOutreachIndexRoute,
@@ -1080,13 +1102,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
