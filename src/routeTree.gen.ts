@@ -37,6 +37,7 @@ import { Route as AuthenticatedOutreachTemplatesRouteImport } from './routes/_au
 import { Route as AuthenticatedNetqloudServersRouteImport } from './routes/_authenticated/netqloud.servers'
 import { Route as AuthenticatedNetqloudKlantenRouteImport } from './routes/_authenticated/netqloud.klanten'
 import { Route as AuthenticatedNetqloudInstellingenRouteImport } from './routes/_authenticated/netqloud.instellingen'
+import { Route as AuthenticatedMailSettingsRouteImport } from './routes/_authenticated/mail.settings'
 import { Route as AuthenticatedCrmActivitiesRouteImport } from './routes/_authenticated/crm.activities'
 import { Route as AuthenticatedAiColumbusRapportagesRouteImport } from './routes/_authenticated/ai-columbus.rapportages'
 import { Route as AuthenticatedAiColumbusProjectenRouteImport } from './routes/_authenticated/ai-columbus.projecten'
@@ -46,6 +47,7 @@ import { Route as AuthenticatedAiColumbusLeadsRouteImport } from './routes/_auth
 import { Route as AuthenticatedAiColumbusKlantenRouteImport } from './routes/_authenticated/ai-columbus.klanten'
 import { Route as AuthenticatedAiColumbusInstellingenRouteImport } from './routes/_authenticated/ai-columbus.instellingen'
 import { Route as ApiPublicHooksStudioFollowupsRouteImport } from './routes/api/public/hooks/studio-followups'
+import { Route as ApiPublicHooksResendEventsRouteImport } from './routes/api/public/hooks/resend-events'
 import { Route as ApiPublicHooksQuoteFollowupsRouteImport } from './routes/api/public/hooks/quote-followups'
 import { Route as ApiPublicHooksOutreachTrackRouteImport } from './routes/api/public/hooks/outreach-track'
 import { Route as ApiPublicHooksOutreachSequenceRouteImport } from './routes/api/public/hooks/outreach-sequence'
@@ -208,6 +210,12 @@ const AuthenticatedNetqloudInstellingenRoute =
     path: '/instellingen',
     getParentRoute: () => AuthenticatedNetqloudRoute,
   } as any)
+const AuthenticatedMailSettingsRoute =
+  AuthenticatedMailSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedMailRoute,
+  } as any)
 const AuthenticatedCrmActivitiesRoute =
   AuthenticatedCrmActivitiesRouteImport.update({
     id: '/crm/activities',
@@ -260,6 +268,12 @@ const ApiPublicHooksStudioFollowupsRoute =
   ApiPublicHooksStudioFollowupsRouteImport.update({
     id: '/api/public/hooks/studio-followups',
     path: '/api/public/hooks/studio-followups',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksResendEventsRoute =
+  ApiPublicHooksResendEventsRouteImport.update({
+    id: '/api/public/hooks/resend-events',
+    path: '/api/public/hooks/resend-events',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksQuoteFollowupsRoute =
@@ -338,7 +352,7 @@ export interface FileRoutesByFullPath {
   '/enterprise': typeof AuthenticatedEnterpriseRoute
   '/gebruikers': typeof AuthenticatedGebruikersRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
-  '/mail': typeof AuthenticatedMailRoute
+  '/mail': typeof AuthenticatedMailRouteWithChildren
   '/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
   '/producten': typeof AuthenticatedProductenRoute
   '/quotes': typeof AuthenticatedQuotesRoute
@@ -353,6 +367,7 @@ export interface FileRoutesByFullPath {
   '/ai-columbus/projecten': typeof AuthenticatedAiColumbusProjectenRouteWithChildren
   '/ai-columbus/rapportages': typeof AuthenticatedAiColumbusRapportagesRoute
   '/crm/activities': typeof AuthenticatedCrmActivitiesRoute
+  '/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
@@ -375,6 +390,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/outreach-sequence': typeof ApiPublicHooksOutreachSequenceRoute
   '/api/public/hooks/outreach-track': typeof ApiPublicHooksOutreachTrackRoute
   '/api/public/hooks/quote-followups': typeof ApiPublicHooksQuoteFollowupsRoute
+  '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
 }
 export interface FileRoutesByTo {
@@ -385,7 +401,7 @@ export interface FileRoutesByTo {
   '/enterprise': typeof AuthenticatedEnterpriseRoute
   '/gebruikers': typeof AuthenticatedGebruikersRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
-  '/mail': typeof AuthenticatedMailRoute
+  '/mail': typeof AuthenticatedMailRouteWithChildren
   '/producten': typeof AuthenticatedProductenRoute
   '/quotes': typeof AuthenticatedQuotesRoute
   '/teams': typeof AuthenticatedTeamsRoute
@@ -400,6 +416,7 @@ export interface FileRoutesByTo {
   '/ai-columbus/projecten': typeof AuthenticatedAiColumbusProjectenRouteWithChildren
   '/ai-columbus/rapportages': typeof AuthenticatedAiColumbusRapportagesRoute
   '/crm/activities': typeof AuthenticatedCrmActivitiesRoute
+  '/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
@@ -422,6 +439,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/outreach-sequence': typeof ApiPublicHooksOutreachSequenceRoute
   '/api/public/hooks/outreach-track': typeof ApiPublicHooksOutreachTrackRoute
   '/api/public/hooks/quote-followups': typeof ApiPublicHooksQuoteFollowupsRoute
+  '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
 }
 export interface FileRoutesById {
@@ -435,7 +453,7 @@ export interface FileRoutesById {
   '/_authenticated/enterprise': typeof AuthenticatedEnterpriseRoute
   '/_authenticated/gebruikers': typeof AuthenticatedGebruikersRoute
   '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
-  '/_authenticated/mail': typeof AuthenticatedMailRoute
+  '/_authenticated/mail': typeof AuthenticatedMailRouteWithChildren
   '/_authenticated/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
   '/_authenticated/producten': typeof AuthenticatedProductenRoute
   '/_authenticated/quotes': typeof AuthenticatedQuotesRoute
@@ -451,6 +469,7 @@ export interface FileRoutesById {
   '/_authenticated/ai-columbus/projecten': typeof AuthenticatedAiColumbusProjectenRouteWithChildren
   '/_authenticated/ai-columbus/rapportages': typeof AuthenticatedAiColumbusRapportagesRoute
   '/_authenticated/crm/activities': typeof AuthenticatedCrmActivitiesRoute
+  '/_authenticated/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/_authenticated/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/_authenticated/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/_authenticated/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
@@ -473,6 +492,7 @@ export interface FileRoutesById {
   '/api/public/hooks/outreach-sequence': typeof ApiPublicHooksOutreachSequenceRoute
   '/api/public/hooks/outreach-track': typeof ApiPublicHooksOutreachTrackRoute
   '/api/public/hooks/quote-followups': typeof ApiPublicHooksQuoteFollowupsRoute
+  '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
 }
 export interface FileRouteTypes {
@@ -502,6 +522,7 @@ export interface FileRouteTypes {
     | '/ai-columbus/projecten'
     | '/ai-columbus/rapportages'
     | '/crm/activities'
+    | '/mail/settings'
     | '/netqloud/instellingen'
     | '/netqloud/klanten'
     | '/netqloud/servers'
@@ -524,6 +545,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/outreach-sequence'
     | '/api/public/hooks/outreach-track'
     | '/api/public/hooks/quote-followups'
+    | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -549,6 +571,7 @@ export interface FileRouteTypes {
     | '/ai-columbus/projecten'
     | '/ai-columbus/rapportages'
     | '/crm/activities'
+    | '/mail/settings'
     | '/netqloud/instellingen'
     | '/netqloud/klanten'
     | '/netqloud/servers'
@@ -571,6 +594,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/outreach-sequence'
     | '/api/public/hooks/outreach-track'
     | '/api/public/hooks/quote-followups'
+    | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
   id:
     | '__root__'
@@ -599,6 +623,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ai-columbus/projecten'
     | '/_authenticated/ai-columbus/rapportages'
     | '/_authenticated/crm/activities'
+    | '/_authenticated/mail/settings'
     | '/_authenticated/netqloud/instellingen'
     | '/_authenticated/netqloud/klanten'
     | '/_authenticated/netqloud/servers'
@@ -621,6 +646,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/outreach-sequence'
     | '/api/public/hooks/outreach-track'
     | '/api/public/hooks/quote-followups'
+    | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
   fileRoutesById: FileRoutesById
 }
@@ -638,6 +664,7 @@ export interface RootRouteChildren {
   ApiPublicHooksOutreachSequenceRoute: typeof ApiPublicHooksOutreachSequenceRoute
   ApiPublicHooksOutreachTrackRoute: typeof ApiPublicHooksOutreachTrackRoute
   ApiPublicHooksQuoteFollowupsRoute: typeof ApiPublicHooksQuoteFollowupsRoute
+  ApiPublicHooksResendEventsRoute: typeof ApiPublicHooksResendEventsRoute
   ApiPublicHooksStudioFollowupsRoute: typeof ApiPublicHooksStudioFollowupsRoute
 }
 
@@ -839,6 +866,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNetqloudInstellingenRouteImport
       parentRoute: typeof AuthenticatedNetqloudRoute
     }
+    '/_authenticated/mail/settings': {
+      id: '/_authenticated/mail/settings'
+      path: '/settings'
+      fullPath: '/mail/settings'
+      preLoaderRoute: typeof AuthenticatedMailSettingsRouteImport
+      parentRoute: typeof AuthenticatedMailRoute
+    }
     '/_authenticated/crm/activities': {
       id: '/_authenticated/crm/activities'
       path: '/crm/activities'
@@ -900,6 +934,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/studio-followups'
       fullPath: '/api/public/hooks/studio-followups'
       preLoaderRoute: typeof ApiPublicHooksStudioFollowupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/resend-events': {
+      id: '/api/public/hooks/resend-events'
+      path: '/api/public/hooks/resend-events'
+      fullPath: '/api/public/hooks/resend-events'
+      preLoaderRoute: typeof ApiPublicHooksResendEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/quote-followups': {
@@ -1059,6 +1100,17 @@ const AuthenticatedBoekhoudingRouteWithChildren =
     AuthenticatedBoekhoudingRouteChildren,
   )
 
+interface AuthenticatedMailRouteChildren {
+  AuthenticatedMailSettingsRoute: typeof AuthenticatedMailSettingsRoute
+}
+
+const AuthenticatedMailRouteChildren: AuthenticatedMailRouteChildren = {
+  AuthenticatedMailSettingsRoute: AuthenticatedMailSettingsRoute,
+}
+
+const AuthenticatedMailRouteWithChildren =
+  AuthenticatedMailRoute._addFileChildren(AuthenticatedMailRouteChildren)
+
 interface AuthenticatedNetqloudRouteChildren {
   AuthenticatedNetqloudInstellingenRoute: typeof AuthenticatedNetqloudInstellingenRoute
   AuthenticatedNetqloudKlantenRoute: typeof AuthenticatedNetqloudKlantenRoute
@@ -1086,7 +1138,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEnterpriseRoute: typeof AuthenticatedEnterpriseRoute
   AuthenticatedGebruikersRoute: typeof AuthenticatedGebruikersRoute
   AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
-  AuthenticatedMailRoute: typeof AuthenticatedMailRoute
+  AuthenticatedMailRoute: typeof AuthenticatedMailRouteWithChildren
   AuthenticatedNetqloudRoute: typeof AuthenticatedNetqloudRouteWithChildren
   AuthenticatedProductenRoute: typeof AuthenticatedProductenRoute
   AuthenticatedQuotesRoute: typeof AuthenticatedQuotesRoute
@@ -1108,7 +1160,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEnterpriseRoute: AuthenticatedEnterpriseRoute,
   AuthenticatedGebruikersRoute: AuthenticatedGebruikersRoute,
   AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
-  AuthenticatedMailRoute: AuthenticatedMailRoute,
+  AuthenticatedMailRoute: AuthenticatedMailRouteWithChildren,
   AuthenticatedNetqloudRoute: AuthenticatedNetqloudRouteWithChildren,
   AuthenticatedProductenRoute: AuthenticatedProductenRoute,
   AuthenticatedQuotesRoute: AuthenticatedQuotesRoute,
@@ -1140,6 +1192,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksOutreachSequenceRoute: ApiPublicHooksOutreachSequenceRoute,
   ApiPublicHooksOutreachTrackRoute: ApiPublicHooksOutreachTrackRoute,
   ApiPublicHooksQuoteFollowupsRoute: ApiPublicHooksQuoteFollowupsRoute,
+  ApiPublicHooksResendEventsRoute: ApiPublicHooksResendEventsRoute,
   ApiPublicHooksStudioFollowupsRoute: ApiPublicHooksStudioFollowupsRoute,
 }
 export const routeTree = rootRouteImport

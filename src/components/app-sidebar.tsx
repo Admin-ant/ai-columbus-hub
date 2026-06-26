@@ -61,12 +61,10 @@ const topItems: NavItem[] = [
   { title: "Offerte Studio", url: "/offerte-studio", icon: Wand2 },
   { title: "Cold Outreach", url: "/outreach", icon: Megaphone },
   { title: "Mail", url: "/mail", icon: Mail },
+  { title: "Mail instellingen", url: "/mail/settings", icon: Settings },
   { title: "Mail templates", url: "/outreach/templates", icon: FileText },
   { title: "CRM Activiteiten", url: "/crm/activities", icon: ClipboardList },
   { title: "Enterprise", url: "/enterprise", icon: Rocket },
-  { title: "Analytics", url: "/analytics", icon: BarChart3 },
-  { title: "Boekhouding", url: "/boekhouding", icon: Receipt },
-  { title: "Producten & Prijzen", url: "/producten", icon: Package },
   { title: "Teams", url: "/teams", icon: Users },
 ];
 
@@ -103,12 +101,17 @@ const sections: NavSection[] = [
       { title: "Instellingen", url: "/netqloud/instellingen", icon: Settings },
     ],
   },
-
 ];
 
 const adminItems: NavItem[] = [
   { title: "Administratie", url: "/administratie", icon: FileText, requiredRole: "admin" },
   { title: "Gebruikers", url: "/gebruikers", icon: UserCog, requiredRole: "admin" },
+];
+
+const administratieSubItems: NavItem[] = [
+  { title: "Analytics", url: "/analytics", icon: BarChart3 },
+  { title: "Boekhouding", url: "/boekhouding", icon: Receipt },
+  { title: "Producten & Prijzen", url: "/producten", icon: Package },
 ];
 
 export function AppSidebar() {
@@ -236,16 +239,37 @@ export function AppSidebar() {
             <SidebarGroupLabel>Beheer</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {visibleAdmin.map((item) => (
-                  <SidebarMenuItem key={item.url}>
-                    <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                      <Link to={item.url} className="flex items-center gap-2">
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {visibleAdmin.map((item) => {
+                  const isAdministratie = item.url === "/administratie";
+                  const showSub =
+                    isAdministratie &&
+                    (currentPath === "/administratie" ||
+                      administratieSubItems.some((s) => currentPath === s.url));
+                  return (
+                    <SidebarMenuItem key={item.url}>
+                      <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                        <Link to={item.url} className="flex items-center gap-2">
+                          <item.icon className="h-4 w-4" />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                      {showSub && (
+                        <SidebarMenuSub>
+                          {administratieSubItems.map((s) => (
+                            <SidebarMenuSubItem key={s.url}>
+                              <SidebarMenuSubButton asChild isActive={isActive(s.url)}>
+                                <Link to={s.url} className="flex items-center gap-2">
+                                  <s.icon className="h-3.5 w-3.5" />
+                                  <span>{s.title}</span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          ))}
+                        </SidebarMenuSub>
+                      )}
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

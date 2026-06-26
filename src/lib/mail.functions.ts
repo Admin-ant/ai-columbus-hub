@@ -63,10 +63,25 @@ export const sendMail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => SEND_SCHEMA.parse(d))
   .handler(async ({ data, context }) => {
-    const from_email = process.env.OUTREACH_FROM_EMAIL ?? "outreach@resend.dev";
-    const from = data.from_name ? `${data.from_name} <${from_email}>` : from_email;
+    // Per-org overrides
+    const { data: settings } = await context.supabase
+      .from("mail_settings")
+      .select("from_email, from_name, reply_to, signature")
+      .eq("organization_id", data.organization_id)
+      .maybeSingle();
+    const s = (settings ?? null) as {
+      from_email: string | null;
+      from_name: string | null;
+      reply_to: string | null;
+      signature: string | null;
+    } | null;
+    const from_email = s?.from_email || process.env.OUTREACH_FROM_EMAIL || "outreach@resend.dev";
+    const from_name = data.from_name ?? s?.from_name ?? null;
+    const from = from_name ? `${from_name} <${from_email}>` : from_email;
+    const replyTo = s?.reply_to || undefined;
+    const fullBody = s?.signature ? `${data.body}\n\n${s.signature}` : data.body;
 
-    const html = `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111;white-space:pre-wrap">${data.body.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]!))}</div>`;
+    const html = `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111;white-space:pre-wrap">${fullBody.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]!))}</div>`;
 
     // Resolve attachments: download from storage and base64-encode
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -86,12 +101,12 @@ export const sendMail = createServerFn({ method: "POST" })
       folder: "sent",
       thread_id: data.thread_id ?? null,
       from_email,
-      from_name: data.from_name ?? null,
+      from_name: from_name,
       to_emails: data.to,
       cc_emails: data.cc ?? [],
       bcc_emails: data.bcc ?? [],
       subject: data.subject,
-      body_text: data.body,
+      body_text: fullBody,
       body_html: html,
       in_reply_to: data.in_reply_to ?? null,
       client_id: data.client_id ?? null,
@@ -116,7 +131,8 @@ export const sendMail = createServerFn({ method: "POST" })
         bcc: data.bcc,
         subject: data.subject,
         html,
-        text: data.body,
+        text: fullBody,
+        replyTo,
         headers: { "X-Mail-Message-Id": id },
         attachments: att.length ? att : undefined,
       });
@@ -175,4 +191,41 @@ export const getAttachmentUrl = createServerFn({ method: "POST" })
       .createSignedUrl(data.path, 60 * 10);
     if (error || !signed) throw new Error(error?.message ?? "URL mislukt");
     return { url: signed.signedUrl };
+  });
+
+export const deleteAttachment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({ message_id: z.string().uuid(), path: z.string() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase
+      .from("mail_messages")
+      .select("attachments")
+      .eq("id", data.message_id)
+      .single();
+    if (error || !row) throw new Error(error?.message ?? "Niet gevonden");
+    const list = ((row as { attachments: Array<{ path: string }> }).attachments ?? []).filter(
+      (a) => a.path !== data.path,
+    );
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.storage.from("mail-attachments").remove([data.path]);
+    const { error: upErr } = await context.supabase
+      .from("mail_messages")
+      .update({ attachments: list } as never)
+      .eq("id", data.message_id);
+    if (upErr) throw new Error(upErr.message);
+    return { ok: true };
+  });
+
+export const deleteMail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("mail_messages")
+      .delete()
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
