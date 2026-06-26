@@ -128,9 +128,40 @@ function OutreachDashboard() {
   const sendEmailFn = useServerFn(sendOutreachEmail);
   const scheduleSeqFn = useServerFn(scheduleSequence);
   const importFn = useServerFn(bulkImportTargets);
+  const personalizeFn = useServerFn(personalizeForTarget);
+  const bulkPersonalizeFn = useServerFn(bulkPersonalize);
   const navigate = useNavigate();
   const [unreadInbox, setUnreadInbox] = useState(0);
   const [builderCampaignId, setBuilderCampaignId] = useState<string | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  async function runPersonalize(t: TargetRow) {
+    toast.loading("AI personaliseren…", { id: "pz" });
+    try {
+      await personalizeFn({ data: { target_id: t.id } });
+      toast.success("Gepersonaliseerd", { id: "pz" });
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Mislukt", { id: "pz" });
+    }
+  }
+
+  async function runBulkPersonalize() {
+    const ids = targets.filter((t) => t.stage === "nieuw" && t.email).map((t) => t.id).slice(0, 50);
+    if (ids.length === 0) return toast.error("Geen nieuwe prospects met e-mail");
+    if (!confirm(`AI personaliseer ${ids.length} prospect(s)? Dit kan even duren.`)) return;
+    setBulkBusy(true);
+    toast.loading(`Bezig met ${ids.length} prospects…`, { id: "bp" });
+    try {
+      const r = await bulkPersonalizeFn({ data: { target_ids: ids } });
+      toast.success(`${r.personalized} gepersonaliseerd, ${r.failed} fout`, { id: "bp" });
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Mislukt", { id: "bp" });
+    } finally {
+      setBulkBusy(false);
+    }
+  }
 
   async function sendNow(t: TargetRow) {
     if (!t.email) return toast.error("Geen e-mailadres");
