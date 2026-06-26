@@ -180,6 +180,7 @@ export const Route = createFileRoute("/api/public/hooks/outreach-sequence")({
                 subject,
                 body,
                 status: "queued",
+                variant_id: t.active_variant_id ?? null,
               } as never)
               .select("id")
               .single();
@@ -197,6 +198,8 @@ export const Route = createFileRoute("/api/public/hooks/outreach-sequence")({
                 body,
                 from: fromEmail,
                 logId,
+                baseUrl: new URL(request.url).origin,
+                trackingSecret: cronSecret,
               });
               await supabaseAdmin
                 .from("outreach_messages")
