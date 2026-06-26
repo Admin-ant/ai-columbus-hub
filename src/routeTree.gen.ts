@@ -37,6 +37,7 @@ import { Route as AuthenticatedOutreachTemplatesRouteImport } from './routes/_au
 import { Route as AuthenticatedNetqloudServersRouteImport } from './routes/_authenticated/netqloud.servers'
 import { Route as AuthenticatedNetqloudKlantenRouteImport } from './routes/_authenticated/netqloud.klanten'
 import { Route as AuthenticatedNetqloudInstellingenRouteImport } from './routes/_authenticated/netqloud.instellingen'
+import { Route as AuthenticatedMailSettingsRouteImport } from './routes/_authenticated/mail.settings'
 import { Route as AuthenticatedCrmActivitiesRouteImport } from './routes/_authenticated/crm.activities'
 import { Route as AuthenticatedAiColumbusRapportagesRouteImport } from './routes/_authenticated/ai-columbus.rapportages'
 import { Route as AuthenticatedAiColumbusProjectenRouteImport } from './routes/_authenticated/ai-columbus.projecten'
@@ -209,6 +210,12 @@ const AuthenticatedNetqloudInstellingenRoute =
     path: '/instellingen',
     getParentRoute: () => AuthenticatedNetqloudRoute,
   } as any)
+const AuthenticatedMailSettingsRoute =
+  AuthenticatedMailSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedMailRoute,
+  } as any)
 const AuthenticatedCrmActivitiesRoute =
   AuthenticatedCrmActivitiesRouteImport.update({
     id: '/crm/activities',
@@ -345,7 +352,7 @@ export interface FileRoutesByFullPath {
   '/enterprise': typeof AuthenticatedEnterpriseRoute
   '/gebruikers': typeof AuthenticatedGebruikersRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
-  '/mail': typeof AuthenticatedMailRoute
+  '/mail': typeof AuthenticatedMailRouteWithChildren
   '/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
   '/producten': typeof AuthenticatedProductenRoute
   '/quotes': typeof AuthenticatedQuotesRoute
@@ -360,6 +367,7 @@ export interface FileRoutesByFullPath {
   '/ai-columbus/projecten': typeof AuthenticatedAiColumbusProjectenRouteWithChildren
   '/ai-columbus/rapportages': typeof AuthenticatedAiColumbusRapportagesRoute
   '/crm/activities': typeof AuthenticatedCrmActivitiesRoute
+  '/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
@@ -393,7 +401,7 @@ export interface FileRoutesByTo {
   '/enterprise': typeof AuthenticatedEnterpriseRoute
   '/gebruikers': typeof AuthenticatedGebruikersRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
-  '/mail': typeof AuthenticatedMailRoute
+  '/mail': typeof AuthenticatedMailRouteWithChildren
   '/producten': typeof AuthenticatedProductenRoute
   '/quotes': typeof AuthenticatedQuotesRoute
   '/teams': typeof AuthenticatedTeamsRoute
@@ -408,6 +416,7 @@ export interface FileRoutesByTo {
   '/ai-columbus/projecten': typeof AuthenticatedAiColumbusProjectenRouteWithChildren
   '/ai-columbus/rapportages': typeof AuthenticatedAiColumbusRapportagesRoute
   '/crm/activities': typeof AuthenticatedCrmActivitiesRoute
+  '/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
@@ -444,7 +453,7 @@ export interface FileRoutesById {
   '/_authenticated/enterprise': typeof AuthenticatedEnterpriseRoute
   '/_authenticated/gebruikers': typeof AuthenticatedGebruikersRoute
   '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
-  '/_authenticated/mail': typeof AuthenticatedMailRoute
+  '/_authenticated/mail': typeof AuthenticatedMailRouteWithChildren
   '/_authenticated/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
   '/_authenticated/producten': typeof AuthenticatedProductenRoute
   '/_authenticated/quotes': typeof AuthenticatedQuotesRoute
@@ -460,6 +469,7 @@ export interface FileRoutesById {
   '/_authenticated/ai-columbus/projecten': typeof AuthenticatedAiColumbusProjectenRouteWithChildren
   '/_authenticated/ai-columbus/rapportages': typeof AuthenticatedAiColumbusRapportagesRoute
   '/_authenticated/crm/activities': typeof AuthenticatedCrmActivitiesRoute
+  '/_authenticated/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/_authenticated/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/_authenticated/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/_authenticated/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
@@ -512,6 +522,7 @@ export interface FileRouteTypes {
     | '/ai-columbus/projecten'
     | '/ai-columbus/rapportages'
     | '/crm/activities'
+    | '/mail/settings'
     | '/netqloud/instellingen'
     | '/netqloud/klanten'
     | '/netqloud/servers'
@@ -560,6 +571,7 @@ export interface FileRouteTypes {
     | '/ai-columbus/projecten'
     | '/ai-columbus/rapportages'
     | '/crm/activities'
+    | '/mail/settings'
     | '/netqloud/instellingen'
     | '/netqloud/klanten'
     | '/netqloud/servers'
@@ -611,6 +623,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ai-columbus/projecten'
     | '/_authenticated/ai-columbus/rapportages'
     | '/_authenticated/crm/activities'
+    | '/_authenticated/mail/settings'
     | '/_authenticated/netqloud/instellingen'
     | '/_authenticated/netqloud/klanten'
     | '/_authenticated/netqloud/servers'
@@ -853,6 +866,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNetqloudInstellingenRouteImport
       parentRoute: typeof AuthenticatedNetqloudRoute
     }
+    '/_authenticated/mail/settings': {
+      id: '/_authenticated/mail/settings'
+      path: '/settings'
+      fullPath: '/mail/settings'
+      preLoaderRoute: typeof AuthenticatedMailSettingsRouteImport
+      parentRoute: typeof AuthenticatedMailRoute
+    }
     '/_authenticated/crm/activities': {
       id: '/_authenticated/crm/activities'
       path: '/crm/activities'
@@ -1080,6 +1100,17 @@ const AuthenticatedBoekhoudingRouteWithChildren =
     AuthenticatedBoekhoudingRouteChildren,
   )
 
+interface AuthenticatedMailRouteChildren {
+  AuthenticatedMailSettingsRoute: typeof AuthenticatedMailSettingsRoute
+}
+
+const AuthenticatedMailRouteChildren: AuthenticatedMailRouteChildren = {
+  AuthenticatedMailSettingsRoute: AuthenticatedMailSettingsRoute,
+}
+
+const AuthenticatedMailRouteWithChildren =
+  AuthenticatedMailRoute._addFileChildren(AuthenticatedMailRouteChildren)
+
 interface AuthenticatedNetqloudRouteChildren {
   AuthenticatedNetqloudInstellingenRoute: typeof AuthenticatedNetqloudInstellingenRoute
   AuthenticatedNetqloudKlantenRoute: typeof AuthenticatedNetqloudKlantenRoute
@@ -1107,7 +1138,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEnterpriseRoute: typeof AuthenticatedEnterpriseRoute
   AuthenticatedGebruikersRoute: typeof AuthenticatedGebruikersRoute
   AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
-  AuthenticatedMailRoute: typeof AuthenticatedMailRoute
+  AuthenticatedMailRoute: typeof AuthenticatedMailRouteWithChildren
   AuthenticatedNetqloudRoute: typeof AuthenticatedNetqloudRouteWithChildren
   AuthenticatedProductenRoute: typeof AuthenticatedProductenRoute
   AuthenticatedQuotesRoute: typeof AuthenticatedQuotesRoute
@@ -1129,7 +1160,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEnterpriseRoute: AuthenticatedEnterpriseRoute,
   AuthenticatedGebruikersRoute: AuthenticatedGebruikersRoute,
   AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
-  AuthenticatedMailRoute: AuthenticatedMailRoute,
+  AuthenticatedMailRoute: AuthenticatedMailRouteWithChildren,
   AuthenticatedNetqloudRoute: AuthenticatedNetqloudRouteWithChildren,
   AuthenticatedProductenRoute: AuthenticatedProductenRoute,
   AuthenticatedQuotesRoute: AuthenticatedQuotesRoute,
