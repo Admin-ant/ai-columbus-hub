@@ -5,7 +5,16 @@ type CampaignRow = {
   id: string;
   name: string | null;
   status: string;
-  sequence_steps: Array<{ day: number; channel: string; subject?: string; body: string }> | null;
+  sequence_steps: Array<{
+    day: number;
+    channel: string;
+    subject?: string;
+    body: string;
+    stop_on_reply?: boolean;
+  }> | null;
+  timezone?: string | null;
+  send_window_start?: number | null;
+  send_window_end?: number | null;
 };
 
 type TargetRow = {
@@ -19,6 +28,9 @@ type TargetRow = {
   next_send_at: string | null;
   paused: boolean;
   stage: string;
+  personalized_subject?: string | null;
+  personalized_body?: string | null;
+  active_variant_id?: string | null;
 };
 
 async function sendResend(opts: {
