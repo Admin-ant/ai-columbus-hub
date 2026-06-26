@@ -63,8 +63,23 @@ export const sendMail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => SEND_SCHEMA.parse(d))
   .handler(async ({ data, context }) => {
-    const from_email = process.env.OUTREACH_FROM_EMAIL ?? "outreach@resend.dev";
-    const from = data.from_name ? `${data.from_name} <${from_email}>` : from_email;
+    // Per-org overrides
+    const { data: settings } = await context.supabase
+      .from("mail_settings")
+      .select("from_email, from_name, reply_to, signature")
+      .eq("organization_id", data.organization_id)
+      .maybeSingle();
+    const s = (settings ?? null) as {
+      from_email: string | null;
+      from_name: string | null;
+      reply_to: string | null;
+      signature: string | null;
+    } | null;
+    const from_email = s?.from_email || process.env.OUTREACH_FROM_EMAIL || "outreach@resend.dev";
+    const from_name = data.from_name ?? s?.from_name ?? null;
+    const from = from_name ? `${from_name} <${from_email}>` : from_email;
+    const replyTo = s?.reply_to || undefined;
+    const fullBody = s?.signature ? `${data.body}\n\n${s.signature}` : data.body;
 
     const html = `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111;white-space:pre-wrap">${data.body.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]!))}</div>`;
 
