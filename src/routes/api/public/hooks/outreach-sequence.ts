@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { injectTracking, signTrackingId } from "@/lib/outreach-tracking";
 
 type CampaignRow = {
   id: string;
