@@ -1021,15 +1021,29 @@ function NewTargetDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
+  const initialForm = {
     company: "",
     contact_name: "",
     email: "",
     phone: "",
     linkedin_url: "",
     campaign_id: "",
+    province: "",
     notes: "",
-  });
+    demo_type: "" as "" | "online" | "onsite",
+    demo_at: "",
+  };
+  const [form, setForm] = useState(initialForm);
+
+  // When a campaign with a province is chosen, auto-fill province
+  function onCampaignChange(id: string) {
+    const camp = campaigns.find((c) => c.id === id) as (Campaign & { province?: string | null }) | undefined;
+    setForm((f) => ({
+      ...f,
+      campaign_id: id,
+      province: f.province || (camp?.province ?? ""),
+    }));
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -1045,6 +1059,9 @@ function NewTargetDialog({
       phone: form.phone.trim() || null,
       linkedin_url: form.linkedin_url.trim() || null,
       notes: form.notes.trim() || null,
+      province: form.province || null,
+      demo_type: form.demo_type || null,
+      demo_at: form.demo_at ? new Date(form.demo_at).toISOString() : null,
       stage: "nieuw",
       created_by: userId,
     });
@@ -1052,7 +1069,7 @@ function NewTargetDialog({
     if (error) return toast.error(error.message);
     toast.success("Prospect toegevoegd");
     setOpen(false);
-    setForm({ company: "", contact_name: "", email: "", phone: "", linkedin_url: "", campaign_id: "", notes: "" });
+    setForm(initialForm);
     onCreated();
   }
 
