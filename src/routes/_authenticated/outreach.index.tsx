@@ -447,6 +447,62 @@ function OutreachDashboard() {
               </div>
             )}
           </TabsContent>
+
+          <TabsContent value="inbox" className="mt-4">
+            <OutreachInboxTab
+              organizationId={currentOrganizationId}
+              campaignNames={Object.fromEntries(campaigns.map((c) => [c.id, c.name]))}
+              onUnreadChange={setUnreadInbox}
+            />
+          </TabsContent>
+
+          <TabsContent value="sequences" className="mt-4">
+            {campaigns.length === 0 ? (
+              <Empty text="Maak eerst een campagne aan." />
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs text-white/60">Campagne:</Label>
+                  <Select
+                    value={builderCampaignId ?? campaigns[0]?.id ?? ""}
+                    onValueChange={setBuilderCampaignId}
+                  >
+                    <SelectTrigger className="w-[280px] bg-white/5 border-white/10 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {campaigns.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {(() => {
+                  const active = campaigns.find(
+                    (c) => c.id === (builderCampaignId ?? campaigns[0]?.id),
+                  );
+                  if (!active) return null;
+                  return (
+                    <SequenceBuilder
+                      key={active.id}
+                      campaignId={active.id}
+                      initialSteps={(active.sequence_steps ?? []) as never}
+                      onSaved={() => load()}
+                    />
+                  );
+                })()}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="analytics" className="mt-4">
+            <OutreachAnalyticsTab
+              organizationId={currentOrganizationId}
+              campaignNames={Object.fromEntries(campaigns.map((c) => [c.id, c.name]))}
+            />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
