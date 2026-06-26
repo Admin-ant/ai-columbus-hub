@@ -117,6 +117,8 @@ type TargetRow = {
   notes: string | null;
   research_summary?: string | null;
   research_at?: string | null;
+  personalized_at?: string | null;
+  personalized_subject?: string | null;
 };
 
 function OutreachDashboard() {
