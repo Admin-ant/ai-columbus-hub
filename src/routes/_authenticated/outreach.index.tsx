@@ -1498,3 +1498,166 @@ function ImportCsvDialog({
     </Dialog>
   );
 }
+
+/* -------------------------------------------------------------------------- */
+/* DnD helpers                                                                */
+/* -------------------------------------------------------------------------- */
+
+function DroppableColumn({
+  stage,
+  color,
+  label,
+  count,
+  children,
+}: {
+  stage: Stage;
+  color: string;
+  label: string;
+  count: number;
+  children: React.ReactNode;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: stage });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`rounded-lg border bg-white/5 p-3 transition ${
+        isOver ? "border-[#ff2bd6]/60 bg-[#ff2bd6]/10" : "border-white/10"
+      }`}
+    >
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span
+            className="h-2 w-2 rounded-full"
+            style={{ background: color, boxShadow: `0 0 8px ${color}` }}
+          />
+          <span className="text-xs font-semibold uppercase tracking-wider text-white/80">
+            {label}
+          </span>
+        </div>
+        <span className="text-xs text-white/50">{count}</span>
+      </div>
+      <div className="space-y-2 min-h-[60px]">{children}</div>
+    </div>
+  );
+}
+
+function DraggableCard({ id, children }: { id: string; children: React.ReactNode }) {
+  const { setNodeRef, listeners, attributes, transform, isDragging } = useDraggable({ id });
+  const style: React.CSSProperties = {
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    opacity: isDragging ? 0.6 : 1,
+    cursor: "grab",
+  };
+  return (
+    <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
+      {children}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Provincial campaign quick action                                           */
+/* -------------------------------------------------------------------------- */
+
+function NewProvincialCampaignButton({
+  orgId,
+  userId,
+  onCreated,
+}: {
+  orgId: string | null;
+  userId: string | null;
+  onCreated: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [province, setProvince] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+
+  async function create() {
+    if (!orgId) return toast.error("Geen organisatie");
+    if (!province) return toast.error("Kies een provincie");
+    setSaving(true);
+    // Load the default email template for body/subject seed
+    const { data: tpl } = await supabase
+      .from("outreach_message_templates")
+      .select("subject, body")
+      .eq("organization_id", orgId)
+      .eq("channel", "email")
+      .eq("is_default", true)
+      .maybeSingle();
+    const t = tpl as { subject: string | null; body: string } | null;
+    const sequence = [
+      {
+        day: 1,
+        channel: "email",
+        subject: t?.subject ?? `Halveer de screeningstijd voor {{company}} in ${province}`,
+        body: t?.body?.replace(/\{\{\s*province\s*\}\}/g, province) ?? "",
+      },
+    ];
+    const { error } = await supabase.from("outreach_campaigns").insert({
+      organization_id: orgId,
+      name: `Recruitment ${province}`,
+      channel: "email",
+      status: "draft",
+      goal: `Recruitment-bureaus aanschrijven in ${province}`,
+      daily_limit: 20,
+      province,
+      sequence_steps: sequence as never,
+      created_by: userId,
+    });
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success(`Campagne "Recruitment ${province}" aangemaakt`);
+    setOpen(false);
+    setProvince("");
+    onCreated();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-blue-400/40 text-blue-200 hover:bg-blue-400/10"
+        >
+          <MapPin className="mr-1 h-4 w-4" /> Provinciale campagne
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md border-white/10 bg-[#0a0a0a] text-white">
+        <DialogHeader>
+          <DialogTitle>Nieuwe provinciale campagne</DialogTitle>
+          <DialogDescription className="text-white/60">
+            Maakt automatisch een campagne aan met het standaard e-mail-sjabloon, ingevuld
+            op de gekozen provincie.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label className="text-[11px] text-white/60">Provincie</Label>
+            <Select value={province} onValueChange={setProvince}>
+              <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                <SelectValue placeholder="Kies provincie" />
+              </SelectTrigger>
+              <SelectContent>
+                {NL_PROVINCES.map((p) => (
+                  <SelectItem key={p} value={p}>{p}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setOpen(false)}>Annuleren</Button>
+          <Button
+            onClick={create}
+            disabled={saving}
+            className="bg-[#ff2bd6] hover:bg-[#ff2bd6]/90 text-white"
+          >
+            {saving ? "Aanmaken…" : "Aanmaken"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
