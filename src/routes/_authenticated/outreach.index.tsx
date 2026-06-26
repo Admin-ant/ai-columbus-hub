@@ -362,6 +362,16 @@ function OutreachDashboard() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-[#ff2bd6]/40 text-[#ff2bd6] hover:bg-[#ff2bd6]/10"
+              onClick={runBulkPersonalize}
+              disabled={bulkBusy}
+            >
+              <Sparkles className="mr-1 h-4 w-4" />
+              {bulkBusy ? "Bezig…" : "AI personaliseer nieuwe"}
+            </Button>
             <ImportCsvDialog
               campaigns={campaigns}
               orgId={currentOrganizationId}
