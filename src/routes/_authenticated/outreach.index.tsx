@@ -59,6 +59,9 @@ import {
   sendOutreachEmail,
   scheduleSequence,
 } from "@/lib/outreach.functions";
+import { OutreachAnalyticsTab } from "@/components/outreach/analytics-tab";
+import { OutreachInboxTab } from "@/components/outreach/inbox-tab";
+import { SequenceBuilder } from "@/components/outreach/sequence-builder";
 
 export const Route = createFileRoute("/_authenticated/outreach/")({
   head: () => ({ meta: [{ title: "Cold Outreach" }] }),
