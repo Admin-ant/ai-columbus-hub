@@ -81,7 +81,7 @@ export const sendMail = createServerFn({ method: "POST" })
     const replyTo = s?.reply_to || undefined;
     const fullBody = s?.signature ? `${data.body}\n\n${s.signature}` : data.body;
 
-    const html = `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111;white-space:pre-wrap">${data.body.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]!))}</div>`;
+    const html = `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111;white-space:pre-wrap">${fullBody.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]!))}</div>`;
 
     // Resolve attachments: download from storage and base64-encode
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
