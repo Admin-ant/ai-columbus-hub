@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
  * Route is intentionally undiscoverable (no nav link). Safe to publish:
  * read-only, no data, no secrets.
  */
-export const Route = createFileRoute("/__visual")({
+export const Route = createFileRoute("/visual-check")({
   head: () => ({
     meta: [
       { title: "Visual regression harness" },
