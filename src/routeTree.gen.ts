@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VisualCheckRouteImport } from './routes/visual-check'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -60,6 +61,11 @@ import { Route as AuthenticatedBoekhoudingJournalEntryIdRouteImport } from './ro
 import { Route as AuthenticatedAiColumbusProjectenProjectIdRouteImport } from './routes/_authenticated/ai-columbus.projecten.$projectId'
 import { Route as AuthenticatedAiColumbusKlantenClientIdRouteImport } from './routes/_authenticated/ai-columbus.klanten.$clientId'
 
+const VisualCheckRoute = VisualCheckRouteImport.update({
+  id: '/visual-check',
+  path: '/visual-check',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -346,6 +352,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/visual-check': typeof VisualCheckRoute
   '/administratie': typeof AuthenticatedAdministratieRoute
   '/ai-columbus': typeof AuthenticatedAiColumbusRouteWithChildren
   '/boekhouding': typeof AuthenticatedBoekhoudingRouteWithChildren
@@ -396,6 +403,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/visual-check': typeof VisualCheckRoute
   '/administratie': typeof AuthenticatedAdministratieRoute
   '/boekhouding': typeof AuthenticatedBoekhoudingRouteWithChildren
   '/enterprise': typeof AuthenticatedEnterpriseRoute
@@ -447,6 +455,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/visual-check': typeof VisualCheckRoute
   '/_authenticated/administratie': typeof AuthenticatedAdministratieRoute
   '/_authenticated/ai-columbus': typeof AuthenticatedAiColumbusRouteWithChildren
   '/_authenticated/boekhouding': typeof AuthenticatedBoekhoudingRouteWithChildren
@@ -501,6 +510,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/visual-check'
     | '/administratie'
     | '/ai-columbus'
     | '/boekhouding'
@@ -551,6 +561,7 @@ export interface FileRouteTypes {
   to:
     | '/auth'
     | '/reset-password'
+    | '/visual-check'
     | '/administratie'
     | '/boekhouding'
     | '/enterprise'
@@ -601,6 +612,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
+    | '/visual-check'
     | '/_authenticated/administratie'
     | '/_authenticated/ai-columbus'
     | '/_authenticated/boekhouding'
@@ -654,6 +666,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  VisualCheckRoute: typeof VisualCheckRoute
   QTokenRoute: typeof QTokenRoute
   TTokenRoute: typeof TTokenRoute
   AcceptQuoteTokenRoute: typeof AcceptQuoteTokenRoute
@@ -670,6 +683,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/visual-check': {
+      id: '/visual-check'
+      path: '/visual-check'
+      fullPath: '/visual-check'
+      preLoaderRoute: typeof VisualCheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -1182,6 +1202,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  VisualCheckRoute: VisualCheckRoute,
   QTokenRoute: QTokenRoute,
   TTokenRoute: TTokenRoute,
   AcceptQuoteTokenRoute: AcceptQuoteTokenRoute,
