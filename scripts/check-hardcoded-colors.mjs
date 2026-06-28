@@ -29,17 +29,36 @@ const ROOT = process.cwd();
 const SRC = join(ROOT, "src");
 
 const ALLOW_PATHS = [
+  // Design tokens
   "src/styles.css",
+  // Generated / vendored
   "src/integrations/",
   "src/components/ui/",
+  "src/routeTree.gen.ts",
+  // Brand-dark offerte/quote viewers (public, intentional brand theme)
   "src/components/offerte-studio-editor.tsx",
   "src/routes/q.$token.tsx",
   "src/routes/t.$token.tsx",
   "src/routes/quote.$token.pdf.tsx",
   "src/routes/accept.quote.$token.tsx",
+  // PDF / signature / print rendering (raster output, not CSS theme)
+  "src/components/pdf-template-dialog.tsx",
+  "src/components/signature-pad.tsx",
+  "src/components/expenses-tab.tsx",
   "src/lib/",
-  "src/routeTree.gen.ts",
+  // Transactional HTML email templates
+  "src/routes/api/public/hooks/",
+  // OAuth provider brand colors (Google etc.) — externally specified
+  "src/routes/auth.tsx",
+  // Quote template editor — colors are user/theme data
+  "src/routes/_authenticated/quotes.tsx",
+  // Pipeline stage status palette + ACCENT constant for inline opacity tricks
+  "src/routes/_authenticated/outreach.index.tsx",
+  "src/routes/_authenticated/analytics.index.tsx",
+  // Enterprise: configurable per-tenant accent color picker
+  "src/routes/_authenticated/enterprise.tsx",
 ];
+
 
 const EXTS = new Set([".ts", ".tsx", ".css"]);
 
