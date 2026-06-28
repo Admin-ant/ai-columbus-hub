@@ -188,7 +188,7 @@ export function ComposeMailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl bg-card border-border text-foreground">
+      <DialogContent className="max-w-3xl border-border bg-background text-foreground shadow-lg">
         <DialogHeader>
           <DialogTitle>{inReplyTo ? "Beantwoorden" : "Nieuwe mail"}</DialogTitle>
         </DialogHeader>
@@ -196,14 +196,14 @@ export function ComposeMailDialog({
         <div className="grid gap-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="text-[11px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+              <label className="flex items-center gap-1 text-[11px] font-medium uppercase tracking-wider text-foreground">
                 <Building2 className="h-3 w-3" /> Bedrijf / Contact
               </label>
               <Select value={selectedClient ?? ""} onValueChange={pickClient}>
-                <SelectTrigger className="bg-muted/50 border-border text-foreground">
+                <SelectTrigger className="border-input bg-background text-foreground shadow-sm">
                   <SelectValue placeholder="Selecteer bedrijf…" />
                 </SelectTrigger>
-                <SelectContent className="max-h-72">
+                <SelectContent className="max-h-72 border-border bg-popover text-popover-foreground">
                   {clients.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.name} {c.email ? `· ${c.email}` : ""}
@@ -213,14 +213,14 @@ export function ComposeMailDialog({
               </Select>
             </div>
             <div>
-              <label className="text-[11px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+              <label className="flex items-center gap-1 text-[11px] font-medium uppercase tracking-wider text-foreground">
                 <FileText className="h-3 w-3" /> Template
               </label>
               <Select value={selectedTemplate ?? ""} onValueChange={applyTemplate}>
-                <SelectTrigger className="bg-muted/50 border-border text-foreground">
+                <SelectTrigger className="border-input bg-background text-foreground shadow-sm">
                   <SelectValue placeholder="Kies template…" />
                 </SelectTrigger>
-                <SelectContent className="max-h-72">
+                <SelectContent className="max-h-72 border-border bg-popover text-popover-foreground">
                   {templates.length === 0 && (
                     <div className="px-2 py-1.5 text-xs text-muted-foreground">Geen templates</div>
                   )}
@@ -235,43 +235,43 @@ export function ComposeMailDialog({
           </div>
 
           <div>
-            <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Aan</label>
+            <label className="text-[11px] font-medium uppercase tracking-wider text-foreground">Aan</label>
             <Input
               value={to}
               onChange={(e) => setTo(e.target.value)}
               placeholder="naam@bedrijf.nl, ander@bedrijf.nl"
-              className="bg-muted/50 border-border text-foreground"
+              className="border-input bg-background text-foreground placeholder:text-muted-foreground shadow-sm"
             />
           </div>
           <div>
-            <label className="text-[11px] uppercase tracking-wider text-muted-foreground">CC</label>
+            <label className="text-[11px] font-medium uppercase tracking-wider text-foreground">CC</label>
             <Input
               value={cc}
               onChange={(e) => setCc(e.target.value)}
               placeholder="optioneel"
-              className="bg-muted/50 border-border text-foreground"
+              className="border-input bg-background text-foreground placeholder:text-muted-foreground shadow-sm"
             />
           </div>
           <div>
-            <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Onderwerp</label>
+            <label className="text-[11px] font-medium uppercase tracking-wider text-foreground">Onderwerp</label>
             <Input
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="bg-muted/50 border-border text-foreground"
+              className="border-input bg-background text-foreground placeholder:text-muted-foreground shadow-sm"
             />
           </div>
           <div>
-            <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Bericht</label>
+            <label className="text-[11px] font-medium uppercase tracking-wider text-foreground">Bericht</label>
             <Textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={12}
-              className="bg-muted/50 border-border text-foreground font-mono text-sm"
+              className="border-input bg-background text-sm leading-relaxed text-foreground placeholder:text-muted-foreground shadow-sm"
             />
           </div>
 
           <div>
-            <label className="text-[11px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+            <label className="flex items-center gap-1 text-[11px] font-medium uppercase tracking-wider text-foreground">
               <Paperclip className="h-3 w-3" /> Bijlagen
             </label>
             <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -279,20 +279,21 @@ export function ComposeMailDialog({
                 <Badge
                   key={a.path}
                   variant="outline"
-                  className="border-border text-foreground gap-1.5"
+                  className="gap-1.5 border-border bg-background text-foreground"
                 >
                   {a.filename}
                   <button
                     onClick={() =>
                       setAttachments((cur) => cur.filter((x) => x.path !== a.path))
                     }
-                    className="opacity-70 hover:opacity-100"
+                    className="text-muted-foreground hover:text-foreground"
+                    aria-label={`${a.filename} verwijderen`}
                   >
                     <X className="h-3 w-3" />
                   </button>
                 </Badge>
               ))}
-              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded border border-dashed border-border px-2 py-1 text-xs text-muted-foreground hover:bg-muted/50">
+              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded border border-dashed border-border px-2 py-1 text-xs font-medium text-foreground hover:bg-accent hover:text-accent-foreground">
                 {uploading ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
                 ) : (
@@ -314,14 +315,14 @@ export function ComposeMailDialog({
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="border-border text-foreground hover:bg-muted"
+            className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
           >
             Annuleren
           </Button>
           <Button
             onClick={onSend}
             disabled={busy}
-            className="bg-brand hover:bg-brand/90 text-brand-foreground"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
             Verstuur
