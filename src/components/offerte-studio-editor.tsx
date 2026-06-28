@@ -633,7 +633,7 @@ export function OfferteStudioEditor({ kind, id }: Props) {
                 {packages.map((p, i) => (
                   <div
                     key={p.id}
-                    className="space-y-1.5 rounded border border-white/10 bg-white/[0.02] p-2"
+                    className="space-y-1.5 rounded border border-white/10 bg-card p-2"
                   >
                     <Input
                       value={p.name}
@@ -957,7 +957,7 @@ function LivePreview({
           key={s.key}
           type="button"
           onClick={() => onJump(s.key)}
-          className="block w-full cursor-pointer border-b px-6 py-6 text-left transition-colors hover:bg-white/[0.02]"
+          className="block w-full cursor-pointer border-b px-6 py-6 text-left transition-colors hover:bg-card"
           style={{
             borderColor: "rgba(255,255,255,0.06)",
             background: activeKey === s.key ? `${accent}0d` : "transparent",

@@ -403,7 +403,7 @@ export function OutreachInboxTab({ organizationId, campaignNames, onUnreadChange
                       key={i}
                       type="button"
                       onClick={() => setReply((r) => ({ ...r, body: d.body }))}
-                      className="rounded border border-white/15 bg-muted/50 px-2 py-1 text-[11px] text-foreground hover:bg-muted"
+                      className="rounded border border-border bg-muted/50 px-2 py-1 text-[11px] text-foreground hover:bg-muted"
                     >
                       {d.label}
                     </button>

@@ -321,7 +321,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                       key={t}
                       type="button"
                       onClick={() => insertToken(t)}
-                      className="rounded border border-white/15 bg-muted/50 px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"
+                      className="rounded border border-border bg-muted/50 px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"
                       title={`Variabele ${t} invoegen`}
                     >
                       {t}
@@ -417,7 +417,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                         className={`text-[9px] px-1.5 ${
                           isCurrent
                             ? "border-emerald-400/40 text-emerald-300"
-                            : "border-white/15 text-muted-foreground"
+                            : "border-border text-muted-foreground"
                         }`}
                       >
                         v{v.version}
@@ -443,7 +443,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                     <button
                       type="button"
                       onClick={() => setPreviewVersion(isPreviewing ? null : v)}
-                      className="rounded border border-white/15 bg-muted/50 px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"
+                      className="rounded border border-border bg-muted/50 px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"
                     >
                       {isPreviewing ? "Sluit preview" : "Preview"}
                     </button>

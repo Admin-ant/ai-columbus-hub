@@ -201,7 +201,7 @@ function AnalyticsDashboard() {
               />
             </Section>
 
-            <div className="rounded-xl border border-border bg-white/[0.02] p-5">
+            <div className="rounded-xl border border-border bg-card p-5">
               <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
                 <Flame className="h-4 w-4" style={{ color: ACCENT }} />
                 Heatmap — wat lezen klanten écht?
@@ -264,7 +264,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-white/[0.02] p-5">
+    <div className="rounded-xl border border-border bg-card p-5">
       <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
         <Icon className="h-4 w-4" style={{ color: ACCENT }} />
         {title}
