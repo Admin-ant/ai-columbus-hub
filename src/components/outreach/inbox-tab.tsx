@@ -245,7 +245,7 @@ export function OutreachInboxTab({ organizationId, campaignNames, onUnreadChange
   };
 
   if (!organizationId) {
-    return <div className="text-sm text-white/60">Geen actieve omgeving.</div>;
+    return <div className="text-sm text-muted-foreground">Geen actieve omgeving.</div>;
   }
 
   return (
@@ -253,9 +253,9 @@ export function OutreachInboxTab({ organizationId, campaignNames, onUnreadChange
       {/* List */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
-          <InboxIcon className="h-4 w-4 text-white/60" />
+          <InboxIcon className="h-4 w-4 text-muted-foreground" />
           <Select value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-            <SelectTrigger className="h-8 w-full bg-white/5 border-white/10 text-xs text-white">
+            <SelectTrigger className="h-8 w-full bg-muted/50 border-border text-xs text-foreground">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -268,11 +268,11 @@ export function OutreachInboxTab({ organizationId, campaignNames, onUnreadChange
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-8 text-white/60">
+          <div className="flex items-center justify-center py-8 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-white/10 p-6 text-center text-xs text-white/40">
+          <div className="rounded-lg border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
             Geen berichten
           </div>
         ) : (
@@ -288,25 +288,25 @@ export function OutreachInboxTab({ organizationId, campaignNames, onUnreadChange
                   className={`w-full text-left rounded-md border p-2.5 transition ${
                     isSelected
                       ? "border-[#ff2bd6]/60 bg-[#ff2bd6]/10"
-                      : "border-white/10 bg-white/5 hover:bg-white/10"
+                      : "border-border bg-muted/50 hover:bg-muted"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <div className={`truncate text-xs font-medium ${isUnread ? "text-white" : "text-white/70"}`}>
+                    <div className={`truncate text-xs font-medium ${isUnread ? "text-foreground" : "text-muted-foreground"}`}>
                       {t?.contact_name ?? t?.company ?? "—"}
                     </div>
                     {isUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#ff2bd6]" />}
                   </div>
-                  <div className="mt-0.5 truncate text-[11px] text-white/50">{t?.company}</div>
-                  <div className="mt-1 truncate text-[11px] text-white/70">{m.subject ?? "(geen onderwerp)"}</div>
+                  <div className="mt-0.5 truncate text-[11px] text-muted-foreground">{t?.company}</div>
+                  <div className="mt-1 truncate text-[11px] text-muted-foreground">{m.subject ?? "(geen onderwerp)"}</div>
                   <div className="mt-1 flex items-center justify-between gap-2">
-                    <span className="text-[10px] text-white/40">
+                    <span className="text-[10px] text-muted-foreground">
                       {m.received_at ? new Date(m.received_at).toLocaleString("nl-NL", { dateStyle: "short", timeStyle: "short" }) : ""}
                     </span>
                     {m.reply_classification && (
                       <Badge
                         variant="outline"
-                        className={`text-[9px] px-1.5 py-0 ${CLASSIFY_COLORS[m.reply_classification] ?? "border-white/20 text-white/60"}`}
+                        className={`text-[9px] px-1.5 py-0 ${CLASSIFY_COLORS[m.reply_classification] ?? "border-border text-muted-foreground"}`}
                       >
                         {m.reply_classification}
                       </Badge>
@@ -320,22 +320,22 @@ export function OutreachInboxTab({ organizationId, campaignNames, onUnreadChange
       </div>
 
       {/* Detail */}
-      <div className="rounded-lg border border-white/10 bg-white/5 p-4 min-h-[400px]">
+      <div className="rounded-lg border border-border bg-muted/50 p-4 min-h-[400px]">
         {!selected ? (
-          <div className="flex h-full items-center justify-center text-sm text-white/40">
+          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
             Selecteer een bericht
           </div>
         ) : (
           <div className="space-y-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="text-sm font-semibold text-white">
+                <div className="text-sm font-semibold text-foreground">
                   {selectedTarget?.contact_name ?? selectedTarget?.company ?? "—"}
-                  <span className="ml-2 text-xs font-normal text-white/50">{selectedTarget?.email}</span>
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">{selectedTarget?.email}</span>
                 </div>
-                <div className="text-xs text-white/60">{selectedTarget?.company}</div>
+                <div className="text-xs text-muted-foreground">{selectedTarget?.company}</div>
                 {selected.campaign_id && (
-                  <div className="text-[11px] text-white/40">
+                  <div className="text-[11px] text-muted-foreground">
                     Campagne: {campaignNames[selected.campaign_id] ?? selected.campaign_id}
                   </div>
                 )}
@@ -344,7 +344,7 @@ export function OutreachInboxTab({ organizationId, campaignNames, onUnreadChange
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-7 text-xs border-white/20 text-white/80 hover:bg-white/10"
+                  className="h-7 text-xs border-border text-foreground hover:bg-muted"
                   onClick={() => handleSnooze(4)}
                 >
                   <Clock className="mr-1 h-3 w-3" /> 4u
@@ -352,7 +352,7 @@ export function OutreachInboxTab({ organizationId, campaignNames, onUnreadChange
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-7 text-xs border-white/20 text-white/80 hover:bg-white/10"
+                  className="h-7 text-xs border-border text-foreground hover:bg-muted"
                   onClick={() => handleSnooze(24)}
                 >
                   <Clock className="mr-1 h-3 w-3" /> 1d
@@ -368,7 +368,7 @@ export function OutreachInboxTab({ organizationId, campaignNames, onUnreadChange
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-7 text-xs border-white/20 text-white/80 hover:bg-white/10"
+                  className="h-7 text-xs border-border text-foreground hover:bg-muted"
                   onClick={() => handleHandled(false)}
                 >
                   <CheckCircle2 className="mr-1 h-3 w-3" /> Done
@@ -376,14 +376,14 @@ export function OutreachInboxTab({ organizationId, campaignNames, onUnreadChange
               </div>
             </div>
 
-            <div className="rounded border border-white/10 bg-black/20 p-3">
-              <div className="text-xs font-medium text-white/70">{selected.subject ?? "(geen onderwerp)"}</div>
-              <div className="mt-2 whitespace-pre-wrap text-sm text-white/90">{selected.body ?? ""}</div>
+            <div className="rounded border border-border bg-black/20 p-3">
+              <div className="text-xs font-medium text-muted-foreground">{selected.subject ?? "(geen onderwerp)"}</div>
+              <div className="mt-2 whitespace-pre-wrap text-sm text-foreground">{selected.body ?? ""}</div>
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <div className="text-xs font-semibold uppercase tracking-wider text-white/60">Reply</div>
+                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Reply</div>
                 <Button
                   size="sm"
                   variant="ghost"
@@ -403,7 +403,7 @@ export function OutreachInboxTab({ organizationId, campaignNames, onUnreadChange
                       key={i}
                       type="button"
                       onClick={() => setReply((r) => ({ ...r, body: d.body }))}
-                      className="rounded border border-white/15 bg-white/5 px-2 py-1 text-[11px] text-white/80 hover:bg-white/10"
+                      className="rounded border border-white/15 bg-muted/50 px-2 py-1 text-[11px] text-foreground hover:bg-muted"
                     >
                       {d.label}
                     </button>
@@ -415,20 +415,20 @@ export function OutreachInboxTab({ organizationId, campaignNames, onUnreadChange
                 value={reply.subject}
                 onChange={(e) => setReply((r) => ({ ...r, subject: e.target.value }))}
                 placeholder="Onderwerp"
-                className="bg-white/5 border-white/10 text-white"
+                className="bg-muted/50 border-border text-foreground"
               />
               <Textarea
                 value={reply.body}
                 onChange={(e) => setReply((r) => ({ ...r, body: e.target.value }))}
                 rows={6}
                 placeholder="Schrijf je antwoord..."
-                className="bg-white/5 border-white/10 text-white"
+                className="bg-muted/50 border-border text-foreground"
               />
               <div className="flex justify-end">
                 <Button
                   onClick={handleSend}
                   disabled={busy || !reply.body.trim()}
-                  className="bg-[#ff2bd6] hover:bg-[#ff2bd6]/90 text-white"
+                  className="bg-[#ff2bd6] hover:bg-[#ff2bd6]/90 text-foreground"
                 >
                   {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                   Verstuur

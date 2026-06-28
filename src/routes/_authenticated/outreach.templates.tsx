@@ -17,7 +17,7 @@ function OutreachTemplatesPage() {
           <div>
             <Link
               to="/outreach"
-              className="inline-flex items-center gap-1.5 text-xs text-white/50 hover:text-white"
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-3 w-3" /> Terug naar pipeline
             </Link>
@@ -25,7 +25,7 @@ function OutreachTemplatesPage() {
               <FileText className="h-6 w-6" style={{ color: "#ff2bd6" }} />
               Mail templates
             </h1>
-            <p className="text-sm text-white/60">
+            <p className="text-sm text-muted-foreground">
               {currentOrganization?.name ?? ""} — beheer e-mail, LinkedIn en WhatsApp sjablonen
             </p>
           </div>

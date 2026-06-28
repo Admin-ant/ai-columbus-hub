@@ -227,7 +227,7 @@ function OfferteStudioIndex() {
           </Button>
           <Dialog open={newOpen} onOpenChange={setNewOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-[#ff2bd6] text-white hover:bg-[#ff2bd6]/90 shadow-[0_0_20px_rgba(255,43,214,0.4)]">
+              <Button className="bg-[#ff2bd6] text-foreground hover:bg-[#ff2bd6]/90 shadow-[0_0_20px_rgba(255,43,214,0.4)]">
                 <Plus className="mr-2 h-4 w-4" />
                 Nieuwe offerte
               </Button>
@@ -378,7 +378,7 @@ function Card({
               : `radial-gradient(circle at 30% 20%, ${accent}33, transparent 60%), #0a0a0a`,
           }}
         >
-          <div className="absolute inset-0 flex flex-col justify-between p-4 text-white">
+          <div className="absolute inset-0 flex flex-col justify-between p-4 text-foreground">
             <span
               className="self-start rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider"
               style={{ borderColor: accent, color: accent }}
@@ -387,7 +387,7 @@ function Card({
             </span>
             <div>
               <div className="text-lg font-semibold drop-shadow">{title}</div>
-              <div className="text-xs text-white/70">{subtitle}</div>
+              <div className="text-xs text-muted-foreground">{subtitle}</div>
             </div>
           </div>
         </div>

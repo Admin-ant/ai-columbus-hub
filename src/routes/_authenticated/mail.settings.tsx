@@ -98,29 +98,29 @@ function MailSettingsPage() {
     <div className="min-h-full bg-background text-foreground">
       <div className="mx-auto max-w-3xl space-y-6">
         <div>
-          <Link to="/mail" className="inline-flex items-center gap-1.5 text-xs text-white/50 hover:text-white">
+          <Link to="/mail" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-3 w-3" /> Terug naar Mail
           </Link>
           <h1 className="mt-1 text-2xl font-bold tracking-tight flex items-center gap-2">
             <MailIcon className="h-6 w-6" style={{ color: "#ff2bd6" }} />
             Mail instellingen
           </h1>
-          <p className="text-sm text-white/60">
+          <p className="text-sm text-muted-foreground">
             {currentOrganization?.name ?? ""} — afzender en standaard templates per bedrijf
           </p>
         </div>
 
         {loading ? (
-          <Loader2 className="h-5 w-5 animate-spin text-white/60" />
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         ) : (
-          <div className="rounded-lg border border-white/10 bg-white/5 p-5 space-y-5">
+          <div className="rounded-lg border border-border bg-muted/50 p-5 space-y-5">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Afzender naam">
                 <Input
                   value={s.from_name ?? ""}
                   onChange={(e) => setS({ ...s, from_name: e.target.value })}
                   placeholder="Bijv. AI van Columbus"
-                  className="bg-white/5 border-white/10 text-white"
+                  className="bg-muted/50 border-border text-foreground"
                 />
               </Field>
               <Field label="Afzender e-mail">
@@ -128,7 +128,7 @@ function MailSettingsPage() {
                   value={s.from_email ?? ""}
                   onChange={(e) => setS({ ...s, from_email: e.target.value })}
                   placeholder="hello@bedrijf.nl"
-                  className="bg-white/5 border-white/10 text-white"
+                  className="bg-muted/50 border-border text-foreground"
                 />
               </Field>
             </div>
@@ -137,7 +137,7 @@ function MailSettingsPage() {
                 value={s.reply_to ?? ""}
                 onChange={(e) => setS({ ...s, reply_to: e.target.value })}
                 placeholder="antwoord@bedrijf.nl"
-                className="bg-white/5 border-white/10 text-white"
+                className="bg-muted/50 border-border text-foreground"
               />
             </Field>
             <Field label="Handtekening (wordt automatisch toegevoegd)">
@@ -145,7 +145,7 @@ function MailSettingsPage() {
                 rows={5}
                 value={s.signature ?? ""}
                 onChange={(e) => setS({ ...s, signature: e.target.value })}
-                className="bg-white/5 border-white/10 text-white font-mono text-sm"
+                className="bg-muted/50 border-border text-foreground font-mono text-sm"
                 placeholder={"Met vriendelijke groet,\nNaam"}
               />
             </Field>
@@ -175,14 +175,14 @@ function MailSettingsPage() {
               <Button
                 onClick={save}
                 disabled={saving}
-                className="bg-[#ff2bd6] hover:bg-[#ff2bd6]/90 text-white"
+                className="bg-[#ff2bd6] hover:bg-[#ff2bd6]/90 text-foreground"
               >
                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Opslaan
               </Button>
             </div>
 
-            <p className="text-[11px] text-white/40">
+            <p className="text-[11px] text-muted-foreground">
               Tip: voor verzending vanaf een eigen domein moet dit domein in Resend geverifieerd zijn.
               Anders blijft de fallback afzender (outreach@resend.dev) in gebruik.
             </p>
@@ -196,7 +196,7 @@ function MailSettingsPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <Label className="text-[11px] uppercase tracking-wider text-white/60">{label}</Label>
+      <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</Label>
       {children}
     </div>
   );
@@ -219,7 +219,7 @@ function TplSel({
         value={value ?? "__none__"}
         onValueChange={(v) => onChange(v === "__none__" ? null : v)}
       >
-        <SelectTrigger className="bg-white/5 border-white/10 text-white">
+        <SelectTrigger className="bg-muted/50 border-border text-foreground">
           <SelectValue placeholder="Geen" />
         </SelectTrigger>
         <SelectContent>

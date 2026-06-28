@@ -439,7 +439,7 @@ function BrandTab({ orgId }: { orgId: string }) {
       <Card>
         <CardHeader><CardTitle>Preview</CardTitle></CardHeader>
         <CardContent>
-          <div className="rounded-lg p-6 text-white" style={{ background: primary || "#0a0a0a", fontFamily: font || undefined }}>
+          <div className="rounded-lg p-6 text-foreground" style={{ background: primary || "#0a0a0a", fontFamily: font || undefined }}>
             {logo && <img src={logo} alt="logo" className="h-10 mb-4" />}
             <h3 className="text-xl font-bold">Jouw merk</h3>
             <p className="opacity-80 text-sm">Zo zien klanten je publieke offertes.</p>

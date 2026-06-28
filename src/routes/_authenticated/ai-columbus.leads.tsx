@@ -269,7 +269,7 @@ function LeadsKanbanPage() {
                 }}
                 className="flex flex-col rounded-lg border bg-muted/30"
               >
-                <div className={`flex items-center justify-between gap-2 rounded-t-lg px-3 py-2 text-xs font-semibold text-white ${stage.color}`}>
+                <div className={`flex items-center justify-between gap-2 rounded-t-lg px-3 py-2 text-xs font-semibold text-foreground ${stage.color}`}>
                   <span className="truncate">{t(`leads.stages.${stage.key}`)}</span>
                   <span className="shrink-0 opacity-90">{eur.format(tot.value)} · {tot.count}</span>
                 </div>

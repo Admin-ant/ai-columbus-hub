@@ -43,13 +43,13 @@ export function OutreachAnalyticsTab({ organizationId, campaignNames }: Props) {
   }, [organizationId, days, fetchAnalytics]);
 
   if (!organizationId) {
-    return <div className="text-sm text-white/60">Geen actieve omgeving.</div>;
+    return <div className="text-sm text-muted-foreground">Geen actieve omgeving.</div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-white/80 uppercase tracking-wider">
+        <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
           Performance ({days} dagen)
         </h3>
         <div className="flex gap-1">
@@ -60,8 +60,8 @@ export function OutreachAnalyticsTab({ organizationId, campaignNames }: Props) {
               variant={days === r.days ? "default" : "ghost"}
               className={
                 days === r.days
-                  ? "bg-[#ff2bd6] hover:bg-[#ff2bd6]/90 text-white"
-                  : "text-white/70 hover:text-white hover:bg-white/10"
+                  ? "bg-[#ff2bd6] hover:bg-[#ff2bd6]/90 text-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
               }
               onClick={() => setDays(r.days)}
             >
@@ -72,11 +72,11 @@ export function OutreachAnalyticsTab({ organizationId, campaignNames }: Props) {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-10 text-white/60">
+        <div className="flex items-center justify-center py-10 text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin" />
         </div>
       ) : !data ? (
-        <div className="text-sm text-white/60">Geen data.</div>
+        <div className="text-sm text-muted-foreground">Geen data.</div>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
@@ -110,10 +110,10 @@ export function OutreachAnalyticsTab({ organizationId, campaignNames }: Props) {
 
           <Panel title="Per campagne">
             {data.by_campaign.length === 0 ? (
-              <div className="text-xs text-white/50">Nog geen data</div>
+              <div className="text-xs text-muted-foreground">Nog geen data</div>
             ) : (
               <table className="w-full text-xs">
-                <thead className="text-white/50">
+                <thead className="text-muted-foreground">
                   <tr>
                     <th className="text-left font-medium pb-2">Campagne</th>
                     <th className="text-right font-medium pb-2">Verzonden</th>
@@ -123,9 +123,9 @@ export function OutreachAnalyticsTab({ organizationId, campaignNames }: Props) {
                     <th className="text-right font-medium pb-2">Positief</th>
                   </tr>
                 </thead>
-                <tbody className="text-white/80">
+                <tbody className="text-foreground">
                   {data.by_campaign.map((c) => (
-                    <tr key={c.campaign_id} className="border-t border-white/5">
+                    <tr key={c.campaign_id} className="border-t border-border">
                       <td className="py-2">{campaignNames[c.campaign_id] ?? "—"}</td>
                       <td className="py-2 text-right">{c.sent}</td>
                       <td className="py-2 text-right">
@@ -148,7 +148,7 @@ export function OutreachAnalyticsTab({ organizationId, campaignNames }: Props) {
           <div className="grid gap-4 md:grid-cols-2">
             <Panel title="A/B varianten">
               {data.by_variant.length === 0 ? (
-                <div className="text-xs text-white/50">Geen varianten</div>
+                <div className="text-xs text-muted-foreground">Geen varianten</div>
               ) : (
                 <div className="space-y-2">
                   {data.by_variant.map((v) => {
@@ -158,14 +158,14 @@ export function OutreachAnalyticsTab({ organizationId, campaignNames }: Props) {
                     return (
                       <div
                         key={v.variant_id}
-                        className="flex items-center justify-between rounded border border-white/10 bg-white/5 px-3 py-2"
+                        className="flex items-center justify-between rounded border border-border bg-muted/50 px-3 py-2"
                       >
-                        <div className="text-xs font-medium text-white/90">{v.variant_id}</div>
-                        <div className="flex items-center gap-3 text-[11px] text-white/70">
+                        <div className="text-xs font-medium text-foreground">{v.variant_id}</div>
+                        <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                           <span>{v.sent} sent</span>
                           <span>{replyRate}% reply</span>
                           <span className="text-emerald-400">{posRate}% pos</span>
-                          <span className="text-white/40">{conf} confidence</span>
+                          <span className="text-muted-foreground">{conf} confidence</span>
                         </div>
                       </div>
                     );
@@ -176,20 +176,20 @@ export function OutreachAnalyticsTab({ organizationId, campaignNames }: Props) {
 
             <Panel title="Per sequence-stap">
               {data.by_step.length === 0 ? (
-                <div className="text-xs text-white/50">Geen data</div>
+                <div className="text-xs text-muted-foreground">Geen data</div>
               ) : (
                 <div className="space-y-2">
                   {data.by_step.map((s) => {
                     const rate = s.sent ? Math.round((s.replies / s.sent) * 100) : 0;
                     return (
                       <div key={s.step} className="space-y-1">
-                        <div className="flex items-center justify-between text-xs text-white/80">
+                        <div className="flex items-center justify-between text-xs text-foreground">
                           <span>Stap {s.step + 1}</span>
-                          <span className="text-white/50">
+                          <span className="text-muted-foreground">
                             {s.sent} sent · {s.replies} replies ({rate}%)
                           </span>
                         </div>
-                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
                           <div
                             className="h-full rounded-full bg-[#ff2bd6]"
                             style={{ width: `${Math.min(100, rate * 4)}%` }}
@@ -226,23 +226,23 @@ function Kpi({
       className={`rounded-lg border p-3 ${
         accent
           ? "border-[#ff2bd6]/40 bg-[#ff2bd6]/10"
-          : "border-white/10 bg-white/5"
+          : "border-border bg-muted/50"
       }`}
     >
       <div className="flex items-center justify-between">
-        <span className="text-[11px] uppercase tracking-wider text-white/60">{label}</span>
-        <Icon className="h-4 w-4 text-white/50" />
+        <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</span>
+        <Icon className="h-4 w-4 text-muted-foreground" />
       </div>
-      <div className="mt-1 text-xl font-semibold text-white">{value}</div>
-      {sub && <div className="text-[11px] text-white/40">{sub}</div>}
+      <div className="mt-1 text-xl font-semibold text-foreground">{value}</div>
+      {sub && <div className="text-[11px] text-muted-foreground">{sub}</div>}
     </div>
   );
 }
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-      <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/60">
+    <div className="rounded-lg border border-border bg-muted/50 p-4">
+      <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         {title}
       </div>
       {children}

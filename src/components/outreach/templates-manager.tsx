@@ -196,7 +196,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
       {/* List */}
       <div className="space-y-3">
         <Tabs value={channel} onValueChange={(v) => setChannel(v as TemplateChannel)}>
-          <TabsList className="bg-white/5 border border-white/10 w-full grid grid-cols-3">
+          <TabsList className="bg-muted/50 border border-border w-full grid grid-cols-3">
             <TabsTrigger value="email"><Mail className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="linkedin"><Linkedin className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="whatsapp"><MessageCircle className="h-3.5 w-3.5" /></TabsTrigger>
@@ -204,9 +204,9 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
           {(["email", "linkedin", "whatsapp"] as const).map((c) => (
             <TabsContent key={c} value={c} className="mt-3 space-y-2">
               {loading ? (
-                <div className="text-xs text-white/40 p-3">Laden…</div>
+                <div className="text-xs text-muted-foreground p-3">Laden…</div>
               ) : visible.length === 0 ? (
-                <div className="rounded border border-dashed border-white/10 p-3 text-center text-xs text-white/40">
+                <div className="rounded border border-dashed border-border p-3 text-center text-xs text-muted-foreground">
                   Geen sjablonen
                 </div>
               ) : (
@@ -220,13 +220,13 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                       className={`group rounded-md border p-2.5 cursor-pointer transition ${
                         active
                           ? "border-[#ff2bd6]/60 bg-[#ff2bd6]/10"
-                          : "border-white/10 bg-white/5 hover:bg-white/10"
+                          : "border-border bg-muted/50 hover:bg-muted"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
-                          <Icon className="h-3.5 w-3.5 text-white/70 shrink-0" />
-                          <span className="text-xs font-medium text-white truncate">{t.name}</span>
+                          <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <span className="text-xs font-medium text-foreground truncate">{t.name}</span>
                         </div>
                         {t.is_default && (
                           <Badge variant="outline" className="text-[9px] border-amber-400/40 text-amber-300 px-1.5">
@@ -235,10 +235,10 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                         )}
                       </div>
                       {t.description && (
-                        <div className="mt-1 truncate text-[11px] text-white/60 italic">{t.description}</div>
+                        <div className="mt-1 truncate text-[11px] text-muted-foreground italic">{t.description}</div>
                       )}
                       {t.subject && (
-                        <div className="mt-0.5 truncate text-[11px] text-white/40">{t.subject}</div>
+                        <div className="mt-0.5 truncate text-[11px] text-muted-foreground">{t.subject}</div>
                       )}
                     </div>
                   );
@@ -247,7 +247,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
               <Button
                 size="sm"
                 variant="outline"
-                className="w-full border-white/20 text-white/80 hover:bg-white/10"
+                className="w-full border-border text-foreground hover:bg-muted"
                 onClick={() => createNew(c)}
               >
                 <Plus className="mr-1 h-3.5 w-3.5" /> Nieuw {CHANNEL_LABEL[c]}-sjabloon
@@ -260,7 +260,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
       {/* Editor */}
       <div className="space-y-3">
         {!editing ? (
-          <div className="rounded-lg border border-dashed border-white/10 p-12 text-center text-sm text-white/40">
+          <div className="rounded-lg border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
             Selecteer of maak een sjabloon
           </div>
         ) : (
@@ -269,7 +269,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
               <Input
                 value={editing.name}
                 onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-                className="bg-white/5 border-white/10 text-white font-semibold"
+                className="bg-muted/50 border-border text-foreground font-semibold"
               />
               <div className="flex gap-1">
                 {!editing.is_default && (
@@ -294,34 +294,34 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
               </div>
             </div>
             <div>
-              <Label className="text-[11px] text-white/60">Beschrijving</Label>
+              <Label className="text-[11px] text-muted-foreground">Beschrijving</Label>
               <Input
                 value={editing.description ?? ""}
                 onChange={(e) => setEditing({ ...editing, description: e.target.value })}
                 placeholder="Korte omschrijving — wanneer gebruik je dit sjabloon?"
-                className="bg-white/5 border-white/10 text-white"
+                className="bg-muted/50 border-border text-foreground"
               />
             </div>
             {editing.channel === "email" && (
               <div>
-                <Label className="text-[11px] text-white/60">Onderwerp</Label>
+                <Label className="text-[11px] text-muted-foreground">Onderwerp</Label>
                 <Input
                   value={editing.subject ?? ""}
                   onChange={(e) => setEditing({ ...editing, subject: e.target.value })}
-                  className="bg-white/5 border-white/10 text-white"
+                  className="bg-muted/50 border-border text-foreground"
                 />
               </div>
             )}
             <div>
               <div className="flex items-center justify-between">
-                <Label className="text-[11px] text-white/60">Inhoud</Label>
+                <Label className="text-[11px] text-muted-foreground">Inhoud</Label>
                 <div className="flex gap-1 flex-wrap">
                   {TEMPLATE_TOKENS.map((t) => (
                     <button
                       key={t}
                       type="button"
                       onClick={() => insertToken(t)}
-                      className="rounded border border-white/15 bg-white/5 px-1.5 py-0.5 text-[10px] text-white/70 hover:bg-white/10"
+                      className="rounded border border-white/15 bg-muted/50 px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"
                       title={`Variabele ${t} invoegen`}
                     >
                       {t}
@@ -333,11 +333,11 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                 rows={14}
                 value={editing.body}
                 onChange={(e) => setEditing({ ...editing, body: e.target.value })}
-                className="bg-white/5 border-white/10 text-white font-mono text-xs"
+                className="bg-muted/50 border-border text-foreground font-mono text-xs"
               />
             </div>
             <div className="flex justify-end">
-              <Button onClick={save} className="bg-[#ff2bd6] hover:bg-[#ff2bd6]/90 text-white">
+              <Button onClick={save} className="bg-[#ff2bd6] hover:bg-[#ff2bd6]/90 text-foreground">
                 <Save className="mr-2 h-4 w-4" /> Opslaan
               </Button>
             </div>
@@ -347,7 +347,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
 
       {/* Preview */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-white/60">
+        <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <Eye className="h-3.5 w-3.5" />
             Preview
@@ -359,41 +359,41 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
           )}
         </div>
         {preview ? (
-          <div className="rounded-lg border border-white/10 bg-black/30 p-3 text-xs text-white/80">
+          <div className="rounded-lg border border-border bg-black/30 p-3 text-xs text-foreground">
             {preview.subject && (
               <>
-                <div className="mb-2 text-[10px] uppercase tracking-wider text-white/40">Onderwerp</div>
-                <div className="mb-3 font-medium text-white">
+                <div className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">Onderwerp</div>
+                <div className="mb-3 font-medium text-foreground">
                   {renderTokens(preview.subject, SAMPLE)}
                 </div>
               </>
             )}
-            <div className="mb-1 text-[10px] uppercase tracking-wider text-white/40">Inhoud</div>
-            <div className="whitespace-pre-wrap text-white/85">
+            <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Inhoud</div>
+            <div className="whitespace-pre-wrap text-foreground/85">
               {renderTokens(preview.body, SAMPLE)}
             </div>
           </div>
         ) : (
-          <div className="rounded-lg border border-dashed border-white/10 p-4 text-center text-xs text-white/40">
+          <div className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
             Selecteer een sjabloon
           </div>
         )}
-        <div className="text-[10px] text-white/40">
+        <div className="text-[10px] text-muted-foreground">
           Variabelen ({TEMPLATE_TOKENS.join(", ")}) worden automatisch ingevuld vanuit prospect-data.
         </div>
       </div>
 
       {/* Version history */}
       <div className="space-y-2 xl:block hidden">
-        <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-white/60">
+        <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           <History className="h-3.5 w-3.5" /> Versies
         </div>
         {!editing ? (
-          <div className="rounded border border-dashed border-white/10 p-3 text-center text-xs text-white/40">
+          <div className="rounded border border-dashed border-border p-3 text-center text-xs text-muted-foreground">
             Selecteer een sjabloon
           </div>
         ) : versions.length === 0 ? (
-          <div className="rounded border border-dashed border-white/10 p-3 text-center text-xs text-white/40">
+          <div className="rounded border border-dashed border-border p-3 text-center text-xs text-muted-foreground">
             Nog geen versies
           </div>
         ) : (
@@ -407,7 +407,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                   className={`rounded-md border p-2 transition ${
                     isPreviewing
                       ? "border-amber-400/60 bg-amber-400/10"
-                      : "border-white/10 bg-white/5"
+                      : "border-border bg-muted/50"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -417,7 +417,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                         className={`text-[9px] px-1.5 ${
                           isCurrent
                             ? "border-emerald-400/40 text-emerald-300"
-                            : "border-white/15 text-white/60"
+                            : "border-white/15 text-muted-foreground"
                         }`}
                       >
                         v{v.version}
@@ -428,22 +428,22 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                         </span>
                       )}
                     </div>
-                    <span className="text-[10px] text-white/40 shrink-0">
+                    <span className="text-[10px] text-muted-foreground shrink-0">
                       {new Date(v.created_at).toLocaleString("nl-NL", {
                         dateStyle: "short",
                         timeStyle: "short",
                       })}
                     </span>
                   </div>
-                  <div className="mt-1 truncate text-[11px] text-white/70">{v.name}</div>
+                  <div className="mt-1 truncate text-[11px] text-muted-foreground">{v.name}</div>
                   {v.subject && (
-                    <div className="truncate text-[10px] text-white/40">{v.subject}</div>
+                    <div className="truncate text-[10px] text-muted-foreground">{v.subject}</div>
                   )}
                   <div className="mt-1.5 flex gap-1">
                     <button
                       type="button"
                       onClick={() => setPreviewVersion(isPreviewing ? null : v)}
-                      className="rounded border border-white/15 bg-white/5 px-1.5 py-0.5 text-[10px] text-white/70 hover:bg-white/10"
+                      className="rounded border border-white/15 bg-muted/50 px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"
                     >
                       {isPreviewing ? "Sluit preview" : "Preview"}
                     </button>
