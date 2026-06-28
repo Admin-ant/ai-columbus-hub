@@ -376,7 +376,7 @@ export function OutreachInboxTab({ organizationId, campaignNames, onUnreadChange
               </div>
             </div>
 
-            <div className="rounded border border-border bg-black/20 p-3">
+            <div className="rounded border border-border bg-muted/30 p-3">
               <div className="text-xs font-medium text-muted-foreground">{selected.subject ?? "(geen onderwerp)"}</div>
               <div className="mt-2 whitespace-pre-wrap text-sm text-foreground">{selected.body ?? ""}</div>
             </div>

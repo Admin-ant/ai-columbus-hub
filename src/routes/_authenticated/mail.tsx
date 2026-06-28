@@ -273,7 +273,7 @@ function MailPage() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <MailIcon className="h-6 w-6" style={{ color: "hsl(var(--primary))" }} />
+              <MailIcon className="h-6 w-6" style={{ color: "var(--primary)" }} />
               Mail
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -651,7 +651,7 @@ function MessageCard({
   onDeleteAttachment: (p: string) => void;
 }) {
   return (
-    <div className="rounded border border-border bg-black/20 p-3 text-sm">
+    <div className="rounded border border-border bg-muted/30 p-3 text-sm">
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="text-xs text-foreground">

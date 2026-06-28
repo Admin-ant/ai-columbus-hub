@@ -79,7 +79,7 @@ export function DemoPromptDialog({
       <DialogContent className="max-w-md border-border bg-background text-foreground">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CalendarClock className="h-5 w-5" style={{ color: "hsl(var(--primary))" }} />
+            <CalendarClock className="h-5 w-5" style={{ color: "var(--primary)" }} />
             Demo inplannen{targetCompany ? ` — ${targetCompany}` : ""}
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">

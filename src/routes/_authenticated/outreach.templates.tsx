@@ -22,7 +22,7 @@ function OutreachTemplatesPage() {
               <ArrowLeft className="h-3 w-3" /> Terug naar pipeline
             </Link>
             <h1 className="mt-1 text-2xl font-bold tracking-tight flex items-center gap-2">
-              <FileText className="h-6 w-6" style={{ color: "hsl(var(--primary))" }} />
+              <FileText className="h-6 w-6" style={{ color: "var(--primary)" }} />
               Mail templates
             </h1>
             <p className="text-sm text-muted-foreground">

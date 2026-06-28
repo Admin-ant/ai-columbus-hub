@@ -102,7 +102,7 @@ function MailSettingsPage() {
             <ArrowLeft className="h-3 w-3" /> Terug naar Mail
           </Link>
           <h1 className="mt-1 text-2xl font-bold tracking-tight flex items-center gap-2">
-            <MailIcon className="h-6 w-6" style={{ color: "hsl(var(--primary))" }} />
+            <MailIcon className="h-6 w-6" style={{ color: "var(--primary)" }} />
             Mail instellingen
           </h1>
           <p className="text-sm text-muted-foreground">

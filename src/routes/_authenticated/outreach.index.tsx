@@ -844,7 +844,7 @@ function TargetCard({
         </button>
       )}
       {showResearch && row.research_summary && (
-        <pre className="mt-1 max-h-48 overflow-auto rounded border border-border bg-black/60 p-2 text-[10px] leading-snug text-foreground whitespace-pre-wrap">
+        <pre className="mt-1 max-h-48 overflow-auto rounded border border-border bg-muted/50 p-2 text-[10px] leading-snug text-foreground whitespace-pre-wrap">
           {row.research_summary}
         </pre>
       )}
