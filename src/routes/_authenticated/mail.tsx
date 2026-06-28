@@ -101,12 +101,12 @@ function StatusBadge({ m }: { m: MailRow }) {
   const s = m.status;
   const map: Record<string, { label: string; cls: string; Icon: typeof CheckCircle2 }> = {
     queued: { label: "In wachtrij", cls: "bg-muted text-muted-foreground", Icon: Clock },
-    sent: { label: "Verzonden", cls: "bg-sky-500/20 text-sky-200", Icon: SendIcon },
-    delivered: { label: "Afgeleverd", cls: "bg-emerald-500/20 text-emerald-200", Icon: CheckCircle2 },
-    bounced: { label: "Bounced", cls: "bg-red-500/20 text-red-200", Icon: XCircle },
-    complained: { label: "Klacht", cls: "bg-orange-500/20 text-orange-200", Icon: AlertCircle },
-    failed: { label: "Geweigerd", cls: "bg-red-500/20 text-red-200", Icon: XCircle },
-    delayed: { label: "Vertraagd", cls: "bg-amber-500/20 text-amber-200", Icon: Clock },
+    sent: { label: "Verzonden", cls: "bg-primary/10 text-primary", Icon: SendIcon },
+    delivered: { label: "Afgeleverd", cls: "bg-primary/10 text-primary", Icon: CheckCircle2 },
+    bounced: { label: "Bounced", cls: "bg-destructive/10 text-destructive", Icon: XCircle },
+    complained: { label: "Klacht", cls: "bg-destructive/10 text-destructive", Icon: AlertCircle },
+    failed: { label: "Geweigerd", cls: "bg-destructive/10 text-destructive", Icon: XCircle },
+    delayed: { label: "Vertraagd", cls: "bg-accent text-accent-foreground", Icon: Clock },
     received: { label: "Ontvangen", cls: "bg-muted text-muted-foreground", Icon: InboxIcon },
   };
   const c = map[s] ?? { label: s, cls: "bg-muted text-muted-foreground", Icon: Clock };
@@ -273,7 +273,7 @@ function MailPage() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <MailIcon className="h-6 w-6" style={{ color: "var(--brand)" }} />
+              <MailIcon className="h-6 w-6 text-brand" />
               Mail
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -287,7 +287,7 @@ function MailPage() {
             <Button variant="outline" size="sm" onClick={load} className="border-border text-foreground hover:bg-muted">
               <RefreshCw className="mr-2 h-4 w-4" /> Verversen
             </Button>
-            <Button onClick={onCompose} className="bg-brand hover:bg-brand/90 text-brand-foreground">
+            <Button onClick={onCompose} className="bg-primary text-primary-foreground hover:bg-primary/90">
               <PenSquare className="mr-2 h-4 w-4" /> Nieuwe mail
             </Button>
           </div>
@@ -312,7 +312,7 @@ function MailPage() {
                     setBulkIds(new Set());
                   }}
                   className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition ${
-                    active ? "bg-brand/15 text-foreground" : "text-muted-foreground hover:bg-muted/50"
+                    active ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   }`}
                 >
                   <span className="flex items-center gap-2">
@@ -320,7 +320,7 @@ function MailPage() {
                     {f.label}
                   </span>
                   {f.count > 0 && (
-                    <Badge className="bg-brand/30 text-foreground text-[10px] px-1.5">{f.count}</Badge>
+                    <Badge className="bg-primary px-1.5 text-[10px] text-primary-foreground">{f.count}</Badge>
                   )}
                 </button>
               );
@@ -330,7 +330,7 @@ function MailPage() {
           {/* List */}
           <div className="flex flex-col max-h-[78vh]">
             {/* Bulk toolbar */}
-            <div className="mb-2 flex items-center justify-between gap-2 rounded-md border border-border bg-muted/50 px-2 py-1.5">
+            <div className="mb-2 flex items-center justify-between gap-2 rounded-md border border-border bg-card px-2 py-1.5 text-card-foreground shadow-sm">
               <label className="flex items-center gap-2 text-[11px] text-muted-foreground cursor-pointer">
                 <Checkbox
                   checked={items.length > 0 && bulkIds.size === items.length}
@@ -446,7 +446,7 @@ function MailPage() {
                         setBulkBusy(false);
                       }
                     }}
-                    className="h-7 px-2 text-[11px] text-rose-300 hover:bg-rose-500/10"
+                    className="h-7 px-2 text-[11px] text-destructive hover:bg-destructive/10"
                   >
                     <Trash2 className="mr-1 h-3 w-3" /> Verwijder
                   </Button>
@@ -478,8 +478,8 @@ function MailPage() {
                       key={m.id}
                       className={`flex gap-2 rounded-md border p-2.5 transition ${
                         isSelected
-                          ? "border-brand/60 bg-brand/10"
-                          : "border-border bg-muted/50 hover:bg-muted"
+                          ? "border-primary/50 bg-accent text-accent-foreground"
+                          : "border-border bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground"
                       }`}
                     >
                       <div className="pt-0.5">
@@ -526,7 +526,7 @@ function MailPage() {
           </div>
 
           {/* Detail */}
-          <div className="rounded-lg border border-border bg-muted/50 p-4 min-h-[400px]">
+          <div className="min-h-[400px] rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm">
             {!selected ? (
               <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
                 Selecteer een bericht
@@ -602,7 +602,7 @@ function ThreadView({
           <Button size="sm" variant="outline" onClick={onDeleteMessage} className="border-border text-foreground hover:bg-muted">
             <Trash2 className="mr-1 h-3 w-3" /> Verwijder
           </Button>
-          <Button size="sm" onClick={onOpenCompose} className="bg-brand hover:bg-brand/90 text-brand-foreground">
+          <Button size="sm" onClick={onOpenCompose} className="bg-primary text-primary-foreground hover:bg-primary/90">
             <Reply className="mr-1 h-3 w-3" /> Uitgebreid
           </Button>
         </div>
@@ -612,8 +612,8 @@ function ThreadView({
         selected.status === "failed" ||
         selected.status === "complained") &&
         (selected.bounce_reason || selected.error) && (
-          <div className="rounded border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-200">
-            <div className="font-semibold flex items-center gap-1">
+          <div className="rounded border border-destructive/30 bg-destructive/10 p-3 text-xs text-foreground">
+            <div className="flex items-center gap-1 font-semibold text-destructive">
               <AlertCircle className="h-3 w-3" /> {selected.status === "bounced" ? "Bounced" : selected.status === "failed" ? "Geweigerd" : "Klacht"}
               {selected.bounce_type && <span className="ml-1 opacity-70">({selected.bounce_type})</span>}
             </div>
@@ -651,7 +651,7 @@ function MessageCard({
   onDeleteAttachment: (p: string) => void;
 }) {
   return (
-    <div className="rounded border border-border bg-muted/30 p-3 text-sm">
+      <div className="rounded border border-border bg-background p-3 text-sm text-foreground shadow-sm">
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="text-xs text-foreground">
@@ -675,7 +675,7 @@ function MessageCard({
         </div>
       </div>
       {m.body_html ? (
-        <div className="text-foreground" dangerouslySetInnerHTML={{ __html: m.body_html }} />
+        <div className="mail-message-body" dangerouslySetInnerHTML={{ __html: m.body_html }} />
       ) : (
         <div className="whitespace-pre-wrap text-foreground">{m.body_text ?? ""}</div>
       )}
@@ -686,7 +686,7 @@ function MessageCard({
             {m.attachments.map((a) => (
               <div
                 key={a.path}
-                className="flex items-center justify-between gap-2 rounded border border-border bg-muted/50 px-2 py-1.5"
+                className="flex items-center justify-between gap-2 rounded border border-border bg-card px-2 py-1.5 text-card-foreground"
               >
                 <div className="flex min-w-0 items-center gap-2">
                   <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -700,13 +700,13 @@ function MessageCard({
                 <div className="flex items-center gap-1 shrink-0">
                   <button
                     onClick={() => onOpenAttachment(a.path)}
-                    className="inline-flex items-center gap-1 rounded border border-border px-2 py-1 text-[11px] text-foreground hover:bg-muted"
+                    className="inline-flex items-center gap-1 rounded border border-border px-2 py-1 text-[11px] font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
                   >
                     <Download className="h-3 w-3" /> Download
                   </button>
                   <button
                     onClick={() => onDeleteAttachment(a.path)}
-                    className="inline-flex items-center gap-1 rounded border border-red-500/30 px-2 py-1 text-[11px] text-red-200 hover:bg-red-500/10"
+                    className="inline-flex items-center gap-1 rounded border border-destructive/30 px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10"
                   >
                     <Trash2 className="h-3 w-3" />
                   </button>
@@ -809,17 +809,17 @@ function InlineReply({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+    <div className="space-y-2 rounded-lg border border-border bg-background p-3 text-foreground shadow-sm">
       <div className="flex items-center justify-between gap-2">
         <div className="text-[11px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
           <Reply className="h-3 w-3" /> Snel antwoorden
         </div>
         <div className="w-60">
           <Select value={tplId || defaultTplId || ""} onValueChange={applyTemplate}>
-            <SelectTrigger className="h-8 bg-muted/50 border-border text-foreground text-xs">
+            <SelectTrigger className="h-8 border-input bg-background text-xs text-foreground shadow-sm">
               <SelectValue placeholder="Kies template…" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="border-border bg-popover text-popover-foreground">
               {templates.length === 0 && (
                 <div className="px-2 py-1.5 text-xs text-muted-foreground">Geen templates</div>
               )}
@@ -838,14 +838,14 @@ function InlineReply({
         value={body}
         onChange={(e) => setBody(e.target.value)}
         placeholder="Typ je antwoord…"
-        className="bg-muted/50 border-border text-foreground font-mono text-sm"
+        className="border-input bg-background text-sm leading-relaxed text-foreground placeholder:text-muted-foreground shadow-sm"
       />
       <div className="flex justify-end">
         <Button
           size="sm"
           onClick={quickSend}
           disabled={busy}
-          className="bg-brand hover:bg-brand/90 text-brand-foreground"
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
           {busy ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <SendIcon className="mr-2 h-3 w-3" />}
           Verstuur antwoord

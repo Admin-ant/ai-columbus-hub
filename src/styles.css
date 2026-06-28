@@ -151,3 +151,37 @@
     color: var(--color-foreground);
   }
 }
+
+.mail-message-body {
+  color: var(--color-foreground);
+  background: transparent;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.mail-message-body :where(*) {
+  color: inherit !important;
+  border-color: var(--color-border) !important;
+}
+
+.mail-message-body :where(div, p, span, table, tbody, thead, tr, td, th) {
+  background: transparent !important;
+}
+
+.mail-message-body :where(a) {
+  color: var(--color-primary) !important;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.mail-message-body :where(img) {
+  max-width: 100%;
+  height: auto;
+}
+
+.mail-message-body :where(blockquote) {
+  margin-inline: 0;
+  padding-inline-start: 0.75rem;
+  border-inline-start: 2px solid var(--color-border) !important;
+  color: var(--color-muted-foreground) !important;
+}

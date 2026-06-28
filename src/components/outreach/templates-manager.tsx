@@ -196,7 +196,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
       {/* List */}
       <div className="space-y-3">
         <Tabs value={channel} onValueChange={(v) => setChannel(v as TemplateChannel)}>
-          <TabsList className="bg-muted/50 border border-border w-full grid grid-cols-3">
+          <TabsList className="grid w-full grid-cols-3 border border-border bg-card text-card-foreground">
             <TabsTrigger value="email"><Mail className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="linkedin"><Linkedin className="h-3.5 w-3.5" /></TabsTrigger>
             <TabsTrigger value="whatsapp"><MessageCircle className="h-3.5 w-3.5" /></TabsTrigger>
@@ -219,8 +219,8 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                       onClick={() => setEditing(t)}
                       className={`group rounded-md border p-2.5 cursor-pointer transition ${
                         active
-                          ? "border-brand/60 bg-brand/10"
-                          : "border-border bg-muted/50 hover:bg-muted"
+                          ? "border-primary/50 bg-accent text-accent-foreground"
+                          : "border-border bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
@@ -229,7 +229,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                           <span className="text-xs font-medium text-foreground truncate">{t.name}</span>
                         </div>
                         {t.is_default && (
-                          <Badge variant="outline" className="text-[9px] border-amber-400/40 text-amber-300 px-1.5">
+                          <Badge variant="outline" className="border-primary/40 bg-primary/10 px-1.5 text-[9px] text-primary">
                             standaard
                           </Badge>
                         )}
@@ -247,7 +247,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
               <Button
                 size="sm"
                 variant="outline"
-                className="w-full border-border text-foreground hover:bg-muted"
+                    className="w-full border-border text-foreground hover:bg-accent hover:text-accent-foreground"
                 onClick={() => createNew(c)}
               >
                 <Plus className="mr-1 h-3.5 w-3.5" /> Nieuw {CHANNEL_LABEL[c]}-sjabloon
@@ -269,7 +269,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
               <Input
                 value={editing.name}
                 onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-                className="bg-muted/50 border-border text-foreground font-semibold"
+                className="border-input bg-background font-semibold text-foreground placeholder:text-muted-foreground shadow-sm"
               />
               <div className="flex gap-1">
                 {!editing.is_default && (
@@ -277,7 +277,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                     size="sm"
                     variant="ghost"
                     onClick={() => setDefault(editing)}
-                    className="text-amber-300 hover:bg-amber-400/10"
+                    className="text-primary hover:bg-accent hover:text-accent-foreground"
                     title="Markeer als standaard voor dit kanaal"
                   >
                     <Star className="h-4 w-4" />
@@ -287,41 +287,41 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                   size="sm"
                   variant="ghost"
                   onClick={() => remove(editing.id)}
-                  className="text-rose-400 hover:bg-rose-500/10"
+                  className="text-destructive hover:bg-destructive/10"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
             </div>
             <div>
-              <Label className="text-[11px] text-muted-foreground">Beschrijving</Label>
+              <Label className="text-[11px] font-medium text-foreground">Beschrijving</Label>
               <Input
                 value={editing.description ?? ""}
                 onChange={(e) => setEditing({ ...editing, description: e.target.value })}
                 placeholder="Korte omschrijving — wanneer gebruik je dit sjabloon?"
-                className="bg-muted/50 border-border text-foreground"
+                className="border-input bg-background text-foreground placeholder:text-muted-foreground shadow-sm"
               />
             </div>
             {editing.channel === "email" && (
               <div>
-                <Label className="text-[11px] text-muted-foreground">Onderwerp</Label>
+                <Label className="text-[11px] font-medium text-foreground">Onderwerp</Label>
                 <Input
                   value={editing.subject ?? ""}
                   onChange={(e) => setEditing({ ...editing, subject: e.target.value })}
-                  className="bg-muted/50 border-border text-foreground"
+                  className="border-input bg-background text-foreground placeholder:text-muted-foreground shadow-sm"
                 />
               </div>
             )}
             <div>
               <div className="flex items-center justify-between">
-                <Label className="text-[11px] text-muted-foreground">Inhoud</Label>
+                <Label className="text-[11px] font-medium text-foreground">Inhoud</Label>
                 <div className="flex gap-1 flex-wrap">
                   {TEMPLATE_TOKENS.map((t) => (
                     <button
                       key={t}
                       type="button"
                       onClick={() => insertToken(t)}
-                      className="rounded border border-border bg-muted/50 px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"
+                      className="rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
                       title={`Variabele ${t} invoegen`}
                     >
                       {t}
@@ -333,11 +333,11 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                 rows={14}
                 value={editing.body}
                 onChange={(e) => setEditing({ ...editing, body: e.target.value })}
-                className="bg-muted/50 border-border text-foreground font-mono text-xs"
+                className="border-input bg-background font-mono text-sm leading-relaxed text-foreground placeholder:text-muted-foreground shadow-sm"
               />
             </div>
             <div className="flex justify-end">
-              <Button onClick={save} className="bg-brand hover:bg-brand/90 text-brand-foreground">
+              <Button onClick={save} className="bg-primary text-primary-foreground hover:bg-primary/90">
                 <Save className="mr-2 h-4 w-4" /> Opslaan
               </Button>
             </div>
@@ -353,13 +353,13 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
             Preview
           </span>
           {previewVersion && (
-            <Badge variant="outline" className="text-[9px] border-amber-400/40 text-amber-300">
+            <Badge variant="outline" className="border-primary/40 bg-primary/10 text-[9px] text-primary">
               v{previewVersion.version}
             </Badge>
           )}
         </div>
         {preview ? (
-          <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-foreground">
+          <div className="rounded-lg border border-border bg-card p-3 text-sm text-card-foreground shadow-sm">
             {preview.subject && (
               <>
                 <div className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">Onderwerp</div>
@@ -369,7 +369,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
               </>
             )}
             <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Inhoud</div>
-            <div className="whitespace-pre-wrap text-foreground/85">
+            <div className="whitespace-pre-wrap leading-relaxed text-foreground">
               {renderTokens(preview.body, SAMPLE)}
             </div>
           </div>
@@ -406,8 +406,8 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                   key={v.id}
                   className={`rounded-md border p-2 transition ${
                     isPreviewing
-                      ? "border-amber-400/60 bg-amber-400/10"
-                      : "border-border bg-muted/50"
+                      ? "border-primary/50 bg-accent text-accent-foreground"
+                      : "border-border bg-card text-card-foreground"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -416,14 +416,14 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                         variant="outline"
                         className={`text-[9px] px-1.5 ${
                           isCurrent
-                            ? "border-emerald-400/40 text-emerald-300"
+                            ? "border-primary/40 bg-primary/10 text-primary"
                             : "border-border text-muted-foreground"
                         }`}
                       >
                         v{v.version}
                       </Badge>
                       {isCurrent && (
-                        <span className="text-[9px] uppercase tracking-wider text-emerald-300/80">
+                        <span className="text-[9px] font-medium uppercase tracking-wider text-primary">
                           huidig
                         </span>
                       )}
@@ -443,7 +443,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                     <button
                       type="button"
                       onClick={() => setPreviewVersion(isPreviewing ? null : v)}
-                      className="rounded border border-border bg-muted/50 px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"
+                      className="rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
                     >
                       {isPreviewing ? "Sluit preview" : "Preview"}
                     </button>
@@ -451,7 +451,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                       <button
                         type="button"
                         onClick={() => restoreVersion(v)}
-                        className="inline-flex items-center gap-1 rounded border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[10px] text-amber-200 hover:bg-amber-400/20"
+                        className="inline-flex items-center gap-1 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/15"
                       >
                         <RotateCcw className="h-2.5 w-2.5" /> Herstel
                       </button>

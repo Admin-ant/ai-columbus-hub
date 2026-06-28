@@ -102,7 +102,7 @@ function MailSettingsPage() {
             <ArrowLeft className="h-3 w-3" /> Terug naar Mail
           </Link>
           <h1 className="mt-1 text-2xl font-bold tracking-tight flex items-center gap-2">
-            <MailIcon className="h-6 w-6" style={{ color: "var(--brand)" }} />
+              <MailIcon className="h-6 w-6 text-brand" />
             Mail instellingen
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -113,14 +113,14 @@ function MailSettingsPage() {
         {loading ? (
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         ) : (
-          <div className="rounded-lg border border-border bg-muted/50 p-5 space-y-5">
+          <div className="space-y-5 rounded-lg border border-border bg-card p-5 text-card-foreground shadow-sm">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Afzender naam">
                 <Input
                   value={s.from_name ?? ""}
                   onChange={(e) => setS({ ...s, from_name: e.target.value })}
                   placeholder="Bijv. AI van Columbus"
-                  className="bg-muted/50 border-border text-foreground"
+                  className="border-input bg-background text-foreground placeholder:text-muted-foreground shadow-sm"
                 />
               </Field>
               <Field label="Afzender e-mail">
@@ -128,7 +128,7 @@ function MailSettingsPage() {
                   value={s.from_email ?? ""}
                   onChange={(e) => setS({ ...s, from_email: e.target.value })}
                   placeholder="hello@bedrijf.nl"
-                  className="bg-muted/50 border-border text-foreground"
+                  className="border-input bg-background text-foreground placeholder:text-muted-foreground shadow-sm"
                 />
               </Field>
             </div>
@@ -137,7 +137,7 @@ function MailSettingsPage() {
                 value={s.reply_to ?? ""}
                 onChange={(e) => setS({ ...s, reply_to: e.target.value })}
                 placeholder="antwoord@bedrijf.nl"
-                className="bg-muted/50 border-border text-foreground"
+                className="border-input bg-background text-foreground placeholder:text-muted-foreground shadow-sm"
               />
             </Field>
             <Field label="Handtekening (wordt automatisch toegevoegd)">
@@ -145,7 +145,7 @@ function MailSettingsPage() {
                 rows={5}
                 value={s.signature ?? ""}
                 onChange={(e) => setS({ ...s, signature: e.target.value })}
-                className="bg-muted/50 border-border text-foreground font-mono text-sm"
+                className="border-input bg-background text-sm leading-relaxed text-foreground placeholder:text-muted-foreground shadow-sm"
                 placeholder={"Met vriendelijke groet,\nNaam"}
               />
             </Field>
@@ -175,7 +175,7 @@ function MailSettingsPage() {
               <Button
                 onClick={save}
                 disabled={saving}
-                className="bg-brand hover:bg-brand/90 text-brand-foreground"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Opslaan
@@ -196,7 +196,7 @@ function MailSettingsPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</Label>
+      <Label className="text-[11px] font-medium uppercase tracking-wider text-foreground">{label}</Label>
       {children}
     </div>
   );
@@ -219,10 +219,10 @@ function TplSel({
         value={value ?? "__none__"}
         onValueChange={(v) => onChange(v === "__none__" ? null : v)}
       >
-        <SelectTrigger className="bg-muted/50 border-border text-foreground">
+        <SelectTrigger className="border-input bg-background text-foreground shadow-sm">
           <SelectValue placeholder="Geen" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="border-border bg-popover text-popover-foreground">
           <SelectItem value="__none__">Geen</SelectItem>
           {options.map((t) => (
             <SelectItem key={t.id} value={t.id}>
