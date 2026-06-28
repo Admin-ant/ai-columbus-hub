@@ -321,7 +321,7 @@ export function ComposeMailDialog({
           <Button
             onClick={onSend}
             disabled={busy}
-            className="bg-[#ff2bd6] hover:bg-[#ff2bd6]/90 text-foreground"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
             Verstuur

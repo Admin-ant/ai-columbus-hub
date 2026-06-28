@@ -216,7 +216,7 @@ function AnalyticsDashboard() {
                     const max = Math.max(1, ...heatmap.map((x) => x.total_ms));
                     const pct = Math.round((h.total_ms / max) * 100);
                     return (
-                      <div key={h.quote_id} className="rounded border border-border bg-black/30 p-3">
+                      <div key={h.quote_id} className="rounded border border-border bg-muted/30 p-3">
                         <div className="flex items-center justify-between text-xs">
                           <span className="truncate font-semibold text-foreground">{h.title}</span>
                           <span className="flex items-center gap-2 tabular-nums text-muted-foreground">
@@ -289,7 +289,7 @@ function Kpi({
 }) {
   return (
     <div
-      className="rounded-lg border border-border bg-black/40 p-4"
+      className="rounded-lg border border-border bg-muted/40 p-4"
       style={accent ? { boxShadow: `0 0 24px ${ACCENT}33`, borderColor: `${ACCENT}55` } : undefined}
     >
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>

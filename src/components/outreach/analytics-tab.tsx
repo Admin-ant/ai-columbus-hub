@@ -60,7 +60,7 @@ export function OutreachAnalyticsTab({ organizationId, campaignNames }: Props) {
               variant={days === r.days ? "default" : "ghost"}
               className={
                 days === r.days
-                  ? "bg-[#ff2bd6] hover:bg-[#ff2bd6]/90 text-foreground"
+                  ? "bg-primary hover:bg-primary/90 text-primary-foreground"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
               }
               onClick={() => setDays(r.days)}
@@ -191,7 +191,7 @@ export function OutreachAnalyticsTab({ organizationId, campaignNames }: Props) {
                         </div>
                         <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
                           <div
-                            className="h-full rounded-full bg-[#ff2bd6]"
+                            className="h-full rounded-full bg-primary"
                             style={{ width: `${Math.min(100, rate * 4)}%` }}
                           />
                         </div>
@@ -225,7 +225,7 @@ function Kpi({
     <div
       className={`rounded-lg border p-3 ${
         accent
-          ? "border-[#ff2bd6]/40 bg-[#ff2bd6]/10"
+          ? "border-primary/40 bg-primary/10"
           : "border-border bg-muted/50"
       }`}
     >

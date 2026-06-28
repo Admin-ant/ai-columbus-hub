@@ -219,7 +219,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                       onClick={() => setEditing(t)}
                       className={`group rounded-md border p-2.5 cursor-pointer transition ${
                         active
-                          ? "border-[#ff2bd6]/60 bg-[#ff2bd6]/10"
+                          ? "border-primary/60 bg-primary/10"
                           : "border-border bg-muted/50 hover:bg-muted"
                       }`}
                     >
@@ -337,7 +337,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
               />
             </div>
             <div className="flex justify-end">
-              <Button onClick={save} className="bg-[#ff2bd6] hover:bg-[#ff2bd6]/90 text-foreground">
+              <Button onClick={save} className="bg-primary hover:bg-primary/90 text-primary-foreground">
                 <Save className="mr-2 h-4 w-4" /> Opslaan
               </Button>
             </div>
@@ -359,7 +359,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
           )}
         </div>
         {preview ? (
-          <div className="rounded-lg border border-border bg-black/30 p-3 text-xs text-foreground">
+          <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-foreground">
             {preview.subject && (
               <>
                 <div className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">Onderwerp</div>

@@ -148,7 +148,7 @@ export function SequenceBuilder({ campaignId, initialSteps, onSaved }: Props) {
                 key={i}
                 className={`group rounded-md border p-2.5 cursor-pointer transition ${
                   isActive
-                    ? "border-[#ff2bd6]/60 bg-[#ff2bd6]/10"
+                    ? "border-primary/60 bg-primary/10"
                     : "border-border bg-muted/50 hover:bg-muted"
                 }`}
                 onClick={() => setActiveStep(i)}
@@ -313,7 +313,7 @@ export function SequenceBuilder({ campaignId, initialSteps, onSaved }: Props) {
           </>
         )}
         <div className="flex justify-end pt-2">
-          <Button onClick={save} disabled={saving} className="bg-[#ff2bd6] hover:bg-[#ff2bd6]/90 text-foreground">
+          <Button onClick={save} disabled={saving} className="bg-primary hover:bg-primary/90 text-primary-foreground">
             <Save className="mr-2 h-4 w-4" /> {saving ? "Opslaan..." : "Sequence opslaan"}
           </Button>
         </div>
@@ -326,7 +326,7 @@ export function SequenceBuilder({ campaignId, initialSteps, onSaved }: Props) {
           Preview
         </div>
         {current && current.channel !== "wait" ? (
-          <div className="rounded-lg border border-border bg-black/30 p-3 text-xs text-foreground">
+          <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-foreground">
             <div className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">Onderwerp</div>
             <div className="mb-3 font-medium text-foreground">{renderPreview(current.subject ?? "")}</div>
             <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Body</div>
