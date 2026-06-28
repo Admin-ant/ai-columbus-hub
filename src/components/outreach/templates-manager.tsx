@@ -219,7 +219,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                       onClick={() => setEditing(t)}
                       className={`group rounded-md border p-2.5 cursor-pointer transition ${
                         active
-                          ? "border-primary/60 bg-primary/10"
+                          ? "border-brand/60 bg-brand/10"
                           : "border-border bg-muted/50 hover:bg-muted"
                       }`}
                     >
@@ -337,7 +337,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
               />
             </div>
             <div className="flex justify-end">
-              <Button onClick={save} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Button onClick={save} className="bg-brand hover:bg-brand/90 text-brand-foreground">
                 <Save className="mr-2 h-4 w-4" /> Opslaan
               </Button>
             </div>

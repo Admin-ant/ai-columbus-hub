@@ -273,7 +273,7 @@ function MailPage() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <MailIcon className="h-6 w-6" style={{ color: "var(--primary)" }} />
+              <MailIcon className="h-6 w-6" style={{ color: "var(--brand)" }} />
               Mail
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -287,7 +287,7 @@ function MailPage() {
             <Button variant="outline" size="sm" onClick={load} className="border-border text-foreground hover:bg-muted">
               <RefreshCw className="mr-2 h-4 w-4" /> Verversen
             </Button>
-            <Button onClick={onCompose} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Button onClick={onCompose} className="bg-brand hover:bg-brand/90 text-brand-foreground">
               <PenSquare className="mr-2 h-4 w-4" /> Nieuwe mail
             </Button>
           </div>
@@ -312,7 +312,7 @@ function MailPage() {
                     setBulkIds(new Set());
                   }}
                   className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition ${
-                    active ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-muted/50"
+                    active ? "bg-brand/15 text-foreground" : "text-muted-foreground hover:bg-muted/50"
                   }`}
                 >
                   <span className="flex items-center gap-2">
@@ -320,7 +320,7 @@ function MailPage() {
                     {f.label}
                   </span>
                   {f.count > 0 && (
-                    <Badge className="bg-primary/30 text-foreground text-[10px] px-1.5">{f.count}</Badge>
+                    <Badge className="bg-brand/30 text-foreground text-[10px] px-1.5">{f.count}</Badge>
                   )}
                 </button>
               );
@@ -478,7 +478,7 @@ function MailPage() {
                       key={m.id}
                       className={`flex gap-2 rounded-md border p-2.5 transition ${
                         isSelected
-                          ? "border-primary/60 bg-primary/10"
+                          ? "border-brand/60 bg-brand/10"
                           : "border-border bg-muted/50 hover:bg-muted"
                       }`}
                     >
@@ -500,7 +500,7 @@ function MailPage() {
                           <div className={`truncate text-xs font-medium ${isUnread ? "text-foreground" : "text-muted-foreground"}`}>
                             {who}
                           </div>
-                          {isUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />}
+                          {isUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />}
                         </div>
                         <div className="mt-0.5 truncate text-[12px] text-foreground">
                           {m.subject ?? "(geen onderwerp)"}
@@ -602,7 +602,7 @@ function ThreadView({
           <Button size="sm" variant="outline" onClick={onDeleteMessage} className="border-border text-foreground hover:bg-muted">
             <Trash2 className="mr-1 h-3 w-3" /> Verwijder
           </Button>
-          <Button size="sm" onClick={onOpenCompose} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+          <Button size="sm" onClick={onOpenCompose} className="bg-brand hover:bg-brand/90 text-brand-foreground">
             <Reply className="mr-1 h-3 w-3" /> Uitgebreid
           </Button>
         </div>
@@ -845,7 +845,7 @@ function InlineReply({
           size="sm"
           onClick={quickSend}
           disabled={busy}
-          className="bg-primary hover:bg-primary/90 text-primary-foreground"
+          className="bg-brand hover:bg-brand/90 text-brand-foreground"
         >
           {busy ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <SendIcon className="mr-2 h-3 w-3" />}
           Verstuur antwoord

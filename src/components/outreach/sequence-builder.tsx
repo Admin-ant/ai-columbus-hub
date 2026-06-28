@@ -148,7 +148,7 @@ export function SequenceBuilder({ campaignId, initialSteps, onSaved }: Props) {
                 key={i}
                 className={`group rounded-md border p-2.5 cursor-pointer transition ${
                   isActive
-                    ? "border-primary/60 bg-primary/10"
+                    ? "border-brand/60 bg-brand/10"
                     : "border-border bg-muted/50 hover:bg-muted"
                 }`}
                 onClick={() => setActiveStep(i)}
@@ -313,7 +313,7 @@ export function SequenceBuilder({ campaignId, initialSteps, onSaved }: Props) {
           </>
         )}
         <div className="flex justify-end pt-2">
-          <Button onClick={save} disabled={saving} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+          <Button onClick={save} disabled={saving} className="bg-brand hover:bg-brand/90 text-brand-foreground">
             <Save className="mr-2 h-4 w-4" /> {saving ? "Opslaan..." : "Sequence opslaan"}
           </Button>
         </div>

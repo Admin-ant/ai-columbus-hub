@@ -79,7 +79,7 @@ export function DemoPromptDialog({
       <DialogContent className="max-w-md border-border bg-background text-foreground">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CalendarClock className="h-5 w-5" style={{ color: "var(--primary)" }} />
+            <CalendarClock className="h-5 w-5" style={{ color: "var(--brand)" }} />
             Demo inplannen{targetCompany ? ` — ${targetCompany}` : ""}
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
@@ -126,7 +126,7 @@ export function DemoPromptDialog({
           <Button
             onClick={save}
             disabled={saving}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+            className="bg-brand hover:bg-brand/90 text-brand-foreground"
           >
             {saving ? "Opslaan…" : "Opslaan"}
           </Button>

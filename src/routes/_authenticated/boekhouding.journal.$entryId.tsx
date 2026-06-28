@@ -324,7 +324,7 @@ function JournalDetailPage() {
 
       <div className="rounded-lg border bg-card p-5">
         <div className="flex items-start gap-3">
-          <div className="rounded-md bg-primary/10 p-2 text-primary">
+          <div className="rounded-md bg-brand/10 p-2 text-brand">
             <ScrollText className="h-5 w-5" />
           </div>
           <div className="flex-1">
@@ -493,7 +493,7 @@ function JournalDetailPage() {
                   <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                   <button
                     onClick={() => void openAttachment(a)}
-                    className="flex-1 truncate text-left text-sm font-medium text-primary hover:underline"
+                    className="flex-1 truncate text-left text-sm font-medium text-brand hover:underline"
                     title={a.file_name}
                   >
                     {a.file_name}

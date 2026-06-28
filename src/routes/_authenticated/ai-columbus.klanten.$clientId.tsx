@@ -262,7 +262,7 @@ function ClientDetailPage() {
                 {client.website && (
                   <div className="flex items-center gap-2 pt-1">
                     <Globe className="h-4 w-4 text-muted-foreground" />
-                    <a className="text-primary hover:underline" href={client.website.startsWith("http") ? client.website : `https://${client.website}`} target="_blank" rel="noreferrer">{client.website}</a>
+                    <a className="text-brand hover:underline" href={client.website.startsWith("http") ? client.website : `https://${client.website}`} target="_blank" rel="noreferrer">{client.website}</a>
                   </div>
                 )}
               </CardContent>
@@ -474,7 +474,7 @@ function ClientDetailPage() {
                             </td>
                             <td className="px-4 py-2">
                               {project ? (
-                                <Link to="/ai-columbus/projecten/$projectId" params={{ projectId: project.id }} className="text-primary hover:underline">{project.name}</Link>
+                                <Link to="/ai-columbus/projecten/$projectId" params={{ projectId: project.id }} className="text-brand hover:underline">{project.name}</Link>
                               ) : suggestedProject ? (
                                 <span className="flex items-center gap-1 text-muted-foreground">
                                   <Sparkles className="h-3 w-3 text-orange-500" />

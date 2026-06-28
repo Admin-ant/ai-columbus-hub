@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/analytics/")({
   component: AnalyticsDashboard,
 });
 
-const ACCENT = "#ff2bd6";
+const ACCENT = "var(--brand)";
 
 type Counters = {
   prospects: number;

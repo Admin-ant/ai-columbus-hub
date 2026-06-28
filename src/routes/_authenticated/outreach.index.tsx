@@ -86,7 +86,7 @@ export const Route = createFileRoute("/_authenticated/outreach/")({
   component: OutreachDashboard,
 });
 
-const ACCENT = "#ff2bd6";
+const ACCENT = "var(--brand)";
 
 const STAGES = [
   { key: "nieuw", label: "Nieuw", color: "#64748b" },
@@ -418,7 +418,7 @@ function OutreachDashboard() {
             <Button
               variant="outline"
               size="sm"
-              className="border-primary/40 text-primary hover:bg-primary/10"
+              className="border-brand/40 text-brand hover:bg-brand/10"
               onClick={runBulkPersonalize}
               disabled={bulkBusy}
             >
@@ -461,19 +461,19 @@ function OutreachDashboard() {
 
         <Tabs defaultValue="pipeline" className="w-full">
           <TabsList className="bg-muted/50 border border-border">
-            <TabsTrigger value="pipeline" className="data-[state=active]:bg-primary/20 data-[state=active]:text-foreground">
+            <TabsTrigger value="pipeline" className="data-[state=active]:bg-brand/20 data-[state=active]:text-foreground">
               Pipeline
             </TabsTrigger>
-            <TabsTrigger value="inbox" className="data-[state=active]:bg-primary/20 data-[state=active]:text-foreground">
+            <TabsTrigger value="inbox" className="data-[state=active]:bg-brand/20 data-[state=active]:text-foreground">
               Inbox{unreadInbox > 0 ? ` (${unreadInbox})` : ""}
             </TabsTrigger>
-            <TabsTrigger value="campaigns" className="data-[state=active]:bg-primary/20 data-[state=active]:text-foreground">
+            <TabsTrigger value="campaigns" className="data-[state=active]:bg-brand/20 data-[state=active]:text-foreground">
               Campagnes ({campaigns.length})
             </TabsTrigger>
-            <TabsTrigger value="sequences" className="data-[state=active]:bg-primary/20 data-[state=active]:text-foreground">
+            <TabsTrigger value="sequences" className="data-[state=active]:bg-brand/20 data-[state=active]:text-foreground">
               Sequences
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="data-[state=active]:bg-primary/20 data-[state=active]:text-foreground">
+            <TabsTrigger value="analytics" className="data-[state=active]:bg-brand/20 data-[state=active]:text-foreground">
               Analytics
             </TabsTrigger>
           </TabsList>
@@ -693,7 +693,7 @@ function TargetCard({
       })
     : null;
   return (
-    <div className="group rounded-md border border-border bg-muted/40 p-3 transition-all hover:border-primary/50">
+    <div className="group rounded-md border border-border bg-muted/40 p-3 transition-all hover:border-brand/50">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-semibold">{row.company}</div>
@@ -793,7 +793,7 @@ function TargetCard({
           variant="ghost"
           size="sm"
           onClick={onCreateQuote}
-          className="h-7 flex-1 justify-start text-[11px] hover:bg-primary/10"
+          className="h-7 flex-1 justify-start text-[11px] hover:bg-brand/10"
           style={{ color: ACCENT }}
         >
           <FileSignature className="mr-1 h-3 w-3" /> Offerte
@@ -804,7 +804,7 @@ function TargetCard({
           variant="ghost"
           size="sm"
           onClick={onPersonalize}
-          className="h-7 flex-1 justify-start text-[11px] hover:bg-primary/10"
+          className="h-7 flex-1 justify-start text-[11px] hover:bg-brand/10"
           style={{ color: ACCENT }}
           title="AI personaliseer onderwerp + body voor deze prospect"
         >
@@ -873,7 +873,7 @@ function CampaignCard({
   const isActive = campaign.status === "active";
   return (
     <div
-      className="rounded-lg border border-border bg-muted/50 p-4 transition-all hover:border-primary/40"
+      className="rounded-lg border border-border bg-muted/50 p-4 transition-all hover:border-brand/40"
       style={isActive ? { boxShadow: `0 0 24px ${ACCENT}22` } : undefined}
     >
       <div className="flex items-start justify-between gap-2">
@@ -902,7 +902,7 @@ function CampaignCard({
       </div>
       {campaign.goal && <p className="mt-3 text-xs text-muted-foreground">{campaign.goal}</p>}
       {campaign.ai_pitch && (
-        <div className="mt-3 rounded border border-primary/30 bg-primary/5 p-2">
+        <div className="mt-3 rounded border border-brand/30 bg-brand/5 p-2">
           <div className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-wider" style={{ color: ACCENT }}>
             <Sparkles className="h-3 w-3" /> AI Pitch
           </div>
@@ -968,7 +968,7 @@ function CampaignCard({
             variant="ghost"
             size="sm"
             onClick={onGenerateSequence}
-            className="h-7 text-xs hover:bg-primary/10"
+            className="h-7 text-xs hover:bg-brand/10"
             style={{ color: ACCENT }}
             title="Genereer een 3-staps AI-sequentie"
           >
@@ -1521,7 +1521,7 @@ function DroppableColumn({
     <div
       ref={setNodeRef}
       className={`rounded-lg border bg-muted/50 p-3 transition ${
-        isOver ? "border-primary/60 bg-primary/10" : "border-border"
+        isOver ? "border-brand/60 bg-brand/10" : "border-border"
       }`}
     >
       <div className="mb-3 flex items-center justify-between">
@@ -1651,7 +1651,7 @@ function NewProvincialCampaignButton({
           <Button
             onClick={create}
             disabled={saving}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+            className="bg-brand hover:bg-brand/90 text-brand-foreground"
           >
             {saving ? "Aanmaken…" : "Aanmaken"}
           </Button>
