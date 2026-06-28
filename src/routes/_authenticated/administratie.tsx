@@ -45,7 +45,7 @@ function AdministratiePage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex items-center gap-3">
-        <FileText className="h-6 w-6 text-primary" />
+        <FileText className="h-6 w-6 text-brand" />
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Administratie</h1>
           <p className="text-sm text-muted-foreground">
@@ -59,16 +59,16 @@ function AdministratiePage() {
           <Link
             key={t.to}
             to={t.to}
-            className="group rounded-xl border bg-card p-5 transition hover:border-primary/40 hover:shadow-sm"
+            className="group rounded-xl border bg-card p-5 transition hover:border-brand/40 hover:shadow-sm"
           >
             <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand/10 text-brand">
                 <t.icon className="h-5 w-5" />
               </span>
               <h2 className="text-base font-semibold">{t.title}</h2>
             </div>
             <p className="mt-3 text-sm text-muted-foreground">{t.description}</p>
-            <span className="mt-4 inline-block text-xs font-medium text-primary opacity-0 transition group-hover:opacity-100">
+            <span className="mt-4 inline-block text-xs font-medium text-brand opacity-0 transition group-hover:opacity-100">
               Openen →
             </span>
           </Link>

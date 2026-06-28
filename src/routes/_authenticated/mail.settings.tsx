@@ -102,7 +102,7 @@ function MailSettingsPage() {
             <ArrowLeft className="h-3 w-3" /> Terug naar Mail
           </Link>
           <h1 className="mt-1 text-2xl font-bold tracking-tight flex items-center gap-2">
-            <MailIcon className="h-6 w-6" style={{ color: "#ff2bd6" }} />
+            <MailIcon className="h-6 w-6" style={{ color: "var(--brand)" }} />
             Mail instellingen
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -175,7 +175,7 @@ function MailSettingsPage() {
               <Button
                 onClick={save}
                 disabled={saving}
-                className="bg-[#ff2bd6] hover:bg-[#ff2bd6]/90 text-foreground"
+                className="bg-brand hover:bg-brand/90 text-brand-foreground"
               >
                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Opslaan

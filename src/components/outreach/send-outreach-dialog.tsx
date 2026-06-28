@@ -230,7 +230,7 @@ export function SendOutreachDialog({
                     size="sm"
                     onClick={handleSendViaSystem}
                     disabled={sending}
-                    className="bg-[#ff2bd6] hover:bg-[#ff2bd6]/90 text-foreground"
+                    className="bg-brand hover:bg-brand/90 text-brand-foreground"
                   >
                     <Send className="mr-1.5 h-3.5 w-3.5" />
                     {sending ? "Versturen…" : "Verstuur via systeem"}

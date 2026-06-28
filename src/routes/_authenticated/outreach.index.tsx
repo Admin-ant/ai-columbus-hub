@@ -418,7 +418,7 @@ function OutreachDashboard() {
             <Button
               variant="outline"
               size="sm"
-              className="border-[#ff2bd6]/40 text-[#ff2bd6] hover:bg-[#ff2bd6]/10"
+              className="border-brand/40 text-brand hover:bg-brand/10"
               onClick={runBulkPersonalize}
               disabled={bulkBusy}
             >
@@ -461,19 +461,19 @@ function OutreachDashboard() {
 
         <Tabs defaultValue="pipeline" className="w-full">
           <TabsList className="bg-muted/50 border border-border">
-            <TabsTrigger value="pipeline" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-foreground">
+            <TabsTrigger value="pipeline" className="data-[state=active]:bg-brand/20 data-[state=active]:text-foreground">
               Pipeline
             </TabsTrigger>
-            <TabsTrigger value="inbox" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-foreground">
+            <TabsTrigger value="inbox" className="data-[state=active]:bg-brand/20 data-[state=active]:text-foreground">
               Inbox{unreadInbox > 0 ? ` (${unreadInbox})` : ""}
             </TabsTrigger>
-            <TabsTrigger value="campaigns" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-foreground">
+            <TabsTrigger value="campaigns" className="data-[state=active]:bg-brand/20 data-[state=active]:text-foreground">
               Campagnes ({campaigns.length})
             </TabsTrigger>
-            <TabsTrigger value="sequences" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-foreground">
+            <TabsTrigger value="sequences" className="data-[state=active]:bg-brand/20 data-[state=active]:text-foreground">
               Sequences
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-foreground">
+            <TabsTrigger value="analytics" className="data-[state=active]:bg-brand/20 data-[state=active]:text-foreground">
               Analytics
             </TabsTrigger>
           </TabsList>
@@ -693,7 +693,7 @@ function TargetCard({
       })
     : null;
   return (
-    <div className="group rounded-md border border-border bg-black/40 p-3 transition-all hover:border-[#ff2bd6]/50">
+    <div className="group rounded-md border border-border bg-muted/40 p-3 transition-all hover:border-brand/50">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-semibold">{row.company}</div>
@@ -793,7 +793,7 @@ function TargetCard({
           variant="ghost"
           size="sm"
           onClick={onCreateQuote}
-          className="h-7 flex-1 justify-start text-[11px] hover:bg-[#ff2bd6]/10"
+          className="h-7 flex-1 justify-start text-[11px] hover:bg-brand/10"
           style={{ color: ACCENT }}
         >
           <FileSignature className="mr-1 h-3 w-3" /> Offerte
@@ -804,7 +804,7 @@ function TargetCard({
           variant="ghost"
           size="sm"
           onClick={onPersonalize}
-          className="h-7 flex-1 justify-start text-[11px] hover:bg-[#ff2bd6]/10"
+          className="h-7 flex-1 justify-start text-[11px] hover:bg-brand/10"
           style={{ color: ACCENT }}
           title="AI personaliseer onderwerp + body voor deze prospect"
         >
@@ -844,7 +844,7 @@ function TargetCard({
         </button>
       )}
       {showResearch && row.research_summary && (
-        <pre className="mt-1 max-h-48 overflow-auto rounded border border-border bg-black/60 p-2 text-[10px] leading-snug text-foreground whitespace-pre-wrap">
+        <pre className="mt-1 max-h-48 overflow-auto rounded border border-border bg-muted/50 p-2 text-[10px] leading-snug text-foreground whitespace-pre-wrap">
           {row.research_summary}
         </pre>
       )}
@@ -873,7 +873,7 @@ function CampaignCard({
   const isActive = campaign.status === "active";
   return (
     <div
-      className="rounded-lg border border-border bg-muted/50 p-4 transition-all hover:border-[#ff2bd6]/40"
+      className="rounded-lg border border-border bg-muted/50 p-4 transition-all hover:border-brand/40"
       style={isActive ? { boxShadow: `0 0 24px ${ACCENT}22` } : undefined}
     >
       <div className="flex items-start justify-between gap-2">
@@ -902,7 +902,7 @@ function CampaignCard({
       </div>
       {campaign.goal && <p className="mt-3 text-xs text-muted-foreground">{campaign.goal}</p>}
       {campaign.ai_pitch && (
-        <div className="mt-3 rounded border border-[#ff2bd6]/30 bg-[#ff2bd6]/5 p-2">
+        <div className="mt-3 rounded border border-brand/30 bg-brand/5 p-2">
           <div className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-wider" style={{ color: ACCENT }}>
             <Sparkles className="h-3 w-3" /> AI Pitch
           </div>
@@ -915,7 +915,7 @@ function CampaignCard({
             <ListOrdered className="h-3 w-3" /> Sequentie ({campaign.sequence_steps.length} stappen)
           </div>
           {campaign.sequence_steps.map((s, i) => (
-            <div key={i} className="rounded border border-border bg-black/40 p-2">
+            <div key={i} className="rounded border border-border bg-muted/40 p-2">
               <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                 <span>Dag {s.day} · {s.channel}</span>
                 {s.subject && <span className="truncate font-medium text-muted-foreground">{s.subject}</span>}
@@ -931,7 +931,7 @@ function CampaignCard({
             <FlaskConical className="h-3 w-3" /> A/B varianten ({campaign.pitch_variants.length})
           </div>
           {campaign.pitch_variants.map((v) => (
-            <div key={v.id} className="rounded border border-border bg-black/40 p-2">
+            <div key={v.id} className="rounded border border-border bg-muted/40 p-2">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[11px] font-semibold text-foreground">{v.label}</span>
                 <button
@@ -968,7 +968,7 @@ function CampaignCard({
             variant="ghost"
             size="sm"
             onClick={onGenerateSequence}
-            className="h-7 text-xs hover:bg-[#ff2bd6]/10"
+            className="h-7 text-xs hover:bg-brand/10"
             style={{ color: ACCENT }}
             title="Genereer een 3-staps AI-sequentie"
           >
@@ -1482,7 +1482,7 @@ function ImportCsvDialog({
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={"company,contact_name,email\nAcme BV,Jan Jansen,jan@acme.nl"}
-            className="min-h-[220px] border-border bg-black/40 font-mono text-xs"
+            className="min-h-[220px] border-border bg-muted/40 font-mono text-xs"
           />
         </div>
         <DialogFooter>
@@ -1521,7 +1521,7 @@ function DroppableColumn({
     <div
       ref={setNodeRef}
       className={`rounded-lg border bg-muted/50 p-3 transition ${
-        isOver ? "border-[#ff2bd6]/60 bg-[#ff2bd6]/10" : "border-border"
+        isOver ? "border-brand/60 bg-brand/10" : "border-border"
       }`}
     >
       <div className="mb-3 flex items-center justify-between">
@@ -1651,7 +1651,7 @@ function NewProvincialCampaignButton({
           <Button
             onClick={create}
             disabled={saving}
-            className="bg-[#ff2bd6] hover:bg-[#ff2bd6]/90 text-foreground"
+            className="bg-brand hover:bg-brand/90 text-brand-foreground"
           >
             {saving ? "Aanmaken…" : "Aanmaken"}
           </Button>

@@ -287,7 +287,7 @@ export function OutreachInboxTab({ organizationId, campaignNames, onUnreadChange
                   onClick={() => handleSelect(m)}
                   className={`w-full text-left rounded-md border p-2.5 transition ${
                     isSelected
-                      ? "border-[#ff2bd6]/60 bg-[#ff2bd6]/10"
+                      ? "border-brand/60 bg-brand/10"
                       : "border-border bg-muted/50 hover:bg-muted"
                   }`}
                 >
@@ -295,7 +295,7 @@ export function OutreachInboxTab({ organizationId, campaignNames, onUnreadChange
                     <div className={`truncate text-xs font-medium ${isUnread ? "text-foreground" : "text-muted-foreground"}`}>
                       {t?.contact_name ?? t?.company ?? "—"}
                     </div>
-                    {isUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#ff2bd6]" />}
+                    {isUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />}
                   </div>
                   <div className="mt-0.5 truncate text-[11px] text-muted-foreground">{t?.company}</div>
                   <div className="mt-1 truncate text-[11px] text-muted-foreground">{m.subject ?? "(geen onderwerp)"}</div>
@@ -376,7 +376,7 @@ export function OutreachInboxTab({ organizationId, campaignNames, onUnreadChange
               </div>
             </div>
 
-            <div className="rounded border border-border bg-black/20 p-3">
+            <div className="rounded border border-border bg-muted/30 p-3">
               <div className="text-xs font-medium text-muted-foreground">{selected.subject ?? "(geen onderwerp)"}</div>
               <div className="mt-2 whitespace-pre-wrap text-sm text-foreground">{selected.body ?? ""}</div>
             </div>
@@ -387,7 +387,7 @@ export function OutreachInboxTab({ organizationId, campaignNames, onUnreadChange
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-7 text-xs text-[#ff2bd6] hover:bg-[#ff2bd6]/10"
+                  className="h-7 text-xs text-brand hover:bg-brand/10"
                   onClick={handleSuggest}
                   disabled={busy}
                 >
@@ -428,7 +428,7 @@ export function OutreachInboxTab({ organizationId, campaignNames, onUnreadChange
                 <Button
                   onClick={handleSend}
                   disabled={busy || !reply.body.trim()}
-                  className="bg-[#ff2bd6] hover:bg-[#ff2bd6]/90 text-foreground"
+                  className="bg-brand hover:bg-brand/90 text-brand-foreground"
                 >
                   {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                   Verstuur

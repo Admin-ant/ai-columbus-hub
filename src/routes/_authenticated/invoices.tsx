@@ -141,7 +141,7 @@ function InvoicesPage() {
                   <TableCell className="font-mono text-sm">{inv.invoice_number}</TableCell>
                   <TableCell className="text-sm">
                     {inv.client_id ? (
-                      <Link to="/ai-columbus/klanten/$clientId" params={{ clientId: inv.client_id }} className="text-primary hover:underline">
+                      <Link to="/ai-columbus/klanten/$clientId" params={{ clientId: inv.client_id }} className="text-brand hover:underline">
                         {inv.client_name ?? "Klant"}
                       </Link>
                     ) : (

@@ -19,7 +19,7 @@ function TeamsPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand/10 text-brand">
           <Users className="h-5 w-5" />
         </div>
         <div>
@@ -33,7 +33,7 @@ function TeamsPage() {
             <CardHeader>
               <div className="flex items-center gap-3">
                 <Avatar>
-                  <AvatarFallback className="bg-primary/10 text-primary">{t.lead}</AvatarFallback>
+                  <AvatarFallback className="bg-brand/10 text-brand">{t.lead}</AvatarFallback>
                 </Avatar>
                 <div>
                   <CardTitle className="text-base">{t.name}</CardTitle>

@@ -996,7 +996,7 @@ function JournalTab({
         const totalCredit = e.journal_lines.reduce((s, l) => s + l.credit_cents, 0);
         const balanced = totalDebit === totalCredit;
         return (
-          <div key={e.id} className="rounded-lg border bg-card transition-colors hover:border-primary/40">
+          <div key={e.id} className="rounded-lg border bg-card transition-colors hover:border-brand/40">
             <Link
               to="/boekhouding/journal/$entryId"
               params={{ entryId: e.id }}

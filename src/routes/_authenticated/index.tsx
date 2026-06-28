@@ -88,10 +88,10 @@ function Index() {
           }
           return (
             <Link key={tile.url} to={tile.url} className="group">
-              <Card className="h-full transition-all hover:border-primary hover:shadow-md">
+              <Card className="h-full transition-all hover:border-brand hover:shadow-md">
                 <CardHeader>
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand/10 text-brand">
                       <tile.icon className="h-5 w-5" />
                     </div>
                     <CardTitle className="flex-1">{tile.title}</CardTitle>
