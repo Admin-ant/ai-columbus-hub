@@ -76,22 +76,22 @@ export function DemoPromptDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md border-white/10 bg-[#0a0a0a] text-white">
+      <DialogContent className="max-w-md border-border bg-background text-foreground">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CalendarClock className="h-5 w-5" style={{ color: "#ff2bd6" }} />
             Demo inplannen{targetCompany ? ` — ${targetCompany}` : ""}
           </DialogTitle>
-          <DialogDescription className="text-white/60">
+          <DialogDescription className="text-muted-foreground">
             Leg vast hoe en wanneer de demo plaatsvindt.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
           <div>
-            <Label className="text-[11px] text-white/60">Type</Label>
+            <Label className="text-[11px] text-muted-foreground">Type</Label>
             <Select value={demoType} onValueChange={(v) => setDemoType(v as DemoType)}>
-              <SelectTrigger className="bg-white/5 border-white/10 text-white">
+              <SelectTrigger className="bg-muted/50 border-border text-foreground">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -109,12 +109,12 @@ export function DemoPromptDialog({
             </Select>
           </div>
           <div>
-            <Label className="text-[11px] text-white/60">Datum &amp; tijd</Label>
+            <Label className="text-[11px] text-muted-foreground">Datum &amp; tijd</Label>
             <Input
               type="datetime-local"
               value={demoAt}
               onChange={(e) => setDemoAt(e.target.value)}
-              className="bg-white/5 border-white/10 text-white"
+              className="bg-muted/50 border-border text-foreground"
             />
           </div>
         </div>
@@ -126,7 +126,7 @@ export function DemoPromptDialog({
           <Button
             onClick={save}
             disabled={saving}
-            className="bg-[#ff2bd6] hover:bg-[#ff2bd6]/90 text-white"
+            className="bg-[#ff2bd6] hover:bg-[#ff2bd6]/90 text-foreground"
           >
             {saving ? "Opslaan…" : "Opslaan"}
           </Button>

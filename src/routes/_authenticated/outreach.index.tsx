@@ -392,7 +392,7 @@ function OutreachDashboard() {
   }
 
   return (
-    <div className="min-h-full bg-[#0a0a0a] text-white -m-4 p-6 md:-m-6 md:p-8">
+    <div className="min-h-full bg-background text-foreground">
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -400,7 +400,7 @@ function OutreachDashboard() {
               <Megaphone className="h-6 w-6" style={{ color: ACCENT }} />
               Cold Outreach
             </h1>
-            <p className="text-sm text-white/60">
+            <p className="text-sm text-muted-foreground">
               {currentOrganization?.name ?? ""} — pipeline & campagnes
             </p>
           </div>
@@ -409,7 +409,7 @@ function OutreachDashboard() {
               <Button
                 variant="outline"
                 size="sm"
-                className="border-white/20 bg-white/5 text-white hover:bg-white/10"
+                className="border-border bg-muted/50 text-foreground hover:bg-muted"
               >
                 <FileText className="mr-1 h-4 w-4" />
                 Mail templates
@@ -460,20 +460,20 @@ function OutreachDashboard() {
         </div>
 
         <Tabs defaultValue="pipeline" className="w-full">
-          <TabsList className="bg-white/5 border border-white/10">
-            <TabsTrigger value="pipeline" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-white">
+          <TabsList className="bg-muted/50 border border-border">
+            <TabsTrigger value="pipeline" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-foreground">
               Pipeline
             </TabsTrigger>
-            <TabsTrigger value="inbox" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-white">
+            <TabsTrigger value="inbox" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-foreground">
               Inbox{unreadInbox > 0 ? ` (${unreadInbox})` : ""}
             </TabsTrigger>
-            <TabsTrigger value="campaigns" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-white">
+            <TabsTrigger value="campaigns" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-foreground">
               Campagnes ({campaigns.length})
             </TabsTrigger>
-            <TabsTrigger value="sequences" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-white">
+            <TabsTrigger value="sequences" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-foreground">
               Sequences
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-white">
+            <TabsTrigger value="analytics" className="data-[state=active]:bg-[#ff2bd6]/20 data-[state=active]:text-foreground">
               Analytics
             </TabsTrigger>
           </TabsList>
@@ -489,7 +489,7 @@ function OutreachDashboard() {
                     return (
                       <DroppableColumn key={s.key} stage={s.key} color={s.color} label={s.label} count={items.length}>
                         {items.length === 0 ? (
-                          <div className="rounded border border-dashed border-white/10 p-3 text-center text-[11px] text-white/40">
+                          <div className="rounded border border-dashed border-border p-3 text-center text-[11px] text-muted-foreground">
                             Sleep hier
                           </div>
                         ) : (
@@ -555,12 +555,12 @@ function OutreachDashboard() {
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
-                  <Label className="text-xs text-white/60">Campagne:</Label>
+                  <Label className="text-xs text-muted-foreground">Campagne:</Label>
                   <Select
                     value={builderCampaignId ?? campaigns[0]?.id ?? ""}
                     onValueChange={setBuilderCampaignId}
                   >
-                    <SelectTrigger className="w-[280px] bg-white/5 border-white/10 text-white">
+                    <SelectTrigger className="w-[280px] bg-muted/50 border-border text-foreground">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -643,11 +643,11 @@ function StatCard({
 }) {
   return (
     <div
-      className="rounded-lg border border-white/10 bg-white/5 p-4"
+      className="rounded-lg border border-border bg-muted/50 p-4"
       style={accent ? { boxShadow: `0 0 24px ${ACCENT}33`, borderColor: `${ACCENT}55` } : undefined}
     >
       <div className="flex items-center justify-between">
-        <span className="text-[11px] uppercase tracking-wider text-white/60">{label}</span>
+        <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</span>
         <Icon className="h-4 w-4" style={{ color: accent ? ACCENT : "rgba(255,255,255,0.5)" }} />
       </div>
       <div className="mt-2 text-2xl font-bold" style={{ color: accent ? ACCENT : "white" }}>
@@ -693,24 +693,24 @@ function TargetCard({
       })
     : null;
   return (
-    <div className="group rounded-md border border-white/10 bg-black/40 p-3 transition-all hover:border-[#ff2bd6]/50">
+    <div className="group rounded-md border border-border bg-black/40 p-3 transition-all hover:border-[#ff2bd6]/50">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-semibold">{row.company}</div>
           {row.contact_name && (
-            <div className="truncate text-xs text-white/60">{row.contact_name}</div>
+            <div className="truncate text-xs text-muted-foreground">{row.contact_name}</div>
           )}
         </div>
         <Button
           variant="ghost"
           size="sm"
-          className="h-6 w-6 p-0 text-white/40 opacity-0 group-hover:opacity-100 hover:text-red-400"
+          className="h-6 w-6 p-0 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-red-400"
           onClick={() => onDelete(row.id)}
         >
           <Trash2 className="h-3 w-3" />
         </Button>
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-1 text-[10px] text-white/50">
+      <div className="mt-2 flex flex-wrap items-center gap-1 text-[10px] text-muted-foreground">
         {row.email && <Mail className="h-3 w-3" />}
         {row.linkedin_url && <Linkedin className="h-3 w-3" />}
         {row.phone && <Phone className="h-3 w-3" />}
@@ -720,7 +720,7 @@ function TargetCard({
           </span>
         )}
         {campaign && (
-          <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px]">{campaign.name}</span>
+          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px]">{campaign.name}</span>
         )}
         {row.research_summary && (
           <span
@@ -751,7 +751,7 @@ function TargetCard({
         <button
           type="button"
           onClick={onOpenDemo}
-          className="mt-2 flex w-full items-center gap-1.5 rounded-md border border-dashed border-white/20 px-2 py-1.5 text-[11px] text-white/60 hover:bg-white/5"
+          className="mt-2 flex w-full items-center gap-1.5 rounded-md border border-dashed border-border px-2 py-1.5 text-[11px] text-muted-foreground hover:bg-muted/50"
         >
           <CalendarClock className="h-3 w-3" /> Demo plannen
         </button>
@@ -761,14 +761,14 @@ function TargetCard({
           variant="ghost"
           size="sm"
           onClick={onOpenSend}
-          className="mt-2 h-7 w-full justify-start text-[11px] hover:bg-white/10"
+          className="mt-2 h-7 w-full justify-start text-[11px] hover:bg-muted"
           title="Open bericht-sjablonen"
         >
           <Mail className="mr-1 h-3 w-3" /> Aanschrijven (templates)
         </Button>
       )}
       <Select value={row.stage} onValueChange={(v) => onMove(row.id, v as Stage)}>
-        <SelectTrigger className="mt-2 h-7 border-white/10 bg-white/5 text-xs">
+        <SelectTrigger className="mt-2 h-7 border-border bg-muted/50 text-xs">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -784,7 +784,7 @@ function TargetCard({
           variant="ghost"
           size="sm"
           onClick={onResearch}
-          className="h-7 flex-1 justify-start text-[11px] hover:bg-white/10"
+          className="h-7 flex-1 justify-start text-[11px] hover:bg-muted"
           title="AI research op deze prospect"
         >
           <Search className="mr-1 h-3 w-3" /> Research
@@ -818,7 +818,7 @@ function TargetCard({
             variant="ghost"
             size="sm"
             onClick={onSendNow}
-            className="h-7 flex-1 justify-start text-[11px] hover:bg-white/10"
+            className="h-7 flex-1 justify-start text-[11px] hover:bg-muted"
             title="Stuur direct e-mail"
           >
             <Send className="mr-1 h-3 w-3" /> Verstuur
@@ -827,7 +827,7 @@ function TargetCard({
             variant="ghost"
             size="sm"
             onClick={onStartSequence}
-            className="h-7 flex-1 justify-start text-[11px] hover:bg-white/10"
+            className="h-7 flex-1 justify-start text-[11px] hover:bg-muted"
             title="Start sequentie van de campagne"
           >
             <CalendarClock className="mr-1 h-3 w-3" /> Sequentie
@@ -838,13 +838,13 @@ function TargetCard({
         <button
           type="button"
           onClick={() => setShowResearch((v) => !v)}
-          className="mt-2 w-full text-left text-[10px] text-white/40 hover:text-white/70"
+          className="mt-2 w-full text-left text-[10px] text-muted-foreground hover:text-muted-foreground"
         >
           {showResearch ? "▾ Verberg research" : "▸ Toon research"}
         </button>
       )}
       {showResearch && row.research_summary && (
-        <pre className="mt-1 max-h-48 overflow-auto rounded border border-white/10 bg-black/60 p-2 text-[10px] leading-snug text-white/80 whitespace-pre-wrap">
+        <pre className="mt-1 max-h-48 overflow-auto rounded border border-border bg-black/60 p-2 text-[10px] leading-snug text-foreground whitespace-pre-wrap">
           {row.research_summary}
         </pre>
       )}
@@ -873,24 +873,24 @@ function CampaignCard({
   const isActive = campaign.status === "active";
   return (
     <div
-      className="rounded-lg border border-white/10 bg-white/5 p-4 transition-all hover:border-[#ff2bd6]/40"
+      className="rounded-lg border border-border bg-muted/50 p-4 transition-all hover:border-[#ff2bd6]/40"
       style={isActive ? { boxShadow: `0 0 24px ${ACCENT}22` } : undefined}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded bg-white/10">
+          <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
             <Icon className="h-4 w-4" />
           </div>
           <div>
             <div className="text-sm font-semibold">{campaign.name}</div>
-            <div className="text-[11px] uppercase tracking-wider text-white/50">
+            <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
               {campaign.channel} · {targetCount} prospects
             </div>
           </div>
         </div>
         <Badge
           variant="outline"
-          className="border-white/20 text-[10px] uppercase"
+          className="border-border text-[10px] uppercase"
           style={
             isActive
               ? { borderColor: ACCENT, color: ACCENT }
@@ -900,47 +900,47 @@ function CampaignCard({
           {campaign.status}
         </Badge>
       </div>
-      {campaign.goal && <p className="mt-3 text-xs text-white/70">{campaign.goal}</p>}
+      {campaign.goal && <p className="mt-3 text-xs text-muted-foreground">{campaign.goal}</p>}
       {campaign.ai_pitch && (
         <div className="mt-3 rounded border border-[#ff2bd6]/30 bg-[#ff2bd6]/5 p-2">
           <div className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-wider" style={{ color: ACCENT }}>
             <Sparkles className="h-3 w-3" /> AI Pitch
           </div>
-          <p className="line-clamp-4 text-[11px] text-white/80 whitespace-pre-wrap">{campaign.ai_pitch}</p>
+          <p className="line-clamp-4 text-[11px] text-foreground whitespace-pre-wrap">{campaign.ai_pitch}</p>
         </div>
       )}
       {Array.isArray(campaign.sequence_steps) && campaign.sequence_steps.length > 0 && (
         <div className="mt-3 space-y-1.5">
-          <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-white/60">
+          <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground">
             <ListOrdered className="h-3 w-3" /> Sequentie ({campaign.sequence_steps.length} stappen)
           </div>
           {campaign.sequence_steps.map((s, i) => (
-            <div key={i} className="rounded border border-white/10 bg-black/40 p-2">
-              <div className="flex items-center justify-between text-[10px] text-white/50">
+            <div key={i} className="rounded border border-border bg-black/40 p-2">
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                 <span>Dag {s.day} · {s.channel}</span>
-                {s.subject && <span className="truncate font-medium text-white/70">{s.subject}</span>}
+                {s.subject && <span className="truncate font-medium text-muted-foreground">{s.subject}</span>}
               </div>
-              <p className="mt-1 line-clamp-2 text-[11px] text-white/75 whitespace-pre-wrap">{s.body}</p>
+              <p className="mt-1 line-clamp-2 text-[11px] text-foreground/75 whitespace-pre-wrap">{s.body}</p>
             </div>
           ))}
         </div>
       )}
       {Array.isArray(campaign.pitch_variants) && campaign.pitch_variants.length > 0 && (
         <div className="mt-3 space-y-1.5">
-          <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-white/60">
+          <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground">
             <FlaskConical className="h-3 w-3" /> A/B varianten ({campaign.pitch_variants.length})
           </div>
           {campaign.pitch_variants.map((v) => (
-            <div key={v.id} className="rounded border border-white/10 bg-black/40 p-2">
+            <div key={v.id} className="rounded border border-border bg-black/40 p-2">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-[11px] font-semibold text-white/90">{v.label}</span>
+                <span className="text-[11px] font-semibold text-foreground">{v.label}</span>
                 <button
                   type="button"
                   onClick={() => {
                     const txt = v.subject ? `${v.subject}\n\n${v.body}` : v.body;
                     navigator.clipboard.writeText(txt).then(() => toast.success("Gekopieerd"));
                   }}
-                  className="text-white/40 hover:text-white"
+                  className="text-muted-foreground hover:text-foreground"
                   title="Kopieer"
                 >
                   <Copy className="h-3 w-3" />
@@ -952,17 +952,17 @@ function CampaignCard({
                 </div>
               )}
               {v.subject && (
-                <div className="mt-1 text-[10px] text-white/60">Onderwerp: {v.subject}</div>
+                <div className="mt-1 text-[10px] text-muted-foreground">Onderwerp: {v.subject}</div>
               )}
-              <p className="mt-1 line-clamp-3 text-[11px] text-white/75 whitespace-pre-wrap">
+              <p className="mt-1 line-clamp-3 text-[11px] text-foreground/75 whitespace-pre-wrap">
                 {v.body}
               </p>
             </div>
           ))}
         </div>
       )}
-      <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3">
-        <span className="text-[11px] text-white/40">Limiet: {campaign.daily_limit}/dag</span>
+      <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
+        <span className="text-[11px] text-muted-foreground">Limiet: {campaign.daily_limit}/dag</span>
         <div className="flex gap-1">
           <Button
             variant="ghost"
@@ -979,7 +979,7 @@ function CampaignCard({
             variant="ghost"
             size="sm"
             onClick={onGenerateVariants}
-            className="h-7 text-xs hover:bg-white/10"
+            className="h-7 text-xs hover:bg-muted"
             title="Genereer 3 A/B pitchvarianten"
           >
             <FlaskConical className="mr-1 h-3.5 w-3.5" />
@@ -988,7 +988,7 @@ function CampaignCard({
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 text-xs hover:bg-white/10"
+            className="h-7 text-xs hover:bg-muted"
             onClick={onToggle}
           >
             {isActive ? <PauseCircle className="mr-1 h-3.5 w-3.5" /> : <PlayCircle className="mr-1 h-3.5 w-3.5" />}
@@ -997,7 +997,7 @@ function CampaignCard({
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 w-7 p-0 text-white/40 hover:bg-red-500/10 hover:text-red-400"
+            className="h-7 w-7 p-0 text-muted-foreground hover:bg-red-500/10 hover:text-red-400"
             onClick={onDelete}
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -1076,7 +1076,7 @@ function NewTargetDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="border-white/20 bg-white/5 text-white hover:bg-white/10">
+        <Button variant="outline" className="border-border bg-muted/50 text-foreground hover:bg-muted">
           <Plus className="mr-2 h-4 w-4" /> Prospect
         </Button>
       </DialogTrigger>
@@ -1133,8 +1133,8 @@ function NewTargetDialog({
                 </SelectContent>
               </Select>
             </div>
-            <div className="col-span-2 rounded-md border border-white/10 bg-white/5 p-3 space-y-3">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-white/60 flex items-center gap-1.5">
+            <div className="col-span-2 rounded-md border border-border bg-muted/50 p-3 space-y-3">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                 <CalendarClock className="h-3.5 w-3.5" /> Demo inplannen (optioneel)
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -1256,7 +1256,7 @@ function NewCampaignDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
-          className="text-white shadow-[0_0_24px_rgba(255,43,214,0.5)]"
+          className="text-foreground shadow-[0_0_24px_rgba(255,43,214,0.5)]"
           style={{ background: ACCENT }}
         >
           <Plus className="mr-2 h-4 w-4" /> Nieuwe campagne
@@ -1345,7 +1345,7 @@ function NewCampaignDialog({
 
 function Loading() {
   return (
-    <div className="flex items-center justify-center py-20 text-white/60">
+    <div className="flex items-center justify-center py-20 text-muted-foreground">
       <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Laden…
     </div>
   );
@@ -1353,7 +1353,7 @@ function Loading() {
 
 function Empty({ text }: { text: string }) {
   return (
-    <div className="rounded-lg border border-dashed border-white/10 py-16 text-center text-sm text-white/50">
+    <div className="rounded-lg border border-dashed border-border py-16 text-center text-sm text-muted-foreground">
       {text}
     </div>
   );
@@ -1451,22 +1451,22 @@ function ImportCsvDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="border-white/20 bg-white/5 text-white hover:bg-white/10">
+        <Button variant="outline" className="border-border bg-muted/50 text-foreground hover:bg-muted">
           <Upload className="mr-2 h-4 w-4" /> CSV import
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl border-white/10 bg-[#0a0a0a] text-white">
+      <DialogContent className="max-w-2xl border-border bg-background text-foreground">
         <DialogHeader>
           <DialogTitle>CSV bulk import</DialogTitle>
-          <DialogDescription className="text-white/60">
+          <DialogDescription className="text-muted-foreground">
             Plak CSV (kop verplicht). Herkende kolommen: company, contact_name, email, phone, linkedin_url, notes.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div>
-            <Label className="text-xs text-white/70">Campagne (optioneel)</Label>
+            <Label className="text-xs text-muted-foreground">Campagne (optioneel)</Label>
             <Select value={campaignId} onValueChange={setCampaignId}>
-              <SelectTrigger className="border-white/10 bg-white/5">
+              <SelectTrigger className="border-border bg-muted/50">
                 <SelectValue placeholder="Geen campagne" />
               </SelectTrigger>
               <SelectContent>
@@ -1482,7 +1482,7 @@ function ImportCsvDialog({
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={"company,contact_name,email\nAcme BV,Jan Jansen,jan@acme.nl"}
-            className="min-h-[220px] border-white/10 bg-black/40 font-mono text-xs"
+            className="min-h-[220px] border-border bg-black/40 font-mono text-xs"
           />
         </div>
         <DialogFooter>
@@ -1520,8 +1520,8 @@ function DroppableColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`rounded-lg border bg-white/5 p-3 transition ${
-        isOver ? "border-[#ff2bd6]/60 bg-[#ff2bd6]/10" : "border-white/10"
+      className={`rounded-lg border bg-muted/50 p-3 transition ${
+        isOver ? "border-[#ff2bd6]/60 bg-[#ff2bd6]/10" : "border-border"
       }`}
     >
       <div className="mb-3 flex items-center justify-between">
@@ -1530,11 +1530,11 @@ function DroppableColumn({
             className="h-2 w-2 rounded-full"
             style={{ background: color, boxShadow: `0 0 8px ${color}` }}
           />
-          <span className="text-xs font-semibold uppercase tracking-wider text-white/80">
+          <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
             {label}
           </span>
         </div>
-        <span className="text-xs text-white/50">{count}</span>
+        <span className="text-xs text-muted-foreground">{count}</span>
       </div>
       <div className="space-y-2 min-h-[60px]">{children}</div>
     </div>
@@ -1623,19 +1623,19 @@ function NewProvincialCampaignButton({
           <MapPin className="mr-1 h-4 w-4" /> Provinciale campagne
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md border-white/10 bg-[#0a0a0a] text-white">
+      <DialogContent className="max-w-md border-border bg-background text-foreground">
         <DialogHeader>
           <DialogTitle>Nieuwe provinciale campagne</DialogTitle>
-          <DialogDescription className="text-white/60">
+          <DialogDescription className="text-muted-foreground">
             Maakt automatisch een campagne aan met het standaard e-mail-sjabloon, ingevuld
             op de gekozen provincie.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div>
-            <Label className="text-[11px] text-white/60">Provincie</Label>
+            <Label className="text-[11px] text-muted-foreground">Provincie</Label>
             <Select value={province} onValueChange={setProvince}>
-              <SelectTrigger className="bg-white/5 border-white/10 text-white">
+              <SelectTrigger className="bg-muted/50 border-border text-foreground">
                 <SelectValue placeholder="Kies provincie" />
               </SelectTrigger>
               <SelectContent>
@@ -1651,7 +1651,7 @@ function NewProvincialCampaignButton({
           <Button
             onClick={create}
             disabled={saving}
-            className="bg-[#ff2bd6] hover:bg-[#ff2bd6]/90 text-white"
+            className="bg-[#ff2bd6] hover:bg-[#ff2bd6]/90 text-foreground"
           >
             {saving ? "Aanmaken…" : "Aanmaken"}
           </Button>

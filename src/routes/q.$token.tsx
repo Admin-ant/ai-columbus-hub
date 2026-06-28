@@ -212,7 +212,7 @@ function PublicQuote() {
               <section
                 key={def.key}
                 data-section-key={def.key}
-                className="rounded-xl border bg-white/[0.02] p-8"
+                className="rounded-xl border bg-card p-8"
                 style={{ borderColor: "rgba(255,255,255,0.08)" }}
               >
                 <div

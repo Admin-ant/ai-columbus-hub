@@ -141,10 +141,10 @@ export function SendOutreachDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl border-white/10 bg-[#0a0a0a] text-white">
+      <DialogContent className="max-w-2xl border-border bg-background text-foreground">
         <DialogHeader>
           <DialogTitle>Aanschrijven — {target.company}</DialogTitle>
-          <DialogDescription className="text-white/60">
+          <DialogDescription className="text-muted-foreground">
             {target.contact_name ? `${target.contact_name} · ` : ""}
             {target.province ? `${target.province} · ` : ""}
             Kies een sjabloon, pas eventueel aan, kopieer of verstuur.
@@ -152,7 +152,7 @@ export function SendOutreachDialog({
         </DialogHeader>
 
         <Tabs value={channel} onValueChange={(v) => setChannel(v as TemplateChannel)}>
-          <TabsList className="bg-white/5 border border-white/10">
+          <TabsList className="bg-muted/50 border border-border">
             <TabsTrigger value="email" disabled={!target.email}>
               <Mail className="mr-1 h-3.5 w-3.5" /> E-mail
             </TabsTrigger>
@@ -166,9 +166,9 @@ export function SendOutreachDialog({
 
           <TabsContent value={channel} className="mt-4 space-y-3">
             <div>
-              <Label className="text-[11px] text-white/60">Sjabloon</Label>
+              <Label className="text-[11px] text-muted-foreground">Sjabloon</Label>
               <Select value={templateId} onValueChange={setTemplateId}>
-                <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                <SelectTrigger className="bg-muted/50 border-border text-foreground">
                   <SelectValue placeholder="Selecteer sjabloon" />
                 </SelectTrigger>
                 <SelectContent>
@@ -189,22 +189,22 @@ export function SendOutreachDialog({
 
             {channel === "email" && (
               <div>
-                <Label className="text-[11px] text-white/60">Onderwerp</Label>
+                <Label className="text-[11px] text-muted-foreground">Onderwerp</Label>
                 <Input
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white"
+                  className="bg-muted/50 border-border text-foreground"
                 />
               </div>
             )}
 
             <div>
-              <Label className="text-[11px] text-white/60">Bericht</Label>
+              <Label className="text-[11px] text-muted-foreground">Bericht</Label>
               <Textarea
                 rows={12}
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
-                className="bg-white/5 border-white/10 text-white font-mono text-xs"
+                className="bg-muted/50 border-border text-foreground font-mono text-xs"
               />
             </div>
 
@@ -215,14 +215,14 @@ export function SendOutreachDialog({
                 onClick={() =>
                   copy(channel === "email" && subject ? `${subject}\n\n${body}` : body)
                 }
-                className="border-white/20 text-white hover:bg-white/10"
+                className="border-border text-foreground hover:bg-muted"
               >
                 <Copy className="mr-1.5 h-3.5 w-3.5" /> Kopieer tekst
               </Button>
               {channel === "email" && target.email && (
                 <>
                   <a href={mailto} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10">
+                    <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
                       <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Open in mailprogramma
                     </Button>
                   </a>
@@ -230,7 +230,7 @@ export function SendOutreachDialog({
                     size="sm"
                     onClick={handleSendViaSystem}
                     disabled={sending}
-                    className="bg-[#ff2bd6] hover:bg-[#ff2bd6]/90 text-white"
+                    className="bg-[#ff2bd6] hover:bg-[#ff2bd6]/90 text-foreground"
                   >
                     <Send className="mr-1.5 h-3.5 w-3.5" />
                     {sending ? "Versturen…" : "Verstuur via systeem"}
@@ -239,14 +239,14 @@ export function SendOutreachDialog({
               )}
               {channel === "linkedin" && target.linkedin_url && (
                 <a href={target.linkedin_url} target="_blank" rel="noopener noreferrer">
-                  <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10">
+                  <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
                     <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Open LinkedIn-profiel
                   </Button>
                 </a>
               )}
               {channel === "whatsapp" && waLink && (
                 <a href={waLink} target="_blank" rel="noopener noreferrer">
-                  <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10">
+                  <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
                     <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Open WhatsApp
                   </Button>
                 </a>

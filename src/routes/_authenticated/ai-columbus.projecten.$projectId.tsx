@@ -26,12 +26,12 @@ type ProjectStatus = Database["public"]["Enums"]["project_status"];
 const EUR = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
 
 const STATUS_META: Record<ProjectStatus, { label: string; cls: string }> = {
-  contact_gezocht:    { label: "Contact gezocht",    cls: "bg-blue-500 text-white" },
-  afspraak_geboekt:   { label: "Afspraak geboekt",   cls: "bg-green-500 text-white" },
+  contact_gezocht:    { label: "Contact gezocht",    cls: "bg-blue-500 text-foreground" },
+  afspraak_geboekt:   { label: "Afspraak geboekt",   cls: "bg-green-500 text-foreground" },
   offerte_verstuurd:  { label: "Offerte verstuurd",  cls: "bg-yellow-400 text-black" },
-  contract_verstuurd: { label: "Contract verstuurd", cls: "bg-orange-500 text-white" },
-  contract_getekend:  { label: "Contract getekend",  cls: "bg-emerald-700 text-white" },
-  on_hold:            { label: "On hold",            cls: "bg-slate-400 text-white" },
+  contract_verstuurd: { label: "Contract verstuurd", cls: "bg-orange-500 text-foreground" },
+  contract_getekend:  { label: "Contract getekend",  cls: "bg-emerald-700 text-foreground" },
+  on_hold:            { label: "On hold",            cls: "bg-slate-400 text-foreground" },
 };
 const STATUS_KEYS = Object.keys(STATUS_META) as ProjectStatus[];
 

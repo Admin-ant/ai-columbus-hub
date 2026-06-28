@@ -156,20 +156,20 @@ function AnalyticsDashboard() {
   }, [c]);
 
   return (
-    <div className="min-h-full bg-[#0a0a0a] text-white -m-4 p-6 md:-m-6 md:p-8">
+    <div className="min-h-full bg-background text-foreground">
       <div className="mx-auto max-w-7xl space-y-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <BarChart3 className="h-6 w-6" style={{ color: ACCENT }} />
             Analytics
           </h1>
-          <p className="text-sm text-white/60">
+          <p className="text-sm text-muted-foreground">
             {currentOrganization?.name ?? ""} — outreach → offerte → deal
           </p>
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20 text-white/60">
+          <div className="flex items-center justify-center py-20 text-muted-foreground">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Laden…
           </div>
         ) : (
@@ -201,13 +201,13 @@ function AnalyticsDashboard() {
               />
             </Section>
 
-            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5">
-              <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-white/80">
+            <div className="rounded-xl border border-border bg-card p-5">
+              <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
                 <Flame className="h-4 w-4" style={{ color: ACCENT }} />
                 Heatmap — wat lezen klanten écht?
               </div>
               {heatmap.length === 0 ? (
-                <div className="rounded border border-dashed border-white/10 p-6 text-center text-xs text-white/40">
+                <div className="rounded border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
                   Nog geen weergavedata. Deel een offerte-link om de heatmap op te bouwen.
                 </div>
               ) : (
@@ -216,16 +216,16 @@ function AnalyticsDashboard() {
                     const max = Math.max(1, ...heatmap.map((x) => x.total_ms));
                     const pct = Math.round((h.total_ms / max) * 100);
                     return (
-                      <div key={h.quote_id} className="rounded border border-white/5 bg-black/30 p-3">
+                      <div key={h.quote_id} className="rounded border border-border bg-black/30 p-3">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="truncate font-semibold text-white">{h.title}</span>
-                          <span className="flex items-center gap-2 tabular-nums text-white/50">
+                          <span className="truncate font-semibold text-foreground">{h.title}</span>
+                          <span className="flex items-center gap-2 tabular-nums text-muted-foreground">
                             <Eye className="h-3 w-3" /> {h.views}
-                            <span className="text-white/30">·</span>
+                            <span className="text-foreground/30">·</span>
                             <span>{Math.round(h.total_ms / 1000)}s</span>
                           </span>
                         </div>
-                        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/5">
+                        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted/50">
                           <div
                             className="h-full rounded-full"
                             style={{
@@ -236,9 +236,9 @@ function AnalyticsDashboard() {
                           />
                         </div>
                         {h.top_section && (
-                          <div className="mt-1 text-[10px] text-white/40">
+                          <div className="mt-1 text-[10px] text-muted-foreground">
                             Hotspot:{" "}
-                            <span className="text-white/70">{h.top_section}</span> ({Math.round(h.top_section_ms / 1000)}s)
+                            <span className="text-muted-foreground">{h.top_section}</span> ({Math.round(h.top_section_ms / 1000)}s)
                           </div>
                         )}
                       </div>
@@ -264,8 +264,8 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5">
-      <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-white/80">
+    <div className="rounded-xl border border-border bg-card p-5">
+      <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
         <Icon className="h-4 w-4" style={{ color: ACCENT }} />
         {title}
       </div>
@@ -289,14 +289,14 @@ function Kpi({
 }) {
   return (
     <div
-      className="rounded-lg border border-white/10 bg-black/40 p-4"
+      className="rounded-lg border border-border bg-black/40 p-4"
       style={accent ? { boxShadow: `0 0 24px ${ACCENT}33`, borderColor: `${ACCENT}55` } : undefined}
     >
-      <div className="text-[10px] uppercase tracking-wider text-white/50">{label}</div>
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
       <div className="mt-1 text-2xl font-bold" style={{ color: accent ? ACCENT : "white" }}>
         {value}
       </div>
-      {sub && <div className="mt-0.5 text-[10px] text-white/40">{sub}</div>}
+      {sub && <div className="mt-0.5 text-[10px] text-muted-foreground">{sub}</div>}
     </div>
   );
 }
@@ -314,10 +314,10 @@ function Funnel({
         return (
           <div key={s.label}>
             <div className="mb-1 flex items-center justify-between text-xs">
-              <span className="text-white/70">{s.label}</span>
-              <span className="tabular-nums text-white/50">{s.value}</span>
+              <span className="text-muted-foreground">{s.label}</span>
+              <span className="tabular-nums text-muted-foreground">{s.value}</span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-white/5">
+            <div className="h-2 overflow-hidden rounded-full bg-muted/50">
               <div
                 className="h-full rounded-full transition-all"
                 style={{
@@ -332,7 +332,7 @@ function Funnel({
           </div>
         );
       })}
-      <div className="mt-3 flex items-center gap-2 text-[11px] text-white/40">
+      <div className="mt-3 flex items-center gap-2 text-[11px] text-muted-foreground">
         <Sparkles className="h-3 w-3" style={{ color: ACCENT }} />
         Live data — geen mock, niets gecached.
         <CheckCircle2 className="ml-auto h-3 w-3 text-emerald-400" />
