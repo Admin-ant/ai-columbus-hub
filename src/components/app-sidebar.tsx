@@ -155,9 +155,10 @@ export function AppSidebar() {
           title={currentOrganization ? `Actieve omgeving: ${currentOrganization.name}` : "Geen actieve omgeving"}
         >
           <span
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[11px] font-semibold text-white"
-            style={{ backgroundColor: brandColor ?? "hsl(var(--primary))" }}
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[11px] font-semibold text-primary-foreground"
+            style={brandColor ? { backgroundColor: brandColor } : undefined}
           >
+
             {orgInitial}
           </span>
           <div className="min-w-0 flex-1">
