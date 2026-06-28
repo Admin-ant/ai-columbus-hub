@@ -268,7 +268,7 @@ function MailPage() {
   const unread = items.filter((i) => folder === "inbox" && !i.read_at).length;
 
   return (
-    <div className="min-h-full bg-[#0a0a0a] text-white -m-4 p-6 md:-m-6 md:p-8">
+    <div className="min-h-full bg-background text-foreground">
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="flex items-center justify-between gap-3">
           <div>

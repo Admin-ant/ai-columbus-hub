@@ -95,7 +95,7 @@ function MailSettingsPage() {
   const byChannel = (ch: string) => templates.filter((t) => t.channel === ch);
 
   return (
-    <div className="min-h-full bg-[#0a0a0a] text-white -m-4 p-6 md:-m-6 md:p-8">
+    <div className="min-h-full bg-background text-foreground">
       <div className="mx-auto max-w-3xl space-y-6">
         <div>
           <Link to="/mail" className="inline-flex items-center gap-1.5 text-xs text-white/50 hover:text-white">
