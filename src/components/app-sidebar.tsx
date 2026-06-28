@@ -155,7 +155,8 @@ export function AppSidebar() {
           title={currentOrganization ? `Actieve omgeving: ${currentOrganization.name}` : "Geen actieve omgeving"}
         >
           <span
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[11px] font-semibold text-primary-foreground"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-primary text-[11px] font-semibold text-primary-foreground"
+
             style={brandColor ? { backgroundColor: brandColor } : undefined}
           >
 
