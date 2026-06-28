@@ -51,7 +51,7 @@ export function WorkspaceSwitcher() {
             <span className="flex items-center gap-2">
               <span
                 className="h-2.5 w-2.5 rounded-full"
-                style={{ background: org.brand_color ?? "#888" }}
+                style={{ background: org.brand_color ?? "currentColor" }}
               />
               {org.name}
             </span>
