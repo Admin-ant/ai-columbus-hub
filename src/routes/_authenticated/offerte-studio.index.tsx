@@ -227,7 +227,7 @@ function OfferteStudioIndex() {
           </Button>
           <Dialog open={newOpen} onOpenChange={setNewOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-[#ff2bd6] text-foreground hover:bg-[#ff2bd6]/90 shadow-[0_0_20px_rgba(255,43,214,0.4)]">
+              <Button className="bg-brand text-brand-foreground hover:bg-brand/90">
                 <Plus className="mr-2 h-4 w-4" />
                 Nieuwe offerte
               </Button>

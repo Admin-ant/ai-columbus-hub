@@ -188,7 +188,7 @@ export function ComposeMailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl bg-[#0f0f0f] border-border text-foreground">
+      <DialogContent className="max-w-3xl bg-card border-border text-foreground">
         <DialogHeader>
           <DialogTitle>{inReplyTo ? "Beantwoorden" : "Nieuwe mail"}</DialogTitle>
         </DialogHeader>

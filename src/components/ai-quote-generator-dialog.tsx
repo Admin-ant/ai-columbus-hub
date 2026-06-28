@@ -129,7 +129,7 @@ export function AIQuoteGeneratorDialog({
       <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Wand2 className="h-5 w-5 text-[#ff2bd6]" />
+            <Wand2 className="h-5 w-5 text-brand" />
             AI Offerte-generator
           </DialogTitle>
           <DialogDescription>
@@ -173,7 +173,7 @@ export function AIQuoteGeneratorDialog({
               placeholder='Bv. "Webshop voor 5k, Shopify, met productfotografie en 3 maanden support"'
             />
             {listening && (
-              <p className="text-xs text-[#ff2bd6]">🎙️ Luisteren… praat gewoon door.</p>
+              <p className="text-xs text-brand">🎙️ Luisteren… praat gewoon door.</p>
             )}
           </div>
         </div>
@@ -184,7 +184,7 @@ export function AIQuoteGeneratorDialog({
           <Button
             onClick={run}
             disabled={busy}
-            className="bg-[#ff2bd6] text-white hover:bg-[#ff2bd6]/90"
+            className="bg-brand text-brand-foreground hover:bg-brand/90"
           >
             {busy ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

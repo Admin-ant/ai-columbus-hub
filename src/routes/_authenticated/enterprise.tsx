@@ -443,7 +443,7 @@ function BrandTab({ orgId }: { orgId: string }) {
             {logo && <img src={logo} alt="logo" className="h-10 mb-4" />}
             <h3 className="text-xl font-bold">Jouw merk</h3>
             <p className="opacity-80 text-sm">Zo zien klanten je publieke offertes.</p>
-            <button className="mt-4 px-4 py-2 rounded font-medium text-black" style={{ background: accent || "#ff2bd6" }}>Accepteer offerte</button>
+            <button className="mt-4 px-4 py-2 rounded font-medium text-foreground" style={{ background: accent || "#ff2bd6" }}>Accepteer offerte</button>
           </div>
         </CardContent>
       </Card>
