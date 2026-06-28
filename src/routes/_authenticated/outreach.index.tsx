@@ -86,7 +86,7 @@ export const Route = createFileRoute("/_authenticated/outreach/")({
   component: OutreachDashboard,
 });
 
-const ACCENT = "var(--brand)";
+const ACCENT = "#ff2bd6";
 
 const STAGES = [
   { key: "nieuw", label: "Nieuw", color: "#64748b" },
