@@ -9,6 +9,8 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
+    "check:colors": "node scripts/check-hardcoded-colors.mjs",
+    "ci": "bun run check:colors && bun run lint",
     "format": "prettier --write ."
   },
   "dependencies": {
