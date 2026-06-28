@@ -57,6 +57,9 @@ const ALLOW_PATHS = [
   "src/routes/_authenticated/analytics.index.tsx",
   // Enterprise: configurable per-tenant accent color picker
   "src/routes/_authenticated/enterprise.tsx",
+  // Offerte-studio index: card thumbnails reuse the brand-dark viewer aesthetic
+  "src/routes/_authenticated/offerte-studio.index.tsx",
+
 ];
 
 
