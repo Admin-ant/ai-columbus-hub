@@ -75,6 +75,7 @@ import {
 } from "@/lib/outreach.functions";
 import { OutreachAnalyticsTab } from "@/components/outreach/analytics-tab";
 import { OutreachInboxTab } from "@/components/outreach/inbox-tab";
+import { IncomingLeadsTab } from "@/components/outreach/incoming-leads-tab";
 import { SequenceBuilder } from "@/components/outreach/sequence-builder";
 import { SendOutreachDialog } from "@/components/outreach/send-outreach-dialog";
 import { DemoPromptDialog } from "@/components/outreach/demo-prompt-dialog";
@@ -467,6 +468,9 @@ function OutreachDashboard() {
             <TabsTrigger value="inbox" className="data-[state=active]:bg-brand/20 data-[state=active]:text-foreground">
               Inbox{unreadInbox > 0 ? ` (${unreadInbox})` : ""}
             </TabsTrigger>
+            <TabsTrigger value="incoming" className="data-[state=active]:bg-brand/20 data-[state=active]:text-foreground">
+              Inkomende leads
+            </TabsTrigger>
             <TabsTrigger value="campaigns" className="data-[state=active]:bg-brand/20 data-[state=active]:text-foreground">
               Campagnes ({campaigns.length})
             </TabsTrigger>
@@ -546,6 +550,13 @@ function OutreachDashboard() {
               organizationId={currentOrganizationId}
               campaignNames={Object.fromEntries(campaigns.map((c) => [c.id, c.name]))}
               onUnreadChange={setUnreadInbox}
+            />
+          </TabsContent>
+
+          <TabsContent value="incoming" className="mt-4">
+            <IncomingLeadsTab
+              organizationId={currentOrganizationId}
+              campaigns={campaigns.map((c) => ({ id: c.id, name: c.name }))}
             />
           </TabsContent>
 
