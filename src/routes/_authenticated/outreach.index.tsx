@@ -468,6 +468,9 @@ function OutreachDashboard() {
             <TabsTrigger value="inbox" className="data-[state=active]:bg-brand/20 data-[state=active]:text-foreground">
               Inbox{unreadInbox > 0 ? ` (${unreadInbox})` : ""}
             </TabsTrigger>
+            <TabsTrigger value="incoming" className="data-[state=active]:bg-brand/20 data-[state=active]:text-foreground">
+              Inkomende leads
+            </TabsTrigger>
             <TabsTrigger value="campaigns" className="data-[state=active]:bg-brand/20 data-[state=active]:text-foreground">
               Campagnes ({campaigns.length})
             </TabsTrigger>
@@ -547,6 +550,13 @@ function OutreachDashboard() {
               organizationId={currentOrganizationId}
               campaignNames={Object.fromEntries(campaigns.map((c) => [c.id, c.name]))}
               onUnreadChange={setUnreadInbox}
+            />
+          </TabsContent>
+
+          <TabsContent value="incoming" className="mt-4">
+            <IncomingLeadsTab
+              organizationId={currentOrganizationId}
+              campaigns={campaigns.map((c) => ({ id: c.id, name: c.name }))}
             />
           </TabsContent>
 
