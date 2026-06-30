@@ -75,6 +75,7 @@ import {
 } from "@/lib/outreach.functions";
 import { OutreachAnalyticsTab } from "@/components/outreach/analytics-tab";
 import { OutreachInboxTab } from "@/components/outreach/inbox-tab";
+import { IncomingLeadsTab } from "@/components/outreach/incoming-leads-tab";
 import { SequenceBuilder } from "@/components/outreach/sequence-builder";
 import { SendOutreachDialog } from "@/components/outreach/send-outreach-dialog";
 import { DemoPromptDialog } from "@/components/outreach/demo-prompt-dialog";
