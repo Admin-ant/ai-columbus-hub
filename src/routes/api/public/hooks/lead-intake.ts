@@ -117,6 +117,63 @@ export const Route = createFileRoute("/api/public/hooks/lead-intake")({
           return json({ error: "Insert failed", details: insErr.message }, 500);
         }
 
+        // Notificatiemail naar info@aivancolumbus.com (fire-and-forget, faalt nooit de webhook)
+        try {
+          const resendKey = process.env.RESEND_API_KEY;
+          const fromEmail = process.env.OUTREACH_FROM_EMAIL || "info@aivancolumbus.com";
+          if (resendKey) {
+            const esc = (s: string) =>
+              s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const rows: Array<[string, string | null | undefined]> = [
+              ["Naam", p.name],
+              ["Bedrijf", p.company],
+              ["Email", p.email],
+              ["Telefoon", p.phone],
+              ["Bron", p.source ?? "webhook"],
+              ["Bericht", p.message],
+            ];
+            const html = `
+              <h2 style="font-family:Arial,sans-serif">Nieuwe lead binnengekomen</h2>
+              <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px">
+                ${rows
+                  .filter(([, v]) => v)
+                  .map(
+                    ([k, v]) =>
+                      `<tr><td style="padding:4px 12px 4px 0;color:#666;vertical-align:top"><b>${k}</b></td><td style="padding:4px 0">${esc(String(v))}</td></tr>`,
+                  )
+                  .join("")}
+              </table>
+              ${
+                p.meta && Object.keys(p.meta).length > 0
+                  ? `<p style="font-family:Arial,sans-serif;font-size:12px;color:#666"><b>Meta</b></p><pre style="background:#f5f5f5;padding:8px;border-radius:4px;font-size:12px">${esc(JSON.stringify(p.meta, null, 2))}</pre>`
+                  : ""
+              }
+              <p style="font-family:Arial,sans-serif;font-size:12px;color:#999">Lead-ID: ${lead.id}</p>
+            `;
+            const mailRes = await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${resendKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                from: `Lead Intake <${fromEmail}>`,
+                to: ["info@aivancolumbus.com"],
+                reply_to: p.email || undefined,
+                subject: `Nieuwe lead: ${p.name}${p.company ? ` (${p.company})` : ""}`,
+                html,
+              }),
+            });
+            if (!mailRes.ok) {
+              console.error("[lead-intake] notify mail failed", mailRes.status, await mailRes.text());
+            }
+          } else {
+            console.warn("[lead-intake] RESEND_API_KEY missing, skipping notify mail");
+          }
+        } catch (e) {
+          console.error("[lead-intake] notify mail error", e);
+        }
+
         return json({ ok: true, lead_id: lead.id }, 201);
       },
     },
