@@ -20,6 +20,7 @@ import {
   Rocket,
   ClipboardList,
   Mail,
+  Inbox,
 } from "lucide-react";
 
 import {
