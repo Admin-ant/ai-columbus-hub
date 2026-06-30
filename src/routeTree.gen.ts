@@ -55,6 +55,7 @@ import { Route as ApiPublicHooksOutreachSequenceRouteImport } from './routes/api
 import { Route as ApiPublicHooksOutreachReplyRouteImport } from './routes/api/public/hooks/outreach-reply'
 import { Route as ApiPublicHooksMollieRouteImport } from './routes/api/public/hooks/mollie'
 import { Route as ApiPublicHooksMailInboundRouteImport } from './routes/api/public/hooks/mail-inbound'
+import { Route as ApiPublicHooksLeadIntakeRouteImport } from './routes/api/public/hooks/lead-intake'
 import { Route as AuthenticatedOfferteStudioTIdRouteImport } from './routes/_authenticated/offerte-studio.t.$id'
 import { Route as AuthenticatedOfferteStudioQIdRouteImport } from './routes/_authenticated/offerte-studio.q.$id'
 import { Route as AuthenticatedBoekhoudingJournalEntryIdRouteImport } from './routes/_authenticated/boekhouding.journal.$entryId'
@@ -317,6 +318,12 @@ const ApiPublicHooksMailInboundRoute =
     path: '/api/public/hooks/mail-inbound',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksLeadIntakeRoute =
+  ApiPublicHooksLeadIntakeRouteImport.update({
+    id: '/api/public/hooks/lead-intake',
+    path: '/api/public/hooks/lead-intake',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedOfferteStudioTIdRoute =
   AuthenticatedOfferteStudioTIdRouteImport.update({
     id: '/offerte-studio/t/$id',
@@ -391,6 +398,7 @@ export interface FileRoutesByFullPath {
   '/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
   '/offerte-studio/q/$id': typeof AuthenticatedOfferteStudioQIdRoute
   '/offerte-studio/t/$id': typeof AuthenticatedOfferteStudioTIdRoute
+  '/api/public/hooks/lead-intake': typeof ApiPublicHooksLeadIntakeRoute
   '/api/public/hooks/mail-inbound': typeof ApiPublicHooksMailInboundRoute
   '/api/public/hooks/mollie': typeof ApiPublicHooksMollieRoute
   '/api/public/hooks/outreach-reply': typeof ApiPublicHooksOutreachReplyRoute
@@ -441,6 +449,7 @@ export interface FileRoutesByTo {
   '/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
   '/offerte-studio/q/$id': typeof AuthenticatedOfferteStudioQIdRoute
   '/offerte-studio/t/$id': typeof AuthenticatedOfferteStudioTIdRoute
+  '/api/public/hooks/lead-intake': typeof ApiPublicHooksLeadIntakeRoute
   '/api/public/hooks/mail-inbound': typeof ApiPublicHooksMailInboundRoute
   '/api/public/hooks/mollie': typeof ApiPublicHooksMollieRoute
   '/api/public/hooks/outreach-reply': typeof ApiPublicHooksOutreachReplyRoute
@@ -495,6 +504,7 @@ export interface FileRoutesById {
   '/_authenticated/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
   '/_authenticated/offerte-studio/q/$id': typeof AuthenticatedOfferteStudioQIdRoute
   '/_authenticated/offerte-studio/t/$id': typeof AuthenticatedOfferteStudioTIdRoute
+  '/api/public/hooks/lead-intake': typeof ApiPublicHooksLeadIntakeRoute
   '/api/public/hooks/mail-inbound': typeof ApiPublicHooksMailInboundRoute
   '/api/public/hooks/mollie': typeof ApiPublicHooksMollieRoute
   '/api/public/hooks/outreach-reply': typeof ApiPublicHooksOutreachReplyRoute
@@ -549,6 +559,7 @@ export interface FileRouteTypes {
     | '/boekhouding/journal/$entryId'
     | '/offerte-studio/q/$id'
     | '/offerte-studio/t/$id'
+    | '/api/public/hooks/lead-intake'
     | '/api/public/hooks/mail-inbound'
     | '/api/public/hooks/mollie'
     | '/api/public/hooks/outreach-reply'
@@ -599,6 +610,7 @@ export interface FileRouteTypes {
     | '/boekhouding/journal/$entryId'
     | '/offerte-studio/q/$id'
     | '/offerte-studio/t/$id'
+    | '/api/public/hooks/lead-intake'
     | '/api/public/hooks/mail-inbound'
     | '/api/public/hooks/mollie'
     | '/api/public/hooks/outreach-reply'
@@ -652,6 +664,7 @@ export interface FileRouteTypes {
     | '/_authenticated/boekhouding/journal/$entryId'
     | '/_authenticated/offerte-studio/q/$id'
     | '/_authenticated/offerte-studio/t/$id'
+    | '/api/public/hooks/lead-intake'
     | '/api/public/hooks/mail-inbound'
     | '/api/public/hooks/mollie'
     | '/api/public/hooks/outreach-reply'
@@ -671,6 +684,7 @@ export interface RootRouteChildren {
   TTokenRoute: typeof TTokenRoute
   AcceptQuoteTokenRoute: typeof AcceptQuoteTokenRoute
   QuoteTokenPdfRoute: typeof QuoteTokenPdfRoute
+  ApiPublicHooksLeadIntakeRoute: typeof ApiPublicHooksLeadIntakeRoute
   ApiPublicHooksMailInboundRoute: typeof ApiPublicHooksMailInboundRoute
   ApiPublicHooksMollieRoute: typeof ApiPublicHooksMollieRoute
   ApiPublicHooksOutreachReplyRoute: typeof ApiPublicHooksOutreachReplyRoute
@@ -1005,6 +1019,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksMailInboundRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/lead-intake': {
+      id: '/api/public/hooks/lead-intake'
+      path: '/api/public/hooks/lead-intake'
+      fullPath: '/api/public/hooks/lead-intake'
+      preLoaderRoute: typeof ApiPublicHooksLeadIntakeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/offerte-studio/t/$id': {
       id: '/_authenticated/offerte-studio/t/$id'
       path: '/offerte-studio/t/$id'
@@ -1207,6 +1228,7 @@ const rootRouteChildren: RootRouteChildren = {
   TTokenRoute: TTokenRoute,
   AcceptQuoteTokenRoute: AcceptQuoteTokenRoute,
   QuoteTokenPdfRoute: QuoteTokenPdfRoute,
+  ApiPublicHooksLeadIntakeRoute: ApiPublicHooksLeadIntakeRoute,
   ApiPublicHooksMailInboundRoute: ApiPublicHooksMailInboundRoute,
   ApiPublicHooksMollieRoute: ApiPublicHooksMollieRoute,
   ApiPublicHooksOutreachReplyRoute: ApiPublicHooksOutreachReplyRoute,
@@ -1219,3 +1241,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
