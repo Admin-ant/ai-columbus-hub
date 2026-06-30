@@ -20,6 +20,7 @@ import {
   Rocket,
   ClipboardList,
   Mail,
+  Inbox,
 } from "lucide-react";
 
 import {
@@ -60,6 +61,7 @@ const topItems: NavItem[] = [
   { title: "Overzicht", url: "/", icon: LayoutDashboard },
   { title: "Offerte Studio", url: "/offerte-studio", icon: Wand2 },
   { title: "Cold Outreach", url: "/outreach", icon: Megaphone },
+  { title: "Leads", url: "/leads", icon: Inbox },
   { title: "Mail", url: "/mail", icon: Mail },
   { title: "Mail instellingen", url: "/mail/settings", icon: Settings },
   { title: "Mail templates", url: "/outreach/templates", icon: FileText },
