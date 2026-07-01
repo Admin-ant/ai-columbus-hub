@@ -103,6 +103,32 @@ function LeadsPage() {
     load();
   }, [load]);
 
+  // Realtime sync met Inbox / Cold Outreach
+  useEffect(() => {
+    if (!currentOrganizationId) return;
+    const channel = supabase
+      .channel(`leads-overview-${currentOrganizationId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "leads", filter: `organization_id=eq.${currentOrganizationId}` },
+        (payload) => {
+          const newRow = payload.new as Lead | null;
+          const oldRow = payload.old as Lead | null;
+          if (payload.eventType === "INSERT" && newRow) {
+            setRows((cur) => (cur.some((r) => r.id === newRow.id) ? cur : [newRow, ...cur]));
+          } else if (payload.eventType === "UPDATE" && newRow) {
+            setRows((cur) => cur.map((r) => (r.id === newRow.id ? { ...r, ...newRow } : r)));
+          } else if (payload.eventType === "DELETE" && oldRow) {
+            setRows((cur) => cur.filter((r) => r.id !== oldRow.id));
+          }
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentOrganizationId]);
+
   const sources = useMemo(() => {
     const s = new Set<string>();
     rows.forEach((r) => r.source && s.add(r.source));
