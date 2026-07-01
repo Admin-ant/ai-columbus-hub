@@ -26,6 +26,7 @@ import {
   Video,
   MapPin,
   FileText,
+  Pencil,
 } from "lucide-react";
 import {
   DndContext,
