@@ -246,6 +246,8 @@ function ClientsPage() {
             <DialogDescription>NAW-gegevens, KvK en contactgegevens van de klant.</DialogDescription>
           </DialogHeader>
 
+          <PasteToFill onParsed={(patch) => setForm((f) => ({ ...f, ...patch }))} />
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
               <Label>Bedrijfsnaam *</Label>
@@ -329,3 +331,82 @@ function ClientsPage() {
     </div>
   );
 }
+
+function PasteToFill({ onParsed }: { onParsed: (patch: Partial<FormState>) => void }) {
+  const [text, setText] = useState("");
+
+  function parse() {
+    const raw = text.trim();
+    if (!raw) { toast.error("Plak eerst tekst"); return; }
+    const patch: Partial<FormState> = {};
+    const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+
+    // Email
+    const email = raw.match(/[\w.+-]+@[\w-]+\.[\w.-]+/)?.[0];
+    if (email) patch.email = email;
+
+    // Website
+    const site = raw.match(/\b((?:https?:\/\/)?(?:www\.)?[a-z0-9-]+\.(?:nl|com|be|de|eu|org|net|io|app)(?:\/[^\s]*)?)\b/i)?.[1];
+    if (site && !site.includes("@")) patch.website = site;
+
+    // Phone (NL)
+    const phone = raw.match(/(\+?31[\s-]?|0)(?:\d[\s-]?){8,10}\d/)?.[0];
+    if (phone) patch.phone = phone.replace(/\s+/g, " ").trim();
+
+    // KvK (8 digits, often labeled)
+    const kvk = raw.match(/kvk[^\d]{0,10}(\d{8})/i)?.[1] ?? raw.match(/\b(\d{8})\b/)?.[1];
+    if (kvk) patch.kvk_number = kvk;
+
+    // BTW
+    const vat = raw.match(/NL[\s]?\d{9}B\d{2}/i)?.[0].replace(/\s+/g, "");
+    if (vat) patch.vat_number = vat.toUpperCase();
+
+    // Postcode + city
+    const pc = raw.match(/\b(\d{4}\s?[A-Z]{2})\b\s+([A-Za-zÀ-ÿ .'-]{2,40})/);
+    if (pc) { patch.postal_code = pc[1].toUpperCase(); patch.city = pc[2].trim(); }
+    else {
+      const pcOnly = raw.match(/\b(\d{4}\s?[A-Z]{2})\b/);
+      if (pcOnly) patch.postal_code = pcOnly[1].toUpperCase();
+    }
+
+    // Address line (street + number)
+    const addr = lines.find((l) => /^[A-Za-zÀ-ÿ.'\- ]+\s+\d+[a-zA-Z]?(\s?[-/]\s?\d+[a-zA-Z]?)?$/.test(l));
+    if (addr) patch.address_line1 = addr;
+
+    // Contact person: label "Contact:" or "T.a.v."
+    const contact = raw.match(/(?:contactpersoon|contact|t\.a\.v\.?|attn)[:\s]+([A-Za-zÀ-ÿ .'-]{2,60})/i)?.[1];
+    if (contact) patch.contact_person = contact.trim();
+
+    // Company name: first line if it doesn't look like address/postcode/email
+    const firstLine = lines[0];
+    if (firstLine && !/@|^\d/.test(firstLine) && !/\d{4}\s?[A-Z]{2}/.test(firstLine)) {
+      patch.name = firstLine;
+    }
+    const nameLabel = raw.match(/(?:bedrijf|bedrijfsnaam|company|naam)[:\s]+(.+)/i)?.[1]?.split(/\r?\n/)[0]?.trim();
+    if (nameLabel) patch.name = nameLabel;
+
+    if (Object.keys(patch).length === 0) {
+      toast.error("Geen gegevens herkend");
+      return;
+    }
+    onParsed(patch);
+    toast.success(`${Object.keys(patch).length} veld(en) ingevuld`);
+  }
+
+  return (
+    <div className="rounded-md border bg-muted/30 p-3 space-y-2">
+      <Label className="text-xs font-medium">Snel invullen — plak hier ruwe gegevens</Label>
+      <Textarea
+        rows={3}
+        placeholder={"Plak bijv:\nAcme B.V.\nHoofdstraat 12\n1234 AB Amsterdam\ninfo@acme.nl  06-12345678  KvK 12345678"}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+      />
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="ghost" size="sm" onClick={() => setText("")}>Wissen</Button>
+        <Button type="button" size="sm" onClick={parse}>Automatisch invullen</Button>
+      </div>
+    </div>
+  );
+}
+
