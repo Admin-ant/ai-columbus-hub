@@ -540,6 +540,7 @@ function OutreachDashboard() {
                     onDelete={() => deleteCampaign(c.id)}
                     onGenerateSequence={() => generateSequence(c)}
                     onGenerateVariants={() => runVariants(c)}
+                    onUpdated={load}
                   />
                 ))}
               </div>
