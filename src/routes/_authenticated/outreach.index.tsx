@@ -872,6 +872,7 @@ function CampaignCard({
   onDelete,
   onGenerateSequence,
   onGenerateVariants,
+  onUpdated,
 }: {
   campaign: Campaign;
   targetCount: number;
@@ -879,11 +880,60 @@ function CampaignCard({
   onDelete: () => void;
   onGenerateSequence: () => void;
   onGenerateVariants: () => void;
+  onUpdated: () => void;
 }) {
   const channelIcon =
     campaign.channel === "linkedin" ? Linkedin : campaign.channel === "cold-call" ? Phone : Mail;
   const Icon = channelIcon;
   const isActive = campaign.status === "active";
+  const [editOpen, setEditOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    name: campaign.name,
+    channel: campaign.channel,
+    status: campaign.status,
+    goal: campaign.goal ?? "",
+    daily_limit: campaign.daily_limit,
+    ai_pitch: campaign.ai_pitch ?? "",
+    notes: campaign.notes ?? "",
+  });
+
+  function openEdit() {
+    setForm({
+      name: campaign.name,
+      channel: campaign.channel,
+      status: campaign.status,
+      goal: campaign.goal ?? "",
+      daily_limit: campaign.daily_limit,
+      ai_pitch: campaign.ai_pitch ?? "",
+      notes: campaign.notes ?? "",
+    });
+    setEditOpen(true);
+  }
+
+  async function saveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.name.trim()) return toast.error("Naam is verplicht");
+    setSaving(true);
+    const { error } = await supabase
+      .from("outreach_campaigns")
+      .update({
+        name: form.name.trim(),
+        channel: form.channel,
+        status: form.status,
+        goal: form.goal.trim() || null,
+        daily_limit: form.daily_limit,
+        ai_pitch: form.ai_pitch.trim() || null,
+        notes: form.notes.trim() || null,
+      } as never)
+      .eq("id", campaign.id);
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success("Campagne bijgewerkt");
+    setEditOpen(false);
+    onUpdated();
+  }
+
   return (
     <div
       className="rounded-lg border border-border bg-muted/50 p-4 transition-all hover:border-brand/40"
