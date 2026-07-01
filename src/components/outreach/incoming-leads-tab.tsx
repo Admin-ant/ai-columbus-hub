@@ -84,6 +84,34 @@ export function IncomingLeadsTab({
     load();
   }, [load]);
 
+  // Realtime: sync met /leads en overige modules
+  useEffect(() => {
+    if (!organizationId) return;
+    const channel = supabase
+      .channel(`leads-incoming-${organizationId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "leads", filter: `organization_id=eq.${organizationId}` },
+        (payload) => {
+          const newRow = payload.new as Lead | null;
+          const oldRow = payload.old as Lead | null;
+          if (payload.eventType === "UPDATE" && newRow) {
+            setRows((cur) => cur.map((r) => (r.id === newRow.id ? { ...r, ...newRow } : r)));
+          } else if (payload.eventType === "DELETE" && oldRow) {
+            setRows((cur) => cur.filter((r) => r.id !== oldRow.id));
+          } else if (payload.eventType === "INSERT" && newRow) {
+            if ((SOURCES as readonly string[]).includes(newRow.source ?? "")) {
+              setRows((cur) => [newRow, ...cur].slice(0, 50));
+            }
+          }
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [organizationId]);
+
   async function changeStage(lead: Lead, stage: string) {
     setRows((cur) => cur.map((r) => (r.id === lead.id ? { ...r, stage } : r)));
     const { error } = await supabase.from("leads").update({ stage: stage as never }).eq("id", lead.id);
