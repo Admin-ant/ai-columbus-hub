@@ -1060,6 +1060,15 @@ function CampaignCard({
           <Button
             variant="ghost"
             size="sm"
+            className="h-7 w-7 p-0 text-muted-foreground hover:bg-muted"
+            onClick={openEdit}
+            title="Bewerk campagne"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             className="h-7 w-7 p-0 text-muted-foreground hover:bg-red-500/10 hover:text-red-400"
             onClick={onDelete}
           >
@@ -1067,6 +1076,76 @@ function CampaignCard({
           </Button>
         </div>
       </div>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Campagne bewerken</DialogTitle>
+            <DialogDescription>Pas naam, kanaal, status, doel en pitch aan.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={saveEdit} className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5 col-span-2">
+                <Label>Naam *</Label>
+                <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Kanaal</Label>
+                <Select value={form.channel} onValueChange={(v) => setForm({ ...form, channel: v as Campaign["channel"] })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="email">E-mail</SelectItem>
+                    <SelectItem value="linkedin">LinkedIn</SelectItem>
+                    <SelectItem value="cold-call">Cold call</SelectItem>
+                    <SelectItem value="multi">Multi-channel</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Status</Label>
+                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as Campaign["status"] })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="active">Actief</SelectItem>
+                    <SelectItem value="paused">Gepauzeerd</SelectItem>
+                    <SelectItem value="completed">Afgerond</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5 col-span-2">
+                <Label>Dagelijkse limiet</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={500}
+                  value={form.daily_limit}
+                  onChange={(e) => setForm({ ...form, daily_limit: Number(e.target.value) || 20 })}
+                />
+              </div>
+              <div className="space-y-1.5 col-span-2">
+                <Label>Doel</Label>
+                <Input value={form.goal} onChange={(e) => setForm({ ...form, goal: e.target.value })} />
+              </div>
+              <div className="space-y-1.5 col-span-2">
+                <Label>AI Pitch</Label>
+                <Textarea rows={5} value={form.ai_pitch} onChange={(e) => setForm({ ...form, ai_pitch: e.target.value })} />
+              </div>
+              <div className="space-y-1.5 col-span-2">
+                <Label>Notities</Label>
+                <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>Annuleren</Button>
+              <Button type="submit" disabled={saving}>
+                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Opslaan
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
