@@ -246,6 +246,8 @@ function ClientsPage() {
             <DialogDescription>NAW-gegevens, KvK en contactgegevens van de klant.</DialogDescription>
           </DialogHeader>
 
+          <PasteToFill onParsed={(patch) => setForm((f) => ({ ...f, ...patch }))} />
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
               <Label>Bedrijfsnaam *</Label>
