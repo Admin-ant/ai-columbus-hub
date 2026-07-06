@@ -87,7 +87,7 @@ const PayloadSchema = z.object({
     .optional(),
 });
 
-type SB = Awaited<ReturnType<typeof import("@/integrations/supabase/client.server").supabaseAdmin["from"] extends never ? never : () => never>>;
+
 
 export const Route = createFileRoute("/api/public/hooks/portaal-billable")({
   server: {
