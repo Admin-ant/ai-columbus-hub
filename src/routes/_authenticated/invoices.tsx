@@ -1,8 +1,17 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Eye, Loader2, MoreHorizontal, Plus, Trash2 } from "lucide-react";
+
+import { deleteInvoice } from "@/lib/invoice-actions.functions";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -174,12 +183,21 @@ function InvoicesPage() {
                 <TableHead>{t("invoices.due_date")}</TableHead>
                 <TableHead className="text-right">{t("invoices.amount")}</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="w-10 text-right">{t("invoices.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {invoices.map((inv) => (
                 <TableRow key={inv.id}>
-                  <TableCell className="font-mono text-sm">{inv.invoice_number}</TableCell>
+                  <TableCell className="font-mono text-sm">
+                    <Link
+                      to="/invoices/$invoiceId"
+                      params={{ invoiceId: inv.id }}
+                      className="text-brand hover:underline"
+                    >
+                      {inv.invoice_number}
+                    </Link>
+                  </TableCell>
                   <TableCell className="text-sm">
                     {inv.client_id ? (
                       <Link to="/ai-columbus/klanten/$clientId" params={{ clientId: inv.client_id }} className="text-brand hover:underline">
@@ -211,6 +229,9 @@ function InvoicesPage() {
                         ))}
                       </SelectContent>
                     </Select>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <RowActions invoice={inv} onChanged={load} />
                   </TableCell>
                 </TableRow>
               ))}
@@ -554,5 +575,45 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function RowActions({ invoice, onChanged }: { invoice: Invoice; onChanged: () => void | Promise<void> }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const deleteFn = useServerFn(deleteInvoice);
+  const isDraft = invoice.status === "draft";
+
+  async function handleDelete() {
+    const msg = isDraft ? t("invoices.delete_confirm") : t("invoices.cancel_confirm");
+    if (!window.confirm(msg)) return;
+    try {
+      const r = await deleteFn({ data: { invoice_id: invoice.id } });
+      toast.success(r.action === "deleted" ? t("invoices.deleted") : t("invoices.cancelled_ok"));
+      await onChanged();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Fout");
+    }
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem
+          onClick={() => navigate({ to: "/invoices/$invoiceId", params: { invoiceId: invoice.id } })}
+        >
+          <Eye className="mr-2 h-4 w-4" /> {t("invoices.view")}
+        </DropdownMenuItem>
+        <DropdownMenuItem className="text-red-600" onClick={handleDelete}>
+          <Trash2 className="mr-2 h-4 w-4" />
+          {isDraft ? t("invoices.delete") : t("invoices.cancel_invoice")}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

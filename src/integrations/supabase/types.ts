@@ -595,6 +595,120 @@ export type Database = {
           },
         ]
       }
+      invoice_attachments: {
+        Row: {
+          created_at: string
+          filename: string
+          id: string
+          invoice_id: string
+          mime_type: string | null
+          organization_id: string
+          size_bytes: number | null
+          storage_path: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          filename: string
+          id?: string
+          invoice_id: string
+          mime_type?: string | null
+          organization_id: string
+          size_bytes?: number | null
+          storage_path: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          filename?: string
+          id?: string
+          invoice_id?: string
+          mime_type?: string | null
+          organization_id?: string
+          size_bytes?: number | null
+          storage_path?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_attachments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_attachments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_email_log: {
+        Row: {
+          body: string | null
+          cc_emails: string[]
+          created_at: string
+          error: string | null
+          id: string
+          invoice_id: string
+          mail_message_id: string | null
+          organization_id: string
+          provider_message_id: string | null
+          sent_by: string | null
+          status: string
+          subject: string
+          to_email: string
+        }
+        Insert: {
+          body?: string | null
+          cc_emails?: string[]
+          created_at?: string
+          error?: string | null
+          id?: string
+          invoice_id: string
+          mail_message_id?: string | null
+          organization_id: string
+          provider_message_id?: string | null
+          sent_by?: string | null
+          status?: string
+          subject: string
+          to_email: string
+        }
+        Update: {
+          body?: string | null
+          cc_emails?: string[]
+          created_at?: string
+          error?: string | null
+          id?: string
+          invoice_id?: string
+          mail_message_id?: string | null
+          organization_id?: string
+          provider_message_id?: string | null
+          sent_by?: string | null
+          status?: string
+          subject?: string
+          to_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_email_log_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_email_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_lines: {
         Row: {
           created_at: string
@@ -747,8 +861,10 @@ export type Database = {
           id: string
           invoice_number: string
           issue_date: string
+          last_emailed_at: string | null
           organization_id: string
           paid_at: string | null
+          pdf_filename: string | null
           project_id: string | null
           quote_id: string | null
           sent_at: string | null
@@ -771,8 +887,10 @@ export type Database = {
           id?: string
           invoice_number: string
           issue_date?: string
+          last_emailed_at?: string | null
           organization_id: string
           paid_at?: string | null
+          pdf_filename?: string | null
           project_id?: string | null
           quote_id?: string | null
           sent_at?: string | null
@@ -795,8 +913,10 @@ export type Database = {
           id?: string
           invoice_number?: string
           issue_date?: string
+          last_emailed_at?: string | null
           organization_id?: string
           paid_at?: string | null
+          pdf_filename?: string | null
           project_id?: string | null
           quote_id?: string | null
           sent_at?: string | null
