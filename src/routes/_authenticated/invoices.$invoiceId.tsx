@@ -45,6 +45,7 @@ import {
   emailInvoice,
   getInvoiceAttachmentUrl,
   removeInvoiceAttachment,
+  updateInvoice,
 } from "@/lib/invoice-actions.functions";
 
 type Invoice = Database["public"]["Tables"]["invoices"]["Row"];
