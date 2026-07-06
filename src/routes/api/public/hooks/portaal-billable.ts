@@ -141,7 +141,7 @@ export const Route = createFileRoute("/api/public/hooks/portaal-billable")({
             event: p.event,
             external_id: p.external_id,
             status: "processing",
-            payload: p as unknown as Record<string, unknown>,
+            payload: p as unknown as Database["public"]["Tables"]["integration_events"]["Insert"]["payload"],
           })
           .select("id")
           .single();

@@ -39,22 +39,22 @@ const SOURCES = [
 ] as const;
 
 function KoppelingenPage() {
-  const { currentOrgId } = useWorkspace();
+  const { currentOrganizationId } = useWorkspace();
   const [events, setEvents] = useState<EventRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-  const webhookUrl = currentOrgId
-    ? `${baseUrl}/api/public/hooks/portaal-billable?org=${currentOrgId}`
+  const webhookUrl = currentOrganizationId
+    ? `${baseUrl}/api/public/hooks/portaal-billable?org=${currentOrganizationId}`
     : "";
 
   async function loadEvents() {
-    if (!currentOrgId) return;
+    if (!currentOrganizationId) return;
     setLoading(true);
     const { data, error } = await supabase
       .from("integration_events")
       .select("*")
-      .eq("organization_id", currentOrgId)
+      .eq("organization_id", currentOrganizationId)
       .order("received_at", { ascending: false })
       .limit(50);
     if (error) toast.error(error.message);
@@ -62,7 +62,7 @@ function KoppelingenPage() {
     setLoading(false);
   }
 
-  useEffect(() => { loadEvents(); /* eslint-disable-next-line */ }, [currentOrgId]);
+  useEffect(() => { loadEvents(); /* eslint-disable-next-line */ }, [currentOrganizationId]);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -190,13 +190,13 @@ function KoppelingenPage() {
               <TabsTrigger value="client">Klant</TabsTrigger>
             </TabsList>
             <TabsContent value="invoice">
-              <CurlSnippet body={sampleInvoice(baseUrl, currentOrgId)} />
+              <CurlSnippet body={sampleInvoice(baseUrl, currentOrganizationId)} />
             </TabsContent>
             <TabsContent value="quote">
-              <CurlSnippet body={sampleQuote(baseUrl, currentOrgId)} />
+              <CurlSnippet body={sampleQuote(baseUrl, currentOrganizationId)} />
             </TabsContent>
             <TabsContent value="client">
-              <CurlSnippet body={sampleClient(baseUrl, currentOrgId)} />
+              <CurlSnippet body={sampleClient(baseUrl, currentOrganizationId)} />
             </TabsContent>
           </Tabs>
         </CardContent>
