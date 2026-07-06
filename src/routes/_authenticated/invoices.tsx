@@ -306,41 +306,60 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
     if (lines.some((l) => !l.description.trim())) return toast.error("Vul alle regelomschrijvingen in");
     setSaving(true);
 
+    const { nextInvoiceNumber } = await import("@/lib/bookkeeping.functions");
+
+    let inv: { id: string } | null = null;
     let number: string | null = null;
-    try {
-      const { nextInvoiceNumber } = await import("@/lib/bookkeeping.functions");
-      const res = await nextInvoiceNumber({ data: { org_id: orgId } });
-      number = res.number;
-    } catch (err) {
-      setSaving(false);
-      return toast.error(err instanceof Error ? err.message : "RPC error");
-    }
-    if (!number) {
-      setSaving(false);
-      return toast.error("Kon factuurnummer niet genereren");
+    let lastErr: { code?: string; message: string } | null = null;
+
+    // Nummer wordt atomair uit de organisatie-sequence gehaald; bij een zeldzame
+    // race (duplicate key 23505) proberen we tot 3x opnieuw met een vers nummer.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const res = await nextInvoiceNumber({ data: { org_id: orgId } });
+        number = res.number;
+      } catch (err) {
+        setSaving(false);
+        return toast.error(err instanceof Error ? err.message : "Kon factuurnummer niet genereren");
+      }
+      if (!number) {
+        setSaving(false);
+        return toast.error("Kon factuurnummer niet genereren");
+      }
+
+      const { data, error } = await supabase
+        .from("invoices")
+        .insert({
+          organization_id: orgId,
+          invoice_number: number,
+          client_id: clientId || null,
+          client_name: name,
+          issue_date: issueDate,
+          due_date: dueDate,
+          subtotal_cents: subtotalCents,
+          vat_cents: vatCents,
+          total_cents: totalCents,
+          amount: totalCents / 100,
+          status: "draft",
+        })
+        .select("id")
+        .single();
+
+      if (!error && data) {
+        inv = data;
+        break;
+      }
+      lastErr = error ? { code: error.code, message: error.message } : null;
+      if (error?.code !== "23505") break; // alleen bij duplicate opnieuw proberen
+      number = null;
     }
 
-    const { data: inv, error: invErr } = await supabase
-      .from("invoices")
-      .insert({
-        organization_id: orgId,
-        invoice_number: number,
-        client_id: clientId || null,
-        client_name: name,
-        issue_date: issueDate,
-        due_date: dueDate,
-        subtotal_cents: subtotalCents,
-        vat_cents: vatCents,
-        total_cents: totalCents,
-        amount: totalCents / 100,
-        status: "draft",
-      })
-      .select("id")
-      .single();
-
-    if (invErr || !inv) {
+    if (!inv) {
       setSaving(false);
-      return toast.error(invErr?.message ?? "Error");
+      if (lastErr?.code === "23505") {
+        return toast.error(`Factuurnummer ${number ?? ""} bestaat al — probeer opnieuw`);
+      }
+      return toast.error(lastErr?.message ?? "Error");
     }
 
     const { error: linesErr } = await supabase.from("invoice_lines").insert(
