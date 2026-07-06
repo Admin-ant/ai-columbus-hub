@@ -577,3 +577,43 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
     </Dialog>
   );
 }
+
+function RowActions({ invoice, onChanged }: { invoice: Invoice; onChanged: () => void | Promise<void> }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const deleteFn = useServerFn(deleteInvoice);
+  const isDraft = invoice.status === "draft";
+
+  async function handleDelete() {
+    const msg = isDraft ? t("invoices.delete_confirm") : t("invoices.cancel_confirm");
+    if (!window.confirm(msg)) return;
+    try {
+      const r = await deleteFn({ data: { invoice_id: invoice.id } });
+      toast.success(r.action === "deleted" ? t("invoices.deleted") : t("invoices.cancelled_ok"));
+      await onChanged();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Fout");
+    }
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem
+          onClick={() => navigate({ to: "/invoices/$invoiceId", params: { invoiceId: invoice.id } })}
+        >
+          <Eye className="mr-2 h-4 w-4" /> {t("invoices.view")}
+        </DropdownMenuItem>
+        <DropdownMenuItem className="text-red-600" onClick={handleDelete}>
+          <Trash2 className="mr-2 h-4 w-4" />
+          {isDraft ? t("invoices.delete") : t("invoices.cancel_invoice")}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
