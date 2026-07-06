@@ -551,7 +551,191 @@ function InvoiceDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{t("invoices.edit")} — {invoice.invoice_number}</DialogTitle>
+            <DialogDescription>{t("invoices.edit_disabled_note")}</DialogDescription>
+          </DialogHeader>
+          <EditInvoiceForm
+            invoice={invoice}
+            lines={lines}
+            onCancel={() => setEditOpen(false)}
+            onSaved={() => {
+              setEditOpen(false);
+              void load();
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+function EditInvoiceForm({
+  invoice,
+  lines: initialLines,
+  onCancel,
+  onSaved,
+}: {
+  invoice: Invoice;
+  lines: InvoiceLine[];
+  onCancel: () => void;
+  onSaved: () => void;
+}) {
+  const { t } = useTranslation();
+  const updateFn = useServerFn(updateInvoice);
+  const [clientName, setClientName] = useState(invoice.client_name ?? "");
+  const [issueDate, setIssueDate] = useState(invoice.issue_date);
+  const [dueDate, setDueDate] = useState(invoice.due_date);
+  const [rows, setRows] = useState(
+    initialLines.map((l) => ({
+      description: l.description,
+      quantity: Number(l.quantity),
+      unit_price_cents: l.unit_price_cents,
+      vat_rate: Number(l.vat_rate),
+    })),
+  );
+  const [saving, setSaving] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await updateFn({
+        data: {
+          invoice_id: invoice.id,
+          client_id: invoice.client_id,
+          client_name: clientName.trim(),
+          issue_date: issueDate,
+          due_date: dueDate,
+          lines: rows,
+        },
+      });
+      toast.success(t("invoices.updated"));
+      onSaved();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Fout");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form onSubmit={submit} className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="space-y-1.5 sm:col-span-3">
+          <Label>Klant</Label>
+          <Input value={clientName} onChange={(e) => setClientName(e.target.value)} required />
+        </div>
+        <div className="space-y-1.5">
+          <Label>{t("invoices.issue_date")}</Label>
+          <Input type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} required />
+        </div>
+        <div className="space-y-1.5">
+          <Label>{t("invoices.due_date")}</Label>
+          <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} required />
+        </div>
+      </div>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Omschrijving</TableHead>
+              <TableHead className="w-20 text-right">Aantal</TableHead>
+              <TableHead className="w-28 text-right">Prijs (€)</TableHead>
+              <TableHead className="w-20 text-right">BTW %</TableHead>
+              <TableHead className="w-10"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((r, i) => (
+              <TableRow key={i}>
+                <TableCell>
+                  <Input
+                    value={r.description}
+                    onChange={(e) => {
+                      const n = [...rows];
+                      n[i] = { ...r, description: e.target.value };
+                      setRows(n);
+                    }}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Input
+                    type="number"
+                    step="0.001"
+                    className="text-right"
+                    value={r.quantity}
+                    onChange={(e) => {
+                      const n = [...rows];
+                      n[i] = { ...r, quantity: Number(e.target.value) };
+                      setRows(n);
+                    }}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    className="text-right"
+                    value={(r.unit_price_cents / 100).toString()}
+                    onChange={(e) => {
+                      const n = [...rows];
+                      n[i] = { ...r, unit_price_cents: Math.round(Number(e.target.value) * 100) };
+                      setRows(n);
+                    }}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Input
+                    type="number"
+                    step="1"
+                    className="text-right"
+                    value={r.vat_rate}
+                    onChange={(e) => {
+                      const n = [...rows];
+                      n[i] = { ...r, vat_rate: Number(e.target.value) };
+                      setRows(n);
+                    }}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setRows(rows.filter((_, j) => j !== i))}
+                    disabled={rows.length === 1}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="flex justify-between">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setRows([...rows, { description: "", quantity: 1, unit_price_cents: 0, vat_rate: 21 }])}
+        >
+          Regel toevoegen
+        </Button>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" onClick={onCancel}>Annuleren</Button>
+          <Button type="submit" disabled={saving}>
+            {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+            Opslaan
+          </Button>
+        </div>
+      </div>
+    </form>
   );
 }
 
