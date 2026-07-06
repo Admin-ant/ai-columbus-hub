@@ -175,6 +175,10 @@ function KoppelingenPage() {
         })}
       </div>
 
+      <ManualImportCard orgId={currentOrganizationId ?? null} onDone={loadEvents} />
+
+
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
