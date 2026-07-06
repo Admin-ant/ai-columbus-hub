@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Copy, Check, Link2, ExternalLink, RefreshCw, ArrowRight, ShieldCheck } from "lucide-react";
+import { Copy, Check, Link2, ExternalLink, RefreshCw, ArrowRight, ShieldCheck, Upload, FileJson, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -13,6 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { importPortalPayload, importPortalBulk } from "@/lib/portal-import.functions";
 
 export const Route = createFileRoute("/_authenticated/ai-columbus/koppelingen")({
   head: () => ({ meta: [{ title: "Koppelingen — AI van Columbus" }] }),
