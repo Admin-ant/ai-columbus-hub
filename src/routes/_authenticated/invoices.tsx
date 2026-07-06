@@ -174,12 +174,21 @@ function InvoicesPage() {
                 <TableHead>{t("invoices.due_date")}</TableHead>
                 <TableHead className="text-right">{t("invoices.amount")}</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="w-10 text-right">{t("invoices.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {invoices.map((inv) => (
                 <TableRow key={inv.id}>
-                  <TableCell className="font-mono text-sm">{inv.invoice_number}</TableCell>
+                  <TableCell className="font-mono text-sm">
+                    <Link
+                      to="/invoices/$invoiceId"
+                      params={{ invoiceId: inv.id }}
+                      className="text-brand hover:underline"
+                    >
+                      {inv.invoice_number}
+                    </Link>
+                  </TableCell>
                   <TableCell className="text-sm">
                     {inv.client_id ? (
                       <Link to="/ai-columbus/klanten/$clientId" params={{ clientId: inv.client_id }} className="text-brand hover:underline">
@@ -211,6 +220,9 @@ function InvoicesPage() {
                         ))}
                       </SelectContent>
                     </Select>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <RowActions invoice={inv} onChanged={load} />
                   </TableCell>
                 </TableRow>
               ))}
