@@ -62,7 +62,7 @@ export const importPortalBulk = createServerFn({ method: "POST" })
     for (let i = 0; i < data.items.length; i++) {
       try {
         const r = await processPortalPayload(data.organization_id, data.items[i]);
-        results.push({ index: i, ok: true, result: r });
+        results.push({ index: i, ok: true, invoice_number: r.invoice_number, duplicate: r.duplicate });
       } catch (e) {
         results.push({ index: i, ok: false, message: e instanceof Error ? e.message : String(e) });
       }
