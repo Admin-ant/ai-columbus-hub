@@ -328,14 +328,8 @@ function InvoiceDetailPage() {
             <Mail className="mr-1 h-4 w-4" /> {t("invoices.email")}
           </Button>
           {isDraft && (
-            <Button
-              variant="outline"
-              size="sm"
-              asChild
-            >
-              <Link to="/invoices/$invoiceId/edit" params={{ invoiceId: invoice.id }}>
-                <Pencil className="mr-1 h-4 w-4" /> {t("invoices.edit")}
-              </Link>
+            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+              <Pencil className="mr-1 h-4 w-4" /> {t("invoices.edit")}
             </Button>
           )}
           <Button variant="outline" size="sm" onClick={handleDelete}>
