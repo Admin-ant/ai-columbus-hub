@@ -52,7 +52,13 @@ export const importPortalBulk = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertOrgAccess(context.userId, data.organization_id);
     const { processPortalPayload } = await import("./portal-processor.server");
-    const results: Array<{ index: number; ok: boolean; message?: string; result?: unknown }> = [];
+    const results: Array<{
+      index: number;
+      ok: boolean;
+      message?: string;
+      invoice_number?: string;
+      duplicate?: boolean;
+    }> = [];
     for (let i = 0; i < data.items.length; i++) {
       try {
         const r = await processPortalPayload(data.organization_id, data.items[i]);
