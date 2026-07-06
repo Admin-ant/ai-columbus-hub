@@ -333,7 +333,7 @@ function InvoiceDetailPage() {
               size="sm"
               asChild
             >
-              <Link to="/invoices" search={{ edit: invoice.id } as never}>
+              <Link to="/invoices/$invoiceId/edit" params={{ invoiceId: invoice.id }}>
                 <Pencil className="mr-1 h-4 w-4" /> {t("invoices.edit")}
               </Link>
             </Button>
