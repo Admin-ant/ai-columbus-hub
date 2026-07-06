@@ -1,0 +1,713 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import {
+  ArrowLeft,
+  Download,
+  Loader2,
+  Mail,
+  Paperclip,
+  Pencil,
+  Trash2,
+  Upload,
+} from "lucide-react";
+
+import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+import { useAuth } from "@/hooks/use-auth";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { buildInvoicePdf, suggestInvoiceFilename, type InvoicePdfData } from "@/lib/invoice-pdf";
+import { loadTemplate } from "@/lib/pdf-template";
+import {
+  deleteInvoice,
+  emailInvoice,
+  getInvoiceAttachmentUrl,
+  removeInvoiceAttachment,
+} from "@/lib/invoice-actions.functions";
+
+type Invoice = Database["public"]["Tables"]["invoices"]["Row"];
+type InvoiceLine = Database["public"]["Tables"]["invoice_lines"]["Row"];
+type InvoiceStatus = Database["public"]["Enums"]["invoice_status"];
+type EmailLogRow = {
+  id: string;
+  to_email: string;
+  cc_emails: string[] | null;
+  subject: string;
+  status: string;
+  error: string | null;
+  created_at: string;
+};
+type AttachmentRow = {
+  id: string;
+  filename: string;
+  storage_path: string;
+  mime_type: string | null;
+  size_bytes: number | null;
+  created_at: string;
+};
+type OrgRow = {
+  id: string;
+  name: string;
+  tax_number: string | null;
+};
+
+const STATUS_COLOR: Record<InvoiceStatus, string> = {
+  draft: "bg-muted text-foreground",
+  sent: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+  paid: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  overdue: "bg-red-500/15 text-red-700 dark:text-red-300",
+  cancelled: "bg-muted text-muted-foreground",
+};
+
+export const Route = createFileRoute("/_authenticated/invoices/$invoiceId")({
+  head: () => ({ meta: [{ title: "Factuur" }] }),
+  component: InvoiceDetailPage,
+});
+
+function InvoiceDetailPage() {
+  const { invoiceId } = Route.useParams();
+  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const [lines, setLines] = useState<InvoiceLine[]>([]);
+  const [org, setOrg] = useState<OrgRow | null>(null);
+  const [client, setClient] = useState<{ email: string | null; address_line1: string | null; postal_code: string | null; city: string | null } | null>(null);
+  const [emailLog, setEmailLog] = useState<EmailLogRow[]>([]);
+  const [attachments, setAttachments] = useState<AttachmentRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [downloadOpen, setDownloadOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState<null | { to: string }>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const eur = useMemo(
+    () =>
+      new Intl.NumberFormat(i18n.resolvedLanguage === "en" ? "en-IE" : "nl-NL", {
+        style: "currency",
+        currency: "EUR",
+      }),
+    [i18n.resolvedLanguage],
+  );
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data: inv, error } = await supabase
+      .from("invoices")
+      .select("*")
+      .eq("id", invoiceId)
+      .maybeSingle();
+    if (error) toast.error(error.message);
+    if (!inv) {
+      setInvoice(null);
+      setLoading(false);
+      return;
+    }
+    setInvoice(inv as Invoice);
+
+    const [ln, lg, at, orgRes, clRes] = await Promise.all([
+      supabase.from("invoice_lines").select("*").eq("invoice_id", invoiceId).order("position"),
+      supabase
+        .from("invoice_email_log")
+        .select("id,to_email,cc_emails,subject,status,error,created_at")
+        .eq("invoice_id", invoiceId)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("invoice_attachments")
+        .select("id,filename,storage_path,mime_type,size_bytes,created_at")
+        .eq("invoice_id", invoiceId)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("organizations")
+        .select("id,name,tax_number")
+        .eq("id", (inv as Invoice).organization_id)
+        .maybeSingle(),
+      (inv as Invoice).client_id
+        ? supabase
+            .from("clients")
+            .select("email,address_line1,postal_code,city")
+            .eq("id", (inv as Invoice).client_id as string)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+    ]);
+    setLines((ln.data ?? []) as InvoiceLine[]);
+    setEmailLog((lg.data ?? []) as EmailLogRow[]);
+    setAttachments((at.data ?? []) as AttachmentRow[]);
+    setOrg((orgRes.data ?? null) as OrgRow | null);
+    setClient(
+      (clRes.data ?? null) as {
+        email: string | null;
+        address_line1: string | null;
+        postal_code: string | null;
+        city: string | null;
+      } | null,
+    );
+    setLoading(false);
+  }, [invoiceId]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const buildPdf = useCallback(() => {
+    if (!invoice) return null;
+    const tpl = loadTemplate(invoice.organization_id, user?.id ?? null);
+    const data: InvoicePdfData = {
+      invoice_number: invoice.invoice_number,
+      issue_date: invoice.issue_date,
+      due_date: invoice.due_date,
+      currency: invoice.currency,
+      client_name: invoice.client_name,
+      client_email: client?.email ?? null,
+      client_address: client
+        ? [client.address_line1, [client.postal_code, client.city].filter(Boolean).join(" ")]
+            .filter(Boolean)
+            .join(", ")
+        : null,
+      organization_name: org?.name ?? null,
+      organization_vat: org?.tax_number ?? null,
+      subtotal_cents: invoice.subtotal_cents,
+      vat_cents: invoice.vat_cents,
+      total_cents: invoice.total_cents,
+      status: invoice.status,
+      lines: lines.map((l) => ({
+        description: l.description,
+        quantity: Number(l.quantity),
+        unit_price_cents: l.unit_price_cents,
+        vat_rate: Number(l.vat_rate),
+        subtotal_cents: l.subtotal_cents,
+        vat_cents: l.vat_cents,
+        total_cents: l.total_cents,
+      })),
+    };
+    return buildInvoicePdf(data, tpl, i18n.resolvedLanguage ?? "nl");
+  }, [invoice, lines, org, client, user, i18n.resolvedLanguage]);
+
+  function downloadPdf(filename: string) {
+    const doc = buildPdf();
+    if (!doc) return;
+    doc.save(filename);
+  }
+
+  const emailFn = useServerFn(emailInvoice);
+  const deleteFn = useServerFn(deleteInvoice);
+  const removeAttFn = useServerFn(removeInvoiceAttachment);
+  const attUrlFn = useServerFn(getInvoiceAttachmentUrl);
+
+  async function handleDelete() {
+    if (!invoice) return;
+    const isDraft = invoice.status === "draft";
+    const msg = isDraft ? t("invoices.delete_confirm") : t("invoices.cancel_confirm");
+    if (!window.confirm(msg)) return;
+    try {
+      const r = await deleteFn({ data: { invoice_id: invoice.id } });
+      if (r.action === "deleted") {
+        toast.success(t("invoices.deleted"));
+        navigate({ to: "/invoices" });
+      } else {
+        toast.success(t("invoices.cancelled_ok"));
+        void load();
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Fout");
+    }
+  }
+
+  async function handleAttachmentUpload(file: File) {
+    if (!invoice) return;
+    const path = `${invoice.organization_id}/${invoice.id}/${crypto.randomUUID()}-${file.name}`;
+    const { error } = await supabase.storage
+      .from("invoice-attachments")
+      .upload(path, file, { contentType: file.type, upsert: false });
+    if (error) return toast.error(error.message);
+    const { error: insErr } = await supabase.from("invoice_attachments").insert({
+      organization_id: invoice.organization_id,
+      invoice_id: invoice.id,
+      storage_path: path,
+      filename: file.name,
+      mime_type: file.type || null,
+      size_bytes: file.size,
+      uploaded_by: user?.id ?? null,
+    } as never);
+    if (insErr) return toast.error(insErr.message);
+    toast.success("Bijlage toegevoegd");
+    void load();
+  }
+
+  async function openAttachment(a: AttachmentRow) {
+    try {
+      const r = await attUrlFn({ data: { storage_path: a.storage_path } });
+      window.open(r.url, "_blank", "noopener,noreferrer");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Fout");
+    }
+  }
+
+  async function deleteAttachment(a: AttachmentRow) {
+    if (!window.confirm(`Verwijder "${a.filename}"?`)) return;
+    try {
+      await removeAttFn({ data: { attachment_id: a.id } });
+      toast.success("Bijlage verwijderd");
+      void load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Fout");
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20 text-muted-foreground">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("common.loading")}
+      </div>
+    );
+  }
+  if (!invoice) {
+    return (
+      <div className="py-20 text-center text-sm text-muted-foreground">
+        {t("invoices.not_found")}
+        <div className="mt-4">
+          <Button asChild variant="outline" size="sm">
+            <Link to="/invoices">
+              <ArrowLeft className="mr-1 h-4 w-4" /> {t("invoices.back_to_list")}
+            </Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const isDraft = invoice.status === "draft";
+  const suggestedFilename = invoice.pdf_filename || suggestInvoiceFilename(invoice.invoice_number, invoice.client_name);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
+            <Link to="/invoices">
+              <ArrowLeft className="mr-1 h-4 w-4" /> {t("invoices.back_to_list")}
+            </Link>
+          </Button>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {invoice.invoice_number}
+            <Badge variant="outline" className={`ml-3 ${STATUS_COLOR[invoice.status]}`}>
+              {t(`invoices.status.${invoice.status}`)}
+            </Badge>
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {invoice.client_name ?? "—"} · {new Date(invoice.issue_date).toLocaleDateString(i18n.resolvedLanguage ?? "nl")}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={() => setDownloadOpen(true)}>
+            <Download className="mr-1 h-4 w-4" /> {t("invoices.download_pdf")}
+          </Button>
+          <Button size="sm" onClick={() => setEmailOpen(true)}>
+            <Mail className="mr-1 h-4 w-4" /> {t("invoices.email")}
+          </Button>
+          {isDraft && (
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+            >
+              <Link to="/invoices" search={{ edit: invoice.id } as never}>
+                <Pencil className="mr-1 h-4 w-4" /> {t("invoices.edit")}
+              </Link>
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={handleDelete}>
+            <Trash2 className="mr-1 h-4 w-4" />
+            {isDraft ? t("invoices.delete") : t("invoices.cancel_invoice")}
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase text-muted-foreground">Klant</div>
+          <div className="mt-1 font-medium">{invoice.client_name ?? "—"}</div>
+          {client?.email && <div className="text-sm text-muted-foreground">{client.email}</div>}
+          {client?.address_line1 && (
+            <div className="text-sm text-muted-foreground">
+              {client.address_line1}
+              {(client.postal_code || client.city) && (
+                <>
+                  <br />
+                  {[client.postal_code, client.city].filter(Boolean).join(" ")}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase text-muted-foreground">{t("invoices.due_date")}</div>
+          <div className="mt-1 font-medium">
+            {new Date(invoice.due_date).toLocaleDateString(i18n.resolvedLanguage ?? "nl")}
+          </div>
+          {invoice.last_emailed_at && (
+            <div className="mt-3 text-xs text-muted-foreground">
+              Laatst gemaild: {new Date(invoice.last_emailed_at).toLocaleString(i18n.resolvedLanguage ?? "nl")}
+            </div>
+          )}
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase text-muted-foreground">{t("invoices.total")}</div>
+          <div className="mt-1 text-xl font-semibold tabular-nums">{eur.format(invoice.total_cents / 100)}</div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            {t("acc.inv.subtotal")}: {eur.format(invoice.subtotal_cents / 100)} · BTW: {eur.format(invoice.vat_cents / 100)}
+          </div>
+        </div>
+      </div>
+
+      <section className="rounded-lg border">
+        <div className="border-b px-4 py-2 text-sm font-semibold">{t("invoices.lines")}</div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Omschrijving</TableHead>
+              <TableHead className="w-20 text-right">Aantal</TableHead>
+              <TableHead className="w-32 text-right">Prijs</TableHead>
+              <TableHead className="w-20 text-right">BTW</TableHead>
+              <TableHead className="w-32 text-right">Totaal</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {lines.map((l) => (
+              <TableRow key={l.id}>
+                <TableCell>{l.description}</TableCell>
+                <TableCell className="text-right tabular-nums">{Number(l.quantity)}</TableCell>
+                <TableCell className="text-right tabular-nums">{eur.format(l.unit_price_cents / 100)}</TableCell>
+                <TableCell className="text-right tabular-nums">{Number(l.vat_rate)}%</TableCell>
+                <TableCell className="text-right tabular-nums">{eur.format(l.total_cents / 100)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </section>
+
+      <section className="rounded-lg border">
+        <div className="flex items-center justify-between border-b px-4 py-2">
+          <div className="text-sm font-semibold">
+            <Paperclip className="mr-1 inline h-4 w-4" /> {t("invoices.attachments")}
+          </div>
+          <div>
+            <input
+              type="file"
+              ref={fileRef}
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void handleAttachmentUpload(f);
+                e.target.value = "";
+              }}
+            />
+            <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
+              <Upload className="mr-1 h-4 w-4" /> {t("invoices.upload_attachment")}
+            </Button>
+          </div>
+        </div>
+        {attachments.length === 0 ? (
+          <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+            {t("invoices.no_attachments")}
+          </div>
+        ) : (
+          <ul className="divide-y">
+            {attachments.map((a) => (
+              <li key={a.id} className="flex items-center justify-between px-4 py-2 text-sm">
+                <button className="text-left hover:underline" onClick={() => openAttachment(a)}>
+                  {a.filename}
+                  {a.size_bytes ? (
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      ({Math.round(a.size_bytes / 1024)} KB)
+                    </span>
+                  ) : null}
+                </button>
+                <Button variant="ghost" size="icon" onClick={() => deleteAttachment(a)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="rounded-lg border">
+        <div className="border-b px-4 py-2 text-sm font-semibold">{t("invoices.email_log")}</div>
+        {emailLog.length === 0 ? (
+          <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+            {t("invoices.no_email_log")}
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Datum</TableHead>
+                <TableHead>Aan</TableHead>
+                <TableHead>Onderwerp</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {emailLog.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {new Date(r.created_at).toLocaleString(i18n.resolvedLanguage ?? "nl")}
+                  </TableCell>
+                  <TableCell className="text-sm">{r.to_email}</TableCell>
+                  <TableCell className="text-sm">{r.subject}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={
+                        r.status === "sent"
+                          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                          : r.status === "failed"
+                            ? "bg-red-500/15 text-red-700 dark:text-red-300"
+                            : "bg-muted"
+                      }
+                    >
+                      {r.status}
+                    </Badge>
+                    {r.error && <div className="mt-1 text-xs text-red-600">{r.error}</div>}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </section>
+
+      {/* Download rename dialog */}
+      <Dialog open={downloadOpen} onOpenChange={setDownloadOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("invoices.download_pdf")}</DialogTitle>
+            <DialogDescription>{t("invoices.rename_before_download")}</DialogDescription>
+          </DialogHeader>
+          <DownloadForm
+            defaultName={suggestedFilename}
+            onCancel={() => setDownloadOpen(false)}
+            onConfirm={(name) => {
+              downloadPdf(name);
+              setDownloadOpen(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Email dialog */}
+      <Dialog open={emailOpen} onOpenChange={setEmailOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>{t("invoices.compose_email")}</DialogTitle>
+            <DialogDescription>{invoice.invoice_number} — {invoice.client_name}</DialogDescription>
+          </DialogHeader>
+          <EmailForm
+            invoice={invoice}
+            defaultTo={client?.email ?? ""}
+            defaultFilename={suggestedFilename}
+            attachments={attachments}
+            buildPdf={buildPdf}
+            onSent={(to) => {
+              setEmailOpen(false);
+              setConfirmOpen({ to });
+              void load();
+            }}
+            emailFn={emailFn}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation dialog */}
+      <Dialog open={!!confirmOpen} onOpenChange={(o) => !o && setConfirmOpen(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("invoices.email_confirm_title")}</DialogTitle>
+            <DialogDescription>
+              {t("invoices.email_confirm_body", { to: confirmOpen?.to ?? "" })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setConfirmOpen(null)}>OK</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function DownloadForm({
+  defaultName,
+  onCancel,
+  onConfirm,
+}: {
+  defaultName: string;
+  onCancel: () => void;
+  onConfirm: (name: string) => void;
+}) {
+  const [name, setName] = useState(defaultName);
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const clean = name.trim().endsWith(".pdf") ? name.trim() : `${name.trim()}.pdf`;
+        onConfirm(clean);
+      }}
+      className="space-y-3"
+    >
+      <div className="space-y-1.5">
+        <Label>Bestandsnaam</Label>
+        <Input value={name} onChange={(e) => setName(e.target.value)} required />
+      </div>
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Annuleren
+        </Button>
+        <Button type="submit">
+          <Download className="mr-1 h-4 w-4" /> Download
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+}
+
+function EmailForm({
+  invoice,
+  defaultTo,
+  defaultFilename,
+  attachments,
+  buildPdf,
+  emailFn,
+  onSent,
+}: {
+  invoice: Invoice;
+  defaultTo: string;
+  defaultFilename: string;
+  attachments: AttachmentRow[];
+  buildPdf: () => ReturnType<typeof buildInvoicePdf> | null;
+  emailFn: (args: { data: Parameters<typeof emailInvoice>[0]["data"] }) => Promise<{ ok: boolean }>;
+  onSent: (to: string) => void;
+}) {
+  const { t } = useTranslation();
+  const [to, setTo] = useState(defaultTo);
+  const [cc, setCc] = useState("");
+  const [subject, setSubject] = useState(`Factuur ${invoice.invoice_number}`);
+  const [body, setBody] = useState(
+    `Beste ${invoice.client_name ?? ""},\n\nBijgevoegd vind je factuur ${invoice.invoice_number}. De vervaldatum is ${new Date(invoice.due_date).toLocaleDateString("nl")}.\n\nMet vriendelijke groet`,
+  );
+  const [filename, setFilename] = useState(defaultFilename);
+  const [extraChecked, setExtraChecked] = useState<Record<string, boolean>>({});
+  const [sending, setSending] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const doc = buildPdf();
+    if (!doc) return toast.error("PDF kon niet worden gebouwd");
+    setSending(true);
+    try {
+      // Upload PDF to mail-attachments bucket
+      const blob = doc.output("blob");
+      const uploadPath = `${invoice.organization_id}/invoice-${invoice.id}-${Date.now()}.pdf`;
+      const { error: upErr } = await supabase.storage
+        .from("mail-attachments")
+        .upload(uploadPath, blob, { contentType: "application/pdf", upsert: false });
+      if (upErr) throw new Error(upErr.message);
+
+      const cleanName = filename.trim().endsWith(".pdf") ? filename.trim() : `${filename.trim()}.pdf`;
+      const toList = to.split(/[,;]/).map((s) => s.trim()).filter(Boolean);
+      const ccList = cc.split(/[,;]/).map((s) => s.trim()).filter(Boolean);
+      const extraPaths = attachments.filter((a) => extraChecked[a.id]).map((a) => a.storage_path);
+
+      await emailFn({
+        data: {
+          invoice_id: invoice.id,
+          to: toList,
+          cc: ccList,
+          subject: subject.trim(),
+          body: body.trim(),
+          pdf_storage_path: uploadPath,
+          pdf_filename: cleanName,
+          extra_attachment_paths: extraPaths,
+          mark_as_sent: true,
+        },
+      });
+      toast.success(t("invoices.email_sent", { to: toList.join(", ") }));
+      onSent(toList.join(", "));
+    } catch (e) {
+      toast.error(t("invoices.email_failed", { msg: e instanceof Error ? e.message : String(e) }));
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <form onSubmit={submit} className="space-y-3">
+      <div className="space-y-1.5">
+        <Label>{t("invoices.to")}</Label>
+        <Input value={to} onChange={(e) => setTo(e.target.value)} required placeholder="klant@voorbeeld.nl" />
+      </div>
+      <div className="space-y-1.5">
+        <Label>{t("invoices.cc")}</Label>
+        <Input value={cc} onChange={(e) => setCc(e.target.value)} placeholder="optioneel" />
+      </div>
+      <div className="space-y-1.5">
+        <Label>{t("invoices.subject")}</Label>
+        <Input value={subject} onChange={(e) => setSubject(e.target.value)} required />
+      </div>
+      <div className="space-y-1.5">
+        <Label>{t("invoices.message")}</Label>
+        <Textarea rows={6} value={body} onChange={(e) => setBody(e.target.value)} required />
+      </div>
+      <div className="space-y-1.5">
+        <Label>Bijlage-naam</Label>
+        <Input value={filename} onChange={(e) => setFilename(e.target.value)} />
+      </div>
+      {attachments.length > 0 && (
+        <div className="space-y-1.5">
+          <Label>{t("invoices.attach_extra")}</Label>
+          <div className="space-y-1 rounded border p-2 text-sm">
+            {attachments.map((a) => (
+              <label key={a.id} className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={!!extraChecked[a.id]}
+                  onChange={(e) => setExtraChecked((s) => ({ ...s, [a.id]: e.target.checked }))}
+                />
+                {a.filename}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+      <DialogFooter>
+        <Button type="submit" disabled={sending}>
+          {sending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+          <Mail className="mr-1 h-4 w-4" /> {t("invoices.send")}
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+}
