@@ -122,6 +122,9 @@ export type Database = {
           created_at: string
           created_by: string | null
           email: string | null
+          external_id: string | null
+          external_source: string | null
+          external_url: string | null
           id: string
           kvk_number: string | null
           monthly_value: number | null
@@ -144,6 +147,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           email?: string | null
+          external_id?: string | null
+          external_source?: string | null
+          external_url?: string | null
           id?: string
           kvk_number?: string | null
           monthly_value?: number | null
@@ -166,6 +172,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           email?: string | null
+          external_id?: string | null
+          external_source?: string | null
+          external_url?: string | null
           id?: string
           kvk_number?: string | null
           monthly_value?: number | null
@@ -527,6 +536,65 @@ export type Database = {
           },
         ]
       }
+      integration_events: {
+        Row: {
+          created_client_id: string | null
+          created_invoice_id: string | null
+          created_lead_id: string | null
+          created_quote_id: string | null
+          error_message: string | null
+          event: string
+          external_id: string | null
+          id: string
+          organization_id: string | null
+          payload: Json
+          received_at: string
+          result: Json | null
+          source: string
+          status: string
+        }
+        Insert: {
+          created_client_id?: string | null
+          created_invoice_id?: string | null
+          created_lead_id?: string | null
+          created_quote_id?: string | null
+          error_message?: string | null
+          event: string
+          external_id?: string | null
+          id?: string
+          organization_id?: string | null
+          payload: Json
+          received_at?: string
+          result?: Json | null
+          source: string
+          status?: string
+        }
+        Update: {
+          created_client_id?: string | null
+          created_invoice_id?: string | null
+          created_lead_id?: string | null
+          created_quote_id?: string | null
+          error_message?: string | null
+          event?: string
+          external_id?: string | null
+          id?: string
+          organization_id?: string | null
+          payload?: Json
+          received_at?: string
+          result?: Json | null
+          source?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_lines: {
         Row: {
           created_at: string
@@ -673,6 +741,9 @@ export type Database = {
           created_at: string
           currency: string
           due_date: string
+          external_id: string | null
+          external_source: string | null
+          external_url: string | null
           id: string
           invoice_number: string
           issue_date: string
@@ -694,6 +765,9 @@ export type Database = {
           created_at?: string
           currency?: string
           due_date?: string
+          external_id?: string | null
+          external_source?: string | null
+          external_url?: string | null
           id?: string
           invoice_number: string
           issue_date?: string
@@ -715,6 +789,9 @@ export type Database = {
           created_at?: string
           currency?: string
           due_date?: string
+          external_id?: string | null
+          external_source?: string | null
+          external_url?: string | null
           id?: string
           invoice_number?: string
           issue_date?: string
@@ -944,6 +1021,9 @@ export type Database = {
           created_at: string
           created_by: string | null
           email: string | null
+          external_id: string | null
+          external_source: string | null
+          external_url: string | null
           id: string
           last_contact_at: string | null
           name: string
@@ -964,6 +1044,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           email?: string | null
+          external_id?: string | null
+          external_source?: string | null
+          external_url?: string | null
           id?: string
           last_contact_at?: string | null
           name: string
@@ -984,6 +1067,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           email?: string | null
+          external_id?: string | null
+          external_source?: string | null
+          external_url?: string | null
           id?: string
           last_contact_at?: string | null
           name?: string
@@ -2053,6 +2139,9 @@ export type Database = {
           content_json: Json
           created_at: string
           created_by: string | null
+          external_id: string | null
+          external_source: string | null
+          external_url: string | null
           followup_after_days: number
           followup_count: number
           followup_enabled: boolean
@@ -2093,6 +2182,9 @@ export type Database = {
           content_json?: Json
           created_at?: string
           created_by?: string | null
+          external_id?: string | null
+          external_source?: string | null
+          external_url?: string | null
           followup_after_days?: number
           followup_count?: number
           followup_enabled?: boolean
@@ -2133,6 +2225,9 @@ export type Database = {
           content_json?: Json
           created_at?: string
           created_by?: string | null
+          external_id?: string | null
+          external_source?: string | null
+          external_url?: string | null
           followup_after_days?: number
           followup_count?: number
           followup_enabled?: boolean

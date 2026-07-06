@@ -46,11 +46,13 @@ import { Route as AuthenticatedAiColumbusProjectenRouteImport } from './routes/_
 import { Route as AuthenticatedAiColumbusModellenRouteImport } from './routes/_authenticated/ai-columbus.modellen'
 import { Route as AuthenticatedAiColumbusLogsRouteImport } from './routes/_authenticated/ai-columbus.logs'
 import { Route as AuthenticatedAiColumbusLeadsRouteImport } from './routes/_authenticated/ai-columbus.leads'
+import { Route as AuthenticatedAiColumbusKoppelingenRouteImport } from './routes/_authenticated/ai-columbus.koppelingen'
 import { Route as AuthenticatedAiColumbusKlantenRouteImport } from './routes/_authenticated/ai-columbus.klanten'
 import { Route as AuthenticatedAiColumbusInstellingenRouteImport } from './routes/_authenticated/ai-columbus.instellingen'
 import { Route as ApiPublicHooksStudioFollowupsRouteImport } from './routes/api/public/hooks/studio-followups'
 import { Route as ApiPublicHooksResendEventsRouteImport } from './routes/api/public/hooks/resend-events'
 import { Route as ApiPublicHooksQuoteFollowupsRouteImport } from './routes/api/public/hooks/quote-followups'
+import { Route as ApiPublicHooksPortaalBillableRouteImport } from './routes/api/public/hooks/portaal-billable'
 import { Route as ApiPublicHooksOutreachTrackRouteImport } from './routes/api/public/hooks/outreach-track'
 import { Route as ApiPublicHooksOutreachSequenceRouteImport } from './routes/api/public/hooks/outreach-sequence'
 import { Route as ApiPublicHooksOutreachReplyRouteImport } from './routes/api/public/hooks/outreach-reply'
@@ -265,6 +267,12 @@ const AuthenticatedAiColumbusLeadsRoute =
     path: '/leads',
     getParentRoute: () => AuthenticatedAiColumbusRoute,
   } as any)
+const AuthenticatedAiColumbusKoppelingenRoute =
+  AuthenticatedAiColumbusKoppelingenRouteImport.update({
+    id: '/koppelingen',
+    path: '/koppelingen',
+    getParentRoute: () => AuthenticatedAiColumbusRoute,
+  } as any)
 const AuthenticatedAiColumbusKlantenRoute =
   AuthenticatedAiColumbusKlantenRouteImport.update({
     id: '/klanten',
@@ -293,6 +301,12 @@ const ApiPublicHooksQuoteFollowupsRoute =
   ApiPublicHooksQuoteFollowupsRouteImport.update({
     id: '/api/public/hooks/quote-followups',
     path: '/api/public/hooks/quote-followups',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksPortaalBillableRoute =
+  ApiPublicHooksPortaalBillableRouteImport.update({
+    id: '/api/public/hooks/portaal-billable',
+    path: '/api/public/hooks/portaal-billable',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksOutreachTrackRoute =
@@ -382,6 +396,7 @@ export interface FileRoutesByFullPath {
   '/t/$token': typeof TTokenRoute
   '/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
   '/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenRouteWithChildren
+  '/ai-columbus/koppelingen': typeof AuthenticatedAiColumbusKoppelingenRoute
   '/ai-columbus/leads': typeof AuthenticatedAiColumbusLeadsRoute
   '/ai-columbus/logs': typeof AuthenticatedAiColumbusLogsRoute
   '/ai-columbus/modellen': typeof AuthenticatedAiColumbusModellenRoute
@@ -411,6 +426,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/outreach-reply': typeof ApiPublicHooksOutreachReplyRoute
   '/api/public/hooks/outreach-sequence': typeof ApiPublicHooksOutreachSequenceRoute
   '/api/public/hooks/outreach-track': typeof ApiPublicHooksOutreachTrackRoute
+  '/api/public/hooks/portaal-billable': typeof ApiPublicHooksPortaalBillableRoute
   '/api/public/hooks/quote-followups': typeof ApiPublicHooksQuoteFollowupsRoute
   '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
@@ -434,6 +450,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
   '/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenRouteWithChildren
+  '/ai-columbus/koppelingen': typeof AuthenticatedAiColumbusKoppelingenRoute
   '/ai-columbus/leads': typeof AuthenticatedAiColumbusLeadsRoute
   '/ai-columbus/logs': typeof AuthenticatedAiColumbusLogsRoute
   '/ai-columbus/modellen': typeof AuthenticatedAiColumbusModellenRoute
@@ -463,6 +480,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/outreach-reply': typeof ApiPublicHooksOutreachReplyRoute
   '/api/public/hooks/outreach-sequence': typeof ApiPublicHooksOutreachSequenceRoute
   '/api/public/hooks/outreach-track': typeof ApiPublicHooksOutreachTrackRoute
+  '/api/public/hooks/portaal-billable': typeof ApiPublicHooksPortaalBillableRoute
   '/api/public/hooks/quote-followups': typeof ApiPublicHooksQuoteFollowupsRoute
   '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
@@ -490,6 +508,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
   '/_authenticated/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenRouteWithChildren
+  '/_authenticated/ai-columbus/koppelingen': typeof AuthenticatedAiColumbusKoppelingenRoute
   '/_authenticated/ai-columbus/leads': typeof AuthenticatedAiColumbusLeadsRoute
   '/_authenticated/ai-columbus/logs': typeof AuthenticatedAiColumbusLogsRoute
   '/_authenticated/ai-columbus/modellen': typeof AuthenticatedAiColumbusModellenRoute
@@ -519,6 +538,7 @@ export interface FileRoutesById {
   '/api/public/hooks/outreach-reply': typeof ApiPublicHooksOutreachReplyRoute
   '/api/public/hooks/outreach-sequence': typeof ApiPublicHooksOutreachSequenceRoute
   '/api/public/hooks/outreach-track': typeof ApiPublicHooksOutreachTrackRoute
+  '/api/public/hooks/portaal-billable': typeof ApiPublicHooksPortaalBillableRoute
   '/api/public/hooks/quote-followups': typeof ApiPublicHooksQuoteFollowupsRoute
   '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
@@ -546,6 +566,7 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/ai-columbus/instellingen'
     | '/ai-columbus/klanten'
+    | '/ai-columbus/koppelingen'
     | '/ai-columbus/leads'
     | '/ai-columbus/logs'
     | '/ai-columbus/modellen'
@@ -575,6 +596,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/outreach-reply'
     | '/api/public/hooks/outreach-sequence'
     | '/api/public/hooks/outreach-track'
+    | '/api/public/hooks/portaal-billable'
     | '/api/public/hooks/quote-followups'
     | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
@@ -598,6 +620,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ai-columbus/instellingen'
     | '/ai-columbus/klanten'
+    | '/ai-columbus/koppelingen'
     | '/ai-columbus/leads'
     | '/ai-columbus/logs'
     | '/ai-columbus/modellen'
@@ -627,6 +650,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/outreach-reply'
     | '/api/public/hooks/outreach-sequence'
     | '/api/public/hooks/outreach-track'
+    | '/api/public/hooks/portaal-billable'
     | '/api/public/hooks/quote-followups'
     | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
@@ -653,6 +677,7 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/_authenticated/ai-columbus/instellingen'
     | '/_authenticated/ai-columbus/klanten'
+    | '/_authenticated/ai-columbus/koppelingen'
     | '/_authenticated/ai-columbus/leads'
     | '/_authenticated/ai-columbus/logs'
     | '/_authenticated/ai-columbus/modellen'
@@ -682,6 +707,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/outreach-reply'
     | '/api/public/hooks/outreach-sequence'
     | '/api/public/hooks/outreach-track'
+    | '/api/public/hooks/portaal-billable'
     | '/api/public/hooks/quote-followups'
     | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
@@ -702,6 +728,7 @@ export interface RootRouteChildren {
   ApiPublicHooksOutreachReplyRoute: typeof ApiPublicHooksOutreachReplyRoute
   ApiPublicHooksOutreachSequenceRoute: typeof ApiPublicHooksOutreachSequenceRoute
   ApiPublicHooksOutreachTrackRoute: typeof ApiPublicHooksOutreachTrackRoute
+  ApiPublicHooksPortaalBillableRoute: typeof ApiPublicHooksPortaalBillableRoute
   ApiPublicHooksQuoteFollowupsRoute: typeof ApiPublicHooksQuoteFollowupsRoute
   ApiPublicHooksResendEventsRoute: typeof ApiPublicHooksResendEventsRoute
   ApiPublicHooksStudioFollowupsRoute: typeof ApiPublicHooksStudioFollowupsRoute
@@ -968,6 +995,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAiColumbusLeadsRouteImport
       parentRoute: typeof AuthenticatedAiColumbusRoute
     }
+    '/_authenticated/ai-columbus/koppelingen': {
+      id: '/_authenticated/ai-columbus/koppelingen'
+      path: '/koppelingen'
+      fullPath: '/ai-columbus/koppelingen'
+      preLoaderRoute: typeof AuthenticatedAiColumbusKoppelingenRouteImport
+      parentRoute: typeof AuthenticatedAiColumbusRoute
+    }
     '/_authenticated/ai-columbus/klanten': {
       id: '/_authenticated/ai-columbus/klanten'
       path: '/klanten'
@@ -1001,6 +1035,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/quote-followups'
       fullPath: '/api/public/hooks/quote-followups'
       preLoaderRoute: typeof ApiPublicHooksQuoteFollowupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/portaal-billable': {
+      id: '/api/public/hooks/portaal-billable'
+      path: '/api/public/hooks/portaal-billable'
+      fullPath: '/api/public/hooks/portaal-billable'
+      preLoaderRoute: typeof ApiPublicHooksPortaalBillableRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/outreach-track': {
@@ -1116,6 +1157,7 @@ const AuthenticatedAiColumbusProjectenRouteWithChildren =
 interface AuthenticatedAiColumbusRouteChildren {
   AuthenticatedAiColumbusInstellingenRoute: typeof AuthenticatedAiColumbusInstellingenRoute
   AuthenticatedAiColumbusKlantenRoute: typeof AuthenticatedAiColumbusKlantenRouteWithChildren
+  AuthenticatedAiColumbusKoppelingenRoute: typeof AuthenticatedAiColumbusKoppelingenRoute
   AuthenticatedAiColumbusLeadsRoute: typeof AuthenticatedAiColumbusLeadsRoute
   AuthenticatedAiColumbusLogsRoute: typeof AuthenticatedAiColumbusLogsRoute
   AuthenticatedAiColumbusModellenRoute: typeof AuthenticatedAiColumbusModellenRoute
@@ -1130,6 +1172,8 @@ const AuthenticatedAiColumbusRouteChildren: AuthenticatedAiColumbusRouteChildren
       AuthenticatedAiColumbusInstellingenRoute,
     AuthenticatedAiColumbusKlantenRoute:
       AuthenticatedAiColumbusKlantenRouteWithChildren,
+    AuthenticatedAiColumbusKoppelingenRoute:
+      AuthenticatedAiColumbusKoppelingenRoute,
     AuthenticatedAiColumbusLeadsRoute: AuthenticatedAiColumbusLeadsRoute,
     AuthenticatedAiColumbusLogsRoute: AuthenticatedAiColumbusLogsRoute,
     AuthenticatedAiColumbusModellenRoute: AuthenticatedAiColumbusModellenRoute,
@@ -1255,6 +1299,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksOutreachReplyRoute: ApiPublicHooksOutreachReplyRoute,
   ApiPublicHooksOutreachSequenceRoute: ApiPublicHooksOutreachSequenceRoute,
   ApiPublicHooksOutreachTrackRoute: ApiPublicHooksOutreachTrackRoute,
+  ApiPublicHooksPortaalBillableRoute: ApiPublicHooksPortaalBillableRoute,
   ApiPublicHooksQuoteFollowupsRoute: ApiPublicHooksQuoteFollowupsRoute,
   ApiPublicHooksResendEventsRoute: ApiPublicHooksResendEventsRoute,
   ApiPublicHooksStudioFollowupsRoute: ApiPublicHooksStudioFollowupsRoute,
@@ -1262,13 +1307,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
