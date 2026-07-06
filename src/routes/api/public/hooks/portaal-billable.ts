@@ -141,14 +141,14 @@ export const Route = createFileRoute("/api/public/hooks/portaal-billable")({
             event: p.event,
             external_id: p.external_id,
             status: "processing",
-            payload: p as unknown as Database["public"]["Tables"]["integration_events"]["Insert"]["payload"],
-          })
+            payload: p as never,
+          } as never)
           .select("id")
           .single();
 
         const eventId = evt?.id;
         const finalize = async (patch: Record<string, unknown>) => {
-          if (eventId) await supabaseAdmin.from("integration_events").update(patch).eq("id", eventId);
+          if (eventId) await supabaseAdmin.from("integration_events").update(patch as never).eq("id", eventId);
         };
 
         try {
