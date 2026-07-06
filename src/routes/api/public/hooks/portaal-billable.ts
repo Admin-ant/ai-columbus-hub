@@ -360,7 +360,7 @@ export const Route = createFileRoute("/api/public/hooks/portaal-billable")({
                 organization_id: orgId,
                 client_id: clientId,
                 title: p.quote.title ?? `Offerte ${p.external_id}`,
-                content_json: { lines: p.quote.lines } as unknown as Record<string, unknown>,
+                content_json: { lines: p.quote.lines } as never,
                 total_amount: total_cents / 100,
                 status: "draft",
                 client_email: p.client?.email ?? null,
