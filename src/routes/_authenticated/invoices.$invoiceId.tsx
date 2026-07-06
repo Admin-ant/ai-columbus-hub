@@ -608,7 +608,7 @@ function EmailForm({
   defaultFilename: string;
   attachments: AttachmentRow[];
   buildPdf: () => ReturnType<typeof buildInvoicePdf> | null;
-  emailFn: (args: { data: Parameters<typeof emailInvoice>[0]["data"] }) => Promise<{ ok: boolean }>;
+  emailFn: ReturnType<typeof useServerFn<typeof emailInvoice>>;
   onSent: (to: string) => void;
 }) {
   const { t } = useTranslation();
