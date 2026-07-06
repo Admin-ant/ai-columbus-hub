@@ -2,16 +2,28 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
   Table,
@@ -30,6 +42,7 @@ export const Route = createFileRoute("/_authenticated/invoices")({
 
 type Invoice = Database["public"]["Tables"]["invoices"]["Row"];
 type InvoiceStatus = Database["public"]["Enums"]["invoice_status"];
+type ClientRow = { id: string; name: string; email: string | null };
 
 const STATUS: InvoiceStatus[] = ["draft", "sent", "paid", "overdue", "cancelled"];
 
@@ -40,6 +53,17 @@ const STATUS_COLOR: Record<InvoiceStatus, string> = {
   overdue: "bg-red-500/15 text-red-700 dark:text-red-300",
   cancelled: "bg-muted text-muted-foreground",
 };
+
+type LineForm = {
+  description: string;
+  quantity: number;
+  unit_price_cents: number;
+  vat_rate: number;
+};
+
+function emptyLine(): LineForm {
+  return { description: "", quantity: 1, unit_price_cents: 0, vat_rate: 21 };
+}
 
 function InvoicesPage() {
   const { t, i18n } = useTranslation();
@@ -81,10 +105,22 @@ function InvoicesPage() {
   async function updateStatus(id: string, status: InvoiceStatus) {
     const prev = invoices;
     setInvoices((is) => is.map((i) => (i.id === id ? { ...i, status } : i)));
-    const { error } = await supabase.from("invoices").update({ status }).eq("id", id);
+    const patch: { status: InvoiceStatus; sent_at?: string; paid_at?: string } = { status };
+    if (status === "sent") patch.sent_at = new Date().toISOString();
+    if (status === "paid") patch.paid_at = new Date().toISOString();
+    const { error } = await supabase.from("invoices").update(patch).eq("id", id);
     if (error) {
       toast.error(error.message);
       setInvoices(prev);
+      return;
+    }
+    if (status === "sent" || status === "paid") {
+      try {
+        const { postInvoiceJournal } = await import("@/lib/bookkeeping.functions");
+        await postInvoiceJournal({ data: { invoice_id: id } });
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "RPC error");
+      }
     }
   }
 
@@ -101,11 +137,16 @@ function InvoicesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">
-          {currentOrganization?.name ?? ""} — {t("invoices.title")}
-        </h1>
-        <p className="text-sm text-muted-foreground">{t("invoices.subtitle")}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {currentOrganization?.name ?? ""} — {t("invoices.title")}
+          </h1>
+          <p className="text-sm text-muted-foreground">{t("invoices.subtitle")}</p>
+        </div>
+        {currentOrganizationId && (
+          <NewInvoiceDialog orgId={currentOrganizationId} onCreated={load} />
+        )}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
@@ -187,5 +228,331 @@ function SummaryCard({ label, value }: { label: string; value: string }) {
       <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className="mt-1 text-xl font-semibold tabular-nums">{value}</div>
     </div>
+  );
+}
+
+function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () => void | Promise<void> }) {
+  const { t, i18n } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [clients, setClients] = useState<ClientRow[]>([]);
+  const [clientId, setClientId] = useState<string>("");
+  const [clientName, setClientName] = useState("");
+  const [issueDate, setIssueDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [dueDate, setDueDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    return d.toISOString().slice(0, 10);
+  });
+  const [lines, setLines] = useState<LineForm[]>([emptyLine()]);
+
+  const eur = useMemo(
+    () =>
+      new Intl.NumberFormat(i18n.resolvedLanguage === "en" ? "en-IE" : "nl-NL", {
+        style: "currency",
+        currency: "EUR",
+      }),
+    [i18n.resolvedLanguage],
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    void supabase
+      .from("clients")
+      .select("id,name,email")
+      .eq("organization_id", orgId)
+      .order("name")
+      .then(({ data }) => setClients((data ?? []) as ClientRow[]));
+  }, [open, orgId]);
+
+  const subtotalCents = lines.reduce((s, l) => s + Math.round(l.quantity * l.unit_price_cents), 0);
+  const vatCents = lines.reduce(
+    (s, l) => s + Math.round(l.quantity * l.unit_price_cents * (l.vat_rate / 100)),
+    0,
+  );
+  const totalCents = subtotalCents + vatCents;
+
+  function reset() {
+    setClientId("");
+    setClientName("");
+    setLines([emptyLine()]);
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const name = clientName.trim() || clients.find((c) => c.id === clientId)?.name?.trim() || "";
+    if (!name) return toast.error("Klantnaam is verplicht");
+    if (lines.some((l) => !l.description.trim())) return toast.error("Vul alle regelomschrijvingen in");
+    setSaving(true);
+
+    let number: string | null = null;
+    try {
+      const { nextInvoiceNumber } = await import("@/lib/bookkeeping.functions");
+      const res = await nextInvoiceNumber({ data: { org_id: orgId } });
+      number = res.number;
+    } catch (err) {
+      setSaving(false);
+      return toast.error(err instanceof Error ? err.message : "RPC error");
+    }
+    if (!number) {
+      setSaving(false);
+      return toast.error("Kon factuurnummer niet genereren");
+    }
+
+    const { data: inv, error: invErr } = await supabase
+      .from("invoices")
+      .insert({
+        organization_id: orgId,
+        invoice_number: number,
+        client_id: clientId || null,
+        client_name: name,
+        issue_date: issueDate,
+        due_date: dueDate,
+        subtotal_cents: subtotalCents,
+        vat_cents: vatCents,
+        total_cents: totalCents,
+        amount: totalCents / 100,
+        status: "draft",
+      })
+      .select("id")
+      .single();
+
+    if (invErr || !inv) {
+      setSaving(false);
+      return toast.error(invErr?.message ?? "Error");
+    }
+
+    const { error: linesErr } = await supabase.from("invoice_lines").insert(
+      lines.map((l, i) => ({
+        invoice_id: inv.id,
+        position: i + 1,
+        description: l.description.trim(),
+        quantity: l.quantity,
+        unit_price_cents: l.unit_price_cents,
+        vat_rate: l.vat_rate,
+        subtotal_cents: Math.round(l.quantity * l.unit_price_cents),
+        vat_cents: Math.round(l.quantity * l.unit_price_cents * (l.vat_rate / 100)),
+        total_cents: Math.round(l.quantity * l.unit_price_cents * (1 + l.vat_rate / 100)),
+      })),
+    );
+    setSaving(false);
+    if (linesErr) return toast.error(linesErr.message);
+    toast.success(t("invoices.created", { number }));
+    setOpen(false);
+    reset();
+    await onCreated();
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (!o) reset();
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="mr-2 h-4 w-4" />
+          {t("invoices.new_invoice")}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>{t("invoices.new_invoice")}</DialogTitle>
+          <DialogDescription>{t("acc.inv.dialog_desc")}</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Klant</Label>
+              <Select
+                value={clientId}
+                onValueChange={(v) => {
+                  setClientId(v);
+                  const c = clients.find((cc) => cc.id === v);
+                  if (c) setClientName(c.name);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={clients.length ? "— kies bestaande klant —" : "Geen klanten"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder="of typ een naam"
+                value={clientName}
+                onChange={(e) => {
+                  setClientName(e.target.value);
+                  if (clientId) setClientId("");
+                }}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="inv-issue">{t("invoices.issue_date")}</Label>
+                <Input
+                  id="inv-issue"
+                  type="date"
+                  value={issueDate}
+                  onChange={(e) => setIssueDate(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="inv-due">{t("invoices.due_date")}</Label>
+                <Input
+                  id="inv-due"
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("quotes.description")}</TableHead>
+                  <TableHead className="w-20 text-right">{t("quotes.qty")}</TableHead>
+                  <TableHead className="w-32 text-right">Prijs (€)</TableHead>
+                  <TableHead className="w-24 text-right">BTW %</TableHead>
+                  <TableHead className="w-28 text-right">{t("quotes.total")}</TableHead>
+                  <TableHead className="w-12"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {lines.map((l, i) => {
+                  const lineTot = Math.round(l.quantity * l.unit_price_cents * (1 + l.vat_rate / 100));
+                  return (
+                    <TableRow key={i}>
+                      <TableCell>
+                        <Input
+                          value={l.description}
+                          onChange={(e) => {
+                            const n = [...lines];
+                            n[i] = { ...l, description: e.target.value };
+                            setLines(n);
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min={0}
+                          step="0.001"
+                          className="text-right"
+                          value={l.quantity}
+                          onChange={(e) => {
+                            const n = [...lines];
+                            n[i] = { ...l, quantity: Number(e.target.value) };
+                            setLines(n);
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          className="text-right"
+                          value={(l.unit_price_cents / 100).toString()}
+                          onChange={(e) => {
+                            const n = [...lines];
+                            n[i] = {
+                              ...l,
+                              unit_price_cents: Math.round(Number(e.target.value) * 100),
+                            };
+                            setLines(n);
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={String(l.vat_rate)}
+                          onValueChange={(v) => {
+                            const n = [...lines];
+                            n[i] = { ...l, vat_rate: Number(v) };
+                            setLines(n);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="21">21%</SelectItem>
+                            <SelectItem value="9">9%</SelectItem>
+                            <SelectItem value="0">0%</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell className="text-right text-sm tabular-nums">
+                        {eur.format(lineTot / 100)}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setLines(lines.filter((_, j) => j !== i))}
+                          disabled={lines.length === 1}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div className="flex items-end justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setLines([...lines, emptyLine()])}
+            >
+              <Plus className="mr-1 h-3 w-3" />
+              {t("quotes.add_line")}
+            </Button>
+            <div className="space-y-1 text-right text-sm">
+              <div>
+                <span className="text-muted-foreground">Subtotaal: </span>
+                <span className="tabular-nums">{eur.format(subtotalCents / 100)}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">BTW: </span>
+                <span className="tabular-nums">{eur.format(vatCents / 100)}</span>
+              </div>
+              <div className="text-base font-semibold">
+                <span className="text-muted-foreground">{t("quotes.total")}: </span>
+                <span className="tabular-nums">{eur.format(totalCents / 100)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {t("common.create")}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
