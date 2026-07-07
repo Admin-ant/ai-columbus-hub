@@ -21,6 +21,12 @@ const tiles = [
     icon: Receipt,
   },
   {
+    title: "Inkoopfacturen",
+    description: "Voer leveranciersfacturen in met bijlage en boek ze door.",
+    to: "/inkoopfacturen",
+    icon: Receipt,
+  },
+  {
     title: "Producten & Prijzen",
     description: "Beheer producten, abonnementen en tarieven.",
     to: "/producten",

@@ -83,6 +83,7 @@ const sections: NavSection[] = [
       { title: "Klanten", url: "/ai-columbus/klanten", icon: Users },
       { title: "Offertes", url: "/quotes", icon: FileSignature },
       { title: "Facturen", url: "/invoices", icon: Receipt },
+      { title: "Inkoopfacturen", url: "/inkoopfacturen", icon: Receipt },
       { title: "Modellen & gebruik", url: "/ai-columbus/modellen", icon: Cpu },
       { title: "Rapportages", url: "/ai-columbus/rapportages", icon: BarChart3 },
       { title: "Logs", url: "/ai-columbus/logs", icon: ScrollText },
@@ -100,6 +101,7 @@ const sections: NavSection[] = [
       { title: "Servers", url: "/netqloud/servers", icon: Server },
       { title: "Offertes", url: "/quotes", icon: FileSignature },
       { title: "Facturen", url: "/invoices", icon: Receipt },
+      { title: "Inkoopfacturen", url: "/inkoopfacturen", icon: Receipt },
       { title: "Instellingen", url: "/netqloud/instellingen", icon: Settings },
     ],
   },
@@ -113,6 +115,7 @@ const adminItems: NavItem[] = [
 const administratieSubItems: NavItem[] = [
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Boekhouding", url: "/boekhouding", icon: Receipt },
+  { title: "Inkoopfacturen", url: "/inkoopfacturen", icon: Receipt },
   { title: "Producten & Prijzen", url: "/producten", icon: Package },
 ];
 

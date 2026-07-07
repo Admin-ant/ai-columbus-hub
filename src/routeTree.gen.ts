@@ -23,6 +23,7 @@ import { Route as AuthenticatedNetqloudRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedMailRouteImport } from './routes/_authenticated/mail'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
+import { Route as AuthenticatedInkoopfacturenRouteImport } from './routes/_authenticated/inkoopfacturen'
 import { Route as AuthenticatedGebruikersRouteImport } from './routes/_authenticated/gebruikers'
 import { Route as AuthenticatedEnterpriseRouteImport } from './routes/_authenticated/enterprise'
 import { Route as AuthenticatedBoekhoudingRouteImport } from './routes/_authenticated/boekhouding'
@@ -135,6 +136,12 @@ const AuthenticatedInvoicesRoute = AuthenticatedInvoicesRouteImport.update({
   path: '/invoices',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedInkoopfacturenRoute =
+  AuthenticatedInkoopfacturenRouteImport.update({
+    id: '/inkoopfacturen',
+    path: '/inkoopfacturen',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedGebruikersRoute = AuthenticatedGebruikersRouteImport.update({
   id: '/gebruikers',
   path: '/gebruikers',
@@ -392,6 +399,7 @@ export interface FileRoutesByFullPath {
   '/boekhouding': typeof AuthenticatedBoekhoudingRouteWithChildren
   '/enterprise': typeof AuthenticatedEnterpriseRoute
   '/gebruikers': typeof AuthenticatedGebruikersRoute
+  '/inkoopfacturen': typeof AuthenticatedInkoopfacturenRoute
   '/invoices': typeof AuthenticatedInvoicesRouteWithChildren
   '/leads': typeof AuthenticatedLeadsRoute
   '/mail': typeof AuthenticatedMailRouteWithChildren
@@ -447,6 +455,7 @@ export interface FileRoutesByTo {
   '/boekhouding': typeof AuthenticatedBoekhoudingRouteWithChildren
   '/enterprise': typeof AuthenticatedEnterpriseRoute
   '/gebruikers': typeof AuthenticatedGebruikersRoute
+  '/inkoopfacturen': typeof AuthenticatedInkoopfacturenRoute
   '/invoices': typeof AuthenticatedInvoicesRouteWithChildren
   '/leads': typeof AuthenticatedLeadsRoute
   '/mail': typeof AuthenticatedMailRouteWithChildren
@@ -505,6 +514,7 @@ export interface FileRoutesById {
   '/_authenticated/boekhouding': typeof AuthenticatedBoekhoudingRouteWithChildren
   '/_authenticated/enterprise': typeof AuthenticatedEnterpriseRoute
   '/_authenticated/gebruikers': typeof AuthenticatedGebruikersRoute
+  '/_authenticated/inkoopfacturen': typeof AuthenticatedInkoopfacturenRoute
   '/_authenticated/invoices': typeof AuthenticatedInvoicesRouteWithChildren
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/mail': typeof AuthenticatedMailRouteWithChildren
@@ -565,6 +575,7 @@ export interface FileRouteTypes {
     | '/boekhouding'
     | '/enterprise'
     | '/gebruikers'
+    | '/inkoopfacturen'
     | '/invoices'
     | '/leads'
     | '/mail'
@@ -620,6 +631,7 @@ export interface FileRouteTypes {
     | '/boekhouding'
     | '/enterprise'
     | '/gebruikers'
+    | '/inkoopfacturen'
     | '/invoices'
     | '/leads'
     | '/mail'
@@ -677,6 +689,7 @@ export interface FileRouteTypes {
     | '/_authenticated/boekhouding'
     | '/_authenticated/enterprise'
     | '/_authenticated/gebruikers'
+    | '/_authenticated/inkoopfacturen'
     | '/_authenticated/invoices'
     | '/_authenticated/leads'
     | '/_authenticated/mail'
@@ -845,6 +858,13 @@ declare module '@tanstack/react-router' {
       path: '/invoices'
       fullPath: '/invoices'
       preLoaderRoute: typeof AuthenticatedInvoicesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/inkoopfacturen': {
+      id: '/_authenticated/inkoopfacturen'
+      path: '/inkoopfacturen'
+      fullPath: '/inkoopfacturen'
+      preLoaderRoute: typeof AuthenticatedInkoopfacturenRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/gebruikers': {
@@ -1274,6 +1294,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBoekhoudingRoute: typeof AuthenticatedBoekhoudingRouteWithChildren
   AuthenticatedEnterpriseRoute: typeof AuthenticatedEnterpriseRoute
   AuthenticatedGebruikersRoute: typeof AuthenticatedGebruikersRoute
+  AuthenticatedInkoopfacturenRoute: typeof AuthenticatedInkoopfacturenRoute
   AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRouteWithChildren
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedMailRoute: typeof AuthenticatedMailRouteWithChildren
@@ -1297,6 +1318,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBoekhoudingRoute: AuthenticatedBoekhoudingRouteWithChildren,
   AuthenticatedEnterpriseRoute: AuthenticatedEnterpriseRoute,
   AuthenticatedGebruikersRoute: AuthenticatedGebruikersRoute,
+  AuthenticatedInkoopfacturenRoute: AuthenticatedInkoopfacturenRoute,
   AuthenticatedInvoicesRoute: AuthenticatedInvoicesRouteWithChildren,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedMailRoute: AuthenticatedMailRouteWithChildren,
