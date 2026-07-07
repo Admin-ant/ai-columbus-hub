@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Plus, Loader2, Trash2, BookOpen, Receipt, Search, Download, Undo2, ExternalLink, AlertTriangle, Paperclip, Upload, FileText, RefreshCw, DownloadCloud,
+  Plus, Loader2, Trash2, BookOpen, Receipt, Search, Download, Undo2, ExternalLink, AlertTriangle, Paperclip, Upload, FileText, RefreshCw, DownloadCloud, Eye, FileDown,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -21,6 +21,14 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import {
+  buildExpensePdf,
+  buildExpensesPeriodPdf,
+  suggestExpenseFilename,
+  type ExpenseJournalHistoryEntry,
+  type ExpensePdfData,
+} from "@/lib/expense-pdf";
+import { loadTemplate } from "@/lib/pdf-template";
 
 type ExpenseRow = Database["public"]["Tables"]["expenses"]["Row"];
 type ClientRow = Pick<Database["public"]["Tables"]["clients"]["Row"], "id" | "name">;
@@ -64,12 +72,16 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [accounts, setAccounts] = useState<AccountRow[]>([]);
   const [journalByExpense, setJournalByExpense] = useState<Map<string, JournalLink>>(new Map());
+  const [journalHistoryByExpense, setJournalHistoryByExpense] = useState<Map<string, JournalLink[]>>(new Map());
   const [attachmentCounts, setAttachmentCounts] = useState<Map<string, number>>(new Map());
+  const [attachmentNames, setAttachmentNames] = useState<Map<string, string[]>>(new Map());
   const [attachExpenseId, setAttachExpenseId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [journalFilter, setJournalFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
@@ -77,6 +89,10 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
   const [reverseId, setReverseId] = useState<string | null>(null);
   const [reverseReason, setReverseReason] = useState("");
   const [reverseConfirm, setReverseConfirm] = useState(false);
+  const [pdfExpenseId, setPdfExpenseId] = useState<string | null>(null);
+  const [pdfName, setPdfName] = useState<string>("");
+  const [periodPdfOpen, setPeriodPdfOpen] = useState(false);
+  const [periodPdfName, setPeriodPdfName] = useState<string>("");
 
   const load = useCallback(async () => {
     if (!orgId) return;
@@ -96,26 +112,38 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
     setClients((cls ?? []) as ClientRow[]);
     setProjects((prjs ?? []) as ProjectRow[]);
     setAccounts((accs ?? []) as AccountRow[]);
-    // Hoogste actieve boeking per uitgave (laatste die niet teruggeboekt is, anders meest recente)
+    // Volledige boekingsgeschiedenis per uitgave (chronologisch, oud → nieuw voor tijdlijn)
+    const history = new Map<string, JournalLink[]>();
     const map = new Map<string, JournalLink>();
     ((jes ?? []) as JournalLink[]).forEach(j => {
       if (!j.expense_id) return;
+      const arr = history.get(j.expense_id) ?? [];
+      arr.push(j);
+      history.set(j.expense_id, arr);
       const existing = map.get(j.expense_id);
       const isActive = !j.reverses_entry_id && !j.reversed_by_entry_id;
       if (!existing || isActive) map.set(j.expense_id, j);
     });
+    // Sorteer historie oud → nieuw
+    history.forEach((arr) => arr.sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? "")));
     setJournalByExpense(map);
+    setJournalHistoryByExpense(history);
 
-    // Aantal bijlagen per uitgave
+    // Aantal + bestandsnamen bijlagen per uitgave
     const { data: atts } = await supabase
       .from("expense_attachments")
-      .select("expense_id")
+      .select("expense_id,file_name")
       .eq("organization_id", orgId);
     const counts = new Map<string, number>();
-    ((atts ?? []) as { expense_id: string }[]).forEach(a => {
+    const names = new Map<string, string[]>();
+    ((atts ?? []) as { expense_id: string; file_name: string }[]).forEach(a => {
       counts.set(a.expense_id, (counts.get(a.expense_id) ?? 0) + 1);
+      const list = names.get(a.expense_id) ?? [];
+      list.push(a.file_name);
+      names.set(a.expense_id, list);
     });
     setAttachmentCounts(counts);
+    setAttachmentNames(names);
 
     setLoading(false);
   }, [orgId]);
@@ -259,6 +287,8 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
     return expenses.filter(e => {
       if (statusFilter !== "all" && e.status !== statusFilter) return false;
       if (journalFilter !== "all" && (e.journal_status ?? "not_posted") !== journalFilter) return false;
+      if (dateFrom && e.expense_date < dateFrom) return false;
+      if (dateTo && e.expense_date > dateTo) return false;
       if (search) {
         const s = search.toLowerCase();
         const blob = `${e.supplier} ${e.description ?? ""} ${e.reference ?? ""} ${e.category ?? ""}`.toLowerCase();
@@ -266,7 +296,102 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
       }
       return true;
     });
-  }, [expenses, statusFilter, journalFilter, search]);
+  }, [expenses, statusFilter, journalFilter, search, dateFrom, dateTo]);
+
+  const activeFilterCount =
+    (statusFilter !== "all" ? 1 : 0) +
+    (journalFilter !== "all" ? 1 : 0) +
+    (dateFrom ? 1 : 0) +
+    (dateTo ? 1 : 0) +
+    (search ? 1 : 0);
+
+  function clearFilters() {
+    setStatusFilter("all");
+    setJournalFilter("all");
+    setDateFrom("");
+    setDateTo("");
+    setSearch("");
+  }
+
+  const pdfExpense = useMemo(
+    () => expenses.find((e) => e.id === pdfExpenseId) ?? null,
+    [expenses, pdfExpenseId],
+  );
+
+  function openPdfDialog(exp: ExpenseRow) {
+    setPdfExpenseId(exp.id);
+    setPdfName(
+      suggestExpenseFilename({
+        expense_date: exp.expense_date,
+        supplier: exp.supplier,
+        reference: exp.reference,
+      }),
+    );
+  }
+
+  function buildPdfDataForRow(e: ExpenseRow): ExpensePdfData {
+    const hist: ExpenseJournalHistoryEntry[] =
+      (journalHistoryByExpense.get(e.id) ?? []).map((j) => ({
+        id: j.id,
+        created_at: j.created_at,
+        description: j.description,
+        is_reversal: !!j.reverses_entry_id,
+        is_reversed: !!j.reversed_by_entry_id,
+      }));
+    return {
+      id: e.id,
+      expense_date: e.expense_date,
+      supplier: e.supplier,
+      description: e.description,
+      category: e.category,
+      reference: e.reference,
+      payment_method: e.payment_method,
+      status: e.status,
+      journal_status: e.journal_status,
+      amount_cents: e.amount_cents,
+      vat_cents: e.vat_cents,
+      total_cents: e.total_cents,
+      vat_rate: e.vat_rate ? Number(e.vat_rate) : null,
+      notes: e.notes,
+      paid_at: e.paid_at,
+      history: hist,
+      attachment_names: attachmentNames.get(e.id) ?? [],
+    };
+  }
+
+  function downloadRowPdf() {
+    if (!pdfExpense) return;
+    const tpl = loadTemplate(orgId, userId ?? null);
+    const doc = buildExpensePdf(buildPdfDataForRow(pdfExpense), tpl);
+    let name = pdfName.trim() || "inkoopfactuur.pdf";
+    if (!/\.pdf$/i.test(name)) name += ".pdf";
+    doc.save(name);
+    setPdfExpenseId(null);
+  }
+
+  function openPeriodPdfDialog() {
+    if (filtered.length === 0) {
+      toast.error("Geen inkoopfacturen in de huidige selectie");
+      return;
+    }
+    const from = dateFrom || (filtered[filtered.length - 1]?.expense_date ?? "");
+    const to = dateTo || (filtered[0]?.expense_date ?? "");
+    setPeriodPdfName(`inkoopfacturen-${from || "begin"}-tot-${to || "nu"}.pdf`);
+    setPeriodPdfOpen(true);
+  }
+
+  function downloadPeriodPdf() {
+    const tpl = loadTemplate(orgId, userId ?? null);
+    const doc = buildExpensesPeriodPdf(
+      filtered.map(buildPdfDataForRow),
+      tpl,
+      { from: dateFrom || null, to: dateTo || null },
+    );
+    let name = periodPdfName.trim() || "inkoopfacturen-periode.pdf";
+    if (!/\.pdf$/i.test(name)) name += ".pdf";
+    doc.save(name);
+    setPeriodPdfOpen(false);
+  }
 
   const totals = useMemo(() => {
     const r = { total: 0, open: 0, paid: 0, vat: 0 };
@@ -367,53 +492,57 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
         <Stat label="Voorbelasting BTW" value={EUR(totals.vat)} />
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-1 flex-wrap items-center gap-2">
-          <div className="relative max-w-xs flex-1">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input className="pl-8" placeholder="Zoek leverancier, omschrijving…" value={search} onChange={e => setSearch(e.target.value)} />
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-1 flex-wrap items-center gap-2">
+            <div className="relative max-w-xs flex-1">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input className="pl-8" placeholder="Zoek leverancier, factuurnr., omschrijving…" value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40"><SelectValue placeholder="Betaalstatus" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle betaalstatussen</SelectItem>
+                <SelectItem value="open">Open</SelectItem>
+                <SelectItem value="paid">Betaald</SelectItem>
+                <SelectItem value="reimbursed">Vergoed</SelectItem>
+                <SelectItem value="cancelled">Geannuleerd</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={journalFilter} onValueChange={setJournalFilter}>
+              <SelectTrigger className="w-44"><SelectValue placeholder="Boekingsstatus" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle boekingsstatussen</SelectItem>
+                <SelectItem value="not_posted">Niet geboekt</SelectItem>
+                <SelectItem value="pending">In afwachting</SelectItem>
+                <SelectItem value="posted">Geboekt</SelectItem>
+                <SelectItem value="reversed">Teruggeboekt</SelectItem>
+                <SelectItem value="error">Fout</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-40"><SelectValue placeholder="Betaalstatus" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Alle betaalstatussen</SelectItem>
-              <SelectItem value="open">Open</SelectItem>
-              <SelectItem value="paid">Betaald</SelectItem>
-              <SelectItem value="reimbursed">Vergoed</SelectItem>
-              <SelectItem value="cancelled">Geannuleerd</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={journalFilter} onValueChange={setJournalFilter}>
-            <SelectTrigger className="w-44"><SelectValue placeholder="Boekingsstatus" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Alle boekingsstatussen</SelectItem>
-              <SelectItem value="not_posted">Niet geboekt</SelectItem>
-              <SelectItem value="pending">In afwachting</SelectItem>
-              <SelectItem value="posted">Geboekt</SelectItem>
-              <SelectItem value="reversed">Teruggeboekt</SelectItem>
-              <SelectItem value="error">Fout</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={exportCSV}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button><Plus className="mr-2 h-4 w-4" /> Nieuwe uitgave</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader><DialogTitle>Uitgave invoeren</DialogTitle></DialogHeader>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div><Label>Leverancier *</Label><Input value={form.supplier} onChange={e => setForm({ ...form, supplier: e.target.value })} placeholder="Bijv. Hetzner, Adobe…" /></div>
-                <div><Label>Datum *</Label><Input type="date" value={form.expense_date} onChange={e => setForm({ ...form, expense_date: e.target.value })} /></div>
-                <div className="sm:col-span-2"><Label>Omschrijving</Label><Input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Bijv. Maandelijkse hosting" /></div>
-                <div>
-                  <Label>Categorie</Label>
-                  <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={openPeriodPdfDialog}>
+              <FileDown className="mr-2 h-4 w-4" /> Export PDF (periode)
+            </Button>
+            <Button variant="outline" onClick={exportCSV}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button><Plus className="mr-2 h-4 w-4" /> Nieuwe uitgave</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader><DialogTitle>Uitgave invoeren</DialogTitle></DialogHeader>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div><Label>Leverancier *</Label><Input value={form.supplier} onChange={e => setForm({ ...form, supplier: e.target.value })} placeholder="Bijv. Hetzner, Adobe…" /></div>
+                  <div><Label>Datum *</Label><Input type="date" value={form.expense_date} onChange={e => setForm({ ...form, expense_date: e.target.value })} /></div>
+                  <div className="sm:col-span-2"><Label>Omschrijving</Label><Input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Bijv. Maandelijkse hosting" /></div>
+                  <div>
+                    <Label>Categorie</Label>
+                    <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
                 <div>
                   <Label>Betaalmethode</Label>
                   <Select value={form.payment_method} onValueChange={v => setForm({ ...form, payment_method: v })}>
@@ -492,6 +621,21 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 px-2 py-1.5 text-xs">
+
+          <span className="text-muted-foreground">Periode:</span>
+          <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="h-8 w-40" />
+          <span className="text-muted-foreground">t/m</span>
+          <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="h-8 w-40" />
+          <span className="ml-auto text-muted-foreground">
+            {filtered.length} van {expenses.length} inkoopfacturen
+            {activeFilterCount > 0 && ` · ${activeFilterCount} filter(s) actief`}
+          </span>
+          {activeFilterCount > 0 && (
+            <Button variant="ghost" size="sm" className="h-7 px-2" onClick={clearFilters}>Wissen</Button>
+          )}
         </div>
       </div>
 
@@ -550,6 +694,14 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
                   <TableCell className="text-right tabular-nums font-medium">{EUR(e.total_cents)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
+                      <Button asChild variant="ghost" size="sm" title="Detail openen">
+                        <Link to="/inkoopfacturen/$expenseId" params={{ expenseId: e.id }}>
+                          <Eye className="h-3.5 w-3.5" />
+                        </Link>
+                      </Button>
+                      <Button variant="ghost" size="sm" title="PDF downloaden" onClick={() => openPdfDialog(e)}>
+                        <FileDown className="h-3.5 w-3.5" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -743,6 +895,41 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
         onClose={() => setAttachExpenseId(null)}
         onChanged={() => void load()}
       />
+
+      <Dialog open={!!pdfExpenseId} onOpenChange={(o) => { if (!o) setPdfExpenseId(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>PDF downloaden</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <Label>Bestandsnaam</Label>
+            <Input value={pdfName} onChange={(e) => setPdfName(e.target.value)} placeholder="inkoopfactuur.pdf" />
+            <p className="text-xs text-muted-foreground">
+              PDF met leverancier, bedragen, BTW-uitsplitsing en doorboekingsgeschiedenis.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPdfExpenseId(null)}>Annuleren</Button>
+            <Button onClick={downloadRowPdf}><Download className="mr-2 h-4 w-4" /> Downloaden</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={periodPdfOpen} onOpenChange={setPeriodPdfOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Periode-export als PDF</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <Label>Bestandsnaam</Label>
+            <Input value={periodPdfName} onChange={(e) => setPeriodPdfName(e.target.value)} />
+            <p className="text-xs text-muted-foreground">
+              Bevat {filtered.length} inkoopfactu{filtered.length === 1 ? "ur" : "ren"} op basis van de huidige filters
+              {dateFrom || dateTo ? ` (${dateFrom || "begin"} — ${dateTo || "nu"})` : ""}.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPeriodPdfOpen(false)}>Annuleren</Button>
+            <Button onClick={downloadPeriodPdf}><FileDown className="mr-2 h-4 w-4" /> Exporteren</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
