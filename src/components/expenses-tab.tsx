@@ -694,6 +694,14 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
                   <TableCell className="text-right tabular-nums font-medium">{EUR(e.total_cents)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
+                      <Button asChild variant="ghost" size="sm" title="Detail openen">
+                        <Link to="/inkoopfacturen/$expenseId" params={{ expenseId: e.id }}>
+                          <Eye className="h-3.5 w-3.5" />
+                        </Link>
+                      </Button>
+                      <Button variant="ghost" size="sm" title="PDF downloaden" onClick={() => openPdfDialog(e)}>
+                        <FileDown className="h-3.5 w-3.5" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
