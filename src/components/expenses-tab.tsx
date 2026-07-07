@@ -895,6 +895,41 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
         onClose={() => setAttachExpenseId(null)}
         onChanged={() => void load()}
       />
+
+      <Dialog open={!!pdfExpenseId} onOpenChange={(o) => { if (!o) setPdfExpenseId(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>PDF downloaden</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <Label>Bestandsnaam</Label>
+            <Input value={pdfName} onChange={(e) => setPdfName(e.target.value)} placeholder="inkoopfactuur.pdf" />
+            <p className="text-xs text-muted-foreground">
+              PDF met leverancier, bedragen, BTW-uitsplitsing en doorboekingsgeschiedenis.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPdfExpenseId(null)}>Annuleren</Button>
+            <Button onClick={downloadRowPdf}><Download className="mr-2 h-4 w-4" /> Downloaden</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={periodPdfOpen} onOpenChange={setPeriodPdfOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Periode-export als PDF</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <Label>Bestandsnaam</Label>
+            <Input value={periodPdfName} onChange={(e) => setPeriodPdfName(e.target.value)} />
+            <p className="text-xs text-muted-foreground">
+              Bevat {filtered.length} inkoopfactu{filtered.length === 1 ? "ur" : "ren"} op basis van de huidige filters
+              {dateFrom || dateTo ? ` (${dateFrom || "begin"} — ${dateTo || "nu"})` : ""}.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPeriodPdfOpen(false)}>Annuleren</Button>
+            <Button onClick={downloadPeriodPdf}><FileDown className="mr-2 h-4 w-4" /> Exporteren</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
