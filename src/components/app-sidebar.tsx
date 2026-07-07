@@ -101,6 +101,7 @@ const sections: NavSection[] = [
       { title: "Servers", url: "/netqloud/servers", icon: Server },
       { title: "Offertes", url: "/quotes", icon: FileSignature },
       { title: "Facturen", url: "/invoices", icon: Receipt },
+      { title: "Inkoopfacturen", url: "/inkoopfacturen", icon: Receipt },
       { title: "Instellingen", url: "/netqloud/instellingen", icon: Settings },
     ],
   },
