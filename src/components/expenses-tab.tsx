@@ -112,26 +112,38 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
     setClients((cls ?? []) as ClientRow[]);
     setProjects((prjs ?? []) as ProjectRow[]);
     setAccounts((accs ?? []) as AccountRow[]);
-    // Hoogste actieve boeking per uitgave (laatste die niet teruggeboekt is, anders meest recente)
+    // Volledige boekingsgeschiedenis per uitgave (chronologisch, oud → nieuw voor tijdlijn)
+    const history = new Map<string, JournalLink[]>();
     const map = new Map<string, JournalLink>();
     ((jes ?? []) as JournalLink[]).forEach(j => {
       if (!j.expense_id) return;
+      const arr = history.get(j.expense_id) ?? [];
+      arr.push(j);
+      history.set(j.expense_id, arr);
       const existing = map.get(j.expense_id);
       const isActive = !j.reverses_entry_id && !j.reversed_by_entry_id;
       if (!existing || isActive) map.set(j.expense_id, j);
     });
+    // Sorteer historie oud → nieuw
+    history.forEach((arr) => arr.sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? "")));
     setJournalByExpense(map);
+    setJournalHistoryByExpense(history);
 
-    // Aantal bijlagen per uitgave
+    // Aantal + bestandsnamen bijlagen per uitgave
     const { data: atts } = await supabase
       .from("expense_attachments")
-      .select("expense_id")
+      .select("expense_id,file_name")
       .eq("organization_id", orgId);
     const counts = new Map<string, number>();
-    ((atts ?? []) as { expense_id: string }[]).forEach(a => {
+    const names = new Map<string, string[]>();
+    ((atts ?? []) as { expense_id: string; file_name: string }[]).forEach(a => {
       counts.set(a.expense_id, (counts.get(a.expense_id) ?? 0) + 1);
+      const list = names.get(a.expense_id) ?? [];
+      list.push(a.file_name);
+      names.set(a.expense_id, list);
     });
     setAttachmentCounts(counts);
+    setAttachmentNames(names);
 
     setLoading(false);
   }, [orgId]);
