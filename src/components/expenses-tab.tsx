@@ -638,6 +638,20 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
             </DialogContent>
           </Dialog>
         </div>
+        <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 px-2 py-1.5 text-xs">
+          <span className="text-muted-foreground">Periode:</span>
+          <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="h-8 w-40" />
+          <span className="text-muted-foreground">t/m</span>
+          <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="h-8 w-40" />
+          <span className="ml-auto text-muted-foreground">
+            {filtered.length} van {expenses.length} inkoopfacturen
+            {activeFilterCount > 0 && ` · ${activeFilterCount} filter(s) actief`}
+          </span>
+          {activeFilterCount > 0 && (
+            <Button variant="ghost" size="sm" className="h-7 px-2" onClick={clearFilters}>Wissen</Button>
+          )}
+        </div>
+      </div>
       </div>
 
       <div className="rounded-lg border overflow-x-auto">
