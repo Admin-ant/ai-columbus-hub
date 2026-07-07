@@ -652,7 +652,6 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
           )}
         </div>
       </div>
-      </div>
 
       <div className="rounded-lg border overflow-x-auto">
         <Table>
