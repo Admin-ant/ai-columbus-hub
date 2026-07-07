@@ -543,23 +543,6 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
                       <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button><Plus className="mr-2 h-4 w-4" /> Nieuwe uitgave</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader><DialogTitle>Uitgave invoeren</DialogTitle></DialogHeader>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div><Label>Leverancier *</Label><Input value={form.supplier} onChange={e => setForm({ ...form, supplier: e.target.value })} placeholder="Bijv. Hetzner, Adobe…" /></div>
-                <div><Label>Datum *</Label><Input type="date" value={form.expense_date} onChange={e => setForm({ ...form, expense_date: e.target.value })} /></div>
-                <div className="sm:col-span-2"><Label>Omschrijving</Label><Input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Bijv. Maandelijkse hosting" /></div>
-                <div>
-                  <Label>Categorie</Label>
-                  <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
                 <div>
                   <Label>Betaalmethode</Label>
                   <Select value={form.payment_method} onValueChange={v => setForm({ ...form, payment_method: v })}>
