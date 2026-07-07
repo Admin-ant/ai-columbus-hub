@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Plus, Loader2, Trash2, BookOpen, Receipt, Search, Download, Undo2, ExternalLink, AlertTriangle, Paperclip, Upload, FileText, RefreshCw, DownloadCloud,
+  Plus, Loader2, Trash2, BookOpen, Receipt, Search, Download, Undo2, ExternalLink, AlertTriangle, Paperclip, Upload, FileText, RefreshCw, DownloadCloud, Eye, FileDown,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";

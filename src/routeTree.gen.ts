@@ -42,6 +42,7 @@ import { Route as AuthenticatedNetqloudKlantenRouteImport } from './routes/_auth
 import { Route as AuthenticatedNetqloudInstellingenRouteImport } from './routes/_authenticated/netqloud.instellingen'
 import { Route as AuthenticatedMailSettingsRouteImport } from './routes/_authenticated/mail.settings'
 import { Route as AuthenticatedInvoicesInvoiceIdRouteImport } from './routes/_authenticated/invoices.$invoiceId'
+import { Route as AuthenticatedInkoopfacturenExpenseIdRouteImport } from './routes/_authenticated/inkoopfacturen.$expenseId'
 import { Route as AuthenticatedCrmActivitiesRouteImport } from './routes/_authenticated/crm.activities'
 import { Route as AuthenticatedAiColumbusRapportagesRouteImport } from './routes/_authenticated/ai-columbus.rapportages'
 import { Route as AuthenticatedAiColumbusProjectenRouteImport } from './routes/_authenticated/ai-columbus.projecten'
@@ -245,6 +246,12 @@ const AuthenticatedInvoicesInvoiceIdRoute =
     path: '/$invoiceId',
     getParentRoute: () => AuthenticatedInvoicesRoute,
   } as any)
+const AuthenticatedInkoopfacturenExpenseIdRoute =
+  AuthenticatedInkoopfacturenExpenseIdRouteImport.update({
+    id: '/$expenseId',
+    path: '/$expenseId',
+    getParentRoute: () => AuthenticatedInkoopfacturenRoute,
+  } as any)
 const AuthenticatedCrmActivitiesRoute =
   AuthenticatedCrmActivitiesRouteImport.update({
     id: '/crm/activities',
@@ -399,7 +406,7 @@ export interface FileRoutesByFullPath {
   '/boekhouding': typeof AuthenticatedBoekhoudingRouteWithChildren
   '/enterprise': typeof AuthenticatedEnterpriseRoute
   '/gebruikers': typeof AuthenticatedGebruikersRoute
-  '/inkoopfacturen': typeof AuthenticatedInkoopfacturenRoute
+  '/inkoopfacturen': typeof AuthenticatedInkoopfacturenRouteWithChildren
   '/invoices': typeof AuthenticatedInvoicesRouteWithChildren
   '/leads': typeof AuthenticatedLeadsRoute
   '/mail': typeof AuthenticatedMailRouteWithChildren
@@ -418,6 +425,7 @@ export interface FileRoutesByFullPath {
   '/ai-columbus/projecten': typeof AuthenticatedAiColumbusProjectenRouteWithChildren
   '/ai-columbus/rapportages': typeof AuthenticatedAiColumbusRapportagesRoute
   '/crm/activities': typeof AuthenticatedCrmActivitiesRoute
+  '/inkoopfacturen/$expenseId': typeof AuthenticatedInkoopfacturenExpenseIdRoute
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
@@ -455,7 +463,7 @@ export interface FileRoutesByTo {
   '/boekhouding': typeof AuthenticatedBoekhoudingRouteWithChildren
   '/enterprise': typeof AuthenticatedEnterpriseRoute
   '/gebruikers': typeof AuthenticatedGebruikersRoute
-  '/inkoopfacturen': typeof AuthenticatedInkoopfacturenRoute
+  '/inkoopfacturen': typeof AuthenticatedInkoopfacturenRouteWithChildren
   '/invoices': typeof AuthenticatedInvoicesRouteWithChildren
   '/leads': typeof AuthenticatedLeadsRoute
   '/mail': typeof AuthenticatedMailRouteWithChildren
@@ -474,6 +482,7 @@ export interface FileRoutesByTo {
   '/ai-columbus/projecten': typeof AuthenticatedAiColumbusProjectenRouteWithChildren
   '/ai-columbus/rapportages': typeof AuthenticatedAiColumbusRapportagesRoute
   '/crm/activities': typeof AuthenticatedCrmActivitiesRoute
+  '/inkoopfacturen/$expenseId': typeof AuthenticatedInkoopfacturenExpenseIdRoute
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
@@ -514,7 +523,7 @@ export interface FileRoutesById {
   '/_authenticated/boekhouding': typeof AuthenticatedBoekhoudingRouteWithChildren
   '/_authenticated/enterprise': typeof AuthenticatedEnterpriseRoute
   '/_authenticated/gebruikers': typeof AuthenticatedGebruikersRoute
-  '/_authenticated/inkoopfacturen': typeof AuthenticatedInkoopfacturenRoute
+  '/_authenticated/inkoopfacturen': typeof AuthenticatedInkoopfacturenRouteWithChildren
   '/_authenticated/invoices': typeof AuthenticatedInvoicesRouteWithChildren
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/mail': typeof AuthenticatedMailRouteWithChildren
@@ -534,6 +543,7 @@ export interface FileRoutesById {
   '/_authenticated/ai-columbus/projecten': typeof AuthenticatedAiColumbusProjectenRouteWithChildren
   '/_authenticated/ai-columbus/rapportages': typeof AuthenticatedAiColumbusRapportagesRoute
   '/_authenticated/crm/activities': typeof AuthenticatedCrmActivitiesRoute
+  '/_authenticated/inkoopfacturen/$expenseId': typeof AuthenticatedInkoopfacturenExpenseIdRoute
   '/_authenticated/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/_authenticated/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/_authenticated/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
@@ -594,6 +604,7 @@ export interface FileRouteTypes {
     | '/ai-columbus/projecten'
     | '/ai-columbus/rapportages'
     | '/crm/activities'
+    | '/inkoopfacturen/$expenseId'
     | '/invoices/$invoiceId'
     | '/mail/settings'
     | '/netqloud/instellingen'
@@ -650,6 +661,7 @@ export interface FileRouteTypes {
     | '/ai-columbus/projecten'
     | '/ai-columbus/rapportages'
     | '/crm/activities'
+    | '/inkoopfacturen/$expenseId'
     | '/invoices/$invoiceId'
     | '/mail/settings'
     | '/netqloud/instellingen'
@@ -709,6 +721,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ai-columbus/projecten'
     | '/_authenticated/ai-columbus/rapportages'
     | '/_authenticated/crm/activities'
+    | '/_authenticated/inkoopfacturen/$expenseId'
     | '/_authenticated/invoices/$invoiceId'
     | '/_authenticated/mail/settings'
     | '/_authenticated/netqloud/instellingen'
@@ -993,6 +1006,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInvoicesInvoiceIdRouteImport
       parentRoute: typeof AuthenticatedInvoicesRoute
     }
+    '/_authenticated/inkoopfacturen/$expenseId': {
+      id: '/_authenticated/inkoopfacturen/$expenseId'
+      path: '/$expenseId'
+      fullPath: '/inkoopfacturen/$expenseId'
+      preLoaderRoute: typeof AuthenticatedInkoopfacturenExpenseIdRouteImport
+      parentRoute: typeof AuthenticatedInkoopfacturenRoute
+    }
     '/_authenticated/crm/activities': {
       id: '/_authenticated/crm/activities'
       path: '/crm/activities'
@@ -1244,6 +1264,21 @@ const AuthenticatedBoekhoudingRouteWithChildren =
     AuthenticatedBoekhoudingRouteChildren,
   )
 
+interface AuthenticatedInkoopfacturenRouteChildren {
+  AuthenticatedInkoopfacturenExpenseIdRoute: typeof AuthenticatedInkoopfacturenExpenseIdRoute
+}
+
+const AuthenticatedInkoopfacturenRouteChildren: AuthenticatedInkoopfacturenRouteChildren =
+  {
+    AuthenticatedInkoopfacturenExpenseIdRoute:
+      AuthenticatedInkoopfacturenExpenseIdRoute,
+  }
+
+const AuthenticatedInkoopfacturenRouteWithChildren =
+  AuthenticatedInkoopfacturenRoute._addFileChildren(
+    AuthenticatedInkoopfacturenRouteChildren,
+  )
+
 interface AuthenticatedInvoicesRouteChildren {
   AuthenticatedInvoicesInvoiceIdRoute: typeof AuthenticatedInvoicesInvoiceIdRoute
 }
@@ -1294,7 +1329,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBoekhoudingRoute: typeof AuthenticatedBoekhoudingRouteWithChildren
   AuthenticatedEnterpriseRoute: typeof AuthenticatedEnterpriseRoute
   AuthenticatedGebruikersRoute: typeof AuthenticatedGebruikersRoute
-  AuthenticatedInkoopfacturenRoute: typeof AuthenticatedInkoopfacturenRoute
+  AuthenticatedInkoopfacturenRoute: typeof AuthenticatedInkoopfacturenRouteWithChildren
   AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRouteWithChildren
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedMailRoute: typeof AuthenticatedMailRouteWithChildren
@@ -1318,7 +1353,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBoekhoudingRoute: AuthenticatedBoekhoudingRouteWithChildren,
   AuthenticatedEnterpriseRoute: AuthenticatedEnterpriseRoute,
   AuthenticatedGebruikersRoute: AuthenticatedGebruikersRoute,
-  AuthenticatedInkoopfacturenRoute: AuthenticatedInkoopfacturenRoute,
+  AuthenticatedInkoopfacturenRoute:
+    AuthenticatedInkoopfacturenRouteWithChildren,
   AuthenticatedInvoicesRoute: AuthenticatedInvoicesRouteWithChildren,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedMailRoute: AuthenticatedMailRouteWithChildren,
