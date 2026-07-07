@@ -83,6 +83,7 @@ const sections: NavSection[] = [
       { title: "Klanten", url: "/ai-columbus/klanten", icon: Users },
       { title: "Offertes", url: "/quotes", icon: FileSignature },
       { title: "Facturen", url: "/invoices", icon: Receipt },
+      { title: "Inkoopfacturen", url: "/inkoopfacturen", icon: Receipt },
       { title: "Modellen & gebruik", url: "/ai-columbus/modellen", icon: Cpu },
       { title: "Rapportages", url: "/ai-columbus/rapportages", icon: BarChart3 },
       { title: "Logs", url: "/ai-columbus/logs", icon: ScrollText },
