@@ -72,12 +72,16 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [accounts, setAccounts] = useState<AccountRow[]>([]);
   const [journalByExpense, setJournalByExpense] = useState<Map<string, JournalLink>>(new Map());
+  const [journalHistoryByExpense, setJournalHistoryByExpense] = useState<Map<string, JournalLink[]>>(new Map());
   const [attachmentCounts, setAttachmentCounts] = useState<Map<string, number>>(new Map());
+  const [attachmentNames, setAttachmentNames] = useState<Map<string, string[]>>(new Map());
   const [attachExpenseId, setAttachExpenseId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [journalFilter, setJournalFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
@@ -85,6 +89,10 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
   const [reverseId, setReverseId] = useState<string | null>(null);
   const [reverseReason, setReverseReason] = useState("");
   const [reverseConfirm, setReverseConfirm] = useState(false);
+  const [pdfExpenseId, setPdfExpenseId] = useState<string | null>(null);
+  const [pdfName, setPdfName] = useState<string>("");
+  const [periodPdfOpen, setPeriodPdfOpen] = useState(false);
+  const [periodPdfName, setPeriodPdfName] = useState<string>("");
 
   const load = useCallback(async () => {
     if (!orgId) return;
