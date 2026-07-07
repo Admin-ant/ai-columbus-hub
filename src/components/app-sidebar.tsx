@@ -115,6 +115,7 @@ const adminItems: NavItem[] = [
 const administratieSubItems: NavItem[] = [
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Boekhouding", url: "/boekhouding", icon: Receipt },
+  { title: "Inkoopfacturen", url: "/inkoopfacturen", icon: Receipt },
   { title: "Producten & Prijzen", url: "/producten", icon: Package },
 ];
 
