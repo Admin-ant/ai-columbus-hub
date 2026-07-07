@@ -21,6 +21,14 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import {
+  buildExpensePdf,
+  buildExpensesPeriodPdf,
+  suggestExpenseFilename,
+  type ExpenseJournalHistoryEntry,
+  type ExpensePdfData,
+} from "@/lib/expense-pdf";
+import { loadTemplate } from "@/lib/pdf-template";
 
 type ExpenseRow = Database["public"]["Tables"]["expenses"]["Row"];
 type ClientRow = Pick<Database["public"]["Tables"]["clients"]["Row"], "id" | "name">;
