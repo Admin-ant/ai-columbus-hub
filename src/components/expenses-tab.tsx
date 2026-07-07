@@ -287,6 +287,8 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
     return expenses.filter(e => {
       if (statusFilter !== "all" && e.status !== statusFilter) return false;
       if (journalFilter !== "all" && (e.journal_status ?? "not_posted") !== journalFilter) return false;
+      if (dateFrom && e.expense_date < dateFrom) return false;
+      if (dateTo && e.expense_date > dateTo) return false;
       if (search) {
         const s = search.toLowerCase();
         const blob = `${e.supplier} ${e.description ?? ""} ${e.reference ?? ""} ${e.category ?? ""}`.toLowerCase();
@@ -294,7 +296,102 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
       }
       return true;
     });
-  }, [expenses, statusFilter, journalFilter, search]);
+  }, [expenses, statusFilter, journalFilter, search, dateFrom, dateTo]);
+
+  const activeFilterCount =
+    (statusFilter !== "all" ? 1 : 0) +
+    (journalFilter !== "all" ? 1 : 0) +
+    (dateFrom ? 1 : 0) +
+    (dateTo ? 1 : 0) +
+    (search ? 1 : 0);
+
+  function clearFilters() {
+    setStatusFilter("all");
+    setJournalFilter("all");
+    setDateFrom("");
+    setDateTo("");
+    setSearch("");
+  }
+
+  const pdfExpense = useMemo(
+    () => expenses.find((e) => e.id === pdfExpenseId) ?? null,
+    [expenses, pdfExpenseId],
+  );
+
+  function openPdfDialog(exp: ExpenseRow) {
+    setPdfExpenseId(exp.id);
+    setPdfName(
+      suggestExpenseFilename({
+        expense_date: exp.expense_date,
+        supplier: exp.supplier,
+        reference: exp.reference,
+      }),
+    );
+  }
+
+  function buildPdfDataForRow(e: ExpenseRow): ExpensePdfData {
+    const hist: ExpenseJournalHistoryEntry[] =
+      (journalHistoryByExpense.get(e.id) ?? []).map((j) => ({
+        id: j.id,
+        created_at: j.created_at,
+        description: j.description,
+        is_reversal: !!j.reverses_entry_id,
+        is_reversed: !!j.reversed_by_entry_id,
+      }));
+    return {
+      id: e.id,
+      expense_date: e.expense_date,
+      supplier: e.supplier,
+      description: e.description,
+      category: e.category,
+      reference: e.reference,
+      payment_method: e.payment_method,
+      status: e.status,
+      journal_status: e.journal_status,
+      amount_cents: e.amount_cents,
+      vat_cents: e.vat_cents,
+      total_cents: e.total_cents,
+      vat_rate: e.vat_rate ? Number(e.vat_rate) : null,
+      notes: e.notes,
+      paid_at: e.paid_at,
+      history: hist,
+      attachment_names: attachmentNames.get(e.id) ?? [],
+    };
+  }
+
+  function downloadRowPdf() {
+    if (!pdfExpense) return;
+    const tpl = loadTemplate(orgId, userId ?? null);
+    const doc = buildExpensePdf(buildPdfDataForRow(pdfExpense), tpl);
+    let name = pdfName.trim() || "inkoopfactuur.pdf";
+    if (!/\.pdf$/i.test(name)) name += ".pdf";
+    doc.save(name);
+    setPdfExpenseId(null);
+  }
+
+  function openPeriodPdfDialog() {
+    if (filtered.length === 0) {
+      toast.error("Geen inkoopfacturen in de huidige selectie");
+      return;
+    }
+    const from = dateFrom || (filtered[filtered.length - 1]?.expense_date ?? "");
+    const to = dateTo || (filtered[0]?.expense_date ?? "");
+    setPeriodPdfName(`inkoopfacturen-${from || "begin"}-tot-${to || "nu"}.pdf`);
+    setPeriodPdfOpen(true);
+  }
+
+  function downloadPeriodPdf() {
+    const tpl = loadTemplate(orgId, userId ?? null);
+    const doc = buildExpensesPeriodPdf(
+      filtered.map(buildPdfDataForRow),
+      tpl,
+      { from: dateFrom || null, to: dateTo || null },
+    );
+    let name = periodPdfName.trim() || "inkoopfacturen-periode.pdf";
+    if (!/\.pdf$/i.test(name)) name += ".pdf";
+    doc.save(name);
+    setPeriodPdfOpen(false);
+  }
 
   const totals = useMemo(() => {
     const r = { total: 0, open: 0, paid: 0, vat: 0 };
