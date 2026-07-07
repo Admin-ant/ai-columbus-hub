@@ -492,36 +492,56 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
         <Stat label="Voorbelasting BTW" value={EUR(totals.vat)} />
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-1 flex-wrap items-center gap-2">
-          <div className="relative max-w-xs flex-1">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input className="pl-8" placeholder="Zoek leverancier, omschrijving…" value={search} onChange={e => setSearch(e.target.value)} />
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-1 flex-wrap items-center gap-2">
+            <div className="relative max-w-xs flex-1">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input className="pl-8" placeholder="Zoek leverancier, factuurnr., omschrijving…" value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40"><SelectValue placeholder="Betaalstatus" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle betaalstatussen</SelectItem>
+                <SelectItem value="open">Open</SelectItem>
+                <SelectItem value="paid">Betaald</SelectItem>
+                <SelectItem value="reimbursed">Vergoed</SelectItem>
+                <SelectItem value="cancelled">Geannuleerd</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={journalFilter} onValueChange={setJournalFilter}>
+              <SelectTrigger className="w-44"><SelectValue placeholder="Boekingsstatus" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle boekingsstatussen</SelectItem>
+                <SelectItem value="not_posted">Niet geboekt</SelectItem>
+                <SelectItem value="pending">In afwachting</SelectItem>
+                <SelectItem value="posted">Geboekt</SelectItem>
+                <SelectItem value="reversed">Teruggeboekt</SelectItem>
+                <SelectItem value="error">Fout</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-40"><SelectValue placeholder="Betaalstatus" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Alle betaalstatussen</SelectItem>
-              <SelectItem value="open">Open</SelectItem>
-              <SelectItem value="paid">Betaald</SelectItem>
-              <SelectItem value="reimbursed">Vergoed</SelectItem>
-              <SelectItem value="cancelled">Geannuleerd</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={journalFilter} onValueChange={setJournalFilter}>
-            <SelectTrigger className="w-44"><SelectValue placeholder="Boekingsstatus" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Alle boekingsstatussen</SelectItem>
-              <SelectItem value="not_posted">Niet geboekt</SelectItem>
-              <SelectItem value="pending">In afwachting</SelectItem>
-              <SelectItem value="posted">Geboekt</SelectItem>
-              <SelectItem value="reversed">Teruggeboekt</SelectItem>
-              <SelectItem value="error">Fout</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={exportCSV}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={openPeriodPdfDialog}>
+              <FileDown className="mr-2 h-4 w-4" /> Export PDF (periode)
+            </Button>
+            <Button variant="outline" onClick={exportCSV}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button><Plus className="mr-2 h-4 w-4" /> Nieuwe uitgave</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader><DialogTitle>Uitgave invoeren</DialogTitle></DialogHeader>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div><Label>Leverancier *</Label><Input value={form.supplier} onChange={e => setForm({ ...form, supplier: e.target.value })} placeholder="Bijv. Hetzner, Adobe…" /></div>
+                  <div><Label>Datum *</Label><Input type="date" value={form.expense_date} onChange={e => setForm({ ...form, expense_date: e.target.value })} /></div>
+                  <div className="sm:col-span-2"><Label>Omschrijving</Label><Input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Bijv. Maandelijkse hosting" /></div>
+                  <div>
+                    <Label>Categorie</Label>
+                    <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                    </Select>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button><Plus className="mr-2 h-4 w-4" /> Nieuwe uitgave</Button>
