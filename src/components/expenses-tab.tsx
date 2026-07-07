@@ -542,6 +542,7 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                     </Select>
+                  </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button><Plus className="mr-2 h-4 w-4" /> Nieuwe uitgave</Button>
