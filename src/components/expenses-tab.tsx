@@ -621,8 +621,10 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 px-2 py-1.5 text-xs">
+
           <span className="text-muted-foreground">Periode:</span>
           <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="h-8 w-40" />
           <span className="text-muted-foreground">t/m</span>
