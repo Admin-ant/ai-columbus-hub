@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Plus, Loader2, Trash2, BookOpen, Receipt, Search, Download, Undo2, ExternalLink, AlertTriangle, Paperclip, Upload, FileText, RefreshCw, DownloadCloud, Eye, FileDown,
+  Plus, Loader2, Trash2, BookOpen, Receipt, Search, Download, Undo2, ExternalLink, AlertTriangle, Paperclip, Upload, FileText, RefreshCw, DownloadCloud, Eye, FileDown, FileSpreadsheet, X,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 
@@ -93,6 +94,8 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
   const [pdfName, setPdfName] = useState<string>("");
   const [periodPdfOpen, setPeriodPdfOpen] = useState(false);
   const [periodPdfName, setPeriodPdfName] = useState<string>("");
+  const [newFiles, setNewFiles] = useState<File[]>([]);
+  const [newTextNote, setNewTextNote] = useState<string>("");
 
   const load = useCallback(async () => {
     if (!orgId) return;
@@ -169,6 +172,8 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
       client_id: "", project_id: "",
       status: "open", notes: "",
     });
+    setNewFiles([]);
+    setNewTextNote("");
   }
 
   // --- Validatie & afronding ---
@@ -184,10 +189,34 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
   if (![0, 9, 21].includes(vatRate)) formErrors.push("BTW-tarief moet 0%, 9% of 21% zijn");
   if (amountCents + vatCents !== totalCents) formErrors.push("Totaal komt niet overeen met subtotaal + BTW");
 
+  async function uploadAttachmentFile(expenseId: string, file: File | Blob, fileName: string, mime: string | null) {
+    const safe = fileName.replace(/[^\w.\-]+/g, "_");
+    const path = `${orgId}/${expenseId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safe}`;
+    const up = await supabase.storage.from("expense-attachments").upload(path, file, {
+      contentType: mime ?? undefined,
+      upsert: false,
+    });
+    if (up.error) throw new Error(up.error.message);
+    const size = file instanceof File ? file.size : (file as Blob).size;
+    const ins = await supabase.from("expense_attachments").insert({
+      organization_id: orgId,
+      expense_id: expenseId,
+      storage_path: path,
+      file_name: fileName,
+      mime_type: mime,
+      size_bytes: size,
+      uploaded_by: userId,
+    });
+    if (ins.error) {
+      await supabase.storage.from("expense-attachments").remove([path]);
+      throw new Error(ins.error.message);
+    }
+  }
+
   async function saveExpense() {
     if (formErrors.length) { toast.error(formErrors[0]); return; }
     setSaving(true);
-    const { error } = await supabase.from("expenses").insert({
+    const { data: inserted, error } = await supabase.from("expenses").insert({
       organization_id: orgId,
       supplier: form.supplier.trim(),
       description: form.description || null,
@@ -205,14 +234,45 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
       paid_at: form.status === "paid" ? new Date().toISOString() : null,
       notes: form.notes || null,
       created_by: userId,
-    });
+    }).select("id").single();
+    if (error || !inserted) {
+      setSaving(false);
+      toast.error(error?.message ?? "Opslaan mislukt");
+      return;
+    }
+    // Bijlagen uploaden (PDF/afbeelding en/of tekst-notitie)
+    let attachErrors = 0;
+    for (const f of newFiles) {
+      try {
+        if (f.size > 25 * 1024 * 1024) throw new Error(`${f.name}: groter dan 25 MB`);
+        await uploadAttachmentFile(inserted.id, f, f.name, f.type || null);
+      } catch (e) {
+        attachErrors++;
+        toast.error(e instanceof Error ? e.message : "Bijlage mislukt");
+      }
+    }
+    if (newTextNote.trim()) {
+      try {
+        const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+        const name = `notitie-${stamp}.txt`;
+        const blob = new Blob([newTextNote], { type: "text/plain;charset=utf-8" });
+        await uploadAttachmentFile(inserted.id, blob, name, "text/plain");
+      } catch (e) {
+        attachErrors++;
+        toast.error(e instanceof Error ? e.message : "Tekstnotitie opslaan mislukt");
+      }
+    }
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Uitgave opgeslagen");
+    toast.success(
+      attachErrors > 0
+        ? `Uitgave opgeslagen (${attachErrors} bijlage-fouten)`
+        : "Uitgave opgeslagen",
+    );
     resetForm();
     setOpen(false);
     void load();
   }
+
 
   async function deleteExpense(id: string) {
     if (!confirm("Uitgave verwijderen?")) return;
@@ -437,6 +497,69 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
     URL.revokeObjectURL(url);
   }
 
+  function exportExcel() {
+    if (filtered.length === 0) {
+      toast.error("Geen inkoopfacturen in de huidige selectie");
+      return;
+    }
+    const rows = filtered.map((e) => {
+      const j = journalByExpense.get(e.id);
+      return {
+        Datum: e.expense_date,
+        Leverancier: e.supplier,
+        Omschrijving: (e.description ?? "").replace(/[\r\n]+/g, " "),
+        Categorie: e.category ?? "",
+        Referentie: e.reference ?? "",
+        Betaalmethode: e.payment_method ?? "",
+        Betaalstatus: PAY_STATUS_LABEL[e.status] ?? e.status,
+        Boekingsstatus: JOURNAL_STATUS[e.journal_status ?? "not_posted"]?.label ?? e.journal_status ?? "",
+        "Bedrag excl.": Number(((e.amount_cents ?? 0) / 100).toFixed(2)),
+        "BTW %": e.vat_rate ?? 21,
+        BTW: Number(((e.vat_cents ?? 0) / 100).toFixed(2)),
+        Totaal: Number(((e.total_cents ?? 0) / 100).toFixed(2)),
+        "Betaald op": e.paid_at ? new Date(e.paid_at).toISOString().slice(0, 10) : "",
+        "Journaal-ID": j?.id ?? "",
+        "Interne ID": e.id,
+      };
+    });
+    const totalExcl = rows.reduce((s, r) => s + Number(r["Bedrag excl."] || 0), 0);
+    const totalVat = rows.reduce((s, r) => s + Number(r.BTW || 0), 0);
+    const totalSum = rows.reduce((s, r) => s + Number(r.Totaal || 0), 0);
+    const ws = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.sheet_add_aoa(
+      ws,
+      [[
+        "", "", "", "", "", "", "", "TOTAAL",
+        Number(totalExcl.toFixed(2)), "", Number(totalVat.toFixed(2)), Number(totalSum.toFixed(2)), "", "", "",
+      ]],
+      { origin: -1 },
+    );
+    ws["!cols"] = [
+      { wch: 11 }, { wch: 26 }, { wch: 40 }, { wch: 22 }, { wch: 14 }, { wch: 12 },
+      { wch: 14 }, { wch: 16 }, { wch: 12 }, { wch: 7 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 36 }, { wch: 36 },
+    ];
+    const meta = [
+      ["Inkoopfacturen — export"],
+      ["Organisatie", orgId],
+      ["Periode", `${dateFrom || "begin"} — ${dateTo || "nu"}`],
+      ["Filters", [
+        statusFilter !== "all" ? `Betaalstatus: ${PAY_STATUS_LABEL[statusFilter] ?? statusFilter}` : null,
+        journalFilter !== "all" ? `Boekingsstatus: ${JOURNAL_STATUS[journalFilter]?.label ?? journalFilter}` : null,
+        search ? `Zoek: "${search}"` : null,
+      ].filter(Boolean).join(" · ") || "Geen"],
+      ["Aantal regels", rows.length],
+      ["Gegenereerd", new Date().toLocaleString("nl-NL")],
+    ];
+    const wsMeta = XLSX.utils.aoa_to_sheet(meta);
+    wsMeta["!cols"] = [{ wch: 20 }, { wch: 60 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Inkoopfacturen");
+    XLSX.utils.book_append_sheet(wb, wsMeta, "Info");
+    const from = dateFrom || "begin";
+    const to = dateTo || new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `inkoopfacturen-${from}-tot-${to}.xlsx`);
+  }
+
   function escapeHtml(s: unknown): string {
     return String(s ?? "").replace(/[&<>"']/g, (c) =>
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] ?? c),
@@ -526,6 +649,7 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
               <FileDown className="mr-2 h-4 w-4" /> Export PDF (periode)
             </Button>
             <Button variant="outline" onClick={exportCSV}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
+            <Button variant="outline" onClick={exportExcel}><FileSpreadsheet className="mr-2 h-4 w-4" /> Export Excel</Button>
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
                 <Button><Plus className="mr-2 h-4 w-4" /> Nieuwe uitgave</Button>
@@ -602,6 +726,52 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
                 </div>
                 <div><Label>Referentie / factuurnr.</Label><Input value={form.reference} onChange={e => setForm({ ...form, reference: e.target.value })} /></div>
                 <div className="sm:col-span-2"><Label>Notitie</Label><Textarea rows={2} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
+                <div className="sm:col-span-2 space-y-2 rounded-md border border-dashed bg-muted/20 p-3">
+                  <Label className="flex items-center gap-2 text-sm">
+                    <Paperclip className="h-4 w-4" /> Bijlagen (PDF, afbeelding of ander bestand)
+                  </Label>
+                  <Input
+                    type="file"
+                    multiple
+                    accept="application/pdf,image/*,.pdf,.png,.jpg,.jpeg,.webp,.heic,.txt,.csv,.xlsx,.xls,.doc,.docx"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files ?? []);
+                      setNewFiles((prev) => [...prev, ...files]);
+                      e.target.value = "";
+                    }}
+                  />
+                  {newFiles.length > 0 && (
+                    <ul className="space-y-1 text-xs">
+                      {newFiles.map((f, i) => (
+                        <li key={`${f.name}-${i}`} className="flex items-center gap-2 rounded border bg-background px-2 py-1">
+                          <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="flex-1 truncate">{f.name}</span>
+                          <span className="text-muted-foreground">{(f.size / 1024).toFixed(0)} KB</span>
+                          <button
+                            type="button"
+                            onClick={() => setNewFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                            className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-destructive"
+                            aria-label="Verwijder bijlage"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <Label className="flex items-center gap-2 pt-1 text-sm">
+                    <FileText className="h-4 w-4" /> Tekst bij deze uitgave (wordt als .txt-bijlage opgeslagen)
+                  </Label>
+                  <Textarea
+                    rows={3}
+                    value={newTextNote}
+                    onChange={(e) => setNewTextNote(e.target.value)}
+                    placeholder="Bijv. gescande bon-inhoud, e-mailtekst van de leverancier, korte toelichting…"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Bijlagen verschijnen automatisch onder de inkoopfactuur, ook in <em>AI van Columbus — Boekhouding</em>.
+                  </p>
+                </div>
                 <div className="sm:col-span-2 rounded-md border bg-muted/40 p-3 text-sm">
                   <div className="flex justify-between"><span>Subtotaal</span><span className="tabular-nums">{EUR(amountCents)}</span></div>
                   <div className="flex justify-between"><span>BTW ({vatRate}%) — afgerond op centen</span><span className="tabular-nums">{EUR(vatCents)}</span></div>

@@ -7,8 +7,11 @@ import {
   ExternalLink,
   FileText,
   Loader2,
+  Lock,
   Paperclip,
+  Pencil,
   Receipt,
+  RefreshCw,
   Undo2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -27,6 +30,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -106,6 +117,21 @@ function ExpenseDetailPage() {
   const [loading, setLoading] = useState(true);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [downloadName, setDownloadName] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [reposting, setReposting] = useState(false);
+  const [editForm, setEditForm] = useState({
+    supplier: "",
+    description: "",
+    category: "",
+    expense_date: "",
+    reference: "",
+    payment_method: "bank",
+    status: "open" as "open" | "paid" | "reimbursed" | "cancelled",
+    notes: "",
+    amount: "",
+    vat_rate: 21 as number,
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -199,6 +225,93 @@ function ExpenseDetailPage() {
     setDownloadOpen(true);
   }
 
+  const journalStatus = expense?.journal_status ?? "not_posted";
+  const isLocked = journalStatus === "posted" || journalStatus === "pending";
+  const canRepost = journalStatus === "reversed" || journalStatus === "error";
+
+  function openEdit() {
+    if (!expense) return;
+    if (isLocked) {
+      toast.error("Deze inkoopfactuur is al geboekt. Boek eerst terug om te kunnen bewerken.");
+      return;
+    }
+    setEditForm({
+      supplier: expense.supplier ?? "",
+      description: expense.description ?? "",
+      category: expense.category ?? "",
+      expense_date: expense.expense_date,
+      reference: expense.reference ?? "",
+      payment_method: expense.payment_method ?? "bank",
+      status: (expense.status ?? "open") as typeof editForm.status,
+      notes: expense.notes ?? "",
+      amount: ((expense.amount_cents ?? 0) / 100).toString().replace(".", ","),
+      vat_rate: expense.vat_rate ? Number(expense.vat_rate) : 21,
+    });
+    setEditOpen(true);
+  }
+
+  async function saveEdit() {
+    if (!expense) return;
+    const amountNumber = Number(editForm.amount.replace(",", "."));
+    if (!Number.isFinite(amountNumber) || amountNumber <= 0) {
+      toast.error("Bedrag moet groter dan 0 zijn");
+      return;
+    }
+    const amountCents = Math.round(amountNumber * 100);
+    const vatRate = Number(editForm.vat_rate);
+    if (![0, 9, 21].includes(vatRate)) {
+      toast.error("BTW-tarief moet 0%, 9% of 21% zijn");
+      return;
+    }
+    const vatCents = Math.round(amountCents * (vatRate / 100));
+    const totalCents = amountCents + vatCents;
+    setEditSaving(true);
+    const { error } = await supabase
+      .from("expenses")
+      .update({
+        supplier: editForm.supplier.trim(),
+        description: editForm.description || null,
+        category: editForm.category || null,
+        expense_date: editForm.expense_date,
+        reference: editForm.reference || null,
+        payment_method: editForm.payment_method || null,
+        status: editForm.status,
+        paid_at: editForm.status === "paid" ? (expense.paid_at ?? new Date().toISOString()) : null,
+        notes: editForm.notes || null,
+        amount_cents: amountCents,
+        vat_cents: vatCents,
+        total_cents: totalCents,
+        vat_rate: vatRate,
+      })
+      .eq("id", expense.id);
+    setEditSaving(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Inkoopfactuur bijgewerkt");
+    setEditOpen(false);
+    void load();
+  }
+
+  async function repostToJournal() {
+    if (!expense) return;
+    setReposting(true);
+    try {
+      await supabase.from("expenses").update({ journal_status: "pending" }).eq("id", expense.id);
+      const { postExpenseJournal } = await import("@/lib/bookkeeping.functions");
+      await postExpenseJournal({ data: { expense_id: expense.id } });
+      toast.success("Opnieuw doorgeboekt in journaal");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Doorboeken mislukt";
+      await supabase.from("expenses").update({ journal_status: "error", journal_error: msg }).eq("id", expense.id);
+      toast.error(msg);
+    } finally {
+      setReposting(false);
+      void load();
+    }
+  }
+
   function downloadPdf() {
     if (!expense) return;
     const tpl = loadTemplate(expense.organization_id, user?.id ?? null);
@@ -283,12 +396,38 @@ function ExpenseDetailPage() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={openEdit}
+            disabled={isLocked}
+            title={isLocked ? "Al geboekt — eerst terugboeken" : "Concept bewerken"}
+          >
+            {isLocked ? <Lock className="mr-2 h-4 w-4" /> : <Pencil className="mr-2 h-4 w-4" />}
+            Bewerken
+          </Button>
+          {canRepost && (
+            <Button variant="outline" size="sm" onClick={repostToJournal} disabled={reposting}>
+              {reposting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+              Opnieuw doorboeken
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={openDownloadDialog}>
             <Download className="mr-2 h-4 w-4" /> PDF downloaden
           </Button>
         </div>
       </div>
+
+      {isLocked && (
+        <div className="flex items-start gap-2 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
+          <Lock className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>
+            Deze inkoopfactuur is <strong>{journalStatus === "posted" ? "geboekt in het journaal" : "in afwachting van boeking"}</strong>.
+            Bewerken is geblokkeerd zodat de journaalpost consistent blijft. Boek eerst terug via het overzicht om aanpassingen te maken.
+          </span>
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-lg border bg-card p-4">
@@ -567,6 +706,92 @@ function ExpenseDetailPage() {
             </Button>
             <Button onClick={downloadPdf}>
               <Download className="mr-2 h-4 w-4" /> Downloaden
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Inkoopfactuur bewerken</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <Label>Leverancier *</Label>
+              <Input value={editForm.supplier} onChange={(e) => setEditForm({ ...editForm, supplier: e.target.value })} />
+            </div>
+            <div>
+              <Label>Datum *</Label>
+              <Input type="date" value={editForm.expense_date} onChange={(e) => setEditForm({ ...editForm, expense_date: e.target.value })} />
+            </div>
+            <div className="sm:col-span-2">
+              <Label>Omschrijving</Label>
+              <Input value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
+            </div>
+            <div>
+              <Label>Categorie</Label>
+              <Input value={editForm.category} onChange={(e) => setEditForm({ ...editForm, category: e.target.value })} />
+            </div>
+            <div>
+              <Label>Referentie / factuurnr.</Label>
+              <Input value={editForm.reference} onChange={(e) => setEditForm({ ...editForm, reference: e.target.value })} />
+            </div>
+            <div>
+              <Label>Bedrag excl. BTW *</Label>
+              <Input inputMode="decimal" placeholder="0,00" value={editForm.amount} onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })} />
+            </div>
+            <div>
+              <Label>BTW %</Label>
+              <Select value={String(editForm.vat_rate)} onValueChange={(v) => setEditForm({ ...editForm, vat_rate: Number(v) })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="21">21%</SelectItem>
+                  <SelectItem value="9">9%</SelectItem>
+                  <SelectItem value="0">0%</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Betaalmethode</Label>
+              <Select value={editForm.payment_method} onValueChange={(v) => setEditForm({ ...editForm, payment_method: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bank">Bank</SelectItem>
+                  <SelectItem value="credit_card">Creditcard</SelectItem>
+                  <SelectItem value="cash">Contant</SelectItem>
+                  <SelectItem value="ideal">iDEAL</SelectItem>
+                  <SelectItem value="other">Overig</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Status</Label>
+              <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v as typeof editForm.status })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="open">Open</SelectItem>
+                  <SelectItem value="paid">Betaald</SelectItem>
+                  <SelectItem value="reimbursed">Vergoed</SelectItem>
+                  <SelectItem value="cancelled">Geannuleerd</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="sm:col-span-2">
+              <Label>Notitie</Label>
+              <Textarea rows={2} value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} />
+            </div>
+            {canRepost && (
+              <div className="sm:col-span-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">
+                Deze inkoopfactuur is eerder <strong>{journalStatus === "reversed" ? "teruggeboekt" : "op fout gezet"}</strong>.
+                Sluit dit venster en gebruik <em>Opnieuw doorboeken</em> om na wijzigingen weer in het journaal te plaatsen.
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Annuleren</Button>
+            <Button onClick={saveEdit} disabled={editSaving}>
+              {editSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Opslaan
             </Button>
           </DialogFooter>
         </DialogContent>
