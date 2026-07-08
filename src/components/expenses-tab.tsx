@@ -172,6 +172,8 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
       client_id: "", project_id: "",
       status: "open", notes: "",
     });
+    setNewFiles([]);
+    setNewTextNote("");
   }
 
   // --- Validatie & afronding ---
@@ -187,10 +189,34 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
   if (![0, 9, 21].includes(vatRate)) formErrors.push("BTW-tarief moet 0%, 9% of 21% zijn");
   if (amountCents + vatCents !== totalCents) formErrors.push("Totaal komt niet overeen met subtotaal + BTW");
 
+  async function uploadAttachmentFile(expenseId: string, file: File | Blob, fileName: string, mime: string | null) {
+    const safe = fileName.replace(/[^\w.\-]+/g, "_");
+    const path = `${orgId}/${expenseId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safe}`;
+    const up = await supabase.storage.from("expense-attachments").upload(path, file, {
+      contentType: mime ?? undefined,
+      upsert: false,
+    });
+    if (up.error) throw new Error(up.error.message);
+    const size = file instanceof File ? file.size : (file as Blob).size;
+    const ins = await supabase.from("expense_attachments").insert({
+      organization_id: orgId,
+      expense_id: expenseId,
+      storage_path: path,
+      file_name: fileName,
+      mime_type: mime,
+      size_bytes: size,
+      uploaded_by: userId,
+    });
+    if (ins.error) {
+      await supabase.storage.from("expense-attachments").remove([path]);
+      throw new Error(ins.error.message);
+    }
+  }
+
   async function saveExpense() {
     if (formErrors.length) { toast.error(formErrors[0]); return; }
     setSaving(true);
-    const { error } = await supabase.from("expenses").insert({
+    const { data: inserted, error } = await supabase.from("expenses").insert({
       organization_id: orgId,
       supplier: form.supplier.trim(),
       description: form.description || null,
@@ -208,14 +234,45 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
       paid_at: form.status === "paid" ? new Date().toISOString() : null,
       notes: form.notes || null,
       created_by: userId,
-    });
+    }).select("id").single();
+    if (error || !inserted) {
+      setSaving(false);
+      toast.error(error?.message ?? "Opslaan mislukt");
+      return;
+    }
+    // Bijlagen uploaden (PDF/afbeelding en/of tekst-notitie)
+    let attachErrors = 0;
+    for (const f of newFiles) {
+      try {
+        if (f.size > 25 * 1024 * 1024) throw new Error(`${f.name}: groter dan 25 MB`);
+        await uploadAttachmentFile(inserted.id, f, f.name, f.type || null);
+      } catch (e) {
+        attachErrors++;
+        toast.error(e instanceof Error ? e.message : "Bijlage mislukt");
+      }
+    }
+    if (newTextNote.trim()) {
+      try {
+        const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+        const name = `notitie-${stamp}.txt`;
+        const blob = new Blob([newTextNote], { type: "text/plain;charset=utf-8" });
+        await uploadAttachmentFile(inserted.id, blob, name, "text/plain");
+      } catch (e) {
+        attachErrors++;
+        toast.error(e instanceof Error ? e.message : "Tekstnotitie opslaan mislukt");
+      }
+    }
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Uitgave opgeslagen");
+    toast.success(
+      attachErrors > 0
+        ? `Uitgave opgeslagen (${attachErrors} bijlage-fouten)`
+        : "Uitgave opgeslagen",
+    );
     resetForm();
     setOpen(false);
     void load();
   }
+
 
   async function deleteExpense(id: string) {
     if (!confirm("Uitgave verwijderen?")) return;
