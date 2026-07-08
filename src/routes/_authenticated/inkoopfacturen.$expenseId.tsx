@@ -396,12 +396,38 @@ function ExpenseDetailPage() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={openEdit}
+            disabled={isLocked}
+            title={isLocked ? "Al geboekt — eerst terugboeken" : "Concept bewerken"}
+          >
+            {isLocked ? <Lock className="mr-2 h-4 w-4" /> : <Pencil className="mr-2 h-4 w-4" />}
+            Bewerken
+          </Button>
+          {canRepost && (
+            <Button variant="outline" size="sm" onClick={repostToJournal} disabled={reposting}>
+              {reposting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+              Opnieuw doorboeken
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={openDownloadDialog}>
             <Download className="mr-2 h-4 w-4" /> PDF downloaden
           </Button>
         </div>
       </div>
+
+      {isLocked && (
+        <div className="flex items-start gap-2 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
+          <Lock className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>
+            Deze inkoopfactuur is <strong>{journalStatus === "posted" ? "geboekt in het journaal" : "in afwachting van boeking"}</strong>.
+            Bewerken is geblokkeerd zodat de journaalpost consistent blijft. Boek eerst terug via het overzicht om aanpassingen te maken.
+          </span>
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-lg border bg-card p-4">
