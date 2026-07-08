@@ -117,6 +117,21 @@ function ExpenseDetailPage() {
   const [loading, setLoading] = useState(true);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [downloadName, setDownloadName] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [reposting, setReposting] = useState(false);
+  const [editForm, setEditForm] = useState({
+    supplier: "",
+    description: "",
+    category: "",
+    expense_date: "",
+    reference: "",
+    payment_method: "bank",
+    status: "open" as "open" | "paid" | "reimbursed" | "cancelled",
+    notes: "",
+    amount: "",
+    vat_rate: 21 as number,
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
