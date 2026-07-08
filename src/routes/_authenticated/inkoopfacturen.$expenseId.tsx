@@ -7,8 +7,11 @@ import {
   ExternalLink,
   FileText,
   Loader2,
+  Lock,
   Paperclip,
+  Pencil,
   Receipt,
+  RefreshCw,
   Undo2,
 } from "lucide-react";
 import { toast } from "sonner";
