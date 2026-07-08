@@ -649,6 +649,7 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
               <FileDown className="mr-2 h-4 w-4" /> Export PDF (periode)
             </Button>
             <Button variant="outline" onClick={exportCSV}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
+            <Button variant="outline" onClick={exportExcel}><FileSpreadsheet className="mr-2 h-4 w-4" /> Export Excel</Button>
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
                 <Button><Plus className="mr-2 h-4 w-4" /> Nieuwe uitgave</Button>
