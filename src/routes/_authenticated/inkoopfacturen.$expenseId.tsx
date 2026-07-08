@@ -710,6 +710,92 @@ function ExpenseDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Inkoopfactuur bewerken</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <Label>Leverancier *</Label>
+              <Input value={editForm.supplier} onChange={(e) => setEditForm({ ...editForm, supplier: e.target.value })} />
+            </div>
+            <div>
+              <Label>Datum *</Label>
+              <Input type="date" value={editForm.expense_date} onChange={(e) => setEditForm({ ...editForm, expense_date: e.target.value })} />
+            </div>
+            <div className="sm:col-span-2">
+              <Label>Omschrijving</Label>
+              <Input value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
+            </div>
+            <div>
+              <Label>Categorie</Label>
+              <Input value={editForm.category} onChange={(e) => setEditForm({ ...editForm, category: e.target.value })} />
+            </div>
+            <div>
+              <Label>Referentie / factuurnr.</Label>
+              <Input value={editForm.reference} onChange={(e) => setEditForm({ ...editForm, reference: e.target.value })} />
+            </div>
+            <div>
+              <Label>Bedrag excl. BTW *</Label>
+              <Input inputMode="decimal" placeholder="0,00" value={editForm.amount} onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })} />
+            </div>
+            <div>
+              <Label>BTW %</Label>
+              <Select value={String(editForm.vat_rate)} onValueChange={(v) => setEditForm({ ...editForm, vat_rate: Number(v) })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="21">21%</SelectItem>
+                  <SelectItem value="9">9%</SelectItem>
+                  <SelectItem value="0">0%</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Betaalmethode</Label>
+              <Select value={editForm.payment_method} onValueChange={(v) => setEditForm({ ...editForm, payment_method: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bank">Bank</SelectItem>
+                  <SelectItem value="credit_card">Creditcard</SelectItem>
+                  <SelectItem value="cash">Contant</SelectItem>
+                  <SelectItem value="ideal">iDEAL</SelectItem>
+                  <SelectItem value="other">Overig</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Status</Label>
+              <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v as typeof editForm.status })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="open">Open</SelectItem>
+                  <SelectItem value="paid">Betaald</SelectItem>
+                  <SelectItem value="reimbursed">Vergoed</SelectItem>
+                  <SelectItem value="cancelled">Geannuleerd</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="sm:col-span-2">
+              <Label>Notitie</Label>
+              <Textarea rows={2} value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} />
+            </div>
+            {canRepost && (
+              <div className="sm:col-span-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">
+                Deze inkoopfactuur is eerder <strong>{journalStatus === "reversed" ? "teruggeboekt" : "op fout gezet"}</strong>.
+                Sluit dit venster en gebruik <em>Opnieuw doorboeken</em> om na wijzigingen weer in het journaal te plaatsen.
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Annuleren</Button>
+            <Button onClick={saveEdit} disabled={editSaving}>
+              {editSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Opslaan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
