@@ -94,6 +94,8 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
   const [pdfName, setPdfName] = useState<string>("");
   const [periodPdfOpen, setPeriodPdfOpen] = useState(false);
   const [periodPdfName, setPeriodPdfName] = useState<string>("");
+  const [newFiles, setNewFiles] = useState<File[]>([]);
+  const [newTextNote, setNewTextNote] = useState<string>("");
 
   const load = useCallback(async () => {
     if (!orgId) return;
