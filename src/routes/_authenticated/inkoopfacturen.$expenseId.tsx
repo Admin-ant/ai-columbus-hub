@@ -225,6 +225,94 @@ function ExpenseDetailPage() {
     setDownloadOpen(true);
   }
 
+  const journalStatus = expense?.journal_status ?? "not_posted";
+  const isLocked = journalStatus === "posted" || journalStatus === "pending";
+  const canRepost = journalStatus === "reversed" || journalStatus === "error";
+
+  function openEdit() {
+    if (!expense) return;
+    if (isLocked) {
+      toast.error("Deze inkoopfactuur is al geboekt. Boek eerst terug om te kunnen bewerken.");
+      return;
+    }
+    setEditForm({
+      supplier: expense.supplier ?? "",
+      description: expense.description ?? "",
+      category: expense.category ?? "",
+      expense_date: expense.expense_date,
+      reference: expense.reference ?? "",
+      payment_method: expense.payment_method ?? "bank",
+      status: (expense.status ?? "open") as typeof editForm.status,
+      notes: expense.notes ?? "",
+      amount: ((expense.amount_cents ?? 0) / 100).toString().replace(".", ","),
+      vat_rate: expense.vat_rate ? Number(expense.vat_rate) : 21,
+    });
+    setEditOpen(true);
+  }
+
+  async function saveEdit() {
+    if (!expense) return;
+    const amountNumber = Number(editForm.amount.replace(",", "."));
+    if (!Number.isFinite(amountNumber) || amountNumber <= 0) {
+      toast.error("Bedrag moet groter dan 0 zijn");
+      return;
+    }
+    const amountCents = Math.round(amountNumber * 100);
+    const vatRate = Number(editForm.vat_rate);
+    if (![0, 9, 21].includes(vatRate)) {
+      toast.error("BTW-tarief moet 0%, 9% of 21% zijn");
+      return;
+    }
+    const vatCents = Math.round(amountCents * (vatRate / 100));
+    const totalCents = amountCents + vatCents;
+    setEditSaving(true);
+    const { error } = await supabase
+      .from("expenses")
+      .update({
+        supplier: editForm.supplier.trim(),
+        description: editForm.description || null,
+        category: editForm.category || null,
+        expense_date: editForm.expense_date,
+        reference: editForm.reference || null,
+        payment_method: editForm.payment_method || null,
+        status: editForm.status,
+        paid_at: editForm.status === "paid" ? (expense.paid_at ?? new Date().toISOString()) : null,
+        notes: editForm.notes || null,
+        amount_cents: amountCents,
+        vat_cents: vatCents,
+        total_cents: totalCents,
+        vat_rate: vatRate,
+        last_modified_by: user?.id ?? null,
+      })
+      .eq("id", expense.id);
+    setEditSaving(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Inkoopfactuur bijgewerkt");
+    setEditOpen(false);
+    void load();
+  }
+
+  async function repostToJournal() {
+    if (!expense) return;
+    setReposting(true);
+    try {
+      await supabase.from("expenses").update({ journal_status: "pending" }).eq("id", expense.id);
+      const { postExpenseJournal } = await import("@/lib/bookkeeping.functions");
+      await postExpenseJournal({ data: { expense_id: expense.id } });
+      toast.success("Opnieuw doorgeboekt in journaal");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Doorboeken mislukt";
+      await supabase.from("expenses").update({ journal_status: "error", journal_error: msg }).eq("id", expense.id);
+      toast.error(msg);
+    } finally {
+      setReposting(false);
+      void load();
+    }
+  }
+
   function downloadPdf() {
     if (!expense) return;
     const tpl = loadTemplate(expense.organization_id, user?.id ?? null);
