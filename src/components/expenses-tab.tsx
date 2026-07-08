@@ -497,6 +497,69 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
     URL.revokeObjectURL(url);
   }
 
+  function exportExcel() {
+    if (filtered.length === 0) {
+      toast.error("Geen inkoopfacturen in de huidige selectie");
+      return;
+    }
+    const rows = filtered.map((e) => {
+      const j = journalByExpense.get(e.id);
+      return {
+        Datum: e.expense_date,
+        Leverancier: e.supplier,
+        Omschrijving: (e.description ?? "").replace(/[\r\n]+/g, " "),
+        Categorie: e.category ?? "",
+        Referentie: e.reference ?? "",
+        Betaalmethode: e.payment_method ?? "",
+        Betaalstatus: PAY_STATUS_LABEL[e.status] ?? e.status,
+        Boekingsstatus: JOURNAL_STATUS[e.journal_status ?? "not_posted"]?.label ?? e.journal_status ?? "",
+        "Bedrag excl.": Number(((e.amount_cents ?? 0) / 100).toFixed(2)),
+        "BTW %": e.vat_rate ?? 21,
+        BTW: Number(((e.vat_cents ?? 0) / 100).toFixed(2)),
+        Totaal: Number(((e.total_cents ?? 0) / 100).toFixed(2)),
+        "Betaald op": e.paid_at ? new Date(e.paid_at).toISOString().slice(0, 10) : "",
+        "Journaal-ID": j?.id ?? "",
+        "Interne ID": e.id,
+      };
+    });
+    const totalExcl = rows.reduce((s, r) => s + Number(r["Bedrag excl."] || 0), 0);
+    const totalVat = rows.reduce((s, r) => s + Number(r.BTW || 0), 0);
+    const totalSum = rows.reduce((s, r) => s + Number(r.Totaal || 0), 0);
+    const ws = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.sheet_add_aoa(
+      ws,
+      [[
+        "", "", "", "", "", "", "", "TOTAAL",
+        Number(totalExcl.toFixed(2)), "", Number(totalVat.toFixed(2)), Number(totalSum.toFixed(2)), "", "", "",
+      ]],
+      { origin: -1 },
+    );
+    ws["!cols"] = [
+      { wch: 11 }, { wch: 26 }, { wch: 40 }, { wch: 22 }, { wch: 14 }, { wch: 12 },
+      { wch: 14 }, { wch: 16 }, { wch: 12 }, { wch: 7 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 36 }, { wch: 36 },
+    ];
+    const meta = [
+      ["Inkoopfacturen — export"],
+      ["Organisatie", orgId],
+      ["Periode", `${dateFrom || "begin"} — ${dateTo || "nu"}`],
+      ["Filters", [
+        statusFilter !== "all" ? `Betaalstatus: ${PAY_STATUS_LABEL[statusFilter] ?? statusFilter}` : null,
+        journalFilter !== "all" ? `Boekingsstatus: ${JOURNAL_STATUS[journalFilter]?.label ?? journalFilter}` : null,
+        search ? `Zoek: "${search}"` : null,
+      ].filter(Boolean).join(" · ") || "Geen"],
+      ["Aantal regels", rows.length],
+      ["Gegenereerd", new Date().toLocaleString("nl-NL")],
+    ];
+    const wsMeta = XLSX.utils.aoa_to_sheet(meta);
+    wsMeta["!cols"] = [{ wch: 20 }, { wch: 60 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Inkoopfacturen");
+    XLSX.utils.book_append_sheet(wb, wsMeta, "Info");
+    const from = dateFrom || "begin";
+    const to = dateTo || new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `inkoopfacturen-${from}-tot-${to}.xlsx`);
+  }
+
   function escapeHtml(s: unknown): string {
     return String(s ?? "").replace(/[&<>"']/g, (c) =>
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] ?? c),
