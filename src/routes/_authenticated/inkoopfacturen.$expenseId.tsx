@@ -282,7 +282,6 @@ function ExpenseDetailPage() {
         vat_cents: vatCents,
         total_cents: totalCents,
         vat_rate: vatRate,
-        last_modified_by: user?.id ?? null,
       })
       .eq("id", expense.id);
     setEditSaving(false);
