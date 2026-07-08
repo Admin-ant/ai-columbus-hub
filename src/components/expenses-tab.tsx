@@ -662,6 +662,52 @@ export function ExpensesTab({ orgId, userId }: { orgId: string; userId: string |
                 </div>
                 <div><Label>Referentie / factuurnr.</Label><Input value={form.reference} onChange={e => setForm({ ...form, reference: e.target.value })} /></div>
                 <div className="sm:col-span-2"><Label>Notitie</Label><Textarea rows={2} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
+                <div className="sm:col-span-2 space-y-2 rounded-md border border-dashed bg-muted/20 p-3">
+                  <Label className="flex items-center gap-2 text-sm">
+                    <Paperclip className="h-4 w-4" /> Bijlagen (PDF, afbeelding of ander bestand)
+                  </Label>
+                  <Input
+                    type="file"
+                    multiple
+                    accept="application/pdf,image/*,.pdf,.png,.jpg,.jpeg,.webp,.heic,.txt,.csv,.xlsx,.xls,.doc,.docx"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files ?? []);
+                      setNewFiles((prev) => [...prev, ...files]);
+                      e.target.value = "";
+                    }}
+                  />
+                  {newFiles.length > 0 && (
+                    <ul className="space-y-1 text-xs">
+                      {newFiles.map((f, i) => (
+                        <li key={`${f.name}-${i}`} className="flex items-center gap-2 rounded border bg-background px-2 py-1">
+                          <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="flex-1 truncate">{f.name}</span>
+                          <span className="text-muted-foreground">{(f.size / 1024).toFixed(0)} KB</span>
+                          <button
+                            type="button"
+                            onClick={() => setNewFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                            className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-destructive"
+                            aria-label="Verwijder bijlage"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <Label className="flex items-center gap-2 pt-1 text-sm">
+                    <FileText className="h-4 w-4" /> Tekst bij deze uitgave (wordt als .txt-bijlage opgeslagen)
+                  </Label>
+                  <Textarea
+                    rows={3}
+                    value={newTextNote}
+                    onChange={(e) => setNewTextNote(e.target.value)}
+                    placeholder="Bijv. gescande bon-inhoud, e-mailtekst van de leverancier, korte toelichting…"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Bijlagen verschijnen automatisch onder de inkoopfactuur, ook in <em>AI van Columbus — Boekhouding</em>.
+                  </p>
+                </div>
                 <div className="sm:col-span-2 rounded-md border bg-muted/40 p-3 text-sm">
                   <div className="flex justify-between"><span>Subtotaal</span><span className="tabular-nums">{EUR(amountCents)}</span></div>
                   <div className="flex justify-between"><span>BTW ({vatRate}%) — afgerond op centen</span><span className="tabular-nums">{EUR(vatCents)}</span></div>
