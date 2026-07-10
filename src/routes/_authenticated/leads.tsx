@@ -84,6 +84,7 @@ function LeadsPage() {
   const [stageFilter, setStageFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [periodFilter, setPeriodFilter] = useState<"7" | "30" | "90" | "all">("all");
+  const [sortBy, setSortBy] = useState<"created_desc" | "created_asc" | "name_asc" | "name_desc" | "company_asc" | "stage_asc" | "value_desc" | "value_asc">("created_desc");
   const [openLead, setOpenLead] = useState<Lead | null>(null);
   const [winLeadRow, setWinLeadRow] = useState<Lead | null>(null);
   const [loseLeadRow, setLoseLeadRow] = useState<Lead | null>(null);
@@ -151,17 +152,32 @@ function LeadsPage() {
     const now = Date.now();
     const cutoff =
       periodFilter === "all" ? 0 : now - Number(periodFilter) * 24 * 60 * 60 * 1000;
-    return rows.filter((r) => {
+    const list = rows.filter((r) => {
       if (stageFilter !== "all" && r.stage !== stageFilter) return false;
       if (sourceFilter !== "all" && (r.source ?? "") !== sourceFilter) return false;
       if (cutoff && new Date(r.created_at).getTime() < cutoff) return false;
       if (q) {
-        const hay = [r.name, r.company, r.email, r.phone, r.notes].filter(Boolean).join(" ").toLowerCase();
+        const hay = [r.name, r.company, r.stage, r.email, r.phone, r.notes].filter(Boolean).join(" ").toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
-  }, [rows, search, stageFilter, sourceFilter, periodFilter]);
+    const collator = new Intl.Collator("nl-NL", { numeric: true, sensitivity: "base" });
+    list.sort((a, b) => {
+      switch (sortBy) {
+        case "created_desc": return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case "created_asc": return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case "name_asc": return collator.compare(a.name, b.name);
+        case "name_desc": return collator.compare(b.name, a.name);
+        case "company_asc": return collator.compare(a.company ?? "", b.company ?? "");
+        case "stage_asc": return collator.compare(a.stage, b.stage);
+        case "value_desc": return (b.value ?? 0) - (a.value ?? 0);
+        case "value_asc": return (a.value ?? 0) - (b.value ?? 0);
+        default: return 0;
+      }
+    });
+    return list;
+  }, [rows, search, stageFilter, sourceFilter, periodFilter, sortBy]);
 
   const stats = useMemo(() => {
     const total = rows.length;
@@ -267,7 +283,7 @@ function LeadsPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Zoek op naam, bedrijf, email…"
+              placeholder="Zoek op naam, bedrijf of status…"
               className="pl-8"
             />
           </div>
@@ -292,6 +308,19 @@ function LeadsPage() {
               <SelectItem value="7">Laatste 7 dagen</SelectItem>
               <SelectItem value="30">Laatste 30 dagen</SelectItem>
               <SelectItem value="90">Laatste 90 dagen</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+            <SelectTrigger className="w-[190px]"><SelectValue placeholder="Sorteren" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="created_desc">Nieuwste eerst</SelectItem>
+              <SelectItem value="created_asc">Oudste eerst</SelectItem>
+              <SelectItem value="name_asc">Naam A-Z</SelectItem>
+              <SelectItem value="name_desc">Naam Z-A</SelectItem>
+              <SelectItem value="company_asc">Bedrijf A-Z</SelectItem>
+              <SelectItem value="stage_asc">Status A-Z</SelectItem>
+              <SelectItem value="value_desc">Waarde hoog-laag</SelectItem>
+              <SelectItem value="value_asc">Waarde laag-hoog</SelectItem>
             </SelectContent>
           </Select>
           <div className="text-xs text-muted-foreground ml-auto">
