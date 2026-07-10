@@ -372,6 +372,12 @@ function LeadsPage() {
           onCreated={() => { setCreateOpen(false); load(); }}
         />
 
+        <EditLeadDialog
+          lead={editLead}
+          onClose={() => setEditLead(null)}
+          onSaved={() => { setEditLead(null); load(); }}
+        />
+
 
         <WinLeadDialog
           lead={winLeadRow}
