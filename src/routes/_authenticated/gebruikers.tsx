@@ -174,6 +174,41 @@ function GebruikersPage() {
     }
   }
 
+  async function openTemplate() {
+    setTplOpen(true);
+    setTplLoading(true);
+    try {
+      const t = await fnGetTpl();
+      setTplSubject(t.subject);
+      setTplBody(t.body);
+      setTplDefaults(t.defaults);
+    } catch (e: any) {
+      toast.error("Sjabloon laden mislukt: " + e.message);
+    } finally {
+      setTplLoading(false);
+    }
+  }
+
+  async function saveTemplate(e: React.FormEvent) {
+    e.preventDefault();
+    setTplSaving(true);
+    try {
+      await fnSaveTpl({ data: { subject: tplSubject, body: tplBody } });
+      toast.success("Sjabloon opgeslagen");
+      setTplOpen(false);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setTplSaving(false);
+    }
+  }
+
+  function resetTemplate() {
+    if (!tplDefaults) return;
+    setTplSubject(tplDefaults.subject);
+    setTplBody(tplDefaults.body);
+  }
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex items-start justify-between gap-4">
