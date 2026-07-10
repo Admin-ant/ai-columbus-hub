@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   TrendingUp,
   Hourglass,
@@ -8,6 +8,8 @@ import {
   Users,
   FileSignature,
   Trophy,
+  Info,
+  Inbox,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -15,10 +17,24 @@ import {
   Bar,
   XAxis,
   YAxis,
-  Tooltip,
+  Tooltip as RTooltip,
   CartesianGrid,
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const EUR = new Intl.NumberFormat("nl-NL", {
   style: "currency",
@@ -30,6 +46,30 @@ const EUR2 = new Intl.NumberFormat("nl-NL", {
   currency: "EUR",
 });
 
+type PeriodKey = "30d" | "quarter" | "year" | "all";
+
+const PERIODS: { value: PeriodKey; label: string }[] = [
+  { value: "30d", label: "Laatste 30 dagen" },
+  { value: "quarter", label: "Dit kwartaal" },
+  { value: "year", label: "Dit jaar" },
+  { value: "all", label: "Alles" },
+];
+
+function periodRange(p: PeriodKey): { from: Date | null; label: string; months: number } {
+  const now = new Date();
+  if (p === "30d") {
+    return { from: new Date(now.getTime() - 30 * 864e5), label: "laatste 30 dagen", months: 1 };
+  }
+  if (p === "quarter") {
+    const qStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+    return { from: qStart, label: "dit kwartaal", months: 3 };
+  }
+  if (p === "year") {
+    return { from: new Date(now.getFullYear(), 0, 1), label: "dit jaar", months: 12 };
+  }
+  return { from: null, label: "alle tijd", months: 12 };
+}
+
 type Kpis = {
   mrr: number;
   pipeline: number;
@@ -37,11 +77,13 @@ type Kpis = {
   openCount: number;
   overdue: number;
   overdueCount: number;
-  paidThisMonth: number;
+  paidInPeriod: number;
   activeClients: number;
   activeContracts: number;
   winRate: number;
-  newLeads30d: number;
+  wonCount: number;
+  lostCount: number;
+  newLeads: number;
   stageCounts: Record<string, number>;
   monthly: { label: string; omzet: number }[];
 };
@@ -53,11 +95,13 @@ const EMPTY: Kpis = {
   openCount: 0,
   overdue: 0,
   overdueCount: 0,
-  paidThisMonth: 0,
+  paidInPeriod: 0,
   activeClients: 0,
   activeContracts: 0,
   winRate: 0,
-  newLeads30d: 0,
+  wonCount: 0,
+  lostCount: 0,
+  newLeads: 0,
   stageCounts: {},
   monthly: [],
 };
@@ -91,6 +135,9 @@ const STAGE_TONE: Record<string, string> = {
 export function DashboardOverview({ organizationId }: { organizationId: string | null }) {
   const [k, setK] = useState<Kpis>(EMPTY);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<PeriodKey>("30d");
+
+  const range = useMemo(() => periodRange(period), [period]);
 
   useEffect(() => {
     if (!organizationId) {
@@ -103,12 +150,10 @@ export function DashboardOverview({ organizationId }: { organizationId: string |
       const now = new Date();
       const today = now.toISOString().slice(0, 10);
       const curKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-        .toISOString()
-        .slice(0, 10);
-      const since30 = new Date(now.getTime() - 30 * 864e5).toISOString();
-      const since90 = new Date(now.getTime() - 90 * 864e5).toISOString();
-      const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1)
+      const fromIso = range.from ? range.from.toISOString() : "1970-01-01T00:00:00Z";
+      const fromDate = range.from ? range.from.toISOString().slice(0, 10) : "1970-01-01";
+      const monthsBack = Math.max(range.months, 6) - 1;
+      const chartStart = new Date(now.getFullYear(), now.getMonth() - monthsBack, 1)
         .toISOString()
         .slice(0, 10);
 
@@ -120,7 +165,7 @@ export function DashboardOverview({ organizationId }: { organizationId: string |
         contractsRes,
         wonRes,
         lostRes,
-        new30Res,
+        newLeadsRes,
         stageRes,
       ] = await Promise.all([
         supabase
@@ -138,7 +183,7 @@ export function DashboardOverview({ organizationId }: { organizationId: string |
           .select("total_cents,amount,paid_at,issue_date")
           .eq("organization_id", organizationId)
           .eq("status", "paid")
-          .gte("paid_at", sixMonthsAgo),
+          .gte("paid_at", chartStart),
         supabase
           .from("clients")
           .select("id", { count: "exact", head: true })
@@ -148,23 +193,40 @@ export function DashboardOverview({ organizationId }: { organizationId: string |
           .select("id", { count: "exact", head: true })
           .eq("organization_id", organizationId)
           .eq("status", "active"),
-        supabase
-          .from("leads")
-          .select("id", { count: "exact", head: true })
-          .eq("organization_id", organizationId)
-          .in("stage", ["gewonnen", "klant"])
-          .gte("updated_at", since90),
-        supabase
-          .from("leads")
-          .select("id", { count: "exact", head: true })
-          .eq("organization_id", organizationId)
-          .eq("stage", "verloren")
-          .gte("updated_at", since90),
-        supabase
-          .from("leads")
-          .select("id", { count: "exact", head: true })
-          .eq("organization_id", organizationId)
-          .gte("created_at", since30),
+        range.from
+          ? supabase
+              .from("leads")
+              .select("id", { count: "exact", head: true })
+              .eq("organization_id", organizationId)
+              .in("stage", ["gewonnen", "klant"])
+              .gte("updated_at", fromIso)
+          : supabase
+              .from("leads")
+              .select("id", { count: "exact", head: true })
+              .eq("organization_id", organizationId)
+              .in("stage", ["gewonnen", "klant"]),
+        range.from
+          ? supabase
+              .from("leads")
+              .select("id", { count: "exact", head: true })
+              .eq("organization_id", organizationId)
+              .eq("stage", "verloren")
+              .gte("updated_at", fromIso)
+          : supabase
+              .from("leads")
+              .select("id", { count: "exact", head: true })
+              .eq("organization_id", organizationId)
+              .eq("stage", "verloren"),
+        range.from
+          ? supabase
+              .from("leads")
+              .select("id", { count: "exact", head: true })
+              .eq("organization_id", organizationId)
+              .gte("created_at", fromIso)
+          : supabase
+              .from("leads")
+              .select("id", { count: "exact", head: true })
+              .eq("organization_id", organizationId),
         supabase
           .from("leads")
           .select("stage")
@@ -201,11 +263,10 @@ export function DashboardOverview({ organizationId }: { organizationId: string |
         }
       });
 
-      // Betaalde omzet deze maand
-      let paidThisMonth = 0;
-      // Bar chart: laatste 6 maanden
+      let paidInPeriod = 0;
+      const chartMonths = Math.max(range.months, 6);
       const monthly: { label: string; omzet: number; key: string }[] = [];
-      for (let i = 5; i >= 0; i--) {
+      for (let i = chartMonths - 1; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
         const label = d
@@ -216,11 +277,12 @@ export function DashboardOverview({ organizationId }: { organizationId: string |
       (paidRes.data ?? []).forEach((i: any) => {
         const cents =
           i.total_cents != null ? Number(i.total_cents) / 100 : Number(i.amount ?? 0);
-        const when = (i.paid_at ?? i.issue_date ?? "").slice(0, 7);
-        const bucket = monthly.find((m) => m.key === when);
+        const paidAt = (i.paid_at ?? i.issue_date ?? "").slice(0, 10);
+        const bucketKey = paidAt.slice(0, 7);
+        const bucket = monthly.find((m) => m.key === bucketKey);
         if (bucket) bucket.omzet += cents;
-        if (when === curKey || (i.paid_at && i.paid_at >= monthStart)) {
-          paidThisMonth += cents;
+        if (!range.from || paidAt >= fromDate) {
+          paidInPeriod += cents;
         }
       });
 
@@ -244,171 +306,239 @@ export function DashboardOverview({ organizationId }: { organizationId: string |
         openCount,
         overdue,
         overdueCount,
-        paidThisMonth,
+        paidInPeriod,
         activeClients: clientsRes.count ?? 0,
         activeContracts: contractsRes.count ?? 0,
         winRate,
-        newLeads30d: new30Res.count ?? 0,
+        wonCount,
+        lostCount,
+        newLeads: newLeadsRes.count ?? 0,
         stageCounts,
         monthly: monthly.map(({ label, omzet }) => ({ label, omzet })),
       });
       setLoading(false);
     })();
-  }, [organizationId]);
+  }, [organizationId, period, range]);
 
   const totalStage = Object.values(k.stageCounts).reduce((a, b) => a + b, 0);
   const stageEntries = Object.entries(k.stageCounts)
     .filter(([s]) => s !== "verloren")
     .sort((a, b) => b[1] - a[1]);
 
+  const hasAnyData =
+    k.mrr > 0 ||
+    k.pipeline > 0 ||
+    k.openInvoices > 0 ||
+    k.overdue > 0 ||
+    k.paidInPeriod > 0 ||
+    k.activeContracts > 0 ||
+    k.newLeads > 0 ||
+    totalStage > 0;
+
   return (
-    <div className="space-y-4">
-      {/* Primaire KPI's */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
-          label="Maandomzet (MRR)"
-          value={EUR2.format(k.mrr)}
-          icon={TrendingUp}
-          tone="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-          loading={loading}
-        />
-        <KpiCard
-          label="Pijplijn / maand"
-          value={EUR2.format(k.pipeline)}
-          icon={Hourglass}
-          tone="bg-blue-500/10 text-blue-600 dark:text-blue-400"
-          loading={loading}
-        />
-        <KpiCard
-          label="Openstaand"
-          value={EUR2.format(k.openInvoices)}
-          sub={`${k.openCount} factu${k.openCount === 1 ? "ur" : "ren"}`}
-          icon={AlertCircle}
-          tone="bg-amber-500/10 text-amber-600 dark:text-amber-400"
-          loading={loading}
-        />
-        <KpiCard
-          label="Achterstallig"
-          value={EUR2.format(k.overdue)}
-          sub={`${k.overdueCount} factu${k.overdueCount === 1 ? "ur" : "ren"}`}
-          icon={AlertTriangle}
-          tone="bg-red-500/10 text-red-600 dark:text-red-400"
-          loading={loading}
-        />
-      </div>
-
-      {/* Secundaire KPI's */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
-          label="Betaald deze maand"
-          value={EUR2.format(k.paidThisMonth)}
-          icon={Wallet}
-          tone="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-          loading={loading}
-        />
-        <KpiCard
-          label="Actieve contracten"
-          value={String(k.activeContracts)}
-          sub={`${k.activeClients} klanten`}
-          icon={FileSignature}
-          tone="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
-          loading={loading}
-        />
-        <KpiCard
-          label="Nieuwe leads (30d)"
-          value={String(k.newLeads30d)}
-          icon={Users}
-          tone="bg-sky-500/10 text-sky-600 dark:text-sky-400"
-          loading={loading}
-        />
-        <KpiCard
-          label="Winrate (90d)"
-          value={`${k.winRate}%`}
-          icon={Trophy}
-          tone="bg-amber-500/10 text-amber-600 dark:text-amber-400"
-          loading={loading}
-        />
-      </div>
-
-      {/* Charts */}
-      <div className="grid gap-3 lg:grid-cols-3">
-        <div className="rounded-lg border bg-card p-4 lg:col-span-2">
-          <div className="mb-3 flex items-center justify-between">
-            <div>
-              <div className="text-sm font-medium">Betaalde omzet</div>
-              <div className="text-xs text-muted-foreground">Laatste 6 maanden</div>
-            </div>
+    <TooltipProvider delayDuration={150}>
+      <div className="space-y-4">
+        {/* Header + period filter */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">Overzicht</h2>
+            <p className="text-xs text-muted-foreground">
+              Periode: {range.label}
+            </p>
           </div>
-          <div className="h-56">
-            {loading ? (
-              <div className="h-full w-full animate-pulse rounded-md bg-muted" />
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={k.monthly} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
-                  <XAxis dataKey="label" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <YAxis
-                    tick={{ fontSize: 11 }}
-                    axisLine={false}
-                    tickLine={false}
-                    tickFormatter={(v) => (v >= 1000 ? `€${Math.round(v / 1000)}k` : `€${v}`)}
-                  />
-                  <Tooltip
-                    formatter={(v: number) => EUR.format(v)}
-                    contentStyle={{
-                      background: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: 8,
-                      fontSize: 12,
-                    }}
-                  />
-                  <Bar dataKey="omzet" radius={[6, 6, 0, 0]} fill="hsl(var(--primary))" />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
+          <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PERIODS.map((p) => (
+                <SelectItem key={p.value} value={p.value}>
+                  {p.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <div className="rounded-lg border bg-card p-4">
-          <div className="mb-3">
-            <div className="text-sm font-medium">Leads per fase</div>
-            <div className="text-xs text-muted-foreground">
-              {totalStage} lead{totalStage === 1 ? "" : "s"} totaal
+        {/* Empty state */}
+        {!loading && !hasAnyData ? (
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-card p-12 text-center">
+            <Inbox className="mb-3 h-10 w-10 text-muted-foreground" />
+            <div className="text-sm font-medium">Nog geen data om te tonen</div>
+            <div className="mt-1 max-w-sm text-xs text-muted-foreground">
+              Voeg leads, klanten, contracten of facturen toe. De KPI's verschijnen zodra er activiteit is.
             </div>
           </div>
-          {loading ? (
-            <div className="h-48 animate-pulse rounded-md bg-muted" />
-          ) : stageEntries.length === 0 ? (
-            <div className="py-8 text-center text-sm text-muted-foreground">
-              Nog geen leads.
+        ) : (
+          <>
+            {/* Primaire KPI's */}
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <KpiCard
+                label="Maandomzet (MRR)"
+                value={EUR2.format(k.mrr)}
+                icon={TrendingUp}
+                tone="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                loading={loading}
+                info="Som van 'potential_monthly_value' van alle leads met stage 'klant' óf met een target-startdatum die vandaag of eerder ligt. Verloren leads tellen niet mee. Momentopname — periodefilter beïnvloedt dit niet."
+              />
+              <KpiCard
+                label="Pijplijn / maand"
+                value={EUR2.format(k.pipeline)}
+                icon={Hourglass}
+                tone="bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                loading={loading}
+                info="Som van maandwaarde van leads die nog niet 'klant' zijn en waarvan de startdatum in de toekomst ligt (of ontbreekt). Momentopname."
+              />
+              <KpiCard
+                label="Openstaand"
+                value={EUR2.format(k.openInvoices)}
+                sub={`${k.openCount} factu${k.openCount === 1 ? "ur" : "ren"}`}
+                icon={AlertCircle}
+                tone="bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                loading={loading}
+                info="Totaal van facturen met status 'draft' of 'sent' waarvan de vervaldatum nog niet is verstreken. Momentopname."
+              />
+              <KpiCard
+                label="Achterstallig"
+                value={EUR2.format(k.overdue)}
+                sub={`${k.overdueCount} factu${k.overdueCount === 1 ? "ur" : "ren"}`}
+                icon={AlertTriangle}
+                tone="bg-red-500/10 text-red-600 dark:text-red-400"
+                loading={loading}
+                info="Facturen met status 'overdue' of met een vervaldatum vóór vandaag (behalve concepten). Momentopname."
+              />
             </div>
-          ) : (
-            <div className="space-y-2">
-              {stageEntries.map(([stage, count]) => {
-                const max = Math.max(...stageEntries.map((e) => e[1]));
-                const pct = max > 0 ? (count / max) * 100 : 0;
-                return (
-                  <div key={stage} className="text-xs">
-                    <div className="mb-1 flex items-center justify-between">
-                      <span className="text-muted-foreground">
-                        {STAGE_LABEL[stage] ?? stage}
-                      </span>
-                      <span className="font-medium tabular-nums">{count}</span>
-                    </div>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className={`h-full ${STAGE_TONE[stage] ?? "bg-primary"}`}
-                        style={{ width: `${pct}%` }}
-                      />
+
+            {/* Secundaire KPI's — periode-afhankelijk */}
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <KpiCard
+                label={`Betaald (${range.label})`}
+                value={EUR2.format(k.paidInPeriod)}
+                icon={Wallet}
+                tone="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                loading={loading}
+                info={`Som van facturen met status 'paid' waarvan de betaaldatum binnen '${range.label}' valt.`}
+              />
+              <KpiCard
+                label="Actieve contracten"
+                value={String(k.activeContracts)}
+                sub={`${k.activeClients} klanten`}
+                icon={FileSignature}
+                tone="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
+                loading={loading}
+                info="Aantal contracten met status 'active'. Momentopname — periodefilter beïnvloedt dit niet."
+              />
+              <KpiCard
+                label={`Nieuwe leads (${range.label})`}
+                value={String(k.newLeads)}
+                icon={Users}
+                tone="bg-sky-500/10 text-sky-600 dark:text-sky-400"
+                loading={loading}
+                info={`Aantal leads aangemaakt binnen '${range.label}'.`}
+              />
+              <KpiCard
+                label={`Winrate (${range.label})`}
+                value={`${k.winRate}%`}
+                sub={`${k.wonCount} gewonnen · ${k.lostCount} verloren`}
+                icon={Trophy}
+                tone="bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                loading={loading}
+                info={`gewonnen / (gewonnen + verloren) × 100%. Gebaseerd op leads met stage 'gewonnen'/'klant' vs 'verloren', gewijzigd binnen '${range.label}'.`}
+              />
+            </div>
+
+            {/* Charts */}
+            <div className="grid gap-3 lg:grid-cols-3">
+              <div className="rounded-lg border bg-card p-4 lg:col-span-2">
+                <div className="mb-3 flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium">Betaalde omzet</div>
+                    <div className="text-xs text-muted-foreground">
+                      Laatste {Math.max(range.months, 6)} maanden
                     </div>
                   </div>
-                );
-              })}
+                </div>
+                <div className="h-56">
+                  {loading ? (
+                    <Skeleton className="h-full w-full" />
+                  ) : k.monthly.every((m) => m.omzet === 0) ? (
+                    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                      Nog geen betaalde facturen in deze periode.
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={k.monthly} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                        <XAxis dataKey="label" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                        <YAxis
+                          tick={{ fontSize: 11 }}
+                          axisLine={false}
+                          tickLine={false}
+                          tickFormatter={(v) => (v >= 1000 ? `€${Math.round(v / 1000)}k` : `€${v}`)}
+                        />
+                        <RTooltip
+                          formatter={(v: number) => EUR.format(v)}
+                          contentStyle={{
+                            background: "hsl(var(--card))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: 8,
+                            fontSize: 12,
+                          }}
+                        />
+                        <Bar dataKey="omzet" radius={[6, 6, 0, 0]} fill="hsl(var(--primary))" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-lg border bg-card p-4">
+                <div className="mb-3">
+                  <div className="text-sm font-medium">Leads per fase</div>
+                  <div className="text-xs text-muted-foreground">
+                    {totalStage} lead{totalStage === 1 ? "" : "s"} totaal
+                  </div>
+                </div>
+                {loading ? (
+                  <div className="space-y-3">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Skeleton key={i} className="h-4 w-full" />
+                    ))}
+                  </div>
+                ) : stageEntries.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-muted-foreground">
+                    Nog geen leads.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {stageEntries.map(([stage, count]) => {
+                      const max = Math.max(...stageEntries.map((e) => e[1]));
+                      const pct = max > 0 ? (count / max) * 100 : 0;
+                      return (
+                        <div key={stage} className="text-xs">
+                          <div className="mb-1 flex items-center justify-between">
+                            <span className="text-muted-foreground">
+                              {STAGE_LABEL[stage] ?? stage}
+                            </span>
+                            <span className="font-medium tabular-nums">{count}</span>
+                          </div>
+                          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                            <div
+                              className={`h-full ${STAGE_TONE[stage] ?? "bg-primary"}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
 
@@ -419,6 +549,7 @@ function KpiCard({
   icon: Icon,
   tone,
   loading,
+  info,
 }: {
   label: string;
   value: string;
@@ -426,21 +557,47 @@ function KpiCard({
   icon: typeof TrendingUp;
   tone: string;
   loading: boolean;
+  info?: string;
 }) {
   return (
     <div className="rounded-lg border bg-card p-4">
       <div className="flex items-center justify-between">
-        <div className="text-xs uppercase tracking-wide text-muted-foreground">
-          {label}
+        <div className="flex items-center gap-1.5">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">
+            {label}
+          </div>
+          {info && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={`Uitleg ${label}`}
+                  className="text-muted-foreground/60 transition hover:text-foreground"
+                >
+                  <Info className="h-3.5 w-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
+                {info}
+              </TooltipContent>
+            </Tooltip>
+          )}
         </div>
         <div className={`flex h-8 w-8 items-center justify-center rounded-md ${tone}`}>
           <Icon className="h-4 w-4" />
         </div>
       </div>
-      <div className="mt-2 text-2xl font-bold tabular-nums">
-        {loading ? "…" : value}
-      </div>
-      {sub && !loading && <div className="mt-1 text-xs text-muted-foreground">{sub}</div>}
+      {loading ? (
+        <>
+          <Skeleton className="mt-2 h-7 w-24" />
+          {sub !== undefined && <Skeleton className="mt-2 h-3 w-16" />}
+        </>
+      ) : (
+        <>
+          <div className="mt-2 text-2xl font-bold tabular-nums">{value}</div>
+          {sub && <div className="mt-1 text-xs text-muted-foreground">{sub}</div>}
+        </>
+      )}
     </div>
   );
 }
