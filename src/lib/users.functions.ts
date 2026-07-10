@@ -283,10 +283,91 @@ export const inviteUser = createServerFn({ method: "POST" })
     return { ok: true, id: newId };
   });
 
+const resendSchema = z.object({
+  userId: z.string().uuid(),
+  password: z.string().min(8).max(72).optional(),
+});
+
+export const resendInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => resendSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const got = await supabaseAdmin.auth.admin.getUserById(data.userId);
+    if (got.error || !got.data.user) throw new Error(got.error?.message || "Gebruiker niet gevonden");
+    const email = got.data.user.email;
+    if (!email) throw new Error("Gebruiker heeft geen e-mailadres");
+    const displayName =
+      (got.data.user.user_metadata as { full_name?: string } | null)?.full_name ||
+      email.split("@")[0];
+
+    // Reset password so the emailed temporary password is valid again.
+    const tempPassword =
+      data.password && data.password.length >= 8
+        ? data.password
+        : `Tmp-${Math.random().toString(36).slice(2, 8)}${Math.random().toString(36).slice(2, 6).toUpperCase()}!`;
+    const upd = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
+      password: tempPassword,
+    });
+    if (upd.error) throw new Error(upd.error.message);
+
+    // Build recovery link
+    const origin =
+      process.env.PUBLIC_APP_URL || process.env.APP_URL || "https://aiqloud.nl";
+    const redirectTo = `${origin.replace(/\/$/, "")}/reset-password`;
+    let resetLink = redirectTo;
+    try {
+      const link = await supabaseAdmin.auth.admin.generateLink({
+        type: "recovery",
+        email,
+        options: { redirectTo },
+      });
+      if (!link.error && link.data?.properties?.action_link) {
+        resetLink = link.data.properties.action_link;
+      }
+    } catch (e) {
+      console.warn("[resendInvite] generateLink mislukt", e);
+    }
+
+    // Load per-org template (same as inviteUser)
+    let tplSubject = DEFAULT_INVITE_SUBJECT;
+    let tplBody = DEFAULT_INVITE_BODY;
+    const orgId = await getCallerOrgId(context);
+    if (orgId) {
+      const { data: settings } = await supabaseAdmin
+        .from("mail_settings")
+        .select("invite_subject, invite_body")
+        .eq("organization_id", orgId)
+        .maybeSingle();
+      const s = settings as { invite_subject: string | null; invite_body: string | null } | null;
+      if (s?.invite_subject && s.invite_subject.trim()) tplSubject = s.invite_subject;
+      if (s?.invite_body && s.invite_body.trim()) tplBody = s.invite_body;
+    }
+
+    try {
+      await sendWelcomeEmail({
+        to: email,
+        displayName,
+        tempPassword,
+        resetLink,
+        subject: tplSubject,
+        body: tplBody,
+      });
+    } catch (e) {
+      console.warn("[resendInvite] welkomstmail fout", e);
+    }
+
+    return { ok: true };
+  });
+
 const passwordSchema = z.object({
   userId: z.string().uuid(),
   password: z.string().min(8).max(72),
 });
+
+
 
 export const updateUserPassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
