@@ -82,6 +82,10 @@ function LeadsPage() {
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [periodFilter, setPeriodFilter] = useState<"7" | "30" | "90" | "all">("all");
   const [openLead, setOpenLead] = useState<Lead | null>(null);
+  const [winLeadRow, setWinLeadRow] = useState<Lead | null>(null);
+  const [loseLeadRow, setLoseLeadRow] = useState<Lead | null>(null);
+  const fnWin = useServerFn(winLead);
+  const fnLose = useServerFn(loseLead);
 
   const load = useCallback(async () => {
     if (!currentOrganizationId) {
