@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import {
   TrendingUp,
   Hourglass,
@@ -10,6 +11,7 @@ import {
   Trophy,
   Info,
   Inbox,
+  ArrowRight,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -35,6 +37,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  PERIODS,
+  periodRange,
+  type PeriodKey,
+} from "@/lib/dashboard-period";
 
 const EUR = new Intl.NumberFormat("nl-NL", {
   style: "currency",
@@ -46,29 +53,6 @@ const EUR2 = new Intl.NumberFormat("nl-NL", {
   currency: "EUR",
 });
 
-type PeriodKey = "30d" | "quarter" | "year" | "all";
-
-const PERIODS: { value: PeriodKey; label: string }[] = [
-  { value: "30d", label: "Laatste 30 dagen" },
-  { value: "quarter", label: "Dit kwartaal" },
-  { value: "year", label: "Dit jaar" },
-  { value: "all", label: "Alles" },
-];
-
-function periodRange(p: PeriodKey): { from: Date | null; label: string; months: number } {
-  const now = new Date();
-  if (p === "30d") {
-    return { from: new Date(now.getTime() - 30 * 864e5), label: "laatste 30 dagen", months: 1 };
-  }
-  if (p === "quarter") {
-    const qStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
-    return { from: qStart, label: "dit kwartaal", months: 3 };
-  }
-  if (p === "year") {
-    return { from: new Date(now.getFullYear(), 0, 1), label: "dit jaar", months: 12 };
-  }
-  return { from: null, label: "alle tijd", months: 12 };
-}
 
 type Kpis = {
   mrr: number;
@@ -132,12 +116,20 @@ const STAGE_TONE: Record<string, string> = {
   verloren: "bg-red-500",
 };
 
-export function DashboardOverview({ organizationId }: { organizationId: string | null }) {
+export function DashboardOverview({
+  organizationId,
+  period,
+  onPeriodChange,
+}: {
+  organizationId: string | null;
+  period: PeriodKey;
+  onPeriodChange: (p: PeriodKey) => void;
+}) {
   const [k, setK] = useState<Kpis>(EMPTY);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState<PeriodKey>("30d");
 
   const range = useMemo(() => periodRange(period), [period]);
+
 
   useEffect(() => {
     if (!organizationId) {
@@ -346,7 +338,7 @@ export function DashboardOverview({ organizationId }: { organizationId: string |
               Periode: {range.label}
             </p>
           </div>
-          <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
+          <Select value={period} onValueChange={(v) => onPeriodChange(v as PeriodKey)}>
             <SelectTrigger className="w-[200px]">
               <SelectValue />
             </SelectTrigger>
@@ -374,6 +366,8 @@ export function DashboardOverview({ organizationId }: { organizationId: string |
             {/* Primaire KPI's */}
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <KpiCard
+                metric="mrr"
+                period={period}
                 label="Maandomzet (MRR)"
                 value={EUR2.format(k.mrr)}
                 icon={TrendingUp}
@@ -382,6 +376,8 @@ export function DashboardOverview({ organizationId }: { organizationId: string |
                 info="Som van 'potential_monthly_value' van alle leads met stage 'klant' óf met een target-startdatum die vandaag of eerder ligt. Verloren leads tellen niet mee. Momentopname — periodefilter beïnvloedt dit niet."
               />
               <KpiCard
+                metric="pipeline"
+                period={period}
                 label="Pijplijn / maand"
                 value={EUR2.format(k.pipeline)}
                 icon={Hourglass}
@@ -390,6 +386,8 @@ export function DashboardOverview({ organizationId }: { organizationId: string |
                 info="Som van maandwaarde van leads die nog niet 'klant' zijn en waarvan de startdatum in de toekomst ligt (of ontbreekt). Momentopname."
               />
               <KpiCard
+                metric="open"
+                period={period}
                 label="Openstaand"
                 value={EUR2.format(k.openInvoices)}
                 sub={`${k.openCount} factu${k.openCount === 1 ? "ur" : "ren"}`}
@@ -399,6 +397,8 @@ export function DashboardOverview({ organizationId }: { organizationId: string |
                 info="Totaal van facturen met status 'draft' of 'sent' waarvan de vervaldatum nog niet is verstreken. Momentopname."
               />
               <KpiCard
+                metric="overdue"
+                period={period}
                 label="Achterstallig"
                 value={EUR2.format(k.overdue)}
                 sub={`${k.overdueCount} factu${k.overdueCount === 1 ? "ur" : "ren"}`}
@@ -412,6 +412,8 @@ export function DashboardOverview({ organizationId }: { organizationId: string |
             {/* Secundaire KPI's — periode-afhankelijk */}
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <KpiCard
+                metric="paid"
+                period={period}
                 label={`Betaald (${range.label})`}
                 value={EUR2.format(k.paidInPeriod)}
                 icon={Wallet}
@@ -420,6 +422,8 @@ export function DashboardOverview({ organizationId }: { organizationId: string |
                 info={`Som van facturen met status 'paid' waarvan de betaaldatum binnen '${range.label}' valt.`}
               />
               <KpiCard
+                metric="contracts"
+                period={period}
                 label="Actieve contracten"
                 value={String(k.activeContracts)}
                 sub={`${k.activeClients} klanten`}
@@ -429,6 +433,8 @@ export function DashboardOverview({ organizationId }: { organizationId: string |
                 info="Aantal contracten met status 'active'. Momentopname — periodefilter beïnvloedt dit niet."
               />
               <KpiCard
+                metric="leads"
+                period={period}
                 label={`Nieuwe leads (${range.label})`}
                 value={String(k.newLeads)}
                 icon={Users}
@@ -437,6 +443,8 @@ export function DashboardOverview({ organizationId }: { organizationId: string |
                 info={`Aantal leads aangemaakt binnen '${range.label}'.`}
               />
               <KpiCard
+                metric="winrate"
+                period={period}
                 label={`Winrate (${range.label})`}
                 value={`${k.winRate}%`}
                 sub={`${k.wonCount} gewonnen · ${k.lostCount} verloren`}
@@ -542,7 +550,19 @@ export function DashboardOverview({ organizationId }: { organizationId: string |
   );
 }
 
+export type KpiMetric =
+  | "mrr"
+  | "pipeline"
+  | "open"
+  | "overdue"
+  | "paid"
+  | "contracts"
+  | "leads"
+  | "winrate";
+
 function KpiCard({
+  metric,
+  period,
   label,
   value,
   sub,
@@ -551,6 +571,8 @@ function KpiCard({
   loading,
   info,
 }: {
+  metric: KpiMetric;
+  period: PeriodKey;
   label: string;
   value: string;
   sub?: string;
@@ -560,7 +582,12 @@ function KpiCard({
   info?: string;
 }) {
   return (
-    <div className="rounded-lg border bg-card p-4">
+    <Link
+      to="/kpi/$metric"
+      params={{ metric }}
+      search={{ period }}
+      className="group block rounded-lg border bg-card p-4 text-left transition hover:border-primary/50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <div className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -572,6 +599,10 @@ function KpiCard({
                 <button
                   type="button"
                   aria-label={`Uitleg ${label}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
                   className="text-muted-foreground/60 transition hover:text-foreground"
                 >
                   <Info className="h-3.5 w-3.5" />
@@ -594,10 +625,14 @@ function KpiCard({
         </>
       ) : (
         <>
-          <div className="mt-2 text-2xl font-bold tabular-nums">{value}</div>
+          <div className="mt-2 flex items-center justify-between">
+            <div className="text-2xl font-bold tabular-nums">{value}</div>
+            <ArrowRight className="h-4 w-4 opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-60" />
+          </div>
           {sub && <div className="mt-1 text-xs text-muted-foreground">{sub}</div>}
         </>
       )}
-    </div>
+    </Link>
   );
 }
+
