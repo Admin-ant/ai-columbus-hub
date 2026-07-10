@@ -18,7 +18,9 @@ import {
   Pencil,
   LayoutGrid,
   Table as TableIcon,
+  Sparkles,
 } from "lucide-react";
+import { extractLeadFromText } from "@/lib/leads-ai.functions";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { z } from "zod";
@@ -1125,6 +1127,9 @@ function CreateLeadDialog({
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<LeadFormErrors>({});
+  const [aiText, setAiText] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const extractLeadFn = useServerFn(extractLeadFromText);
 
   useEffect(() => {
     if (open) {
@@ -1138,8 +1143,41 @@ function CreateLeadDialog({
       setValue("0");
       setNotes("");
       setErrors({});
+      setAiText("");
+      setAiLoading(false);
     }
   }, [open]);
+
+  async function runAiExtract() {
+    const text = aiText.trim();
+    if (!text) {
+      toast.error("Plak eerst wat tekst.");
+      return;
+    }
+    setAiLoading(true);
+    try {
+      const r = await extractLeadFn({ data: { text } });
+      let filled = 0;
+      if (r.name) { setName(r.name); filled++; }
+      if (r.company) { setCompany(r.company); filled++; }
+      if (r.contact_person) { setContactPerson(r.contact_person); filled++; }
+      if (r.email) { setEmail(r.email); filled++; }
+      if (r.phone) { setPhone(r.phone); filled++; }
+      if (r.source) { setSource(r.source); filled++; }
+      if (r.estimated_value_eur != null) { setValue(String(r.estimated_value_eur)); filled++; }
+      if (r.notes) { setNotes(r.notes); filled++; }
+      if (filled === 0) {
+        toast.warning("AI kon geen velden herkennen. Vul handmatig aan.");
+      } else {
+        toast.success(`AI heeft ${filled} veld${filled === 1 ? "" : "en"} ingevuld — controleer even.`);
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "AI-invullen mislukt");
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
 
   async function save() {
     if (!organizationId) {
@@ -1221,7 +1259,38 @@ function CreateLeadDialog({
           <DialogTitle>Nieuwe lead</DialogTitle>
           <DialogDescription>Voeg handmatig een lead toe aan de pipeline.</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-3 text-sm">
+        <div className="grid gap-3 text-sm max-h-[70vh] overflow-y-auto pr-1">
+          <div className="rounded-md border border-dashed bg-muted/40 p-3 grid gap-2">
+            <div className="flex items-center gap-2 text-xs font-medium">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              AI-invulhulp — plak tekst
+            </div>
+            <Textarea
+              rows={4}
+              placeholder="Plak hier een e-mail, LinkedIn-bericht, notitie of visitekaartje-tekst…"
+              value={aiText}
+              onChange={(e) => setAiText(e.target.value)}
+              disabled={aiLoading}
+            />
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">
+                AI vult de velden hieronder in. Je kunt daarna nog aanpassen.
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={runAiExtract}
+                disabled={aiLoading || !aiText.trim()}
+              >
+                {aiLoading ? (
+                  <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> Bezig…</>
+                ) : (
+                  <><Sparkles className="mr-1 h-3.5 w-3.5" /> AI invullen</>
+                )}
+              </Button>
+            </div>
+          </div>
           <div className="grid gap-1">
             <Label>Naam *</Label>
             <Input
