@@ -1259,7 +1259,38 @@ function CreateLeadDialog({
           <DialogTitle>Nieuwe lead</DialogTitle>
           <DialogDescription>Voeg handmatig een lead toe aan de pipeline.</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-3 text-sm">
+        <div className="grid gap-3 text-sm max-h-[70vh] overflow-y-auto pr-1">
+          <div className="rounded-md border border-dashed bg-muted/40 p-3 grid gap-2">
+            <div className="flex items-center gap-2 text-xs font-medium">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              AI-invulhulp — plak tekst
+            </div>
+            <Textarea
+              rows={4}
+              placeholder="Plak hier een e-mail, LinkedIn-bericht, notitie of visitekaartje-tekst…"
+              value={aiText}
+              onChange={(e) => setAiText(e.target.value)}
+              disabled={aiLoading}
+            />
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">
+                AI vult de velden hieronder in. Je kunt daarna nog aanpassen.
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={runAiExtract}
+                disabled={aiLoading || !aiText.trim()}
+              >
+                {aiLoading ? (
+                  <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> Bezig…</>
+                ) : (
+                  <><Sparkles className="mr-1 h-3.5 w-3.5" /> AI invullen</>
+                )}
+              </Button>
+            </div>
+          </div>
           <div className="grid gap-1">
             <Label>Naam *</Label>
             <Input
