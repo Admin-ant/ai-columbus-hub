@@ -710,24 +710,40 @@ function ExpenseDetailPage() {
           </div>
         ) : (
           <ul className="divide-y">
-            {attachments.map((a) => (
-              <li key={a.id} className="flex items-center gap-3 px-4 py-2">
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                <button
-                  onClick={() => void openAttachment(a)}
-                  className="flex-1 truncate text-left text-sm font-medium text-primary hover:underline"
-                >
-                  {a.file_name}
-                </button>
-                <span className="text-xs text-muted-foreground">
-                  {a.size_bytes ? `${(a.size_bytes / 1024).toFixed(0)} KB` : ""}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {new Date(a.created_at).toLocaleDateString("nl-NL")}
-                </span>
-              </li>
-            ))}
+            {attachments.map((a) => {
+              const isTextNote = a.mime_type === "text/plain" || a.file_name.endsWith(".txt");
+              return (
+                <li key={a.id} className="flex items-center gap-3 px-4 py-2">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <button
+                    onClick={() => void openAttachment(a)}
+                    className="flex-1 truncate text-left text-sm font-medium text-primary hover:underline"
+                    title={isTextNote ? "Tekstnotitie openen" : "Bijlage openen"}
+                  >
+                    {a.file_name}
+                  </button>
+                  <span className="text-xs text-muted-foreground">
+                    {a.size_bytes ? `${(a.size_bytes / 1024).toFixed(0)} KB` : ""}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(a.created_at).toLocaleDateString("nl-NL")}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void downloadAttachment(a)}
+                    title={isTextNote ? "Tekstnotitie downloaden" : "Bijlage downloaden"}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    <span className="hidden sm:inline">
+                      {isTextNote ? "Notitie" : "Bestand"}
+                    </span>
+                  </Button>
+                </li>
+              );
+            })}
           </ul>
+
         )}
       </div>
 
