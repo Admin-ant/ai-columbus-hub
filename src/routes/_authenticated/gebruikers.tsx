@@ -2,7 +2,7 @@ import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, UserPlus, KeyRound, Trash2, ShieldCheck, Shield, Mail, RotateCcw } from "lucide-react";
+import { Loader2, UserPlus, KeyRound, Trash2, ShieldCheck, Shield, Mail, RotateCcw, Send } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -13,6 +13,7 @@ import {
   deleteUser,
   getInviteTemplate,
   saveInviteTemplate,
+  resendInvite,
 } from "@/lib/users.functions";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -78,6 +79,8 @@ function GebruikersPage() {
   const fnDelete = useServerFn(deleteUser);
   const fnGetTpl = useServerFn(getInviteTemplate);
   const fnSaveTpl = useServerFn(saveInviteTemplate);
+  const fnResend = useServerFn(resendInvite);
+  const [resendingId, setResendingId] = useState<string | null>(null);
 
   // template editor
   const [tplOpen, setTplOpen] = useState(false);
@@ -173,6 +176,20 @@ function GebruikersPage() {
       toast.error(e.message);
     }
   }
+
+  async function handleResend(row: Row) {
+    setResendingId(row.id);
+    try {
+      await fnResend({ data: { userId: row.id } });
+      toast.success(`Uitnodiging opnieuw verstuurd naar ${row.email}`);
+    } catch (e: any) {
+      toast.error("Verzenden mislukt: " + e.message);
+    } finally {
+      setResendingId(null);
+    }
+  }
+
+
 
   async function openTemplate() {
     setTplOpen(true);
@@ -310,7 +327,20 @@ function GebruikersPage() {
                       >
                         {isAdmin ? <ShieldCheck className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => { setPwdUser(row); setNewPwd(""); }}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleResend(row)}
+                        disabled={resendingId === row.id}
+                        title="Uitnodiging opnieuw versturen"
+                      >
+                        {resendingId === row.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Send className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => { setPwdUser(row); setNewPwd(""); }} title="Wachtwoord aanpassen">
                         <KeyRound className="h-4 w-4" />
                       </Button>
                       <AlertDialog>
