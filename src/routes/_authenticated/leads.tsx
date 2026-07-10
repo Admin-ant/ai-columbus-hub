@@ -86,6 +86,7 @@ function LeadsPage() {
   const [openLead, setOpenLead] = useState<Lead | null>(null);
   const [winLeadRow, setWinLeadRow] = useState<Lead | null>(null);
   const [loseLeadRow, setLoseLeadRow] = useState<Lead | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
   const fnWin = useServerFn(winLead);
   const fnLose = useServerFn(loseLead);
 
