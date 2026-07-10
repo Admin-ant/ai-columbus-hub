@@ -21,6 +21,7 @@ import {
   ClipboardList,
   Mail,
   Inbox,
+  Mic,
 } from "lucide-react";
 
 import {
