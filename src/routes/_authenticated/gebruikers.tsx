@@ -79,6 +79,8 @@ function GebruikersPage() {
   const fnDelete = useServerFn(deleteUser);
   const fnGetTpl = useServerFn(getInviteTemplate);
   const fnSaveTpl = useServerFn(saveInviteTemplate);
+  const fnResend = useServerFn(resendInvite);
+  const [resendingId, setResendingId] = useState<string | null>(null);
 
   // template editor
   const [tplOpen, setTplOpen] = useState(false);
