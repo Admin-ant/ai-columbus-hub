@@ -42,12 +42,20 @@ const TIMING_OPTIONS = [
   { value: "no-date", label: "Zonder datum" },
 ];
 
-export function MonthlyPipelinePanel({ organizationId }: { organizationId: string | null }) {
+export function MonthlyPipelinePanel({
+  organizationId,
+  period = "all",
+}: {
+  organizationId: string | null;
+  period?: PeriodKey;
+}) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [stageFilter, setStageFilter] = useState("all");
   const [timingFilter, setTimingFilter] = useState("all");
+
+  const range = useMemo(() => periodRange(period), [period]);
 
   useEffect(() => {
     if (!organizationId) {
@@ -71,6 +79,11 @@ export function MonthlyPipelinePanel({ organizationId }: { organizationId: strin
     const now = new Date();
     const currentKey = monthKey(now);
     const quarterEnd = new Date(now.getFullYear(), now.getMonth() + 3, 0);
+    // Forward-looking window matching the period: 30d → +1 month, quarter → +3, year → +12, all → geen limiet
+    const upcomingEnd =
+      period === "all"
+        ? null
+        : new Date(now.getFullYear(), now.getMonth() + range.months, now.getDate());
     const q = search.trim().toLowerCase();
     return leads.filter((l) => {
       if (l.stage === "verloren") return false;
@@ -81,6 +94,8 @@ export function MonthlyPipelinePanel({ organizationId }: { organizationId: strin
       }
       const start = l.target_start_date ? new Date(l.target_start_date) : null;
       const isRunning = l.stage === "klant" || (start && monthKey(start) <= currentKey);
+      // Consistente periode-filter: toekomstige leads met start binnen periodevenster
+      if (!isRunning && upcomingEnd && start && start > upcomingEnd) return false;
       if (timingFilter === "running" && !isRunning) return false;
       if (timingFilter === "upcoming" && (isRunning || !start)) return false;
       if (timingFilter === "no-date" && start) return false;
@@ -89,7 +104,7 @@ export function MonthlyPipelinePanel({ organizationId }: { organizationId: strin
       }
       return true;
     });
-  }, [leads, search, stageFilter, timingFilter]);
+  }, [leads, search, stageFilter, timingFilter, period, range.months]);
 
   const { running, upcoming, totalRunning, totalUpcoming } = useMemo(() => {
     const now = new Date();
