@@ -210,6 +210,9 @@ function LeadsPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="mr-1 h-4 w-4" /> Nieuwe lead
+            </Button>
             <Button variant="outline" size="sm" onClick={exportCsv} disabled={filtered.length === 0}>
               <Download className="mr-1 h-4 w-4" /> Export CSV
             </Button>
