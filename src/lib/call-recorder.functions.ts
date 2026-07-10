@@ -349,23 +349,6 @@ export const listCallRecordings = createServerFn({ method: "POST" })
     };
   });
 
-/* ============================================================ get one */
-
-export const getCallRecording = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }): Promise<{ row: Record<string, string | number | boolean | null> }> => {
-    const { supabase } = context;
-    const { data: row, error } = await supabase
-      .from("call_recordings" as never)
-      .select("*")
-      .eq("id", data.id)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!row) throw new Error("Opname niet gevonden");
-    return row as unknown as Record<string, unknown>;
-  });
-
 /* ============================================================ signed url */
 
 export const getRecordingAudioUrl = createServerFn({ method: "POST" })
@@ -398,10 +381,26 @@ export const getRecordingAudioUrl = createServerFn({ method: "POST" })
 
 /* ============================================================ rules CRUD */
 
+export type CallRecorderRule = {
+  id: string;
+  organization_id: string;
+  name: string;
+  keywords: string[];
+  action_kind: "create_task" | "set_stage";
+  task_title: string | null;
+  task_body: string | null;
+  task_due_days: number;
+  target_stage: string | null;
+  priority: number;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 export const listCallRecorderRules = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ organization_id: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data, context }): Promise<{ rows: CallRecorderRule[] }> => {
     const { data: rows, error } = await context.supabase
       .from("call_recorder_rules" as never)
       .select("*")
@@ -409,8 +408,9 @@ export const listCallRecorderRules = createServerFn({ method: "POST" })
       .order("priority", { ascending: true })
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return { rows: (rows ?? []) as unknown as Array<Record<string, unknown>> };
+    return { rows: (rows ?? []) as unknown as CallRecorderRule[] };
   });
+
 
 export const upsertCallRecorderRule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
