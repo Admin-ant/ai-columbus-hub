@@ -1441,52 +1441,82 @@ export type Database = {
       }
       organizations: {
         Row: {
+          address_line1: string | null
+          address_line2: string | null
+          bic: string | null
           brand_accent_color: string | null
           brand_color: string | null
           brand_custom_domain: string | null
           brand_font: string | null
           brand_logo_url: string | null
           brand_primary_color: string | null
+          city: string | null
+          country: string | null
           created_at: string
+          email: string | null
+          iban: string | null
           id: string
           invoice_prefix: string
+          kvk_number: string | null
           logo_url: string | null
           name: string
           next_invoice_seq: number
+          phone: string | null
+          postal_code: string | null
           slug: string
           tax_number: string | null
           updated_at: string
         }
         Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          bic?: string | null
           brand_accent_color?: string | null
           brand_color?: string | null
           brand_custom_domain?: string | null
           brand_font?: string | null
           brand_logo_url?: string | null
           brand_primary_color?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
+          email?: string | null
+          iban?: string | null
           id?: string
           invoice_prefix: string
+          kvk_number?: string | null
           logo_url?: string | null
           name: string
           next_invoice_seq?: number
+          phone?: string | null
+          postal_code?: string | null
           slug: string
           tax_number?: string | null
           updated_at?: string
         }
         Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          bic?: string | null
           brand_accent_color?: string | null
           brand_color?: string | null
           brand_custom_domain?: string | null
           brand_font?: string | null
           brand_logo_url?: string | null
           brand_primary_color?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
+          email?: string | null
+          iban?: string | null
           id?: string
           invoice_prefix?: string
+          kvk_number?: string | null
           logo_url?: string | null
           name?: string
           next_invoice_seq?: number
+          phone?: string | null
+          postal_code?: string | null
           slug?: string
           tax_number?: string | null
           updated_at?: string

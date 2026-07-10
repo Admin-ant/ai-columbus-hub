@@ -385,12 +385,22 @@ function BrandTab({ orgId }: { orgId: string }) {
   const [logo, setLogo] = useState("");
   const [font, setFont] = useState("");
   const [domain, setDomain] = useState("");
+  const [addr1, setAddr1] = useState("");
+  const [addr2, setAddr2] = useState("");
+  const [postal, setPostal] = useState("");
+  const [city, setCity] = useState("");
+  const [country, setCountry] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [kvk, setKvk] = useState("");
+  const [iban, setIban] = useState("");
+  const [bic, setBic] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     (async () => {
       const { data } = await supabase.from("organizations")
-        .select("brand_primary_color, brand_accent_color, brand_logo_url, brand_font, brand_custom_domain")
+        .select("brand_primary_color, brand_accent_color, brand_logo_url, brand_font, brand_custom_domain, address_line1, address_line2, postal_code, city, country, email, phone, kvk_number, iban, bic")
         .eq("id", orgId).maybeSingle();
       if (data) {
         setPrimary(data.brand_primary_color ?? "");
@@ -398,6 +408,16 @@ function BrandTab({ orgId }: { orgId: string }) {
         setLogo(data.brand_logo_url ?? "");
         setFont(data.brand_font ?? "");
         setDomain(data.brand_custom_domain ?? "");
+        setAddr1(data.address_line1 ?? "");
+        setAddr2(data.address_line2 ?? "");
+        setPostal(data.postal_code ?? "");
+        setCity(data.city ?? "");
+        setCountry(data.country ?? "");
+        setEmail(data.email ?? "");
+        setPhone(data.phone ?? "");
+        setKvk(data.kvk_number ?? "");
+        setIban(data.iban ?? "");
+        setBic(data.bic ?? "");
       }
     })();
   }, [orgId]);
@@ -413,6 +433,16 @@ function BrandTab({ orgId }: { orgId: string }) {
           brand_logo_url: logo || null,
           brand_font: font || null,
           brand_custom_domain: domain || null,
+          address_line1: addr1 || null,
+          address_line2: addr2 || null,
+          postal_code: postal || null,
+          city: city || null,
+          country: country || null,
+          email: email || null,
+          phone: phone || null,
+          kvk_number: kvk || null,
+          iban: iban || null,
+          bic: bic || null,
         },
       });
       toast.success("Opgeslagen");
@@ -432,19 +462,29 @@ function BrandTab({ orgId }: { orgId: string }) {
           <div><Label>Logo URL</Label><Input value={logo} onChange={(e) => setLogo(e.target.value)} placeholder="https://..." /></div>
           <div><Label>Font (Google Font naam)</Label><Input value={font} onChange={(e) => setFont(e.target.value)} placeholder="Inter" /></div>
           <div><Label>Custom domein</Label><Input value={domain} onChange={(e) => setDomain(e.target.value)} placeholder="offertes.jouwbedrijf.nl" /></div>
-          <Button onClick={save} disabled={busy} className="w-full">{busy && <Loader2 className="size-4 mr-1 animate-spin" />}Opslaan</Button>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Preview</CardTitle></CardHeader>
-        <CardContent>
-          <div className="rounded-lg p-6 text-foreground" style={{ background: primary || "#0a0a0a", fontFamily: font || undefined }}>
-            {logo && <img src={logo} alt="logo" className="h-10 mb-4" />}
-            <h3 className="text-xl font-bold">Jouw merk</h3>
-            <p className="opacity-80 text-sm">Zo zien klanten je publieke offertes.</p>
-            <button className="mt-4 px-4 py-2 rounded font-medium text-foreground" style={{ background: accent || "#ff2bd6" }}>Accepteer offerte</button>
+        <CardHeader><CardTitle>Bedrijfsgegevens</CardTitle><CardDescription>Verschijnen op factuur-PDF's (adres, KvK, IBAN)</CardDescription></CardHeader>
+        <CardContent className="space-y-3">
+          <div><Label>Adres</Label><Input value={addr1} onChange={(e) => setAddr1(e.target.value)} placeholder="Straat 1" /></div>
+          <div><Label>Adres regel 2</Label><Input value={addr2} onChange={(e) => setAddr2(e.target.value)} placeholder="Optioneel" /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Postcode</Label><Input value={postal} onChange={(e) => setPostal(e.target.value)} /></div>
+            <div><Label>Plaats</Label><Input value={city} onChange={(e) => setCity(e.target.value)} /></div>
           </div>
+          <div><Label>Land</Label><Input value={country} onChange={(e) => setCountry(e.target.value)} placeholder="Nederland" /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>E-mail</Label><Input value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+            <div><Label>Telefoon</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
+          </div>
+          <div><Label>KvK-nummer</Label><Input value={kvk} onChange={(e) => setKvk(e.target.value)} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>IBAN</Label><Input value={iban} onChange={(e) => setIban(e.target.value)} placeholder="NL00 BANK 0000 0000 00" /></div>
+            <div><Label>BIC</Label><Input value={bic} onChange={(e) => setBic(e.target.value)} /></div>
+          </div>
+          <Button onClick={save} disabled={busy} className="w-full">{busy && <Loader2 className="size-4 mr-1 animate-spin" />}Opslaan</Button>
         </CardContent>
       </Card>
     </div>

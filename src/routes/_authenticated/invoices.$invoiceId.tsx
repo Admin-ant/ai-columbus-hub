@@ -72,6 +72,16 @@ type OrgRow = {
   id: string;
   name: string;
   tax_number: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  postal_code: string | null;
+  city: string | null;
+  country: string | null;
+  email: string | null;
+  phone: string | null;
+  kvk_number: string | null;
+  iban: string | null;
+  bic: string | null;
 };
 
 const STATUS_COLOR: Record<InvoiceStatus, string> = {
@@ -143,7 +153,7 @@ function InvoiceDetailPage() {
         .order("created_at", { ascending: false }),
       supabase
         .from("organizations")
-        .select("id,name,tax_number")
+        .select("id,name,tax_number,address_line1,address_line2,postal_code,city,country,email,phone,kvk_number,iban,bic")
         .eq("id", (inv as Invoice).organization_id)
         .maybeSingle(),
       (inv as Invoice).client_id
@@ -190,6 +200,19 @@ function InvoiceDetailPage() {
         : null,
       organization_name: org?.name ?? null,
       organization_vat: org?.tax_number ?? null,
+      organization_address: org
+        ? [
+            org.address_line1,
+            org.address_line2,
+            [org.postal_code, org.city].filter(Boolean).join(" "),
+            org.country,
+          ]
+            .filter(Boolean)
+            .join(", ")
+        : null,
+      organization_email: org?.email ?? null,
+      organization_kvk: org?.kvk_number ?? null,
+      organization_iban: org?.iban ?? null,
       subtotal_cents: invoice.subtotal_cents,
       vat_cents: invoice.vat_cents,
       total_cents: invoice.total_cents,
