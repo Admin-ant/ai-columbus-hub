@@ -200,6 +200,19 @@ function InvoiceDetailPage() {
         : null,
       organization_name: org?.name ?? null,
       organization_vat: org?.tax_number ?? null,
+      organization_address: org
+        ? [
+            org.address_line1,
+            org.address_line2,
+            [org.postal_code, org.city].filter(Boolean).join(" "),
+            org.country,
+          ]
+            .filter(Boolean)
+            .join(", ")
+        : null,
+      organization_email: org?.email ?? null,
+      organization_kvk: org?.kvk_number ?? null,
+      organization_iban: org?.iban ?? null,
       subtotal_cents: invoice.subtotal_cents,
       vat_cents: invoice.vat_cents,
       total_cents: invoice.total_cents,
