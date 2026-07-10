@@ -542,12 +542,20 @@ function ExpenseDetailPage() {
       )}
       {expense.notes && (
         <div className="rounded-lg border bg-card p-4">
-          <div className="text-xs uppercase tracking-wide text-muted-foreground">Notitie</div>
-          <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
-            {expense.notes}
-          </p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-wide text-muted-foreground">Notitie</div>
+              <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+                {expense.notes}
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={downloadNotes}>
+              <Download className="mr-2 h-4 w-4" /> Downloaden
+            </Button>
+          </div>
         </div>
       )}
+
 
       <div className="rounded-lg border bg-card">
         <div className="flex items-center justify-between border-b p-4">
