@@ -1,55 +1,58 @@
-## Status A+B traject
+# Sales Workflow — implementatieplan
 
-Ik heb de eerdere implementatie nagelopen — het complete A+B traject (Opportunities-pipeline + automatische klant/project/contract + maandelijkse facturatie) staat er al:
+Veel bouwstenen bestaan al (leads, quotes met publieke signeer-link, contracts, invoices, `generate_recurring_invoices` cron, Mollie iDEAL webhook, `convert_lead_to_customer` RPC). Ik voeg de ontbrekende schakels toe zonder bestaande logica te breken.
 
-- ✅ `contracts`, `contract_lines`, `recurring_invoice_runs` tabellen met RLS
-- ✅ `convert_lead_to_customer()` en `generate_recurring_invoices()` DB-functies
-- ✅ Trigger die `clients.monthly_value` bijwerkt vanuit actieve contracten
-- ✅ `winLead` / `loseLead` / contract-CRUD serverfuncties
-- ✅ `pg_cron` job `recurring-invoices-daily` (dagelijks 06:00) → `/api/public/hooks/recurring-invoices`
-- ✅ UI: "Gewonnen"/"Verloren" dialogs op /leads, /contracten overzicht + detailpagina, sidebar-item, Kanban-view
+## Wat je krijgt
 
-Er is dus niets meer nodig aan A+B zelf — dat traject is klaar.
+### 1. Nieuwe pagina `/sales-workflow`
+Één overzicht met de 5-stappen pipeline per lead:
 
-## Nieuwe wens: AI-plak-veld in "Nieuwe lead"
+```text
+[ Nieuwe leads ] → [ Klantwensen ] → [ Offerte/Contract ] → [ Ondertekend ] → [ Facturen & Abo ]
+```
 
-In het "Nieuwe lead"-dialog komt bovenaan een **AI-invulhulp**: je plakt losse tekst (mailtje, LinkedIn-bericht, visitekaartje-OCR, notitie) en de AI vult de formuliervelden voor je in.
+- Kolommen als kanban of tabel met filter (bron, status, periode).
+- Per lead-rij: knop naar bijbehorende Klantwensen / Offerte / Contract / Facturen.
+- KPI-strip bovenaan: aantal per fase, MRR uit lopende contracten, openstaand op eenmalige facturen.
 
-### Werking
+### 2. Klantwensen-stap (nieuw)
+Nieuwe tabel `client_requirements` (1-op-1 met lead) met:
+- `scope` (tekst, editable),
+- `one_time_cents`, `recurring_cents`, `currency`, `notes`.
 
-1. Bovenin het dialog een uitklapbare sectie **"AI-invulhulp — plak tekst"**:
-   - `Textarea` (min. 4 regels)
-   - Knop **"AI invullen"** (met sparkle-icoon)
-   - Kleine hint: _"Plak een e-mail, LinkedIn-bericht of notitie. AI vult de velden in — je kunt daarna nog aanpassen."_
-2. Bij klik roept de UI een nieuwe server-function `extractLeadFromText` aan.
-3. De AI (Lovable AI Gateway, model `google/gemini-3-flash-preview`) krijgt de tekst en levert gestructureerd JSON:
-   - `name`, `company`, `contact_person`, `email`, `phone`, `source` (moet mappen op bestaande bron-enum, anders leeg), `estimated_value_cents` (indien genoemd), `notes` (korte samenvatting).
-4. De teruggegeven velden vullen de bestaande form-inputs. Bestaande waarden worden overschreven; leeg blijft leeg. Toast: _"AI heeft X velden ingevuld — controleer even."_
-5. Foutafhandeling:
-   - 429 → toast "AI is druk, probeer opnieuw"
-   - 402 → toast "AI-credits op — vul credits aan in Instellingen"
-   - Overig → toast met foutmelding, form blijft onaangeroerd
+UI: knop op leaddetail "Klantwensen opstellen" → editable form (velden voorinvullen met AI-samenvatting uit `lead.transcript`/`description` via bestaande Lovable AI helper). Vanuit dit scherm knop **"Genereer offerte & contract"** → maakt quote + contract-concept met de bedragen uit deze requirements.
 
-### Technisch
+### 3. Auto-conversie bij ondertekening (nu pas bij paid)
+Nieuwe SECURITY DEFINER-functie `finalize_signed_quote(_quote_id)`:
+- Roept `convert_lead_to_customer` aan (client + project + contract).
+- Maakt direct één **eenmalige factuur** voor `one_time_cents` (status `sent`, Mollie iDEAL link via bestaande flow).
+- Activeert contract met `next_invoice_date = start_date` zodat bestaande `generate_recurring_invoices` cron de maandfacturen genereert (interne recurring, iDEAL per factuur — géén SEPA, per jouw keuze).
+- Trigger op `quotes` na UPDATE waarbij `signed_at` van NULL → gevuld, roept deze functie aan.
 
-- Nieuw bestand `src/lib/leads-ai.functions.ts` met `extractLeadFromText` (`createServerFn` + `requireSupabaseAuth`).
-- Gebruikt `createLovableAiGatewayProvider` uit bestaande `src/lib/ai-gateway.server.ts` (of maakt die aan als hij nog niet bestaat).
-- `generateText` met `Output.object` + kleine Zod-schema (geen bounds, alleen types + optional).
-- Bron-mapping doen we in code na de call: lowercase → matchen op bestaande source-lijst; anders `null`.
-- Input: `{ text: string }` (max 8000 chars, korter in code afkappen zodat we schema-bounds vermijden).
-- Alleen `src/routes/_authenticated/leads.tsx` `CreateDialog`-component wordt uitgebreid; overige leads-code blijft ongewijzigd.
+### 4. Behoud huidige Mollie iDEAL flow
+- Mollie subscriptions/SEPA blijven **uit**.
+- Elke maandfactuur uit de cron krijgt zoals nu een iDEAL-betaallink; klant betaalt handmatig per factuur.
+- Bestaande webhook `/api/public/hooks/mollie` blijft ongewijzigd.
 
-### Niet in deze stap
+## Technisch
 
-- Automatisch opslaan zonder bevestiging — je moet altijd nog op "Opslaan" klikken.
-- Bijlagen/afbeeldingen uploaden (alleen tekst plakken).
-- AI-invullen in het "Bewerken"-dialog (kan later, als je wil).
+**Nieuwe migratie:**
+- `client_requirements` tabel + GRANT + RLS (org-scoped via `has_org_access`).
+- `finalize_signed_quote(uuid)` RPC (SECURITY DEFINER).
+- Trigger `trg_quote_signed_finalize` op `quotes` AFTER UPDATE OF `signed_at`.
 
-### Acceptatie
+**Nieuwe server functions (`src/lib/sales-workflow.functions.ts`):**
+- `listSalesPipeline` — leads + requirements + quote + contract joined.
+- `upsertRequirements` — save Klantwensen.
+- `aiDraftRequirements` — Lovable AI genereert scope/bedragen uit lead-tekst.
+- `generateQuoteFromRequirements` — maakt quote + contract-concept.
 
-- Dialog "Nieuwe lead" toont AI-plakveld bovenaan.
-- Plakken + klikken vult naam/bedrijf/contact/e-mail/telefoon/bron/waarde in waar de AI die uit de tekst haalt.
-- Fouten (rate limit, credits, netwerk) tonen duidelijke toasts.
-- Build en lint blijven groen.
+**Nieuwe route:** `/_authenticated/sales-workflow.tsx` + sidebar-link.
+**Uitbreiding leaddetail:** knop "Klantwensen" op bestaande leads-pagina.
 
-Reageer met "start build" of geef aan wat je aangepast wil zien.
+## Wat NIET verandert
+- Bestaande quote-, contract-, factuur- en Mollie-code blijft intact.
+- Geen wijzigingen aan `client.ts`, `types.ts` handmatig — types worden na migratie hergegenereerd.
+- Geen edge functions; alles via TanStack `createServerFn`.
+
+Akkoord? Dan ga ik bouwen.
