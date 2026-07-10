@@ -18,7 +18,9 @@ import {
   Pencil,
   LayoutGrid,
   Table as TableIcon,
+  Sparkles,
 } from "lucide-react";
+import { extractLeadFromText } from "@/lib/leads-ai.functions";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { z } from "zod";
