@@ -1,77 +1,55 @@
-# Plan: Kanban-view voor /leads
+## Status A+B traject
 
-## Doel
-Vervang (of vul aan) de huidige leads-tabel door een visuele Kanban-pipeline met sleep-en-los kolommen, zodat je leads snel tussen fases kunt verplaatsen.
+Ik heb de eerdere implementatie nagelopen — het complete A+B traject (Opportunities-pipeline + automatische klant/project/contract + maandelijkse facturatie) staat er al:
 
-## Huidige situatie
-- `/leads` toont nu een tabel met filters, zoeken, sorteren, create/edit/win/lose dialogs.
-- `leads` tabel heeft al een `position` kolom (integer, default 0).
-- `@dnd-kit/core` + `@dnd-kit/sortable` zijn al geïnstalleerd en worden al gebruikt in `/outreach`.
-- Server functions `winLead` en `loseLead` bestaan al in `src/lib/pipeline.functions.ts`.
+- ✅ `contracts`, `contract_lines`, `recurring_invoice_runs` tabellen met RLS
+- ✅ `convert_lead_to_customer()` en `generate_recurring_invoices()` DB-functies
+- ✅ Trigger die `clients.monthly_value` bijwerkt vanuit actieve contracten
+- ✅ `winLead` / `loseLead` / contract-CRUD serverfuncties
+- ✅ `pg_cron` job `recurring-invoices-daily` (dagelijks 06:00) → `/api/public/hooks/recurring-invoices`
+- ✅ UI: "Gewonnen"/"Verloren" dialogs op /leads, /contracten overzicht + detailpagina, sidebar-item, Kanban-view
 
-## Wat we bouwen
+Er is dus niets meer nodig aan A+B zelf — dat traject is klaar.
 
-### 1. View-toggle op /leads
-- Twee tabs/knoppen boven de huidige filterbalk: **Tabel** (huidig) en **Kanban** (nieuw).
-- Standaard start op **Kanban** voor de visuele pipeline-ervaring.
-- Bestaande tabel blijft beschikbaar onder de Tabel-tab.
+## Nieuwe wens: AI-plak-veld in "Nieuwe lead"
 
-### 2. Kanban kolommen
-We groeperen de bestaande `lead_stage` waarden in 6 logische kolommen:
+In het "Nieuwe lead"-dialog komt bovenaan een **AI-invulhulp**: je plakt losse tekst (mailtje, LinkedIn-bericht, visitekaartje-OCR, notitie) en de AI vult de formuliervelden voor je in.
 
-| Kolom | Stages die erin vallen | Primaire stage bij drop |
-|-------|------------------------|-------------------------|
-| Nieuw | `nieuwe` | `nieuwe` |
-| Kwalificatie | `contact_opgenomen`, `in_contact` | `in_contact` |
-| Afspraak | `op_afspraak` | `op_afspraak` |
-| Offerte | `offerte_verzonden`, `in_afwachting`, `even_on_hold` | `offerte_verzonden` |
-| Gewonnen | `klant`, `gewonnen`, `ai_columbus` | `gewonnen` |
-| Verloren | `verloren` | `verloren` |
+### Werking
 
-- Per kolom: header met naam + aantal leads + kleurindicator.
-- Lege kolom toont een dashed "Sleep hier" placeholder.
+1. Bovenin het dialog een uitklapbare sectie **"AI-invulhulp — plak tekst"**:
+   - `Textarea` (min. 4 regels)
+   - Knop **"AI invullen"** (met sparkle-icoon)
+   - Kleine hint: _"Plak een e-mail, LinkedIn-bericht of notitie. AI vult de velden in — je kunt daarna nog aanpassen."_
+2. Bij klik roept de UI een nieuwe server-function `extractLeadFromText` aan.
+3. De AI (Lovable AI Gateway, model `google/gemini-3-flash-preview`) krijgt de tekst en levert gestructureerd JSON:
+   - `name`, `company`, `contact_person`, `email`, `phone`, `source` (moet mappen op bestaande bron-enum, anders leeg), `estimated_value_cents` (indien genoemd), `notes` (korte samenvatting).
+4. De teruggegeven velden vullen de bestaande form-inputs. Bestaande waarden worden overschreven; leeg blijft leeg. Toast: _"AI heeft X velden ingevuld — controleer even."_
+5. Foutafhandeling:
+   - 429 → toast "AI is druk, probeer opnieuw"
+   - 402 → toast "AI-credits op — vul credits aan in Instellingen"
+   - Overig → toast met foutmelding, form blijft onaangeroerd
 
-### 3. Lead-kaarten
-Elke kaart toont:
-- Naam (bold)
-- Bedrijf (indien aanwezig)
-- Geschatte waarde (€ p/m)
-- Bron-badge
-- Contacthint (e-mail en/of telefoon icoon)
-- Snelle actie-knoppen: Bewerken, Gewonnen, Verloren, Details
+### Technisch
 
-### 4. Drag-and-drop gedrag
-- **Tussen kolommen slepen**: update `stage` naar de primaire stage van de doelkolom en `position` naar het einde van die kolom.
-- **Binnen kolom slepen**: herorden kaarten door `position` opnieuw toe te wijzen (stap van 1000, zodat er later makkelijk tussen geplaatst kan worden).
-- **Optimistic UI**: kaart verplaatst direct visueel; database update op de achtergrond. Bij fout wordt de lijst herladen.
-- **Sensor**: `PointerSensor` met 4px activation constraint (zoals in `/outreach`).
+- Nieuw bestand `src/lib/leads-ai.functions.ts` met `extractLeadFromText` (`createServerFn` + `requireSupabaseAuth`).
+- Gebruikt `createLovableAiGatewayProvider` uit bestaande `src/lib/ai-gateway.server.ts` (of maakt die aan als hij nog niet bestaat).
+- `generateText` met `Output.object` + kleine Zod-schema (geen bounds, alleen types + optional).
+- Bron-mapping doen we in code na de call: lowercase → matchen op bestaande source-lijst; anders `null`.
+- Input: `{ text: string }` (max 8000 chars, korter in code afkappen zodat we schema-bounds vermijden).
+- Alleen `src/routes/_authenticated/leads.tsx` `CreateDialog`-component wordt uitgebreid; overige leads-code blijft ongewijzigd.
 
-### 5. Filters blijven werken
-- Zoeken, bron-filter, periode-filter en status-filter werken ook in Kanban-view.
-- Sorteeroptie is alleen relevant in Tabel-view; in Kanban-view wordt op `position` binnen de kolom gesorteerd.
+### Niet in deze stap
 
-### 6. Behoud bestaande functionaliteit
-- "Nieuwe lead" knop, Create/Edit dialogs, Win/Lose dialogs en Detail-dialog blijven exact zoals ze nu zijn.
-- Realtime Supabase subscription blijft actief, zodat wijzigingen vanuit andere pagina's direct zichtbaar zijn.
+- Automatisch opslaan zonder bevestiging — je moet altijd nog op "Opslaan" klikken.
+- Bijlagen/afbeeldingen uploaden (alleen tekst plakken).
+- AI-invullen in het "Bewerken"-dialog (kan later, als je wil).
 
-### 7. Technische aanpak
-- Hergebruik `@dnd-kit/core` componenten (`DndContext`, `useDraggable`, `useDroppable`) volgens het patroon in `src/routes/_authenticated/outreach.index.tsx`.
-- Geen nieuwe server functions nodig voor het verplaatsen; we gebruiken direct `supabase.from("leads").update()` (zoals de huidige `changeStage` al doet).
-- Voor herordening binnen een kolom voegen we een kleine helper toe die `position` herberekent.
-- Geen database-migratie nodig: `position` bestaat al.
+### Acceptatie
 
-### 8. Bestanden die wijzigen
-- `src/routes/_authenticated/leads.tsx` — uitbreiden met Kanban-view, view-toggle en DnD helpers.
-
-## Niet in deze fase
-- Volledig herontwerp van de kaart-styling (we houden het compact en functioneel).
-- Automatische acties bij stage-wijziging (zoals e-mail versturen) — dat komt later.
-
-## Acceptatie
-- Gebruiker kan schakelen tussen Tabel en Kanban.
-- Gebruiker kan een lead van de ene kolom naar de andere slepen; stage wordt opgeslagen.
-- Gebruiker kan kaarten binnen een kolom herordenen.
-- Zoeken en filters werken in beide views.
-- TypeScript build en lint blijven groen.
+- Dialog "Nieuwe lead" toont AI-plakveld bovenaan.
+- Plakken + klikken vult naam/bedrijf/contact/e-mail/telefoon/bron/waarde in waar de AI die uit de tekst haalt.
+- Fouten (rate limit, credits, netwerk) tonen duidelijke toasts.
+- Build en lint blijven groen.
 
 Reageer met "start build" of geef aan wat je aangepast wil zien.
