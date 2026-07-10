@@ -310,6 +310,19 @@ function LeadsPage() {
               <SelectItem value="90">Laatste 90 dagen</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+            <SelectTrigger className="w-[190px]"><SelectValue placeholder="Sorteren" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="created_desc">Nieuwste eerst</SelectItem>
+              <SelectItem value="created_asc">Oudste eerst</SelectItem>
+              <SelectItem value="name_asc">Naam A-Z</SelectItem>
+              <SelectItem value="name_desc">Naam Z-A</SelectItem>
+              <SelectItem value="company_asc">Bedrijf A-Z</SelectItem>
+              <SelectItem value="stage_asc">Status A-Z</SelectItem>
+              <SelectItem value="value_desc">Waarde hoog-laag</SelectItem>
+              <SelectItem value="value_asc">Waarde laag-hoog</SelectItem>
+            </SelectContent>
+          </Select>
           <div className="text-xs text-muted-foreground ml-auto">
             {filtered.length} van {rows.length}
           </div>
