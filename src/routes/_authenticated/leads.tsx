@@ -283,7 +283,7 @@ function LeadsPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Zoek op naam, bedrijf, email…"
+              placeholder="Zoek op naam, bedrijf of status…"
               className="pl-8"
             />
           </div>
