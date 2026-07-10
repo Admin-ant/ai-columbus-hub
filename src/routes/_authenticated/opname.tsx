@@ -739,6 +739,17 @@ function OpnamePage() {
         }}
         createLead={createLead}
       />
+      <QuickClientDialog
+        open={newClientOpen}
+        onOpenChange={setNewClientOpen}
+        orgId={currentOrganizationId}
+        onCreated={(client) => {
+          const t: Target = { kind: "client", id: client.id, label: client.name, sublabel: client.contact_person ?? undefined };
+          setClients((prev) => [t, ...prev]);
+          setSelectedKey(`client:${client.id}`);
+        }}
+        createClient={createClient}
+      />
     </div>
   );
 }
