@@ -136,7 +136,7 @@ function OpnamePage() {
       ]);
       if (!alive) return;
       setLeads(
-        (leadsRes.data ?? []).map((l) => ({
+        (leadsRes.data ?? []).map((l: { id: string; name: string; company: string | null }) => ({
           kind: "lead" as const,
           id: l.id,
           label: l.name,
@@ -144,7 +144,7 @@ function OpnamePage() {
         })),
       );
       setClients(
-        (clientsRes.data ?? []).map((c) => ({
+        (clientsRes.data ?? []).map((c: { id: string; name: string; contact_person: string | null }) => ({
           kind: "client" as const,
           id: c.id,
           label: c.name,
