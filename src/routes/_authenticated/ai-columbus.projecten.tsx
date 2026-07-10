@@ -538,7 +538,7 @@ function ProjectsDashboardPage() {
               </thead>
               <tbody>
                 {filtered.length === 0 && (
-                  <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">Geen projecten met deze filters.</td></tr>
+                  <tr><td colSpan={10} className="px-4 py-8 text-center text-muted-foreground">Geen projecten met deze filters.</td></tr>
                 )}
                 {filtered.map((r) => {
                   const prof = r.last_modified_by ? profiles[r.last_modified_by] : null;
