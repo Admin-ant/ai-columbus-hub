@@ -3181,7 +3181,13 @@ export type Database = {
         | "contract_verstuurd"
         | "contract_getekend"
         | "on_hold"
-      quote_event_type: "viewed" | "signed" | "paid" | "invoice_created"
+      quote_event_type:
+        | "viewed"
+        | "signed"
+        | "paid"
+        | "invoice_created"
+        | "converted"
+        | "convert_error"
       quote_status:
         | "draft"
         | "sent"
@@ -3353,7 +3359,14 @@ export const Constants = {
         "contract_getekend",
         "on_hold",
       ],
-      quote_event_type: ["viewed", "signed", "paid", "invoice_created"],
+      quote_event_type: [
+        "viewed",
+        "signed",
+        "paid",
+        "invoice_created",
+        "converted",
+        "convert_error",
+      ],
       quote_status: [
         "draft",
         "sent",
