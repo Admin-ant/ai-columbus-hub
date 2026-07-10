@@ -330,7 +330,7 @@ export const listCallRecordings = createServerFn({ method: "POST" })
     const { supabase } = context;
     let q = supabase
       .from("call_recordings" as never)
-      .select("id, title, summary, status, progress_stage, duration_seconds, tasks_created, suggested_stage, workflow_stage, lead_id, client_id, transcript, created_at, finalized_at")
+      .select("id, title, summary, status, progress_stage, duration_seconds, tasks_created, suggested_stage, workflow_stage, lead_id, client_id, transcript, report_markdown, created_at, finalized_at")
       .eq("organization_id", data.organization_id)
       .order("created_at", { ascending: false })
       .limit(data.limit);
@@ -344,6 +344,7 @@ export const listCallRecordings = createServerFn({ method: "POST" })
         progress_stage: string | null; duration_seconds: number | null; tasks_created: number;
         suggested_stage: string | null; workflow_stage: string | null;
         lead_id: string | null; client_id: string | null; transcript: string | null;
+        report_markdown: string | null;
         created_at: string; finalized_at: string | null;
       }>,
     };

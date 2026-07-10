@@ -28,6 +28,7 @@ import {
   createCallRecording, processCallRecording, finalizeCallRecording,
   listCallRecordings, quickCreateLead, getRecordingAudioUrl,
 } from "@/lib/call-recorder.functions";
+import { exportCallRecordingPdf, exportCallRecordingsBundle } from "@/lib/call-recording-pdf";
 
 export const Route = createFileRoute("/_authenticated/opname")({
   head: () => ({ meta: [{ title: "AI Gesprek Recorder" }] }),
@@ -643,10 +644,21 @@ function OpnamePage() {
         <CardHeader className="pb-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle className="text-base">Gespreksgeschiedenis</CardTitle>
-            <div className="flex gap-1">
+            <div className="flex flex-wrap gap-1">
               <Button variant={historyFilter === "all" ? "default" : "outline"} size="sm" onClick={() => setHistoryFilter("all")}>Alle</Button>
               <Button variant={historyFilter === "current" ? "default" : "outline"} size="sm" onClick={() => setHistoryFilter("current")} disabled={!selectedTarget}>
                 {selectedTarget ? selectedTarget.label : "Deze klant/lead"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={history.length === 0}
+                onClick={() => {
+                  const label = historyFilter === "current" && selectedTarget ? selectedTarget.label : "alle";
+                  exportCallRecordingsBundle(history, label);
+                }}
+              >
+                <Download className="mr-1 h-4 w-4" /> Export PDF ({history.length})
               </Button>
             </div>
           </div>
@@ -686,10 +698,18 @@ function OpnamePage() {
                             <div className="mt-2 whitespace-pre-wrap rounded bg-background p-2 font-mono text-xs">{h.transcript}</div>
                           </details>
                         )}
-                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                           <Badge variant="outline">{h.tasks_created} taken</Badge>
                           {h.suggested_stage && <Badge variant="outline">fase: {h.suggested_stage}</Badge>}
                           {h.duration_seconds && <Badge variant="outline">{formatDuration(h.duration_seconds)}</Badge>}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="ml-auto h-7"
+                            onClick={(e) => { e.stopPropagation(); exportCallRecordingPdf(h, selectedTarget?.label ?? null); }}
+                          >
+                            <Download className="mr-1 h-3 w-3" /> PDF
+                          </Button>
                         </div>
                       </div>
                     )}
