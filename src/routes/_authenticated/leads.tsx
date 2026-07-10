@@ -230,6 +230,33 @@ function LeadsPage() {
           <StatCard label="Klant / gewonnen" value={stats.klant} />
         </div>
 
+        <div className="flex flex-wrap gap-2">
+          {[
+            { key: "all", label: "Alle" },
+            { key: "nieuwe", label: "Nieuw" },
+            { key: "in_contact", label: "Kwalificatie" },
+            { key: "offerte_verzonden", label: "Offerte" },
+            { key: "gewonnen", label: "Gewonnen" },
+            { key: "verloren", label: "Verloren" },
+          ].map((p) => {
+            const count = p.key === "all" ? rows.length : rows.filter((r) => r.stage === p.key).length;
+            const active = stageFilter === p.key;
+            return (
+              <Button
+                key={p.key}
+                size="sm"
+                variant={active ? "default" : "outline"}
+                onClick={() => setStageFilter(p.key)}
+                className="h-8"
+              >
+                {p.label}
+                <span className={`ml-2 rounded px-1.5 py-0.5 text-[10px] ${active ? "bg-primary-foreground/20" : "bg-muted"}`}>
+                  {count}
+                </span>
+              </Button>
+            );
+          })}
+
         <div className="rounded-xl border border-border bg-card p-3 flex flex-wrap gap-2 items-center">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
