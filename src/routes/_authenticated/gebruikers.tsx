@@ -76,6 +76,16 @@ function GebruikersPage() {
   const fnPwd = useServerFn(updateUserPassword);
   const fnRole = useServerFn(setUserRole);
   const fnDelete = useServerFn(deleteUser);
+  const fnGetTpl = useServerFn(getInviteTemplate);
+  const fnSaveTpl = useServerFn(saveInviteTemplate);
+
+  // template editor
+  const [tplOpen, setTplOpen] = useState(false);
+  const [tplSubject, setTplSubject] = useState("");
+  const [tplBody, setTplBody] = useState("");
+  const [tplDefaults, setTplDefaults] = useState<{ subject: string; body: string } | null>(null);
+  const [tplLoading, setTplLoading] = useState(false);
+  const [tplSaving, setTplSaving] = useState(false);
 
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
