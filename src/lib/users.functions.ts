@@ -51,11 +51,41 @@ const inviteSchema = z.object({
   role: z.enum(["admin", "medewerker"]),
 });
 
+export const DEFAULT_INVITE_SUBJECT =
+  "Welkom bij AI van Columbus — stel je wachtwoord in";
+
+export const DEFAULT_INVITE_BODY = `Hoi {{name}},
+
+Er is een account voor je aangemaakt in het AI van Columbus Portaal.
+Hieronder vind je je inloggegevens. Stel meteen een eigen wachtwoord in via de knop hieronder.`;
+
+function renderTokens(
+  tpl: string,
+  vars: { name: string; email: string; temp_password: string; reset_link: string },
+) {
+  return tpl.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k: string) => {
+    const v = (vars as Record<string, string>)[k];
+    return v ?? "";
+  });
+}
+
+async function getCallerOrgId(context: { supabase: any; userId: string }): Promise<string | null> {
+  const { data } = await context.supabase
+    .from("organization_members")
+    .select("organization_id")
+    .eq("user_id", context.userId)
+    .limit(1)
+    .maybeSingle();
+  return (data as { organization_id: string } | null)?.organization_id ?? null;
+}
+
 async function sendWelcomeEmail(opts: {
   to: string;
   displayName: string;
   tempPassword: string;
   resetLink: string;
+  subject: string;
+  body: string;
 }) {
   const key = process.env.RESEND_API_KEY;
   if (!key) {
@@ -66,6 +96,17 @@ async function sendWelcomeEmail(opts: {
   const from = `AI van Columbus <${fromEmail}>`;
   const esc = (s: string) =>
     s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+
+  const vars = {
+    name: opts.displayName,
+    email: opts.to,
+    temp_password: opts.tempPassword,
+    reset_link: opts.resetLink,
+  };
+  const subject = renderTokens(opts.subject || DEFAULT_INVITE_SUBJECT, vars);
+  const bodyRendered = renderTokens(opts.body || DEFAULT_INVITE_BODY, vars);
+  const bodyHtml = esc(bodyRendered).replace(/\n/g, "<br />");
+
   const html = `<!doctype html><html><body style="margin:0;padding:0;background:#f6f7fb;font-family:Inter,Arial,sans-serif;color:#111">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px">
     <tr><td align="center">
@@ -75,11 +116,7 @@ async function sendWelcomeEmail(opts: {
           <div style="font-size:20px;font-weight:700;margin-top:4px">Welkom in het portaal</div>
         </td></tr>
         <tr><td style="padding:28px">
-          <p style="margin:0 0 12px;font-size:15px">Hoi ${esc(opts.displayName)},</p>
-          <p style="margin:0 0 12px;font-size:15px;line-height:1.6">
-            Er is een account voor je aangemaakt in het <strong>AI van Columbus Portaal</strong>.
-            Log in met je e-mailadres en het tijdelijke wachtwoord hieronder, en stel daarna direct een eigen wachtwoord in.
-          </p>
+          <div style="margin:0 0 16px;font-size:15px;line-height:1.6">${bodyHtml}</div>
           <table role="presentation" cellpadding="0" cellspacing="0" style="margin:16px 0;border:1px solid #e5e7eb;border-radius:8px;width:100%">
             <tr><td style="padding:12px 16px;font-size:13px;color:#6b7280">E-mail</td><td style="padding:12px 16px;font-size:14px;font-weight:600">${esc(opts.to)}</td></tr>
             <tr><td style="padding:12px 16px;font-size:13px;color:#6b7280;border-top:1px solid #e5e7eb">Tijdelijk wachtwoord</td><td style="padding:12px 16px;font-size:14px;font-weight:600;font-family:ui-monospace,Menlo,monospace;border-top:1px solid #e5e7eb">${esc(opts.tempPassword)}</td></tr>
@@ -99,23 +136,69 @@ async function sendWelcomeEmail(opts: {
       </table>
     </td></tr>
   </table></body></html>`;
-  const text = `Hoi ${opts.displayName},\n\nEr is een account voor je aangemaakt in het AI van Columbus Portaal.\n\nE-mail: ${opts.to}\nTijdelijk wachtwoord: ${opts.tempPassword}\n\nStel direct een nieuw wachtwoord in via:\n${opts.resetLink}\n\nHeb je dit niet aangevraagd? Negeer dan deze mail.`;
+  const text = `${bodyRendered}\n\nE-mail: ${opts.to}\nTijdelijk wachtwoord: ${opts.tempPassword}\n\nStel direct een nieuw wachtwoord in via:\n${opts.resetLink}`;
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
-    body: JSON.stringify({
-      from,
-      to: [opts.to],
-      subject: "Welkom bij AI van Columbus — stel je wachtwoord in",
-      html,
-      text,
-    }),
+    body: JSON.stringify({ from, to: [opts.to], subject, html, text }),
   });
   if (!res.ok) {
     const b = await res.text();
     console.warn(`[inviteUser] welkomstmail mislukt: ${res.status} ${b.slice(0, 200)}`);
   }
 }
+
+export const getInviteTemplate = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const orgId = await getCallerOrgId(context);
+    let subject: string | null = null;
+    let body: string | null = null;
+    if (orgId) {
+      const { data } = await context.supabase
+        .from("mail_settings")
+        .select("invite_subject, invite_body")
+        .eq("organization_id", orgId)
+        .maybeSingle();
+      const row = data as { invite_subject: string | null; invite_body: string | null } | null;
+      subject = row?.invite_subject ?? null;
+      body = row?.invite_body ?? null;
+    }
+    return {
+      subject: subject ?? DEFAULT_INVITE_SUBJECT,
+      body: body ?? DEFAULT_INVITE_BODY,
+      defaults: { subject: DEFAULT_INVITE_SUBJECT, body: DEFAULT_INVITE_BODY },
+      hasOrg: !!orgId,
+    };
+  });
+
+const saveTemplateSchema = z.object({
+  subject: z.string().min(1).max(300),
+  body: z.string().min(1).max(10000),
+});
+
+export const saveInviteTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => saveTemplateSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const orgId = await getCallerOrgId(context);
+    if (!orgId) throw new Error("Geen organisatie gevonden voor deze gebruiker.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("mail_settings")
+      .upsert(
+        {
+          organization_id: orgId,
+          invite_subject: data.subject,
+          invite_body: data.body,
+        } as never,
+        { onConflict: "organization_id" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
 
 export const inviteUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -160,12 +243,29 @@ export const inviteUser = createServerFn({ method: "POST" })
       console.warn("[inviteUser] generateLink mislukt", e);
     }
 
+    // Load per-org template (falls back to defaults inside sendWelcomeEmail)
+    let tplSubject = DEFAULT_INVITE_SUBJECT;
+    let tplBody = DEFAULT_INVITE_BODY;
+    const orgId = await getCallerOrgId(context);
+    if (orgId) {
+      const { data: settings } = await context.supabase
+        .from("mail_settings")
+        .select("invite_subject, invite_body")
+        .eq("organization_id", orgId)
+        .maybeSingle();
+      const s = settings as { invite_subject: string | null; invite_body: string | null } | null;
+      if (s?.invite_subject) tplSubject = s.invite_subject;
+      if (s?.invite_body) tplBody = s.invite_body;
+    }
+
     try {
       await sendWelcomeEmail({
         to: data.email,
         displayName: data.displayName,
         tempPassword: data.password,
         resetLink,
+        subject: tplSubject,
+        body: tplBody,
       });
     } catch (e) {
       console.warn("[inviteUser] welkomstmail fout", e);

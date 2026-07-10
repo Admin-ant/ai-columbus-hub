@@ -1347,6 +1347,8 @@ export type Database = {
           default_whatsapp_template_id: string | null
           from_email: string | null
           from_name: string | null
+          invite_body: string | null
+          invite_subject: string | null
           organization_id: string
           reply_to: string | null
           signature: string | null
@@ -1359,6 +1361,8 @@ export type Database = {
           default_whatsapp_template_id?: string | null
           from_email?: string | null
           from_name?: string | null
+          invite_body?: string | null
+          invite_subject?: string | null
           organization_id: string
           reply_to?: string | null
           signature?: string | null
@@ -1371,6 +1375,8 @@ export type Database = {
           default_whatsapp_template_id?: string | null
           from_email?: string | null
           from_name?: string | null
+          invite_body?: string | null
+          invite_subject?: string | null
           organization_id?: string
           reply_to?: string | null
           signature?: string | null

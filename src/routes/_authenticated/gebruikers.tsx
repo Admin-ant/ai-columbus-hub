@@ -2,7 +2,7 @@ import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, UserPlus, KeyRound, Trash2, ShieldCheck, Shield } from "lucide-react";
+import { Loader2, UserPlus, KeyRound, Trash2, ShieldCheck, Shield, Mail, RotateCcw } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -11,7 +11,10 @@ import {
   updateUserPassword,
   setUserRole,
   deleteUser,
+  getInviteTemplate,
+  saveInviteTemplate,
 } from "@/lib/users.functions";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,6 +76,16 @@ function GebruikersPage() {
   const fnPwd = useServerFn(updateUserPassword);
   const fnRole = useServerFn(setUserRole);
   const fnDelete = useServerFn(deleteUser);
+  const fnGetTpl = useServerFn(getInviteTemplate);
+  const fnSaveTpl = useServerFn(saveInviteTemplate);
+
+  // template editor
+  const [tplOpen, setTplOpen] = useState(false);
+  const [tplSubject, setTplSubject] = useState("");
+  const [tplBody, setTplBody] = useState("");
+  const [tplDefaults, setTplDefaults] = useState<{ subject: string; body: string } | null>(null);
+  const [tplLoading, setTplLoading] = useState(false);
+  const [tplSaving, setTplSaving] = useState(false);
 
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
@@ -161,6 +174,41 @@ function GebruikersPage() {
     }
   }
 
+  async function openTemplate() {
+    setTplOpen(true);
+    setTplLoading(true);
+    try {
+      const t = await fnGetTpl();
+      setTplSubject(t.subject);
+      setTplBody(t.body);
+      setTplDefaults(t.defaults);
+    } catch (e: any) {
+      toast.error("Sjabloon laden mislukt: " + e.message);
+    } finally {
+      setTplLoading(false);
+    }
+  }
+
+  async function saveTemplate(e: React.FormEvent) {
+    e.preventDefault();
+    setTplSaving(true);
+    try {
+      await fnSaveTpl({ data: { subject: tplSubject, body: tplBody } });
+      toast.success("Sjabloon opgeslagen");
+      setTplOpen(false);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setTplSaving(false);
+    }
+  }
+
+  function resetTemplate() {
+    if (!tplDefaults) return;
+    setTplSubject(tplDefaults.subject);
+    setTplBody(tplDefaults.body);
+  }
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -170,10 +218,14 @@ function GebruikersPage() {
             Nodig collega's uit, beheer rollen en reset wachtwoorden.
           </p>
         </div>
-        <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-          <DialogTrigger asChild>
-            <Button><UserPlus className="mr-2 h-4 w-4" />Nieuwe gebruiker</Button>
-          </DialogTrigger>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={openTemplate}>
+            <Mail className="mr-2 h-4 w-4" />Uitnodigingsmail
+          </Button>
+          <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+            <DialogTrigger asChild>
+              <Button><UserPlus className="mr-2 h-4 w-4" />Nieuwe gebruiker</Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Gebruiker uitnodigen</DialogTitle>
@@ -210,8 +262,9 @@ function GebruikersPage() {
                 </Button>
               </DialogFooter>
             </form>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="rounded-lg border bg-card">
@@ -321,6 +374,59 @@ function GebruikersPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={tplOpen} onOpenChange={setTplOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Uitnodigings- & welkomstmail</DialogTitle>
+            <DialogDescription>
+              Pas het onderwerp en de tekst aan. Gebruik tokens{" "}
+              <code className="rounded bg-muted px-1">{"{{name}}"}</code>,{" "}
+              <code className="rounded bg-muted px-1">{"{{email}}"}</code>,{" "}
+              <code className="rounded bg-muted px-1">{"{{temp_password}}"}</code>,{" "}
+              <code className="rounded bg-muted px-1">{"{{reset_link}}"}</code>.
+              Het wachtwoord en de knop worden automatisch toegevoegd.
+            </DialogDescription>
+          </DialogHeader>
+          {tplLoading ? (
+            <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />Laden…
+            </div>
+          ) : (
+            <form onSubmit={saveTemplate} className="space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="tpl-subject">Onderwerp</Label>
+                <Input
+                  id="tpl-subject"
+                  value={tplSubject}
+                  onChange={(e) => setTplSubject(e.target.value)}
+                  maxLength={300}
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="tpl-body">Berichttekst</Label>
+                <Textarea
+                  id="tpl-body"
+                  value={tplBody}
+                  onChange={(e) => setTplBody(e.target.value)}
+                  rows={10}
+                  maxLength={10000}
+                  required
+                />
+              </div>
+              <DialogFooter className="gap-2 sm:justify-between">
+                <Button type="button" variant="ghost" onClick={resetTemplate} disabled={!tplDefaults}>
+                  <RotateCcw className="mr-2 h-4 w-4" />Standaard herstellen
+                </Button>
+                <Button type="submit" disabled={tplSaving}>
+                  {tplSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Opslaan
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </div>
