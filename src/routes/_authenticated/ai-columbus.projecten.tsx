@@ -446,6 +446,24 @@ function ProjectsDashboardPage() {
         </div>
       </div>
 
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Maandelijkse opbrengst</div>
+          <div className="mt-2 text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{EUR.format(monthlyTotal / 100)}</div>
+          <div className="mt-1 text-xs text-muted-foreground">Som van alle {filtered.length} projecten in filter</div>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Eenmalige kosten</div>
+          <div className="mt-2 text-2xl font-bold tabular-nums text-indigo-600 dark:text-indigo-400">{EUR.format(oneTimeTotal / 100)}</div>
+          <div className="mt-1 text-xs text-muted-foreground">Totaal eenmalig / setup</div>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Totale deal-waarde</div>
+          <div className="mt-2 text-2xl font-bold tabular-nums">{EUR.format(total / 100)}</div>
+          <div className="mt-1 text-xs text-muted-foreground">Som van 'Waarde' kolom</div>
+        </div>
+      </div>
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {STATUS_KEYS.map((s) => {
           const items = rows.filter((r) => r.status === s);
