@@ -243,20 +243,29 @@ export const inviteUser = createServerFn({ method: "POST" })
       console.warn("[inviteUser] generateLink mislukt", e);
     }
 
-    // Load per-org template (falls back to defaults inside sendWelcomeEmail)
+    // Load per-org template via admin client to bypass RLS and always reflect
+    // the most recent saved subject/body from the editor.
     let tplSubject = DEFAULT_INVITE_SUBJECT;
     let tplBody = DEFAULT_INVITE_BODY;
     const orgId = await getCallerOrgId(context);
     if (orgId) {
-      const { data: settings } = await context.supabase
+      const { data: settings, error: settingsErr } = await supabaseAdmin
         .from("mail_settings")
         .select("invite_subject, invite_body")
         .eq("organization_id", orgId)
         .maybeSingle();
+      if (settingsErr) {
+        console.warn("[inviteUser] mail_settings lezen mislukt", settingsErr.message);
+      }
       const s = settings as { invite_subject: string | null; invite_body: string | null } | null;
-      if (s?.invite_subject) tplSubject = s.invite_subject;
-      if (s?.invite_body) tplBody = s.invite_body;
+      if (s?.invite_subject && s.invite_subject.trim()) tplSubject = s.invite_subject;
+      if (s?.invite_body && s.invite_body.trim()) tplBody = s.invite_body;
     }
+    console.info("[inviteUser] template gebruikt", {
+      orgId,
+      subjectSource: tplSubject === DEFAULT_INVITE_SUBJECT ? "default" : "custom",
+      bodySource: tplBody === DEFAULT_INVITE_BODY ? "default" : "custom",
+    });
 
     try {
       await sendWelcomeEmail({
