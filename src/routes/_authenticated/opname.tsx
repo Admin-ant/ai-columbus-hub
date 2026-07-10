@@ -839,5 +839,58 @@ function QuickLeadDialog({
   );
 }
 
+function QuickClientDialog({
+  open, onOpenChange, orgId, onCreated, createClient,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  orgId: string | null;
+  onCreated: (client: { id: string; name: string; contact_person: string | null }) => void;
+  createClient: ReturnType<typeof useServerFn<typeof quickCreateClient>>;
+}) {
+  const [name, setName] = useState("");
+  const [contact, setContact] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function submit() {
+    if (!orgId) return;
+    if (!name.trim()) { toast.error("Bedrijfsnaam is verplicht"); return; }
+    setSaving(true);
+    try {
+      const row = await createClient({
+        data: { organization_id: orgId, name: name.trim(), contact_person: contact.trim() || null, email: email.trim() || null, phone: phone.trim() || null },
+      });
+      onCreated(row);
+      toast.success("Klant aangemaakt");
+      setName(""); setContact(""); setEmail(""); setPhone("");
+      onOpenChange(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Kon klant niet aanmaken");
+    } finally { setSaving(false); }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader><DialogTitle>Nieuwe klant</DialogTitle></DialogHeader>
+        <div className="grid gap-3">
+          <div className="grid gap-2"><Label>Bedrijfsnaam *</Label><Input value={name} onChange={(e) => setName(e.target.value)} autoFocus placeholder="bv. Acme B.V." /></div>
+          <div className="grid gap-2"><Label>Contactpersoon</Label><Input value={contact} onChange={(e) => setContact(e.target.value)} /></div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-2"><Label>E-mail</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+            <div className="grid gap-2"><Label>Telefoon</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Annuleren</Button>
+          <Button onClick={submit} disabled={saving}>{saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Opslaan</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // Suppress unused import warning
 void Trash2;
