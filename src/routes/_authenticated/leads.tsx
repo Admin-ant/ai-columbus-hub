@@ -256,6 +256,8 @@ function LeadsPage() {
               </Button>
             );
           })}
+        </div>
+
 
         <div className="rounded-xl border border-border bg-card p-3 flex flex-wrap gap-2 items-center">
           <div className="relative flex-1 min-w-[200px]">
