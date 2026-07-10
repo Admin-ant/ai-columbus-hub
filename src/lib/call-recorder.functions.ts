@@ -344,6 +344,7 @@ export const listCallRecordings = createServerFn({ method: "POST" })
         progress_stage: string | null; duration_seconds: number | null; tasks_created: number;
         suggested_stage: string | null; workflow_stage: string | null;
         lead_id: string | null; client_id: string | null; transcript: string | null;
+        report_markdown: string | null;
         created_at: string; finalized_at: string | null;
       }>,
     };
