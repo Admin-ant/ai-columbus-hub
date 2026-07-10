@@ -26,7 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
 import {
   createCallRecording, processCallRecording, finalizeCallRecording,
-  listCallRecordings, quickCreateLead, getRecordingAudioUrl,
+  listCallRecordings, quickCreateLead, quickCreateClient, getRecordingAudioUrl,
 } from "@/lib/call-recorder.functions";
 import { exportCallRecordingPdf, exportCallRecordingsBundle } from "@/lib/call-recording-pdf";
 
