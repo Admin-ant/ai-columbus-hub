@@ -213,6 +213,46 @@ function ExpenseDetailPage() {
     window.open(data.signedUrl, "_blank", "noopener,noreferrer");
   }
 
+  async function downloadAttachment(a: Attachment) {
+    const { data, error } = await supabase.storage
+      .from("expense-attachments")
+      .createSignedUrl(a.storage_path, 60 * 5);
+    if (error || !data?.signedUrl) {
+      toast.error(error?.message ?? "Kan bestand niet downloaden");
+      return;
+    }
+    try {
+      const response = await fetch(data.signedUrl);
+      if (!response.ok) throw new Error("Download mislukt");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = a.file_name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Download mislukt");
+    }
+  }
+
+  function downloadNotes() {
+    if (!expense?.notes) return;
+    const blob = new Blob([expense.notes], { type: "text/plain;charset=utf-8" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const safeSupplier = (expense.supplier ?? "inkoopfactuur").replace(/[^\w\-]+/g, "_");
+    link.download = `notitie-${safeSupplier}-${expense.expense_date}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }
+
+
   function openDownloadDialog() {
     if (!expense) return;
     setDownloadName(
