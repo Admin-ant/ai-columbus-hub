@@ -625,6 +625,8 @@ function ProjectsDashboardPage() {
                 <tr className="bg-muted/40 font-semibold">
                   <td className="px-4 py-3">Totaal ({filtered.length})</td>
                   <td className="px-4 py-3 text-right tabular-nums">{EUR.format(total / 100)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400">{EUR.format(monthlyTotal / 100)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-indigo-600 dark:text-indigo-400">{EUR.format(oneTimeTotal / 100)}</td>
                   <td colSpan={6}></td>
                 </tr>
               </tfoot>
