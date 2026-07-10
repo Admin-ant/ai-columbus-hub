@@ -285,7 +285,7 @@ function ExpenseDetailPage() {
       status: (expense.status ?? "open") as typeof editForm.status,
       notes: expense.notes ?? "",
       amount: ((expense.amount_cents ?? 0) / 100).toString().replace(".", ","),
-      vat_rate: expense.vat_rate ? Number(expense.vat_rate) : 21,
+      vat_rate: expense.vat_rate != null ? Number(expense.vat_rate) : 21,
     });
     setEditOpen(true);
   }
