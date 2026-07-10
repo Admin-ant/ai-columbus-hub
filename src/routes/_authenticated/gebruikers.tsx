@@ -177,6 +177,20 @@ function GebruikersPage() {
     }
   }
 
+  async function handleResend(row: Row) {
+    setResendingId(row.id);
+    try {
+      await fnResend({ data: { userId: row.id } });
+      toast.success(`Uitnodiging opnieuw verstuurd naar ${row.email}`);
+    } catch (e: any) {
+      toast.error("Verzenden mislukt: " + e.message);
+    } finally {
+      setResendingId(null);
+    }
+  }
+
+
+
   async function openTemplate() {
     setTplOpen(true);
     setTplLoading(true);
