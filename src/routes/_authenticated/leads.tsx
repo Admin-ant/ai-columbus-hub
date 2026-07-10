@@ -152,17 +152,32 @@ function LeadsPage() {
     const now = Date.now();
     const cutoff =
       periodFilter === "all" ? 0 : now - Number(periodFilter) * 24 * 60 * 60 * 1000;
-    return rows.filter((r) => {
+    const list = rows.filter((r) => {
       if (stageFilter !== "all" && r.stage !== stageFilter) return false;
       if (sourceFilter !== "all" && (r.source ?? "") !== sourceFilter) return false;
       if (cutoff && new Date(r.created_at).getTime() < cutoff) return false;
       if (q) {
-        const hay = [r.name, r.company, r.email, r.phone, r.notes].filter(Boolean).join(" ").toLowerCase();
+        const hay = [r.name, r.company, r.stage, r.email, r.phone, r.notes].filter(Boolean).join(" ").toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
-  }, [rows, search, stageFilter, sourceFilter, periodFilter]);
+    const collator = new Intl.Collator("nl-NL", { numeric: true, sensitivity: "base" });
+    list.sort((a, b) => {
+      switch (sortBy) {
+        case "created_desc": return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case "created_asc": return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case "name_asc": return collator.compare(a.name, b.name);
+        case "name_desc": return collator.compare(b.name, a.name);
+        case "company_asc": return collator.compare(a.company ?? "", b.company ?? "");
+        case "stage_asc": return collator.compare(a.stage, b.stage);
+        case "value_desc": return (b.value ?? 0) - (a.value ?? 0);
+        case "value_asc": return (a.value ?? 0) - (b.value ?? 0);
+        default: return 0;
+      }
+    });
+    return list;
+  }, [rows, search, stageFilter, sourceFilter, periodFilter, sortBy]);
 
   const stats = useMemo(() => {
     const total = rows.length;
