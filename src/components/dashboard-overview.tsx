@@ -550,7 +550,19 @@ export function DashboardOverview({
   );
 }
 
+export type KpiMetric =
+  | "mrr"
+  | "pipeline"
+  | "open"
+  | "overdue"
+  | "paid"
+  | "contracts"
+  | "leads"
+  | "winrate";
+
 function KpiCard({
+  metric,
+  period,
   label,
   value,
   sub,
@@ -559,6 +571,8 @@ function KpiCard({
   loading,
   info,
 }: {
+  metric: KpiMetric;
+  period: PeriodKey;
   label: string;
   value: string;
   sub?: string;
@@ -568,7 +582,12 @@ function KpiCard({
   info?: string;
 }) {
   return (
-    <div className="rounded-lg border bg-card p-4">
+    <Link
+      to="/kpi/$metric"
+      params={{ metric }}
+      search={{ period }}
+      className="group block rounded-lg border bg-card p-4 text-left transition hover:border-primary/50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <div className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -580,6 +599,10 @@ function KpiCard({
                 <button
                   type="button"
                   aria-label={`Uitleg ${label}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
                   className="text-muted-foreground/60 transition hover:text-foreground"
                 >
                   <Info className="h-3.5 w-3.5" />
@@ -602,10 +625,14 @@ function KpiCard({
         </>
       ) : (
         <>
-          <div className="mt-2 text-2xl font-bold tabular-nums">{value}</div>
+          <div className="mt-2 flex items-center justify-between">
+            <div className="text-2xl font-bold tabular-nums">{value}</div>
+            <ArrowRight className="h-4 w-4 opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-60" />
+          </div>
           {sub && <div className="mt-1 text-xs text-muted-foreground">{sub}</div>}
         </>
       )}
-    </div>
+    </Link>
   );
 }
+
