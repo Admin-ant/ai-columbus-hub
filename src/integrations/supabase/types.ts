@@ -65,6 +65,65 @@ export type Database = {
           },
         ]
       }
+      call_recorder_rules: {
+        Row: {
+          action_kind: string
+          created_at: string
+          created_by: string | null
+          enabled: boolean
+          id: string
+          keywords: string[]
+          name: string
+          organization_id: string
+          priority: number
+          target_stage: string | null
+          task_body: string | null
+          task_due_days: number
+          task_title: string | null
+          updated_at: string
+        }
+        Insert: {
+          action_kind: string
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          id?: string
+          keywords?: string[]
+          name: string
+          organization_id: string
+          priority?: number
+          target_stage?: string | null
+          task_body?: string | null
+          task_due_days?: number
+          task_title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          action_kind?: string
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          id?: string
+          keywords?: string[]
+          name?: string
+          organization_id?: string
+          priority?: number
+          target_stage?: string | null
+          task_body?: string | null
+          task_due_days?: number
+          task_title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_recorder_rules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       call_recordings: {
         Row: {
           audio_mime: string | null
@@ -74,9 +133,13 @@ export type Database = {
           created_by: string | null
           duration_seconds: number | null
           error: string | null
+          final_transcript: string | null
+          finalized_at: string | null
           id: string
           lead_id: string | null
           organization_id: string
+          pending_tasks: Json
+          progress_stage: string | null
           report_markdown: string | null
           status: string
           suggested_stage: string | null
@@ -95,9 +158,13 @@ export type Database = {
           created_by?: string | null
           duration_seconds?: number | null
           error?: string | null
+          final_transcript?: string | null
+          finalized_at?: string | null
           id?: string
           lead_id?: string | null
           organization_id: string
+          pending_tasks?: Json
+          progress_stage?: string | null
           report_markdown?: string | null
           status?: string
           suggested_stage?: string | null
@@ -116,9 +183,13 @@ export type Database = {
           created_by?: string | null
           duration_seconds?: number | null
           error?: string | null
+          final_transcript?: string | null
+          finalized_at?: string | null
           id?: string
           lead_id?: string | null
           organization_id?: string
+          pending_tasks?: Json
+          progress_stage?: string | null
           report_markdown?: string | null
           status?: string
           suggested_stage?: string | null
