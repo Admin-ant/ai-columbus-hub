@@ -644,10 +644,21 @@ function OpnamePage() {
         <CardHeader className="pb-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle className="text-base">Gespreksgeschiedenis</CardTitle>
-            <div className="flex gap-1">
+            <div className="flex flex-wrap gap-1">
               <Button variant={historyFilter === "all" ? "default" : "outline"} size="sm" onClick={() => setHistoryFilter("all")}>Alle</Button>
               <Button variant={historyFilter === "current" ? "default" : "outline"} size="sm" onClick={() => setHistoryFilter("current")} disabled={!selectedTarget}>
                 {selectedTarget ? selectedTarget.label : "Deze klant/lead"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={history.length === 0}
+                onClick={() => {
+                  const label = historyFilter === "current" && selectedTarget ? selectedTarget.label : "alle";
+                  exportCallRecordingsBundle(history, label);
+                }}
+              >
+                <Download className="mr-1 h-4 w-4" /> Export PDF ({history.length})
               </Button>
             </div>
           </div>
