@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { periodRange, type PeriodKey } from "@/lib/dashboard-period";
 
 type Lead = Database["public"]["Tables"]["leads"]["Row"];
 
