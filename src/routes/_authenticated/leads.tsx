@@ -1,7 +1,9 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Inbox, RefreshCw, Loader2, Search, Download, ExternalLink, Mail, Phone, Filter } from "lucide-react";
+import { Inbox, RefreshCw, Loader2, Search, Download, ExternalLink, Mail, Phone, Filter, Trophy, XCircle } from "lucide-react";
+import { winLead, loseLead } from "@/lib/pipeline.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { Button } from "@/components/ui/button";
