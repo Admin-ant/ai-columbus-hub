@@ -17,6 +17,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as QTokenRouteImport } from './routes/q.$token'
 import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated/teams'
+import { Route as AuthenticatedSalesWorkflowRouteImport } from './routes/_authenticated/sales-workflow'
 import { Route as AuthenticatedQuotesRouteImport } from './routes/_authenticated/quotes'
 import { Route as AuthenticatedProductenRouteImport } from './routes/_authenticated/producten'
 import { Route as AuthenticatedOpnameRouteImport } from './routes/_authenticated/opname'
@@ -113,6 +114,12 @@ const AuthenticatedTeamsRoute = AuthenticatedTeamsRouteImport.update({
   path: '/teams',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSalesWorkflowRoute =
+  AuthenticatedSalesWorkflowRouteImport.update({
+    id: '/sales-workflow',
+    path: '/sales-workflow',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedQuotesRoute = AuthenticatedQuotesRouteImport.update({
   id: '/quotes',
   path: '/quotes',
@@ -454,6 +461,7 @@ export interface FileRoutesByFullPath {
   '/opname': typeof AuthenticatedOpnameRouteWithChildren
   '/producten': typeof AuthenticatedProductenRoute
   '/quotes': typeof AuthenticatedQuotesRoute
+  '/sales-workflow': typeof AuthenticatedSalesWorkflowRoute
   '/teams': typeof AuthenticatedTeamsRoute
   '/q/$token': typeof QTokenRoute
   '/t/$token': typeof TTokenRoute
@@ -516,6 +524,7 @@ export interface FileRoutesByTo {
   '/opname': typeof AuthenticatedOpnameRouteWithChildren
   '/producten': typeof AuthenticatedProductenRoute
   '/quotes': typeof AuthenticatedQuotesRoute
+  '/sales-workflow': typeof AuthenticatedSalesWorkflowRoute
   '/teams': typeof AuthenticatedTeamsRoute
   '/q/$token': typeof QTokenRoute
   '/t/$token': typeof TTokenRoute
@@ -583,6 +592,7 @@ export interface FileRoutesById {
   '/_authenticated/opname': typeof AuthenticatedOpnameRouteWithChildren
   '/_authenticated/producten': typeof AuthenticatedProductenRoute
   '/_authenticated/quotes': typeof AuthenticatedQuotesRoute
+  '/_authenticated/sales-workflow': typeof AuthenticatedSalesWorkflowRoute
   '/_authenticated/teams': typeof AuthenticatedTeamsRoute
   '/q/$token': typeof QTokenRoute
   '/t/$token': typeof TTokenRoute
@@ -651,6 +661,7 @@ export interface FileRouteTypes {
     | '/opname'
     | '/producten'
     | '/quotes'
+    | '/sales-workflow'
     | '/teams'
     | '/q/$token'
     | '/t/$token'
@@ -713,6 +724,7 @@ export interface FileRouteTypes {
     | '/opname'
     | '/producten'
     | '/quotes'
+    | '/sales-workflow'
     | '/teams'
     | '/q/$token'
     | '/t/$token'
@@ -779,6 +791,7 @@ export interface FileRouteTypes {
     | '/_authenticated/opname'
     | '/_authenticated/producten'
     | '/_authenticated/quotes'
+    | '/_authenticated/sales-workflow'
     | '/_authenticated/teams'
     | '/q/$token'
     | '/t/$token'
@@ -905,6 +918,13 @@ declare module '@tanstack/react-router' {
       path: '/teams'
       fullPath: '/teams'
       preLoaderRoute: typeof AuthenticatedTeamsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/sales-workflow': {
+      id: '/_authenticated/sales-workflow'
+      path: '/sales-workflow'
+      fullPath: '/sales-workflow'
+      preLoaderRoute: typeof AuthenticatedSalesWorkflowRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/quotes': {
@@ -1482,6 +1502,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOpnameRoute: typeof AuthenticatedOpnameRouteWithChildren
   AuthenticatedProductenRoute: typeof AuthenticatedProductenRoute
   AuthenticatedQuotesRoute: typeof AuthenticatedQuotesRoute
+  AuthenticatedSalesWorkflowRoute: typeof AuthenticatedSalesWorkflowRoute
   AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedCrmActivitiesRoute: typeof AuthenticatedCrmActivitiesRoute
@@ -1510,6 +1531,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOpnameRoute: AuthenticatedOpnameRouteWithChildren,
   AuthenticatedProductenRoute: AuthenticatedProductenRoute,
   AuthenticatedQuotesRoute: AuthenticatedQuotesRoute,
+  AuthenticatedSalesWorkflowRoute: AuthenticatedSalesWorkflowRoute,
   AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedCrmActivitiesRoute: AuthenticatedCrmActivitiesRoute,

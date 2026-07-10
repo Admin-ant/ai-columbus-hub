@@ -271,6 +271,63 @@ export type Database = {
           },
         ]
       }
+      client_requirements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          currency: string
+          id: string
+          lead_id: string
+          notes: string | null
+          one_time_cents: number
+          organization_id: string
+          recurring_cents: number
+          scope: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          lead_id: string
+          notes?: string | null
+          one_time_cents?: number
+          organization_id: string
+          recurring_cents?: number
+          scope?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          lead_id?: string
+          notes?: string | null
+          one_time_cents?: number
+          organization_id?: string
+          recurring_cents?: number
+          scope?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_requirements_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: true
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_requirements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address_line1: string | null
@@ -3054,6 +3111,14 @@ export type Database = {
           out_project_id: string
         }[]
       }
+      finalize_signed_quote: {
+        Args: { _quote_id: string }
+        Returns: {
+          client_id: string
+          contract_id: string
+          invoice_id: string
+        }[]
+      }
       generate_recurring_invoices: {
         Args: { _only_contract_id?: string }
         Returns: {
@@ -3116,7 +3181,13 @@ export type Database = {
         | "contract_verstuurd"
         | "contract_getekend"
         | "on_hold"
-      quote_event_type: "viewed" | "signed" | "paid" | "invoice_created"
+      quote_event_type:
+        | "viewed"
+        | "signed"
+        | "paid"
+        | "invoice_created"
+        | "converted"
+        | "convert_error"
       quote_status:
         | "draft"
         | "sent"
@@ -3288,7 +3359,14 @@ export const Constants = {
         "contract_getekend",
         "on_hold",
       ],
-      quote_event_type: ["viewed", "signed", "paid", "invoice_created"],
+      quote_event_type: [
+        "viewed",
+        "signed",
+        "paid",
+        "invoice_created",
+        "converted",
+        "convert_error",
+      ],
       quote_status: [
         "draft",
         "sent",
