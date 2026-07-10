@@ -71,7 +71,8 @@ function ProjectsDashboardPage() {
   const [exportType, setExportType] = useState<"csv" | "xlsx" | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    name: "", value: "0", target_month: "", client_id: "" as string,
+    name: "", value: "0", monthly: "0", one_time: "0",
+    target_month: "", client_id: "" as string,
     status: "contact_gezocht" as ProjectStatus,
     contact_name: "", contact_email: "", contact_phone: "", notes: "",
   });
