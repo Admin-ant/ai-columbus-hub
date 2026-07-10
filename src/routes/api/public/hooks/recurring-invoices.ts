@@ -12,9 +12,7 @@ export const Route = createFileRoute("/api/public/hooks/recurring-invoices")({
           return new Response("Unauthorized", { status: 401 });
         }
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { data, error } = await supabaseAdmin.rpc("generate_recurring_invoices", {
-          _only_contract_id: null,
-        });
+        const { data, error } = await supabaseAdmin.rpc("generate_recurring_invoices", {} as never);
         if (error) {
           return new Response(JSON.stringify({ ok: false, error: error.message }), {
             status: 500,

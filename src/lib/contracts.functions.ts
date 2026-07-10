@@ -253,9 +253,7 @@ export const runRecurringInvoices = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin.rpc("generate_recurring_invoices", {
-      _only_contract_id: null,
-    });
+    const { data, error } = await supabaseAdmin.rpc("generate_recurring_invoices", {} as never);
     if (error) throw new Error(error.message);
     const rows = (Array.isArray(data) ? data : []) as Array<{
       contract_id: string;
