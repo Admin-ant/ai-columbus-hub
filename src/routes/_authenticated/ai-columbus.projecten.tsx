@@ -559,6 +559,14 @@ function ProjectsDashboardPage() {
                         <EditableNumber value={Number(r.value_cents) / 100}
                           onSave={(v) => updateRow(r.id, { value_cents: Math.round(v * 100) })} />
                       </td>
+                      <td className="px-4 py-2 text-right tabular-nums">
+                        <EditableNumber value={Number((r as any).monthly_value_cents ?? 0) / 100}
+                          onSave={(v) => updateRow(r.id, { monthly_value_cents: Math.round(v * 100) } as any)} />
+                      </td>
+                      <td className="px-4 py-2 text-right tabular-nums">
+                        <EditableNumber value={Number((r as any).one_time_cents ?? 0) / 100}
+                          onSave={(v) => updateRow(r.id, { one_time_cents: Math.round(v * 100) } as any)} />
+                      </td>
                       <td className="px-4 py-2 text-muted-foreground">
                         <Input type="month" defaultValue={r.target_month ? r.target_month.slice(0,7) : ""}
                           onBlur={(e) => {
