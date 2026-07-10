@@ -307,7 +307,7 @@ function PipelineRow({
             {row.requirements ? "Klantwensen bewerken" : "Klantwensen"}
           </Button>
           {!row.quote && row.requirements && (
-            <GenerateButton row={row} onDone={onChanged} disabled={busy} />
+            <GenerateButton row={row} onDone={onChanged} />
           )}
           {row.contract && (
             <Button asChild size="sm" variant="ghost">
@@ -317,9 +317,6 @@ function PipelineRow({
             </Button>
           )}
         </div>
-        {/* keep no-op reference to satisfy TS */}
-        <span className="hidden">{busy ? "" : ""}</span>
-        <span className="hidden" onClick={handleGenerate} />
       </TableCell>
     </TableRow>
   );
