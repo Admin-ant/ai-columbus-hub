@@ -307,9 +307,17 @@ function LeadsPage() {
                       </Select>
                     </td>
                     <td className="px-3 py-2 text-right whitespace-nowrap">
-                      <Button size="sm" variant="ghost" onClick={() => setOpenLead(l)}>
-                        <ExternalLink className="h-3.5 w-3.5 mr-1" /> Open
-                      </Button>
+                      <div className="flex gap-1 justify-end">
+                        <Button size="sm" variant="ghost" title="Zet op gewonnen" onClick={() => setWinLeadRow(l)} disabled={l.stage === "gewonnen"}>
+                          <Trophy className="h-3.5 w-3.5 text-emerald-600" />
+                        </Button>
+                        <Button size="sm" variant="ghost" title="Zet op verloren" onClick={() => setLoseLeadRow(l)} disabled={l.stage === "verloren"}>
+                          <XCircle className="h-3.5 w-3.5 text-rose-600" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setOpenLead(l)}>
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -317,6 +325,20 @@ function LeadsPage() {
             </tbody>
           </table>
         </div>
+
+        <WinLeadDialog
+          lead={winLeadRow}
+          onClose={() => setWinLeadRow(null)}
+          onDone={() => { setWinLeadRow(null); load(); }}
+          fnWin={fnWin}
+        />
+
+        <LoseLeadDialog
+          lead={loseLeadRow}
+          onClose={() => setLoseLeadRow(null)}
+          onDone={() => { setLoseLeadRow(null); load(); }}
+          fnLose={fnLose}
+        />
 
         <Dialog open={!!openLead} onOpenChange={(o) => !o && setOpenLead(null)}>
           <DialogContent className="max-w-lg">
