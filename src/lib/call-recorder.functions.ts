@@ -508,3 +508,36 @@ export const quickCreateLead = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return row as { id: string; name: string; company: string | null };
   });
+
+/* ============================================================ quick client */
+
+export const quickCreateClient = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        organization_id: z.string().uuid(),
+        name: z.string().min(1).max(200),
+        contact_person: z.string().max(200).optional().nullable(),
+        email: z.string().max(200).optional().nullable(),
+        phone: z.string().max(50).optional().nullable(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: row, error } = await supabase
+      .from("clients")
+      .insert({
+        organization_id: data.organization_id,
+        name: data.name,
+        contact_person: data.contact_person ?? null,
+        email: data.email ?? null,
+        phone: data.phone ?? null,
+        created_by: userId,
+      } as never)
+      .select("id, name, contact_person")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return row as { id: string; name: string; contact_person: string | null };
+  });

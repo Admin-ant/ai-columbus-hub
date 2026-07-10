@@ -26,7 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
 import {
   createCallRecording, processCallRecording, finalizeCallRecording,
-  listCallRecordings, quickCreateLead, getRecordingAudioUrl,
+  listCallRecordings, quickCreateLead, quickCreateClient, getRecordingAudioUrl,
 } from "@/lib/call-recorder.functions";
 import { exportCallRecordingPdf, exportCallRecordingsBundle } from "@/lib/call-recording-pdf";
 
@@ -79,6 +79,7 @@ function OpnamePage() {
   const [workflowStage, setWorkflowStage] = useState<string>("");
   const [title, setTitle] = useState<string>("");
   const [newLeadOpen, setNewLeadOpen] = useState(false);
+  const [newClientOpen, setNewClientOpen] = useState(false);
 
   const [recState, setRecState] = useState<RecState>("idle");
   const [durationSec, setDurationSec] = useState(0);
@@ -117,6 +118,7 @@ function OpnamePage() {
   const finalizeRec = useServerFn(finalizeCallRecording);
   const listRec = useServerFn(listCallRecordings);
   const createLead = useServerFn(quickCreateLead);
+  const createClient = useServerFn(quickCreateClient);
 
   const selectedTarget: Target | null = useMemo(() => {
     if (!selectedKey) return null;
@@ -410,9 +412,14 @@ function OpnamePage() {
                 )}
               </SelectContent>
             </Select>
-            <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => setNewLeadOpen(true)} disabled={isRecording || isBusy}>
-              <Plus className="mr-1 h-4 w-4" /> Nieuwe lead aanmaken
-            </Button>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => setNewLeadOpen(true)} disabled={isRecording || isBusy}>
+                <Plus className="mr-1 h-4 w-4" /> Nieuwe lead
+              </Button>
+              <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => setNewClientOpen(true)} disabled={isRecording || isBusy}>
+                <Plus className="mr-1 h-4 w-4" /> Nieuwe klant
+              </Button>
+            </div>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
             <div className="grid gap-2">
@@ -732,6 +739,17 @@ function OpnamePage() {
         }}
         createLead={createLead}
       />
+      <QuickClientDialog
+        open={newClientOpen}
+        onOpenChange={setNewClientOpen}
+        orgId={currentOrganizationId}
+        onCreated={(client) => {
+          const t: Target = { kind: "client", id: client.id, label: client.name, sublabel: client.contact_person ?? undefined };
+          setClients((prev) => [t, ...prev]);
+          setSelectedKey(`client:${client.id}`);
+        }}
+        createClient={createClient}
+      />
     </div>
   );
 }
@@ -807,6 +825,59 @@ function QuickLeadDialog({
         <div className="grid gap-3">
           <div className="grid gap-2"><Label>Naam contact *</Label><Input value={name} onChange={(e) => setName(e.target.value)} autoFocus /></div>
           <div className="grid gap-2"><Label>Bedrijf</Label><Input value={company} onChange={(e) => setCompany(e.target.value)} /></div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-2"><Label>E-mail</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+            <div className="grid gap-2"><Label>Telefoon</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Annuleren</Button>
+          <Button onClick={submit} disabled={saving}>{saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Opslaan</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function QuickClientDialog({
+  open, onOpenChange, orgId, onCreated, createClient,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  orgId: string | null;
+  onCreated: (client: { id: string; name: string; contact_person: string | null }) => void;
+  createClient: ReturnType<typeof useServerFn<typeof quickCreateClient>>;
+}) {
+  const [name, setName] = useState("");
+  const [contact, setContact] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function submit() {
+    if (!orgId) return;
+    if (!name.trim()) { toast.error("Bedrijfsnaam is verplicht"); return; }
+    setSaving(true);
+    try {
+      const row = await createClient({
+        data: { organization_id: orgId, name: name.trim(), contact_person: contact.trim() || null, email: email.trim() || null, phone: phone.trim() || null },
+      });
+      onCreated(row);
+      toast.success("Klant aangemaakt");
+      setName(""); setContact(""); setEmail(""); setPhone("");
+      onOpenChange(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Kon klant niet aanmaken");
+    } finally { setSaving(false); }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader><DialogTitle>Nieuwe klant</DialogTitle></DialogHeader>
+        <div className="grid gap-3">
+          <div className="grid gap-2"><Label>Bedrijfsnaam *</Label><Input value={name} onChange={(e) => setName(e.target.value)} autoFocus placeholder="bv. Acme B.V." /></div>
+          <div className="grid gap-2"><Label>Contactpersoon</Label><Input value={contact} onChange={(e) => setContact(e.target.value)} /></div>
           <div className="grid gap-2 sm:grid-cols-2">
             <div className="grid gap-2"><Label>E-mail</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
             <div className="grid gap-2"><Label>Telefoon</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
