@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Inbox, RefreshCw, Loader2, Search, Download, ExternalLink, Mail, Phone, Filter, Trophy, XCircle, Plus, Pencil } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { z } from "zod";
 import { winLead, loseLead } from "@/lib/pipeline.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -583,6 +584,25 @@ function LoseLeadDialog({
 
 // Small no-op to preserve trailing closing brace
 
+const leadFormSchema = z.object({
+  name: z.string().trim().min(2, "Naam moet minimaal 2 tekens zijn").max(200, "Naam mag max 200 tekens zijn"),
+  company: z.string().trim().max(200, "Bedrijf mag max 200 tekens zijn").optional().or(z.literal("")),
+  contactPerson: z.string().trim().max(200, "Contactpersoon mag max 200 tekens zijn").optional().or(z.literal("")),
+  email: z.string().trim().max(255, "Email mag max 255 tekens zijn").email("Ongeldig e-mailadres").optional().or(z.literal("")),
+  phone: z.string().trim().max(40, "Telefoon mag max 40 tekens zijn").regex(/^[+0-9()\-\s]*$/, "Alleen cijfers, spaties, +, -, ( en ) toegestaan").optional().or(z.literal("")),
+  source: z.string().trim().min(1, "Kies een bron"),
+  stage: z.string().trim().min(1, "Kies een status"),
+  value: z.coerce.number({ invalid_type_error: "Waarde moet een getal zijn" }).min(0, "Waarde mag niet negatief zijn").max(10_000_000, "Waarde te hoog"),
+  notes: z.string().trim().max(2000, "Notities mogen max 2000 tekens zijn").optional().or(z.literal("")),
+});
+
+type LeadFormErrors = Partial<Record<keyof z.infer<typeof leadFormSchema>, string>>;
+
+function FieldError({ msg }: { msg?: string }) {
+  if (!msg) return null;
+  return <p className="text-xs text-destructive">{msg}</p>;
+}
+
 function CreateLeadDialog({
   open, onClose, organizationId, onCreated,
 }: {
@@ -601,33 +621,72 @@ function CreateLeadDialog({
   const [value, setValue] = useState("0");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<LeadFormErrors>({});
 
   useEffect(() => {
     if (open) {
       setName(""); setCompany(""); setContactPerson(""); setEmail("");
       setPhone(""); setSource("handmatig"); setStage("nieuwe"); setValue("0"); setNotes("");
+      setErrors({});
     }
   }, [open]);
 
   async function save() {
-    if (!organizationId) { toast.error("Geen actieve organisatie"); return; }
-    if (!name.trim()) { toast.error("Naam is verplicht"); return; }
+    if (!organizationId) {
+      toast.error("Geen actieve organisatie", { description: "Selecteer eerst een omgeving in de sidebar." });
+      return;
+    }
+    const parsed = leadFormSchema.safeParse({
+      name, company, contactPerson, email, phone, source, stage, value, notes,
+    });
+    if (!parsed.success) {
+      const flat = parsed.error.flatten().fieldErrors;
+      const nextErrors: LeadFormErrors = {};
+      (Object.keys(flat) as (keyof LeadFormErrors)[]).forEach((k) => {
+        const msg = flat[k]?.[0];
+        if (msg) nextErrors[k] = msg;
+      });
+      setErrors(nextErrors);
+      const count = Object.keys(nextErrors).length;
+      toast.error("Controleer het formulier", {
+        description: `${count} veld${count === 1 ? "" : "en"} met een fout. Zie de rode meldingen bij de invoer.`,
+      });
+      return;
+    }
+    setErrors({});
+    const d = parsed.data;
     setSaving(true);
-    const { error } = await supabase.from("leads").insert({
-      organization_id: organizationId,
-      name: name.trim(),
-      company: company.trim() || null,
-      rep: contactPerson.trim() || null,
-      email: email.trim() || null,
-      phone: phone.trim() || null,
-      source: source.trim() || null,
-      stage: stage as never,
-      value: Number(value) || 0,
-      notes: notes.trim() || null,
-    } as never);
+    const { data: inserted, error } = await supabase
+      .from("leads")
+      .insert({
+        organization_id: organizationId,
+        name: d.name,
+        company: d.company || null,
+        rep: d.contactPerson || null,
+        email: d.email || null,
+        phone: d.phone || null,
+        source: d.source,
+        stage: d.stage as never,
+        value: d.value,
+        notes: d.notes || null,
+      } as never)
+      .select("id, name")
+      .single();
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Lead aangemaakt");
+    if (error) {
+      const msg = error.message.toLowerCase();
+      if (msg.includes("duplicate") || msg.includes("unique")) {
+        toast.error("Deze lead bestaat al", { description: "Er is al een lead met dezelfde gegevens." });
+      } else if (msg.includes("permission") || msg.includes("row-level")) {
+        toast.error("Geen toegang", { description: "Je hebt geen rechten om een lead toe te voegen in deze omgeving." });
+      } else {
+        toast.error("Opslaan mislukt", { description: error.message });
+      }
+      return;
+    }
+    toast.success("Lead aangemaakt", {
+      description: `${(inserted as { name: string } | null)?.name ?? d.name} staat nu op status "${d.stage}".`,
+    });
     onCreated();
   }
 
@@ -641,62 +700,119 @@ function CreateLeadDialog({
         <div className="grid gap-3 text-sm">
           <div className="grid gap-1">
             <Label>Naam *</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={200} />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={200}
+              aria-invalid={!!errors.name}
+              className={errors.name ? "border-destructive" : ""}
+            />
+            <FieldError msg={errors.name} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1">
               <Label>Bedrijf</Label>
-              <Input value={company} onChange={(e) => setCompany(e.target.value)} maxLength={200} />
+              <Input
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                maxLength={200}
+                aria-invalid={!!errors.company}
+                className={errors.company ? "border-destructive" : ""}
+              />
+              <FieldError msg={errors.company} />
             </div>
             <div className="grid gap-1">
               <Label>Contactpersoon</Label>
-              <Input value={contactPerson} onChange={(e) => setContactPerson(e.target.value)} maxLength={200} />
+              <Input
+                value={contactPerson}
+                onChange={(e) => setContactPerson(e.target.value)}
+                maxLength={200}
+                aria-invalid={!!errors.contactPerson}
+                className={errors.contactPerson ? "border-destructive" : ""}
+              />
+              <FieldError msg={errors.contactPerson} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1">
               <Label>Email</Label>
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={255} />
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                maxLength={255}
+                aria-invalid={!!errors.email}
+                className={errors.email ? "border-destructive" : ""}
+              />
+              <FieldError msg={errors.email} />
             </div>
             <div className="grid gap-1">
               <Label>Telefoon</Label>
-              <Input value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={40} />
+              <Input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                maxLength={40}
+                aria-invalid={!!errors.phone}
+                className={errors.phone ? "border-destructive" : ""}
+              />
+              <FieldError msg={errors.phone} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1">
               <Label>Bron</Label>
               <Select value={source} onValueChange={setSource}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className={errors.source ? "border-destructive" : ""}><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {["handmatig","website","referral","cold_outreach","linkedin","evenement","aanbesteding","anders"].map((s) => (
                     <SelectItem key={s} value={s}>{s}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <FieldError msg={errors.source} />
             </div>
             <div className="grid gap-1">
               <Label>Status</Label>
               <Select value={stage} onValueChange={setStage}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className={errors.stage ? "border-destructive" : ""}><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {STAGES.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
                 </SelectContent>
               </Select>
+              <FieldError msg={errors.stage} />
             </div>
           </div>
           <div className="grid gap-1">
             <Label>Waarde (€ p/m indicatie)</Label>
-            <Input type="number" min="0" value={value} onChange={(e) => setValue(e.target.value)} />
+            <Input
+              type="number"
+              min="0"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              aria-invalid={!!errors.value}
+              className={errors.value ? "border-destructive" : ""}
+            />
+            <FieldError msg={errors.value} />
           </div>
           <div className="grid gap-1">
             <Label>Notities</Label>
-            <Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={2000} />
+            <Textarea
+              rows={3}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              maxLength={2000}
+              aria-invalid={!!errors.notes}
+              className={errors.notes ? "border-destructive" : ""}
+            />
+            <div className="flex justify-between">
+              <FieldError msg={errors.notes} />
+              <span className="ml-auto text-[10px] text-muted-foreground">{notes.length}/2000</span>
+            </div>
           </div>
         </div>
         <div className="flex justify-end gap-2 pt-3">
           <Button variant="outline" onClick={onClose} disabled={saving}>Annuleren</Button>
-          <Button onClick={save} disabled={saving || !name.trim()}>
+          <Button onClick={save} disabled={saving}>
             {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
             Lead aanmaken
           </Button>
@@ -705,6 +821,7 @@ function CreateLeadDialog({
     </Dialog>
   );
 }
+
 
 function EditLeadDialog({
   lead, onClose, onSaved,
