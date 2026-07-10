@@ -28,6 +28,7 @@ import {
   createCallRecording, processCallRecording, finalizeCallRecording,
   listCallRecordings, quickCreateLead, getRecordingAudioUrl,
 } from "@/lib/call-recorder.functions";
+import { exportCallRecordingPdf, exportCallRecordingsBundle } from "@/lib/call-recording-pdf";
 
 export const Route = createFileRoute("/_authenticated/opname")({
   head: () => ({ meta: [{ title: "AI Gesprek Recorder" }] }),
