@@ -698,10 +698,18 @@ function OpnamePage() {
                             <div className="mt-2 whitespace-pre-wrap rounded bg-background p-2 font-mono text-xs">{h.transcript}</div>
                           </details>
                         )}
-                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                           <Badge variant="outline">{h.tasks_created} taken</Badge>
                           {h.suggested_stage && <Badge variant="outline">fase: {h.suggested_stage}</Badge>}
                           {h.duration_seconds && <Badge variant="outline">{formatDuration(h.duration_seconds)}</Badge>}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="ml-auto h-7"
+                            onClick={(e) => { e.stopPropagation(); exportCallRecordingPdf(h, selectedTarget?.label ?? null); }}
+                          >
+                            <Download className="mr-1 h-3 w-3" /> PDF
+                          </Button>
                         </div>
                       </div>
                     )}
