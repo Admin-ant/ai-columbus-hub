@@ -245,31 +245,9 @@ function PipelineRow({
   onEdit: () => void;
   onChanged: () => void;
 }) {
-  const generate = useServerFn(generateQuoteFromRequirements);
-  const [busy, setBusy] = useState(false);
   const stage = stageOf(row);
 
-  async function handleGenerate() {
-    if (!row.requirements) {
-      toast.info("Vul eerst de klantwensen in.");
-      onEdit();
-      return;
-    }
-    try {
-      setBusy(true);
-      const res = await generate({
-        data: { leadId: row.id, organizationId: /* injected below */ "" as string },
-      });
-      toast.success("Offerte aangemaakt");
-      onChanged();
-      window.open(`/quotes`, "_self");
-      void res;
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Kon offerte niet maken");
-    } finally {
-      setBusy(false);
-    }
-  }
+
 
   return (
     <TableRow>
