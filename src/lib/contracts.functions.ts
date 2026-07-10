@@ -37,7 +37,7 @@ export const listContracts = createServerFn({ method: "GET" })
       )
       .eq("organization_id", data.organizationId)
       .order("created_at", { ascending: false });
-    if (data.status) q = q.eq("status", data.status);
+    if (data.status) q = q.eq("status", data.status as never);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
 
