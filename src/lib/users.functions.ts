@@ -243,12 +243,29 @@ export const inviteUser = createServerFn({ method: "POST" })
       console.warn("[inviteUser] generateLink mislukt", e);
     }
 
+    // Load per-org template (falls back to defaults inside sendWelcomeEmail)
+    let tplSubject = DEFAULT_INVITE_SUBJECT;
+    let tplBody = DEFAULT_INVITE_BODY;
+    const orgId = await getCallerOrgId(context);
+    if (orgId) {
+      const { data: settings } = await context.supabase
+        .from("mail_settings")
+        .select("invite_subject, invite_body")
+        .eq("organization_id", orgId)
+        .maybeSingle();
+      const s = settings as { invite_subject: string | null; invite_body: string | null } | null;
+      if (s?.invite_subject) tplSubject = s.invite_subject;
+      if (s?.invite_body) tplBody = s.invite_body;
+    }
+
     try {
       await sendWelcomeEmail({
         to: data.email,
         displayName: data.displayName,
         tempPassword: data.password,
         resetLink,
+        subject: tplSubject,
+        body: tplBody,
       });
     } catch (e) {
       console.warn("[inviteUser] welkomstmail fout", e);
