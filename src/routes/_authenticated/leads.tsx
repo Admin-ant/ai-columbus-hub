@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Inbox, RefreshCw, Loader2, Search, Download, ExternalLink, Mail, Phone, Filter, Trophy, XCircle, Plus, Pencil } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { z } from "zod";
 import { winLead, loseLead } from "@/lib/pipeline.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
