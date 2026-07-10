@@ -526,6 +526,8 @@ function ProjectsDashboardPage() {
                 <tr className="border-b bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-2 font-medium">Project</th>
                   <th className="px-4 py-2 text-right font-medium">Waarde</th>
+                  <th className="px-4 py-2 text-right font-medium">Mnd opbrengst</th>
+                  <th className="px-4 py-2 text-right font-medium">Eenmalig</th>
                   <th className="px-4 py-2 font-medium">Maand</th>
                   <th className="px-4 py-2 font-medium">Status</th>
                   <th className="px-4 py-2 font-medium">Contact</th>
