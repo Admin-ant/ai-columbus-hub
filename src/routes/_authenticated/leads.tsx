@@ -350,7 +350,10 @@ function LeadsPage() {
                         <Button size="sm" variant="ghost" title="Zet op verloren" onClick={() => setLoseLeadRow(l)} disabled={l.stage === "verloren"}>
                           <XCircle className="h-3.5 w-3.5 text-rose-600" />
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setOpenLead(l)}>
+                        <Button size="sm" variant="ghost" title="Bewerken" onClick={() => setEditLead(l)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button size="sm" variant="ghost" title="Details" onClick={() => setOpenLead(l)}>
                           <ExternalLink className="h-3.5 w-3.5" />
                         </Button>
                       </div>
