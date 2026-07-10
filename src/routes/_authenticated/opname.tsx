@@ -118,6 +118,7 @@ function OpnamePage() {
   const finalizeRec = useServerFn(finalizeCallRecording);
   const listRec = useServerFn(listCallRecordings);
   const createLead = useServerFn(quickCreateLead);
+  const createClient = useServerFn(quickCreateClient);
 
   const selectedTarget: Target | null = useMemo(() => {
     if (!selectedKey) return null;
