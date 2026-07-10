@@ -412,9 +412,14 @@ function OpnamePage() {
                 )}
               </SelectContent>
             </Select>
-            <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => setNewLeadOpen(true)} disabled={isRecording || isBusy}>
-              <Plus className="mr-1 h-4 w-4" /> Nieuwe lead aanmaken
-            </Button>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => setNewLeadOpen(true)} disabled={isRecording || isBusy}>
+                <Plus className="mr-1 h-4 w-4" /> Nieuwe lead
+              </Button>
+              <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => setNewClientOpen(true)} disabled={isRecording || isBusy}>
+                <Plus className="mr-1 h-4 w-4" /> Nieuwe klant
+              </Button>
+            </div>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
             <div className="grid gap-2">
