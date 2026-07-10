@@ -198,6 +198,167 @@ export type Database = {
           },
         ]
       }
+      contract_lines: {
+        Row: {
+          contract_id: string
+          created_at: string
+          description: string
+          id: string
+          position: number
+          product_id: string | null
+          quantity: number
+          unit_price_cents: number
+          vat_rate: number
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          description: string
+          id?: string
+          position?: number
+          product_id?: string | null
+          quantity?: number
+          unit_price_cents?: number
+          vat_rate?: number
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          description?: string
+          id?: string
+          position?: number
+          product_id?: string | null
+          quantity?: number
+          unit_price_cents?: number
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_lines_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contracts: {
+        Row: {
+          auto_invoice: boolean
+          billing_frequency: Database["public"]["Enums"]["billing_frequency"]
+          client_id: string
+          contract_number: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          end_date: string | null
+          id: string
+          last_invoiced_at: string | null
+          monthly_amount_cents: number
+          next_invoice_date: string | null
+          notes: string | null
+          notice_period_days: number
+          organization_id: string
+          payment_terms_days: number
+          project_id: string | null
+          quote_id: string | null
+          setup_fee_cents: number
+          start_date: string
+          status: Database["public"]["Enums"]["contract_status"]
+          title: string
+          updated_at: string
+          vat_rate: number
+        }
+        Insert: {
+          auto_invoice?: boolean
+          billing_frequency?: Database["public"]["Enums"]["billing_frequency"]
+          client_id: string
+          contract_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          end_date?: string | null
+          id?: string
+          last_invoiced_at?: string | null
+          monthly_amount_cents?: number
+          next_invoice_date?: string | null
+          notes?: string | null
+          notice_period_days?: number
+          organization_id: string
+          payment_terms_days?: number
+          project_id?: string | null
+          quote_id?: string | null
+          setup_fee_cents?: number
+          start_date: string
+          status?: Database["public"]["Enums"]["contract_status"]
+          title: string
+          updated_at?: string
+          vat_rate?: number
+        }
+        Update: {
+          auto_invoice?: boolean
+          billing_frequency?: Database["public"]["Enums"]["billing_frequency"]
+          client_id?: string
+          contract_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          end_date?: string | null
+          id?: string
+          last_invoiced_at?: string | null
+          monthly_amount_cents?: number
+          next_invoice_date?: string | null
+          notes?: string | null
+          notice_period_days?: number
+          organization_id?: string
+          payment_terms_days?: number
+          project_id?: string | null
+          quote_id?: string | null
+          setup_fee_cents?: number
+          start_date?: string
+          status?: Database["public"]["Enums"]["contract_status"]
+          title?: string
+          updated_at?: string
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_activities: {
         Row: {
           body: string | null
@@ -852,6 +1013,7 @@ export type Database = {
           amount: number
           client_id: string | null
           client_name: string | null
+          contract_id: string | null
           created_at: string
           currency: string
           due_date: string
@@ -878,6 +1040,7 @@ export type Database = {
           amount?: number
           client_id?: string | null
           client_name?: string | null
+          contract_id?: string | null
           created_at?: string
           currency?: string
           due_date?: string
@@ -904,6 +1067,7 @@ export type Database = {
           amount?: number
           client_id?: string | null
           client_name?: string | null
+          contract_id?: string | null
           created_at?: string
           currency?: string
           due_date?: string
@@ -1138,6 +1302,9 @@ export type Database = {
       leads: {
         Row: {
           company: string | null
+          converted_client_id: string | null
+          converted_contract_id: string | null
+          converted_project_id: string | null
           created_at: string
           created_by: string | null
           email: string | null
@@ -1146,21 +1313,27 @@ export type Database = {
           external_url: string | null
           id: string
           last_contact_at: string | null
+          lost_reason: string | null
           name: string
           notes: string | null
           organization_id: string
           phone: string | null
           position: number
           potential_monthly_value: number
+          quote_id: string | null
           rep: string | null
           source: string | null
           stage: Database["public"]["Enums"]["lead_stage"]
           target_start_date: string | null
           updated_at: string
           value: number
+          won_at: string | null
         }
         Insert: {
           company?: string | null
+          converted_client_id?: string | null
+          converted_contract_id?: string | null
+          converted_project_id?: string | null
           created_at?: string
           created_by?: string | null
           email?: string | null
@@ -1169,21 +1342,27 @@ export type Database = {
           external_url?: string | null
           id?: string
           last_contact_at?: string | null
+          lost_reason?: string | null
           name: string
           notes?: string | null
           organization_id: string
           phone?: string | null
           position?: number
           potential_monthly_value?: number
+          quote_id?: string | null
           rep?: string | null
           source?: string | null
           stage?: Database["public"]["Enums"]["lead_stage"]
           target_start_date?: string | null
           updated_at?: string
           value?: number
+          won_at?: string | null
         }
         Update: {
           company?: string | null
+          converted_client_id?: string | null
+          converted_contract_id?: string | null
+          converted_project_id?: string | null
           created_at?: string
           created_by?: string | null
           email?: string | null
@@ -1192,18 +1371,21 @@ export type Database = {
           external_url?: string | null
           id?: string
           last_contact_at?: string | null
+          lost_reason?: string | null
           name?: string
           notes?: string | null
           organization_id?: string
           phone?: string | null
           position?: number
           potential_monthly_value?: number
+          quote_id?: string | null
           rep?: string | null
           source?: string | null
           stage?: Database["public"]["Enums"]["lead_stage"]
           target_start_date?: string | null
           updated_at?: string
           value?: number
+          won_at?: string | null
         }
         Relationships: [
           {
@@ -1927,6 +2109,7 @@ export type Database = {
           contract_months: number | null
           created_at: string
           created_by: string | null
+          default_solution_type: string | null
           description: string | null
           discount_percent: number
           discount_type: Database["public"]["Enums"]["discount_type"]
@@ -1945,6 +2128,7 @@ export type Database = {
           contract_months?: number | null
           created_at?: string
           created_by?: string | null
+          default_solution_type?: string | null
           description?: string | null
           discount_percent?: number
           discount_type?: Database["public"]["Enums"]["discount_type"]
@@ -1963,6 +2147,7 @@ export type Database = {
           contract_months?: number | null
           created_at?: string
           created_by?: string | null
+          default_solution_type?: string | null
           description?: string | null
           discount_percent?: number
           discount_type?: Database["public"]["Enums"]["discount_type"]
@@ -2439,6 +2624,57 @@ export type Database = {
           },
         ]
       }
+      recurring_invoice_runs: {
+        Row: {
+          contract_id: string
+          created_at: string
+          error: string | null
+          id: string
+          invoice_id: string | null
+          organization_id: string
+          period_end: string
+          period_start: string
+          status: string
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          invoice_id?: string | null
+          organization_id: string
+          period_end: string
+          period_start: string
+          status: string
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          invoice_id?: string | null
+          organization_id?: string
+          period_end?: string
+          period_start?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_invoice_runs_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_invoice_runs_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       studio_quote_events: {
         Row: {
           duration_ms: number | null
@@ -2639,6 +2875,29 @@ export type Database = {
         }
         Returns: string
       }
+      convert_lead_to_customer: {
+        Args: {
+          _lead_id: string
+          _monthly_cents: number
+          _setup_cents: number
+          _start_date: string
+          _title: string
+        }
+        Returns: {
+          out_client_id: string
+          out_contract_id: string
+          out_project_id: string
+        }[]
+      }
+      generate_recurring_invoices: {
+        Args: { _only_contract_id?: string }
+        Returns: {
+          contract_id: string
+          error: string
+          invoice_id: string
+          status: string
+        }[]
+      }
       next_invoice_number: { Args: { _org_id: string }; Returns: string }
       post_expense_journal:
         | { Args: { _expense_id: string }; Returns: string }
@@ -2667,6 +2926,8 @@ export type Database = {
         | "expense"
         | "vat"
       app_role: "admin" | "medewerker"
+      billing_frequency: "monthly" | "quarterly" | "yearly"
+      contract_status: "draft" | "active" | "paused" | "cancelled" | "ended"
       discount_type: "none" | "one_time" | "recurring"
       invoice_status: "draft" | "sent" | "paid" | "overdue" | "cancelled"
       lead_stage:
@@ -2835,6 +3096,8 @@ export const Constants = {
         "vat",
       ],
       app_role: ["admin", "medewerker"],
+      billing_frequency: ["monthly", "quarterly", "yearly"],
+      contract_status: ["draft", "active", "paused", "cancelled", "ended"],
       discount_type: ["none", "one_time", "recurring"],
       invoice_status: ["draft", "sent", "paid", "overdue", "cancelled"],
       lead_stage: [
