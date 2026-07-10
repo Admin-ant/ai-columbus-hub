@@ -22,6 +22,7 @@ import {
   Mail,
   Inbox,
   Mic,
+  Workflow,
 } from "lucide-react";
 
 import {
