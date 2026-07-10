@@ -80,7 +80,7 @@ function RegelsPage() {
     setLoading(true);
     try {
       const r = await list({ data: { organization_id: currentOrganizationId } });
-      setRules(r.rows as unknown as Rule[]);
+      setRules(r.rows as Rule[]);
     } finally {
       setLoading(false);
     }
