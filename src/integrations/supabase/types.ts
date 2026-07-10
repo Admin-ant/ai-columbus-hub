@@ -65,6 +65,94 @@ export type Database = {
           },
         ]
       }
+      call_recordings: {
+        Row: {
+          audio_mime: string | null
+          audio_path: string | null
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          duration_seconds: number | null
+          error: string | null
+          id: string
+          lead_id: string | null
+          organization_id: string
+          report_markdown: string | null
+          status: string
+          suggested_stage: string | null
+          summary: string | null
+          tasks_created: number
+          title: string | null
+          transcript: string | null
+          updated_at: string
+          workflow_stage: string | null
+        }
+        Insert: {
+          audio_mime?: string | null
+          audio_path?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          duration_seconds?: number | null
+          error?: string | null
+          id?: string
+          lead_id?: string | null
+          organization_id: string
+          report_markdown?: string | null
+          status?: string
+          suggested_stage?: string | null
+          summary?: string | null
+          tasks_created?: number
+          title?: string | null
+          transcript?: string | null
+          updated_at?: string
+          workflow_stage?: string | null
+        }
+        Update: {
+          audio_mime?: string | null
+          audio_path?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          duration_seconds?: number | null
+          error?: string | null
+          id?: string
+          lead_id?: string | null
+          organization_id?: string
+          report_markdown?: string | null
+          status?: string
+          suggested_stage?: string | null
+          summary?: string | null
+          tasks_created?: number
+          title?: string | null
+          transcript?: string | null
+          updated_at?: string
+          workflow_stage?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_recordings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_recordings_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_recordings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chart_of_accounts: {
         Row: {
           active: boolean

@@ -19,6 +19,7 @@ import { Route as QTokenRouteImport } from './routes/q.$token'
 import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated/teams'
 import { Route as AuthenticatedQuotesRouteImport } from './routes/_authenticated/quotes'
 import { Route as AuthenticatedProductenRouteImport } from './routes/_authenticated/producten'
+import { Route as AuthenticatedOpnameRouteImport } from './routes/_authenticated/opname'
 import { Route as AuthenticatedNetqloudRouteImport } from './routes/_authenticated/netqloud'
 import { Route as AuthenticatedMailRouteImport } from './routes/_authenticated/mail'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
@@ -119,6 +120,11 @@ const AuthenticatedQuotesRoute = AuthenticatedQuotesRouteImport.update({
 const AuthenticatedProductenRoute = AuthenticatedProductenRouteImport.update({
   id: '/producten',
   path: '/producten',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOpnameRoute = AuthenticatedOpnameRouteImport.update({
+  id: '/opname',
+  path: '/opname',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedNetqloudRoute = AuthenticatedNetqloudRouteImport.update({
@@ -438,6 +444,7 @@ export interface FileRoutesByFullPath {
   '/leads': typeof AuthenticatedLeadsRoute
   '/mail': typeof AuthenticatedMailRouteWithChildren
   '/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
+  '/opname': typeof AuthenticatedOpnameRoute
   '/producten': typeof AuthenticatedProductenRoute
   '/quotes': typeof AuthenticatedQuotesRoute
   '/teams': typeof AuthenticatedTeamsRoute
@@ -498,6 +505,7 @@ export interface FileRoutesByTo {
   '/invoices': typeof AuthenticatedInvoicesRouteWithChildren
   '/leads': typeof AuthenticatedLeadsRoute
   '/mail': typeof AuthenticatedMailRouteWithChildren
+  '/opname': typeof AuthenticatedOpnameRoute
   '/producten': typeof AuthenticatedProductenRoute
   '/quotes': typeof AuthenticatedQuotesRoute
   '/teams': typeof AuthenticatedTeamsRoute
@@ -563,6 +571,7 @@ export interface FileRoutesById {
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/mail': typeof AuthenticatedMailRouteWithChildren
   '/_authenticated/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
+  '/_authenticated/opname': typeof AuthenticatedOpnameRoute
   '/_authenticated/producten': typeof AuthenticatedProductenRoute
   '/_authenticated/quotes': typeof AuthenticatedQuotesRoute
   '/_authenticated/teams': typeof AuthenticatedTeamsRoute
@@ -629,6 +638,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/mail'
     | '/netqloud'
+    | '/opname'
     | '/producten'
     | '/quotes'
     | '/teams'
@@ -689,6 +699,7 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/leads'
     | '/mail'
+    | '/opname'
     | '/producten'
     | '/quotes'
     | '/teams'
@@ -753,6 +764,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads'
     | '/_authenticated/mail'
     | '/_authenticated/netqloud'
+    | '/_authenticated/opname'
     | '/_authenticated/producten'
     | '/_authenticated/quotes'
     | '/_authenticated/teams'
@@ -894,6 +906,13 @@ declare module '@tanstack/react-router' {
       path: '/producten'
       fullPath: '/producten'
       preLoaderRoute: typeof AuthenticatedProductenRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/opname': {
+      id: '/_authenticated/opname'
+      path: '/opname'
+      fullPath: '/opname'
+      preLoaderRoute: typeof AuthenticatedOpnameRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/netqloud': {
@@ -1429,6 +1448,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedMailRoute: typeof AuthenticatedMailRouteWithChildren
   AuthenticatedNetqloudRoute: typeof AuthenticatedNetqloudRouteWithChildren
+  AuthenticatedOpnameRoute: typeof AuthenticatedOpnameRoute
   AuthenticatedProductenRoute: typeof AuthenticatedProductenRoute
   AuthenticatedQuotesRoute: typeof AuthenticatedQuotesRoute
   AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
@@ -1456,6 +1476,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedMailRoute: AuthenticatedMailRouteWithChildren,
   AuthenticatedNetqloudRoute: AuthenticatedNetqloudRouteWithChildren,
+  AuthenticatedOpnameRoute: AuthenticatedOpnameRoute,
   AuthenticatedProductenRoute: AuthenticatedProductenRoute,
   AuthenticatedQuotesRoute: AuthenticatedQuotesRoute,
   AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
