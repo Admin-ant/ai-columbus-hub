@@ -183,10 +183,14 @@ function GebruikersPage() {
             Nodig collega's uit, beheer rollen en reset wachtwoorden.
           </p>
         </div>
-        <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-          <DialogTrigger asChild>
-            <Button><UserPlus className="mr-2 h-4 w-4" />Nieuwe gebruiker</Button>
-          </DialogTrigger>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={openTemplate}>
+            <Mail className="mr-2 h-4 w-4" />Uitnodigingsmail
+          </Button>
+          <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+            <DialogTrigger asChild>
+              <Button><UserPlus className="mr-2 h-4 w-4" />Nieuwe gebruiker</Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Gebruiker uitnodigen</DialogTitle>
