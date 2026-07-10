@@ -42,6 +42,7 @@ import { Route as AuthenticatedNetqloudServersRouteImport } from './routes/_auth
 import { Route as AuthenticatedNetqloudKlantenRouteImport } from './routes/_authenticated/netqloud.klanten'
 import { Route as AuthenticatedNetqloudInstellingenRouteImport } from './routes/_authenticated/netqloud.instellingen'
 import { Route as AuthenticatedMailSettingsRouteImport } from './routes/_authenticated/mail.settings'
+import { Route as AuthenticatedKpiMetricRouteImport } from './routes/_authenticated/kpi.$metric'
 import { Route as AuthenticatedInvoicesInvoiceIdRouteImport } from './routes/_authenticated/invoices.$invoiceId'
 import { Route as AuthenticatedInkoopfacturenExpenseIdRouteImport } from './routes/_authenticated/inkoopfacturen.$expenseId'
 import { Route as AuthenticatedCrmActivitiesRouteImport } from './routes/_authenticated/crm.activities'
@@ -248,6 +249,11 @@ const AuthenticatedMailSettingsRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedMailRoute,
   } as any)
+const AuthenticatedKpiMetricRoute = AuthenticatedKpiMetricRouteImport.update({
+  id: '/kpi/$metric',
+  path: '/kpi/$metric',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedInvoicesInvoiceIdRoute =
   AuthenticatedInvoicesInvoiceIdRouteImport.update({
     id: '/$invoiceId',
@@ -449,6 +455,7 @@ export interface FileRoutesByFullPath {
   '/crm/activities': typeof AuthenticatedCrmActivitiesRoute
   '/inkoopfacturen/$expenseId': typeof AuthenticatedInkoopfacturenExpenseIdRoute
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
+  '/kpi/$metric': typeof AuthenticatedKpiMetricRoute
   '/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
@@ -509,6 +516,7 @@ export interface FileRoutesByTo {
   '/crm/activities': typeof AuthenticatedCrmActivitiesRoute
   '/inkoopfacturen/$expenseId': typeof AuthenticatedInkoopfacturenExpenseIdRoute
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
+  '/kpi/$metric': typeof AuthenticatedKpiMetricRoute
   '/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
@@ -573,6 +581,7 @@ export interface FileRoutesById {
   '/_authenticated/crm/activities': typeof AuthenticatedCrmActivitiesRoute
   '/_authenticated/inkoopfacturen/$expenseId': typeof AuthenticatedInkoopfacturenExpenseIdRoute
   '/_authenticated/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
+  '/_authenticated/kpi/$metric': typeof AuthenticatedKpiMetricRoute
   '/_authenticated/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/_authenticated/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/_authenticated/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
@@ -637,6 +646,7 @@ export interface FileRouteTypes {
     | '/crm/activities'
     | '/inkoopfacturen/$expenseId'
     | '/invoices/$invoiceId'
+    | '/kpi/$metric'
     | '/mail/settings'
     | '/netqloud/instellingen'
     | '/netqloud/klanten'
@@ -697,6 +707,7 @@ export interface FileRouteTypes {
     | '/crm/activities'
     | '/inkoopfacturen/$expenseId'
     | '/invoices/$invoiceId'
+    | '/kpi/$metric'
     | '/mail/settings'
     | '/netqloud/instellingen'
     | '/netqloud/klanten'
@@ -760,6 +771,7 @@ export interface FileRouteTypes {
     | '/_authenticated/crm/activities'
     | '/_authenticated/inkoopfacturen/$expenseId'
     | '/_authenticated/invoices/$invoiceId'
+    | '/_authenticated/kpi/$metric'
     | '/_authenticated/mail/settings'
     | '/_authenticated/netqloud/instellingen'
     | '/_authenticated/netqloud/klanten'
@@ -1044,6 +1056,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/mail/settings'
       preLoaderRoute: typeof AuthenticatedMailSettingsRouteImport
       parentRoute: typeof AuthenticatedMailRoute
+    }
+    '/_authenticated/kpi/$metric': {
+      id: '/_authenticated/kpi/$metric'
+      path: '/kpi/$metric'
+      fullPath: '/kpi/$metric'
+      preLoaderRoute: typeof AuthenticatedKpiMetricRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/invoices/$invoiceId': {
       id: '/_authenticated/invoices/$invoiceId'
@@ -1415,6 +1434,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedCrmActivitiesRoute: typeof AuthenticatedCrmActivitiesRoute
+  AuthenticatedKpiMetricRoute: typeof AuthenticatedKpiMetricRoute
   AuthenticatedOutreachTemplatesRoute: typeof AuthenticatedOutreachTemplatesRoute
   AuthenticatedAnalyticsIndexRoute: typeof AuthenticatedAnalyticsIndexRoute
   AuthenticatedOfferteStudioIndexRoute: typeof AuthenticatedOfferteStudioIndexRoute
@@ -1441,6 +1461,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedCrmActivitiesRoute: AuthenticatedCrmActivitiesRoute,
+  AuthenticatedKpiMetricRoute: AuthenticatedKpiMetricRoute,
   AuthenticatedOutreachTemplatesRoute: AuthenticatedOutreachTemplatesRoute,
   AuthenticatedAnalyticsIndexRoute: AuthenticatedAnalyticsIndexRoute,
   AuthenticatedOfferteStudioIndexRoute: AuthenticatedOfferteStudioIndexRoute,
