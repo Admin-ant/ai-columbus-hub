@@ -366,6 +366,8 @@ export function DashboardOverview({
             {/* Primaire KPI's */}
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <KpiCard
+                metric="mrr"
+                period={period}
                 label="Maandomzet (MRR)"
                 value={EUR2.format(k.mrr)}
                 icon={TrendingUp}
@@ -374,6 +376,8 @@ export function DashboardOverview({
                 info="Som van 'potential_monthly_value' van alle leads met stage 'klant' óf met een target-startdatum die vandaag of eerder ligt. Verloren leads tellen niet mee. Momentopname — periodefilter beïnvloedt dit niet."
               />
               <KpiCard
+                metric="pipeline"
+                period={period}
                 label="Pijplijn / maand"
                 value={EUR2.format(k.pipeline)}
                 icon={Hourglass}
@@ -382,6 +386,8 @@ export function DashboardOverview({
                 info="Som van maandwaarde van leads die nog niet 'klant' zijn en waarvan de startdatum in de toekomst ligt (of ontbreekt). Momentopname."
               />
               <KpiCard
+                metric="open"
+                period={period}
                 label="Openstaand"
                 value={EUR2.format(k.openInvoices)}
                 sub={`${k.openCount} factu${k.openCount === 1 ? "ur" : "ren"}`}
@@ -391,6 +397,8 @@ export function DashboardOverview({
                 info="Totaal van facturen met status 'draft' of 'sent' waarvan de vervaldatum nog niet is verstreken. Momentopname."
               />
               <KpiCard
+                metric="overdue"
+                period={period}
                 label="Achterstallig"
                 value={EUR2.format(k.overdue)}
                 sub={`${k.overdueCount} factu${k.overdueCount === 1 ? "ur" : "ren"}`}
@@ -404,6 +412,8 @@ export function DashboardOverview({
             {/* Secundaire KPI's — periode-afhankelijk */}
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <KpiCard
+                metric="paid"
+                period={period}
                 label={`Betaald (${range.label})`}
                 value={EUR2.format(k.paidInPeriod)}
                 icon={Wallet}
@@ -412,6 +422,8 @@ export function DashboardOverview({
                 info={`Som van facturen met status 'paid' waarvan de betaaldatum binnen '${range.label}' valt.`}
               />
               <KpiCard
+                metric="contracts"
+                period={period}
                 label="Actieve contracten"
                 value={String(k.activeContracts)}
                 sub={`${k.activeClients} klanten`}
@@ -421,6 +433,8 @@ export function DashboardOverview({
                 info="Aantal contracten met status 'active'. Momentopname — periodefilter beïnvloedt dit niet."
               />
               <KpiCard
+                metric="leads"
+                period={period}
                 label={`Nieuwe leads (${range.label})`}
                 value={String(k.newLeads)}
                 icon={Users}
@@ -429,6 +443,8 @@ export function DashboardOverview({
                 info={`Aantal leads aangemaakt binnen '${range.label}'.`}
               />
               <KpiCard
+                metric="winrate"
+                period={period}
                 label={`Winrate (${range.label})`}
                 value={`${k.winRate}%`}
                 sub={`${k.wonCount} gewonnen · ${k.lostCount} verloren`}
