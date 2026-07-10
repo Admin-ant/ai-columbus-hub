@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Inbox, RefreshCw, Loader2, Search, Download, ExternalLink, Mail, Phone, Filter, Trophy, XCircle, Plus } from "lucide-react";
+import { Inbox, RefreshCw, Loader2, Search, Download, ExternalLink, Mail, Phone, Filter, Trophy, XCircle, Plus, Pencil } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { winLead, loseLead } from "@/lib/pipeline.functions";
@@ -87,6 +87,7 @@ function LeadsPage() {
   const [winLeadRow, setWinLeadRow] = useState<Lead | null>(null);
   const [loseLeadRow, setLoseLeadRow] = useState<Lead | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editLead, setEditLead] = useState<Lead | null>(null);
   const fnWin = useServerFn(winLead);
   const fnLose = useServerFn(loseLead);
 
@@ -349,7 +350,10 @@ function LeadsPage() {
                         <Button size="sm" variant="ghost" title="Zet op verloren" onClick={() => setLoseLeadRow(l)} disabled={l.stage === "verloren"}>
                           <XCircle className="h-3.5 w-3.5 text-rose-600" />
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setOpenLead(l)}>
+                        <Button size="sm" variant="ghost" title="Bewerken" onClick={() => setEditLead(l)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button size="sm" variant="ghost" title="Details" onClick={() => setOpenLead(l)}>
                           <ExternalLink className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -366,6 +370,12 @@ function LeadsPage() {
           onClose={() => setCreateOpen(false)}
           organizationId={currentOrganizationId}
           onCreated={() => { setCreateOpen(false); load(); }}
+        />
+
+        <EditLeadDialog
+          lead={editLead}
+          onClose={() => setEditLead(null)}
+          onSaved={() => { setEditLead(null); load(); }}
         />
 
 
@@ -689,6 +699,137 @@ function CreateLeadDialog({
           <Button onClick={save} disabled={saving || !name.trim()}>
             {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
             Lead aanmaken
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditLeadDialog({
+  lead, onClose, onSaved,
+}: {
+  lead: Lead | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [company, setCompany] = useState("");
+  const [contactPerson, setContactPerson] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [source, setSource] = useState("");
+  const [stage, setStage] = useState<string>("nieuwe");
+  const [value, setValue] = useState("0");
+  const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (lead) {
+      setName(lead.name ?? "");
+      setCompany(lead.company ?? "");
+      setContactPerson(lead.rep ?? "");
+      setEmail(lead.email ?? "");
+      setPhone(lead.phone ?? "");
+      setSource(lead.source ?? "handmatig");
+      setStage(lead.stage);
+      setValue(lead.value != null ? String(lead.value) : "0");
+      setNotes(lead.notes ?? "");
+    }
+  }, [lead]);
+
+  async function save() {
+    if (!lead) return;
+    if (!name.trim()) { toast.error("Naam is verplicht"); return; }
+    setSaving(true);
+    const { error } = await supabase
+      .from("leads")
+      .update({
+        name: name.trim(),
+        company: company.trim() || null,
+        rep: contactPerson.trim() || null,
+        email: email.trim() || null,
+        phone: phone.trim() || null,
+        source: source.trim() || null,
+        stage: stage as never,
+        value: Number(value) || 0,
+        notes: notes.trim() || null,
+      } as never)
+      .eq("id", lead.id);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Lead bijgewerkt");
+    onSaved();
+  }
+
+  return (
+    <Dialog open={!!lead} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Lead bewerken</DialogTitle>
+          <DialogDescription>Werk de gegevens van deze lead bij.</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3 text-sm">
+          <div className="grid gap-1">
+            <Label>Naam *</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={200} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1">
+              <Label>Bedrijf</Label>
+              <Input value={company} onChange={(e) => setCompany(e.target.value)} maxLength={200} />
+            </div>
+            <div className="grid gap-1">
+              <Label>Contactpersoon</Label>
+              <Input value={contactPerson} onChange={(e) => setContactPerson(e.target.value)} maxLength={200} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1">
+              <Label>Email</Label>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={255} />
+            </div>
+            <div className="grid gap-1">
+              <Label>Telefoon</Label>
+              <Input value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={40} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1">
+              <Label>Bron</Label>
+              <Select value={source} onValueChange={setSource}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {["handmatig","website","referral","cold_outreach","linkedin","evenement","aanbesteding","anders"].map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1">
+              <Label>Status</Label>
+              <Select value={stage} onValueChange={setStage}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {STAGES.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid gap-1">
+            <Label>Waarde (€ p/m indicatie)</Label>
+            <Input type="number" min="0" value={value} onChange={(e) => setValue(e.target.value)} />
+          </div>
+          <div className="grid gap-1">
+            <Label>Notities</Label>
+            <Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={2000} />
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 pt-3">
+          <Button variant="outline" onClick={onClose} disabled={saving}>Annuleren</Button>
+          <Button onClick={save} disabled={saving || !name.trim()}>
+            {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+            Opslaan
           </Button>
         </div>
       </DialogContent>
