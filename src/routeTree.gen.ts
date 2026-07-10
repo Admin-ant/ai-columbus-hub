@@ -26,6 +26,7 @@ import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedInkoopfacturenRouteImport } from './routes/_authenticated/inkoopfacturen'
 import { Route as AuthenticatedGebruikersRouteImport } from './routes/_authenticated/gebruikers'
 import { Route as AuthenticatedEnterpriseRouteImport } from './routes/_authenticated/enterprise'
+import { Route as AuthenticatedContractenRouteImport } from './routes/_authenticated/contracten'
 import { Route as AuthenticatedBoekhoudingRouteImport } from './routes/_authenticated/boekhouding'
 import { Route as AuthenticatedAiColumbusRouteImport } from './routes/_authenticated/ai-columbus'
 import { Route as AuthenticatedAdministratieRouteImport } from './routes/_authenticated/administratie'
@@ -44,6 +45,7 @@ import { Route as AuthenticatedMailSettingsRouteImport } from './routes/_authent
 import { Route as AuthenticatedInvoicesInvoiceIdRouteImport } from './routes/_authenticated/invoices.$invoiceId'
 import { Route as AuthenticatedInkoopfacturenExpenseIdRouteImport } from './routes/_authenticated/inkoopfacturen.$expenseId'
 import { Route as AuthenticatedCrmActivitiesRouteImport } from './routes/_authenticated/crm.activities'
+import { Route as AuthenticatedContractenContractIdRouteImport } from './routes/_authenticated/contracten.$contractId'
 import { Route as AuthenticatedAiColumbusRapportagesRouteImport } from './routes/_authenticated/ai-columbus.rapportages'
 import { Route as AuthenticatedAiColumbusProjectenRouteImport } from './routes/_authenticated/ai-columbus.projecten'
 import { Route as AuthenticatedAiColumbusModellenRouteImport } from './routes/_authenticated/ai-columbus.modellen'
@@ -54,6 +56,7 @@ import { Route as AuthenticatedAiColumbusKlantenRouteImport } from './routes/_au
 import { Route as AuthenticatedAiColumbusInstellingenRouteImport } from './routes/_authenticated/ai-columbus.instellingen'
 import { Route as ApiPublicHooksStudioFollowupsRouteImport } from './routes/api/public/hooks/studio-followups'
 import { Route as ApiPublicHooksResendEventsRouteImport } from './routes/api/public/hooks/resend-events'
+import { Route as ApiPublicHooksRecurringInvoicesRouteImport } from './routes/api/public/hooks/recurring-invoices'
 import { Route as ApiPublicHooksQuoteFollowupsRouteImport } from './routes/api/public/hooks/quote-followups'
 import { Route as ApiPublicHooksPortaalBillableRouteImport } from './routes/api/public/hooks/portaal-billable'
 import { Route as ApiPublicHooksOutreachTrackRouteImport } from './routes/api/public/hooks/outreach-track'
@@ -151,6 +154,11 @@ const AuthenticatedGebruikersRoute = AuthenticatedGebruikersRouteImport.update({
 const AuthenticatedEnterpriseRoute = AuthenticatedEnterpriseRouteImport.update({
   id: '/enterprise',
   path: '/enterprise',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedContractenRoute = AuthenticatedContractenRouteImport.update({
+  id: '/contracten',
+  path: '/contracten',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedBoekhoudingRoute =
@@ -258,6 +266,12 @@ const AuthenticatedCrmActivitiesRoute =
     path: '/crm/activities',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedContractenContractIdRoute =
+  AuthenticatedContractenContractIdRouteImport.update({
+    id: '/$contractId',
+    path: '/$contractId',
+    getParentRoute: () => AuthenticatedContractenRoute,
+  } as any)
 const AuthenticatedAiColumbusRapportagesRoute =
   AuthenticatedAiColumbusRapportagesRouteImport.update({
     id: '/rapportages',
@@ -316,6 +330,12 @@ const ApiPublicHooksResendEventsRoute =
   ApiPublicHooksResendEventsRouteImport.update({
     id: '/api/public/hooks/resend-events',
     path: '/api/public/hooks/resend-events',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksRecurringInvoicesRoute =
+  ApiPublicHooksRecurringInvoicesRouteImport.update({
+    id: '/api/public/hooks/recurring-invoices',
+    path: '/api/public/hooks/recurring-invoices',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksQuoteFollowupsRoute =
@@ -404,6 +424,7 @@ export interface FileRoutesByFullPath {
   '/administratie': typeof AuthenticatedAdministratieRoute
   '/ai-columbus': typeof AuthenticatedAiColumbusRouteWithChildren
   '/boekhouding': typeof AuthenticatedBoekhoudingRouteWithChildren
+  '/contracten': typeof AuthenticatedContractenRouteWithChildren
   '/enterprise': typeof AuthenticatedEnterpriseRoute
   '/gebruikers': typeof AuthenticatedGebruikersRoute
   '/inkoopfacturen': typeof AuthenticatedInkoopfacturenRouteWithChildren
@@ -424,6 +445,7 @@ export interface FileRoutesByFullPath {
   '/ai-columbus/modellen': typeof AuthenticatedAiColumbusModellenRoute
   '/ai-columbus/projecten': typeof AuthenticatedAiColumbusProjectenRouteWithChildren
   '/ai-columbus/rapportages': typeof AuthenticatedAiColumbusRapportagesRoute
+  '/contracten/$contractId': typeof AuthenticatedContractenContractIdRoute
   '/crm/activities': typeof AuthenticatedCrmActivitiesRoute
   '/inkoopfacturen/$expenseId': typeof AuthenticatedInkoopfacturenExpenseIdRoute
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
@@ -452,6 +474,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/outreach-track': typeof ApiPublicHooksOutreachTrackRoute
   '/api/public/hooks/portaal-billable': typeof ApiPublicHooksPortaalBillableRoute
   '/api/public/hooks/quote-followups': typeof ApiPublicHooksQuoteFollowupsRoute
+  '/api/public/hooks/recurring-invoices': typeof ApiPublicHooksRecurringInvoicesRoute
   '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
 }
@@ -461,6 +484,7 @@ export interface FileRoutesByTo {
   '/visual-check': typeof VisualCheckRoute
   '/administratie': typeof AuthenticatedAdministratieRoute
   '/boekhouding': typeof AuthenticatedBoekhoudingRouteWithChildren
+  '/contracten': typeof AuthenticatedContractenRouteWithChildren
   '/enterprise': typeof AuthenticatedEnterpriseRoute
   '/gebruikers': typeof AuthenticatedGebruikersRoute
   '/inkoopfacturen': typeof AuthenticatedInkoopfacturenRouteWithChildren
@@ -481,6 +505,7 @@ export interface FileRoutesByTo {
   '/ai-columbus/modellen': typeof AuthenticatedAiColumbusModellenRoute
   '/ai-columbus/projecten': typeof AuthenticatedAiColumbusProjectenRouteWithChildren
   '/ai-columbus/rapportages': typeof AuthenticatedAiColumbusRapportagesRoute
+  '/contracten/$contractId': typeof AuthenticatedContractenContractIdRoute
   '/crm/activities': typeof AuthenticatedCrmActivitiesRoute
   '/inkoopfacturen/$expenseId': typeof AuthenticatedInkoopfacturenExpenseIdRoute
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
@@ -509,6 +534,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/outreach-track': typeof ApiPublicHooksOutreachTrackRoute
   '/api/public/hooks/portaal-billable': typeof ApiPublicHooksPortaalBillableRoute
   '/api/public/hooks/quote-followups': typeof ApiPublicHooksQuoteFollowupsRoute
+  '/api/public/hooks/recurring-invoices': typeof ApiPublicHooksRecurringInvoicesRoute
   '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
 }
@@ -521,6 +547,7 @@ export interface FileRoutesById {
   '/_authenticated/administratie': typeof AuthenticatedAdministratieRoute
   '/_authenticated/ai-columbus': typeof AuthenticatedAiColumbusRouteWithChildren
   '/_authenticated/boekhouding': typeof AuthenticatedBoekhoudingRouteWithChildren
+  '/_authenticated/contracten': typeof AuthenticatedContractenRouteWithChildren
   '/_authenticated/enterprise': typeof AuthenticatedEnterpriseRoute
   '/_authenticated/gebruikers': typeof AuthenticatedGebruikersRoute
   '/_authenticated/inkoopfacturen': typeof AuthenticatedInkoopfacturenRouteWithChildren
@@ -542,6 +569,7 @@ export interface FileRoutesById {
   '/_authenticated/ai-columbus/modellen': typeof AuthenticatedAiColumbusModellenRoute
   '/_authenticated/ai-columbus/projecten': typeof AuthenticatedAiColumbusProjectenRouteWithChildren
   '/_authenticated/ai-columbus/rapportages': typeof AuthenticatedAiColumbusRapportagesRoute
+  '/_authenticated/contracten/$contractId': typeof AuthenticatedContractenContractIdRoute
   '/_authenticated/crm/activities': typeof AuthenticatedCrmActivitiesRoute
   '/_authenticated/inkoopfacturen/$expenseId': typeof AuthenticatedInkoopfacturenExpenseIdRoute
   '/_authenticated/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
@@ -570,6 +598,7 @@ export interface FileRoutesById {
   '/api/public/hooks/outreach-track': typeof ApiPublicHooksOutreachTrackRoute
   '/api/public/hooks/portaal-billable': typeof ApiPublicHooksPortaalBillableRoute
   '/api/public/hooks/quote-followups': typeof ApiPublicHooksQuoteFollowupsRoute
+  '/api/public/hooks/recurring-invoices': typeof ApiPublicHooksRecurringInvoicesRoute
   '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
 }
@@ -583,6 +612,7 @@ export interface FileRouteTypes {
     | '/administratie'
     | '/ai-columbus'
     | '/boekhouding'
+    | '/contracten'
     | '/enterprise'
     | '/gebruikers'
     | '/inkoopfacturen'
@@ -603,6 +633,7 @@ export interface FileRouteTypes {
     | '/ai-columbus/modellen'
     | '/ai-columbus/projecten'
     | '/ai-columbus/rapportages'
+    | '/contracten/$contractId'
     | '/crm/activities'
     | '/inkoopfacturen/$expenseId'
     | '/invoices/$invoiceId'
@@ -631,6 +662,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/outreach-track'
     | '/api/public/hooks/portaal-billable'
     | '/api/public/hooks/quote-followups'
+    | '/api/public/hooks/recurring-invoices'
     | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
   fileRoutesByTo: FileRoutesByTo
@@ -640,6 +672,7 @@ export interface FileRouteTypes {
     | '/visual-check'
     | '/administratie'
     | '/boekhouding'
+    | '/contracten'
     | '/enterprise'
     | '/gebruikers'
     | '/inkoopfacturen'
@@ -660,6 +693,7 @@ export interface FileRouteTypes {
     | '/ai-columbus/modellen'
     | '/ai-columbus/projecten'
     | '/ai-columbus/rapportages'
+    | '/contracten/$contractId'
     | '/crm/activities'
     | '/inkoopfacturen/$expenseId'
     | '/invoices/$invoiceId'
@@ -688,6 +722,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/outreach-track'
     | '/api/public/hooks/portaal-billable'
     | '/api/public/hooks/quote-followups'
+    | '/api/public/hooks/recurring-invoices'
     | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
   id:
@@ -699,6 +734,7 @@ export interface FileRouteTypes {
     | '/_authenticated/administratie'
     | '/_authenticated/ai-columbus'
     | '/_authenticated/boekhouding'
+    | '/_authenticated/contracten'
     | '/_authenticated/enterprise'
     | '/_authenticated/gebruikers'
     | '/_authenticated/inkoopfacturen'
@@ -720,6 +756,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ai-columbus/modellen'
     | '/_authenticated/ai-columbus/projecten'
     | '/_authenticated/ai-columbus/rapportages'
+    | '/_authenticated/contracten/$contractId'
     | '/_authenticated/crm/activities'
     | '/_authenticated/inkoopfacturen/$expenseId'
     | '/_authenticated/invoices/$invoiceId'
@@ -748,6 +785,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/outreach-track'
     | '/api/public/hooks/portaal-billable'
     | '/api/public/hooks/quote-followups'
+    | '/api/public/hooks/recurring-invoices'
     | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
   fileRoutesById: FileRoutesById
@@ -769,6 +807,7 @@ export interface RootRouteChildren {
   ApiPublicHooksOutreachTrackRoute: typeof ApiPublicHooksOutreachTrackRoute
   ApiPublicHooksPortaalBillableRoute: typeof ApiPublicHooksPortaalBillableRoute
   ApiPublicHooksQuoteFollowupsRoute: typeof ApiPublicHooksQuoteFollowupsRoute
+  ApiPublicHooksRecurringInvoicesRoute: typeof ApiPublicHooksRecurringInvoicesRoute
   ApiPublicHooksResendEventsRoute: typeof ApiPublicHooksResendEventsRoute
   ApiPublicHooksStudioFollowupsRoute: typeof ApiPublicHooksStudioFollowupsRoute
 }
@@ -892,6 +931,13 @@ declare module '@tanstack/react-router' {
       path: '/enterprise'
       fullPath: '/enterprise'
       preLoaderRoute: typeof AuthenticatedEnterpriseRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/contracten': {
+      id: '/_authenticated/contracten'
+      path: '/contracten'
+      fullPath: '/contracten'
+      preLoaderRoute: typeof AuthenticatedContractenRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/boekhouding': {
@@ -1020,6 +1066,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCrmActivitiesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/contracten/$contractId': {
+      id: '/_authenticated/contracten/$contractId'
+      path: '/$contractId'
+      fullPath: '/contracten/$contractId'
+      preLoaderRoute: typeof AuthenticatedContractenContractIdRouteImport
+      parentRoute: typeof AuthenticatedContractenRoute
+    }
     '/_authenticated/ai-columbus/rapportages': {
       id: '/_authenticated/ai-columbus/rapportages'
       path: '/rapportages'
@@ -1088,6 +1141,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/resend-events'
       fullPath: '/api/public/hooks/resend-events'
       preLoaderRoute: typeof ApiPublicHooksResendEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/recurring-invoices': {
+      id: '/api/public/hooks/recurring-invoices'
+      path: '/api/public/hooks/recurring-invoices'
+      fullPath: '/api/public/hooks/recurring-invoices'
+      preLoaderRoute: typeof ApiPublicHooksRecurringInvoicesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/quote-followups': {
@@ -1264,6 +1324,21 @@ const AuthenticatedBoekhoudingRouteWithChildren =
     AuthenticatedBoekhoudingRouteChildren,
   )
 
+interface AuthenticatedContractenRouteChildren {
+  AuthenticatedContractenContractIdRoute: typeof AuthenticatedContractenContractIdRoute
+}
+
+const AuthenticatedContractenRouteChildren: AuthenticatedContractenRouteChildren =
+  {
+    AuthenticatedContractenContractIdRoute:
+      AuthenticatedContractenContractIdRoute,
+  }
+
+const AuthenticatedContractenRouteWithChildren =
+  AuthenticatedContractenRoute._addFileChildren(
+    AuthenticatedContractenRouteChildren,
+  )
+
 interface AuthenticatedInkoopfacturenRouteChildren {
   AuthenticatedInkoopfacturenExpenseIdRoute: typeof AuthenticatedInkoopfacturenExpenseIdRoute
 }
@@ -1327,6 +1402,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdministratieRoute: typeof AuthenticatedAdministratieRoute
   AuthenticatedAiColumbusRoute: typeof AuthenticatedAiColumbusRouteWithChildren
   AuthenticatedBoekhoudingRoute: typeof AuthenticatedBoekhoudingRouteWithChildren
+  AuthenticatedContractenRoute: typeof AuthenticatedContractenRouteWithChildren
   AuthenticatedEnterpriseRoute: typeof AuthenticatedEnterpriseRoute
   AuthenticatedGebruikersRoute: typeof AuthenticatedGebruikersRoute
   AuthenticatedInkoopfacturenRoute: typeof AuthenticatedInkoopfacturenRouteWithChildren
@@ -1351,6 +1427,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdministratieRoute: AuthenticatedAdministratieRoute,
   AuthenticatedAiColumbusRoute: AuthenticatedAiColumbusRouteWithChildren,
   AuthenticatedBoekhoudingRoute: AuthenticatedBoekhoudingRouteWithChildren,
+  AuthenticatedContractenRoute: AuthenticatedContractenRouteWithChildren,
   AuthenticatedEnterpriseRoute: AuthenticatedEnterpriseRoute,
   AuthenticatedGebruikersRoute: AuthenticatedGebruikersRoute,
   AuthenticatedInkoopfacturenRoute:
@@ -1392,6 +1469,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksOutreachTrackRoute: ApiPublicHooksOutreachTrackRoute,
   ApiPublicHooksPortaalBillableRoute: ApiPublicHooksPortaalBillableRoute,
   ApiPublicHooksQuoteFollowupsRoute: ApiPublicHooksQuoteFollowupsRoute,
+  ApiPublicHooksRecurringInvoicesRoute: ApiPublicHooksRecurringInvoicesRoute,
   ApiPublicHooksResendEventsRoute: ApiPublicHooksResendEventsRoute,
   ApiPublicHooksStudioFollowupsRoute: ApiPublicHooksStudioFollowupsRoute,
 }
