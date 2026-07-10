@@ -37,7 +37,7 @@ export const createCallRecording = createServerFn({ method: "POST" })
       .select("id")
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return { id: (row as { id: string }).id };
+    return { id: (row as unknown as { id: string }).id };
   });
 
 /* -------------------------------------------------------------------------- */
