@@ -213,6 +213,46 @@ function ExpenseDetailPage() {
     window.open(data.signedUrl, "_blank", "noopener,noreferrer");
   }
 
+  async function downloadAttachment(a: Attachment) {
+    const { data, error } = await supabase.storage
+      .from("expense-attachments")
+      .createSignedUrl(a.storage_path, 60 * 5);
+    if (error || !data?.signedUrl) {
+      toast.error(error?.message ?? "Kan bestand niet downloaden");
+      return;
+    }
+    try {
+      const response = await fetch(data.signedUrl);
+      if (!response.ok) throw new Error("Download mislukt");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = a.file_name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Download mislukt");
+    }
+  }
+
+  function downloadNotes() {
+    if (!expense?.notes) return;
+    const blob = new Blob([expense.notes], { type: "text/plain;charset=utf-8" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const safeSupplier = (expense.supplier ?? "inkoopfactuur").replace(/[^\w\-]+/g, "_");
+    link.download = `notitie-${safeSupplier}-${expense.expense_date}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }
+
+
   function openDownloadDialog() {
     if (!expense) return;
     setDownloadName(
@@ -502,12 +542,20 @@ function ExpenseDetailPage() {
       )}
       {expense.notes && (
         <div className="rounded-lg border bg-card p-4">
-          <div className="text-xs uppercase tracking-wide text-muted-foreground">Notitie</div>
-          <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
-            {expense.notes}
-          </p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-wide text-muted-foreground">Notitie</div>
+              <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+                {expense.notes}
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={downloadNotes}>
+              <Download className="mr-2 h-4 w-4" /> Downloaden
+            </Button>
+          </div>
         </div>
       )}
+
 
       <div className="rounded-lg border bg-card">
         <div className="flex items-center justify-between border-b p-4">
@@ -662,24 +710,40 @@ function ExpenseDetailPage() {
           </div>
         ) : (
           <ul className="divide-y">
-            {attachments.map((a) => (
-              <li key={a.id} className="flex items-center gap-3 px-4 py-2">
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                <button
-                  onClick={() => void openAttachment(a)}
-                  className="flex-1 truncate text-left text-sm font-medium text-primary hover:underline"
-                >
-                  {a.file_name}
-                </button>
-                <span className="text-xs text-muted-foreground">
-                  {a.size_bytes ? `${(a.size_bytes / 1024).toFixed(0)} KB` : ""}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {new Date(a.created_at).toLocaleDateString("nl-NL")}
-                </span>
-              </li>
-            ))}
+            {attachments.map((a) => {
+              const isTextNote = a.mime_type === "text/plain" || a.file_name.endsWith(".txt");
+              return (
+                <li key={a.id} className="flex items-center gap-3 px-4 py-2">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <button
+                    onClick={() => void openAttachment(a)}
+                    className="flex-1 truncate text-left text-sm font-medium text-primary hover:underline"
+                    title={isTextNote ? "Tekstnotitie openen" : "Bijlage openen"}
+                  >
+                    {a.file_name}
+                  </button>
+                  <span className="text-xs text-muted-foreground">
+                    {a.size_bytes ? `${(a.size_bytes / 1024).toFixed(0)} KB` : ""}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(a.created_at).toLocaleDateString("nl-NL")}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void downloadAttachment(a)}
+                    title={isTextNote ? "Tekstnotitie downloaden" : "Bijlage downloaden"}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    <span className="hidden sm:inline">
+                      {isTextNote ? "Notitie" : "Bestand"}
+                    </span>
+                  </Button>
+                </li>
+              );
+            })}
           </ul>
+
         )}
       </div>
 
