@@ -234,6 +234,16 @@ const brandingSchema = z.object({
   brand_logo_url: z.string().optional().nullable(),
   brand_font: z.string().optional().nullable(),
   brand_custom_domain: z.string().optional().nullable(),
+  address_line1: z.string().optional().nullable(),
+  address_line2: z.string().optional().nullable(),
+  postal_code: z.string().optional().nullable(),
+  city: z.string().optional().nullable(),
+  country: z.string().optional().nullable(),
+  email: z.string().optional().nullable(),
+  phone: z.string().optional().nullable(),
+  kvk_number: z.string().optional().nullable(),
+  iban: z.string().optional().nullable(),
+  bic: z.string().optional().nullable(),
 });
 
 export const updateBranding = createServerFn({ method: "POST" })
