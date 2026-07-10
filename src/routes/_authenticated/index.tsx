@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { DashboardOverview } from "@/components/dashboard-overview";
 import { MonthlyPipelinePanel } from "@/components/monthly-pipeline-panel";
+import type { PeriodKey } from "@/lib/dashboard-period";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Overzicht — AI van Columbus" }] }),
@@ -12,6 +14,7 @@ export const Route = createFileRoute("/_authenticated/")({
 function Index() {
   const { user } = useAuth();
   const { currentOrganizationId, currentOrganization } = useWorkspace();
+  const [period, setPeriod] = useState<PeriodKey>("30d");
   const name =
     user?.user_metadata?.full_name || user?.email?.split("@")[0] || "collega";
 
@@ -25,9 +28,16 @@ function Index() {
         </p>
       </div>
 
-      <DashboardOverview organizationId={currentOrganizationId} />
+      <DashboardOverview
+        organizationId={currentOrganizationId}
+        period={period}
+        onPeriodChange={setPeriod}
+      />
 
-      <MonthlyPipelinePanel organizationId={currentOrganizationId} />
+      <MonthlyPipelinePanel
+        organizationId={currentOrganizationId}
+        period={period}
+      />
     </div>
   );
 }
