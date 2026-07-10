@@ -72,6 +72,16 @@ type OrgRow = {
   id: string;
   name: string;
   tax_number: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  postal_code: string | null;
+  city: string | null;
+  country: string | null;
+  email: string | null;
+  phone: string | null;
+  kvk_number: string | null;
+  iban: string | null;
+  bic: string | null;
 };
 
 const STATUS_COLOR: Record<InvoiceStatus, string> = {
