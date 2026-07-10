@@ -376,6 +376,59 @@ function GebruikersPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={tplOpen} onOpenChange={setTplOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Uitnodigings- & welkomstmail</DialogTitle>
+            <DialogDescription>
+              Pas het onderwerp en de tekst aan. Gebruik tokens{" "}
+              <code className="rounded bg-muted px-1">{"{{name}}"}</code>,{" "}
+              <code className="rounded bg-muted px-1">{"{{email}}"}</code>,{" "}
+              <code className="rounded bg-muted px-1">{"{{temp_password}}"}</code>,{" "}
+              <code className="rounded bg-muted px-1">{"{{reset_link}}"}</code>.
+              Het wachtwoord en de knop worden automatisch toegevoegd.
+            </DialogDescription>
+          </DialogHeader>
+          {tplLoading ? (
+            <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />Laden…
+            </div>
+          ) : (
+            <form onSubmit={saveTemplate} className="space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="tpl-subject">Onderwerp</Label>
+                <Input
+                  id="tpl-subject"
+                  value={tplSubject}
+                  onChange={(e) => setTplSubject(e.target.value)}
+                  maxLength={300}
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="tpl-body">Berichttekst</Label>
+                <Textarea
+                  id="tpl-body"
+                  value={tplBody}
+                  onChange={(e) => setTplBody(e.target.value)}
+                  rows={10}
+                  maxLength={10000}
+                  required
+                />
+              </div>
+              <DialogFooter className="gap-2 sm:justify-between">
+                <Button type="button" variant="ghost" onClick={resetTemplate} disabled={!tplDefaults}>
+                  <RotateCcw className="mr-2 h-4 w-4" />Standaard herstellen
+                </Button>
+                <Button type="submit" disabled={tplSaving}>
+                  {tplSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Opslaan
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
