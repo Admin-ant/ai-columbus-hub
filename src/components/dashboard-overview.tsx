@@ -116,12 +116,20 @@ const STAGE_TONE: Record<string, string> = {
   verloren: "bg-red-500",
 };
 
-export function DashboardOverview({ organizationId }: { organizationId: string | null }) {
+export function DashboardOverview({
+  organizationId,
+  period,
+  onPeriodChange,
+}: {
+  organizationId: string | null;
+  period: PeriodKey;
+  onPeriodChange: (p: PeriodKey) => void;
+}) {
   const [k, setK] = useState<Kpis>(EMPTY);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState<PeriodKey>("30d");
 
   const range = useMemo(() => periodRange(period), [period]);
+
 
   useEffect(() => {
     if (!organizationId) {
