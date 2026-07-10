@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import {
   TrendingUp,
   Hourglass,
@@ -10,6 +11,7 @@ import {
   Trophy,
   Info,
   Inbox,
+  ArrowRight,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -35,6 +37,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  PERIODS,
+  periodRange,
+  type PeriodKey,
+} from "@/lib/dashboard-period";
 
 const EUR = new Intl.NumberFormat("nl-NL", {
   style: "currency",
@@ -46,29 +53,6 @@ const EUR2 = new Intl.NumberFormat("nl-NL", {
   currency: "EUR",
 });
 
-type PeriodKey = "30d" | "quarter" | "year" | "all";
-
-const PERIODS: { value: PeriodKey; label: string }[] = [
-  { value: "30d", label: "Laatste 30 dagen" },
-  { value: "quarter", label: "Dit kwartaal" },
-  { value: "year", label: "Dit jaar" },
-  { value: "all", label: "Alles" },
-];
-
-function periodRange(p: PeriodKey): { from: Date | null; label: string; months: number } {
-  const now = new Date();
-  if (p === "30d") {
-    return { from: new Date(now.getTime() - 30 * 864e5), label: "laatste 30 dagen", months: 1 };
-  }
-  if (p === "quarter") {
-    const qStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
-    return { from: qStart, label: "dit kwartaal", months: 3 };
-  }
-  if (p === "year") {
-    return { from: new Date(now.getFullYear(), 0, 1), label: "dit jaar", months: 12 };
-  }
-  return { from: null, label: "alle tijd", months: 12 };
-}
 
 type Kpis = {
   mrr: number;
