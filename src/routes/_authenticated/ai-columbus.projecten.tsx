@@ -188,6 +188,8 @@ function ProjectsDashboardPage() {
     return filtered.map((r) => ({
       Project: r.name,
       "Waarde (EUR)": Number(r.value_cents ?? 0) / 100,
+      "Maandelijkse opbrengst (EUR)": Number((r as any).monthly_value_cents ?? 0) / 100,
+      "Eenmalige kosten (EUR)": Number((r as any).one_time_cents ?? 0) / 100,
       Maand: r.target_month ? monthLabel(r.target_month) : "",
       Status: STATUS_META[r.status].label,
       Contactpersoon: r.contact_name ?? "",
