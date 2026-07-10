@@ -2254,8 +2254,10 @@ export type Database = {
           id: string
           last_modified_at: string
           last_modified_by: string | null
+          monthly_value_cents: number
           name: string
           notes: string | null
+          one_time_cents: number
           organization_id: string
           status: Database["public"]["Enums"]["project_status"]
           target_month: string | null
@@ -2272,8 +2274,10 @@ export type Database = {
           id?: string
           last_modified_at?: string
           last_modified_by?: string | null
+          monthly_value_cents?: number
           name: string
           notes?: string | null
+          one_time_cents?: number
           organization_id: string
           status?: Database["public"]["Enums"]["project_status"]
           target_month?: string | null
@@ -2290,8 +2294,10 @@ export type Database = {
           id?: string
           last_modified_at?: string
           last_modified_by?: string | null
+          monthly_value_cents?: number
           name?: string
           notes?: string | null
+          one_time_cents?: number
           organization_id?: string
           status?: Database["public"]["Enums"]["project_status"]
           target_month?: string | null

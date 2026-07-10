@@ -71,7 +71,8 @@ function ProjectsDashboardPage() {
   const [exportType, setExportType] = useState<"csv" | "xlsx" | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    name: "", value: "0", target_month: "", client_id: "" as string,
+    name: "", value: "0", monthly: "0", one_time: "0",
+    target_month: "", client_id: "" as string,
     status: "contact_gezocht" as ProjectStatus,
     contact_name: "", contact_email: "", contact_phone: "", notes: "",
   });
@@ -126,6 +127,8 @@ function ProjectsDashboardPage() {
   }, [rows, statusFilter, monthFilter, search]);
 
   const total = useMemo(() => filtered.reduce((s, r) => s + Number(r.value_cents ?? 0), 0), [filtered]);
+  const monthlyTotal = useMemo(() => filtered.reduce((s, r) => s + Number((r as any).monthly_value_cents ?? 0), 0), [filtered]);
+  const oneTimeTotal = useMemo(() => filtered.reduce((s, r) => s + Number((r as any).one_time_cents ?? 0), 0), [filtered]);
 
   async function updateRow(id: string, patch: Partial<ProjectRow>) {
     const prev = rows;
@@ -159,6 +162,8 @@ function ProjectsDashboardPage() {
       organization_id: currentOrganizationId,
       name: form.name.trim(),
       value_cents: valueCents,
+      monthly_value_cents: Math.round((Number(form.monthly) || 0) * 100),
+      one_time_cents: Math.round((Number(form.one_time) || 0) * 100),
       target_month: form.target_month || null,
       status: form.status,
       client_id: form.client_id || null,
@@ -168,12 +173,12 @@ function ProjectsDashboardPage() {
       notes: form.notes || null,
       created_by: user?.id ?? null,
       last_modified_by: user?.id ?? null,
-    });
+    } as any);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Project toegevoegd");
     setOpen(false);
-    setForm({ name: "", value: "0", target_month: "", client_id: "", status: "contact_gezocht", contact_name: "", contact_email: "", contact_phone: "", notes: "" });
+    setForm({ name: "", value: "0", monthly: "0", one_time: "0", target_month: "", client_id: "", status: "contact_gezocht", contact_name: "", contact_email: "", contact_phone: "", notes: "" });
     load();
   }
 
@@ -183,6 +188,8 @@ function ProjectsDashboardPage() {
     return filtered.map((r) => ({
       Project: r.name,
       "Waarde (EUR)": Number(r.value_cents ?? 0) / 100,
+      "Maandelijkse opbrengst (EUR)": Number((r as any).monthly_value_cents ?? 0) / 100,
+      "Eenmalige kosten (EUR)": Number((r as any).one_time_cents ?? 0) / 100,
       Maand: r.target_month ? monthLabel(r.target_month) : "",
       Status: STATUS_META[r.status].label,
       Contactpersoon: r.contact_name ?? "",
@@ -335,13 +342,21 @@ function ProjectsDashboardPage() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Waarde (€)</Label>
+                  <Label>Totale deal-waarde (€)</Label>
                   <Input type="number" step="0.01" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Doelmaand</Label>
                   <Input type="month" value={form.target_month ? form.target_month.slice(0,7) : ""}
                     onChange={(e) => setForm({ ...form, target_month: e.target.value ? `${e.target.value}-01` : "" })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Maandelijkse opbrengst (€)</Label>
+                  <Input type="number" step="0.01" value={form.monthly} onChange={(e) => setForm({ ...form, monthly: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Eenmalige kosten (€)</Label>
+                  <Input type="number" step="0.01" value={form.one_time} onChange={(e) => setForm({ ...form, one_time: e.target.value })} />
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label>Status</Label>
@@ -431,6 +446,24 @@ function ProjectsDashboardPage() {
         </div>
       </div>
 
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Maandelijkse opbrengst</div>
+          <div className="mt-2 text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{EUR.format(monthlyTotal / 100)}</div>
+          <div className="mt-1 text-xs text-muted-foreground">Som van alle {filtered.length} projecten in filter</div>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Eenmalige kosten</div>
+          <div className="mt-2 text-2xl font-bold tabular-nums text-indigo-600 dark:text-indigo-400">{EUR.format(oneTimeTotal / 100)}</div>
+          <div className="mt-1 text-xs text-muted-foreground">Totaal eenmalig / setup</div>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Totale deal-waarde</div>
+          <div className="mt-2 text-2xl font-bold tabular-nums">{EUR.format(total / 100)}</div>
+          <div className="mt-1 text-xs text-muted-foreground">Som van 'Waarde' kolom</div>
+        </div>
+      </div>
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {STATUS_KEYS.map((s) => {
           const items = rows.filter((r) => r.status === s);
@@ -493,6 +526,8 @@ function ProjectsDashboardPage() {
                 <tr className="border-b bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-2 font-medium">Project</th>
                   <th className="px-4 py-2 text-right font-medium">Waarde</th>
+                  <th className="px-4 py-2 text-right font-medium">Mnd opbrengst</th>
+                  <th className="px-4 py-2 text-right font-medium">Eenmalig</th>
                   <th className="px-4 py-2 font-medium">Maand</th>
                   <th className="px-4 py-2 font-medium">Status</th>
                   <th className="px-4 py-2 font-medium">Contact</th>
@@ -503,7 +538,7 @@ function ProjectsDashboardPage() {
               </thead>
               <tbody>
                 {filtered.length === 0 && (
-                  <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">Geen projecten met deze filters.</td></tr>
+                  <tr><td colSpan={10} className="px-4 py-8 text-center text-muted-foreground">Geen projecten met deze filters.</td></tr>
                 )}
                 {filtered.map((r) => {
                   const prof = r.last_modified_by ? profiles[r.last_modified_by] : null;
@@ -523,6 +558,14 @@ function ProjectsDashboardPage() {
                       <td className="px-4 py-2 text-right tabular-nums">
                         <EditableNumber value={Number(r.value_cents) / 100}
                           onSave={(v) => updateRow(r.id, { value_cents: Math.round(v * 100) })} />
+                      </td>
+                      <td className="px-4 py-2 text-right tabular-nums">
+                        <EditableNumber value={Number((r as any).monthly_value_cents ?? 0) / 100}
+                          onSave={(v) => updateRow(r.id, { monthly_value_cents: Math.round(v * 100) } as any)} />
+                      </td>
+                      <td className="px-4 py-2 text-right tabular-nums">
+                        <EditableNumber value={Number((r as any).one_time_cents ?? 0) / 100}
+                          onSave={(v) => updateRow(r.id, { one_time_cents: Math.round(v * 100) } as any)} />
                       </td>
                       <td className="px-4 py-2 text-muted-foreground">
                         <Input type="month" defaultValue={r.target_month ? r.target_month.slice(0,7) : ""}
@@ -582,6 +625,8 @@ function ProjectsDashboardPage() {
                 <tr className="bg-muted/40 font-semibold">
                   <td className="px-4 py-3">Totaal ({filtered.length})</td>
                   <td className="px-4 py-3 text-right tabular-nums">{EUR.format(total / 100)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400">{EUR.format(monthlyTotal / 100)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-indigo-600 dark:text-indigo-400">{EUR.format(oneTimeTotal / 100)}</td>
                   <td colSpan={6}></td>
                 </tr>
               </tfoot>
