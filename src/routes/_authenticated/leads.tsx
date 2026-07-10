@@ -361,6 +361,14 @@ function LeadsPage() {
           </table>
         </div>
 
+        <CreateLeadDialog
+          open={createOpen}
+          onClose={() => setCreateOpen(false)}
+          organizationId={currentOrganizationId}
+          onCreated={() => { setCreateOpen(false); load(); }}
+        />
+
+
         <WinLeadDialog
           lead={winLeadRow}
           onClose={() => setWinLeadRow(null)}
