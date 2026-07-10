@@ -162,6 +162,8 @@ function ProjectsDashboardPage() {
       organization_id: currentOrganizationId,
       name: form.name.trim(),
       value_cents: valueCents,
+      monthly_value_cents: Math.round((Number(form.monthly) || 0) * 100),
+      one_time_cents: Math.round((Number(form.one_time) || 0) * 100),
       target_month: form.target_month || null,
       status: form.status,
       client_id: form.client_id || null,
@@ -171,12 +173,12 @@ function ProjectsDashboardPage() {
       notes: form.notes || null,
       created_by: user?.id ?? null,
       last_modified_by: user?.id ?? null,
-    });
+    } as any);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Project toegevoegd");
     setOpen(false);
-    setForm({ name: "", value: "0", target_month: "", client_id: "", status: "contact_gezocht", contact_name: "", contact_email: "", contact_phone: "", notes: "" });
+    setForm({ name: "", value: "0", monthly: "0", one_time: "0", target_month: "", client_id: "", status: "contact_gezocht", contact_name: "", contact_email: "", contact_phone: "", notes: "" });
     load();
   }
 
