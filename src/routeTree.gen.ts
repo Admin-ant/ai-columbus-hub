@@ -39,6 +39,7 @@ import { Route as AuthenticatedAiColumbusIndexRouteImport } from './routes/_auth
 import { Route as QuoteTokenPdfRouteImport } from './routes/quote.$token.pdf'
 import { Route as AcceptQuoteTokenRouteImport } from './routes/accept.quote.$token'
 import { Route as AuthenticatedOutreachTemplatesRouteImport } from './routes/_authenticated/outreach.templates'
+import { Route as AuthenticatedOpnameRegelsRouteImport } from './routes/_authenticated/opname.regels'
 import { Route as AuthenticatedNetqloudServersRouteImport } from './routes/_authenticated/netqloud.servers'
 import { Route as AuthenticatedNetqloudKlantenRouteImport } from './routes/_authenticated/netqloud.klanten'
 import { Route as AuthenticatedNetqloudInstellingenRouteImport } from './routes/_authenticated/netqloud.instellingen'
@@ -230,6 +231,12 @@ const AuthenticatedOutreachTemplatesRoute =
     id: '/outreach/templates',
     path: '/outreach/templates',
     getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOpnameRegelsRoute =
+  AuthenticatedOpnameRegelsRouteImport.update({
+    id: '/regels',
+    path: '/regels',
+    getParentRoute: () => AuthenticatedOpnameRoute,
   } as any)
 const AuthenticatedNetqloudServersRoute =
   AuthenticatedNetqloudServersRouteImport.update({
@@ -444,7 +451,7 @@ export interface FileRoutesByFullPath {
   '/leads': typeof AuthenticatedLeadsRoute
   '/mail': typeof AuthenticatedMailRouteWithChildren
   '/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
-  '/opname': typeof AuthenticatedOpnameRoute
+  '/opname': typeof AuthenticatedOpnameRouteWithChildren
   '/producten': typeof AuthenticatedProductenRoute
   '/quotes': typeof AuthenticatedQuotesRoute
   '/teams': typeof AuthenticatedTeamsRoute
@@ -467,6 +474,7 @@ export interface FileRoutesByFullPath {
   '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
+  '/opname/regels': typeof AuthenticatedOpnameRegelsRoute
   '/outreach/templates': typeof AuthenticatedOutreachTemplatesRoute
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/quote/$token/pdf': typeof QuoteTokenPdfRoute
@@ -505,7 +513,7 @@ export interface FileRoutesByTo {
   '/invoices': typeof AuthenticatedInvoicesRouteWithChildren
   '/leads': typeof AuthenticatedLeadsRoute
   '/mail': typeof AuthenticatedMailRouteWithChildren
-  '/opname': typeof AuthenticatedOpnameRoute
+  '/opname': typeof AuthenticatedOpnameRouteWithChildren
   '/producten': typeof AuthenticatedProductenRoute
   '/quotes': typeof AuthenticatedQuotesRoute
   '/teams': typeof AuthenticatedTeamsRoute
@@ -529,6 +537,7 @@ export interface FileRoutesByTo {
   '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
+  '/opname/regels': typeof AuthenticatedOpnameRegelsRoute
   '/outreach/templates': typeof AuthenticatedOutreachTemplatesRoute
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/quote/$token/pdf': typeof QuoteTokenPdfRoute
@@ -571,7 +580,7 @@ export interface FileRoutesById {
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/mail': typeof AuthenticatedMailRouteWithChildren
   '/_authenticated/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
-  '/_authenticated/opname': typeof AuthenticatedOpnameRoute
+  '/_authenticated/opname': typeof AuthenticatedOpnameRouteWithChildren
   '/_authenticated/producten': typeof AuthenticatedProductenRoute
   '/_authenticated/quotes': typeof AuthenticatedQuotesRoute
   '/_authenticated/teams': typeof AuthenticatedTeamsRoute
@@ -595,6 +604,7 @@ export interface FileRoutesById {
   '/_authenticated/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/_authenticated/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/_authenticated/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
+  '/_authenticated/opname/regels': typeof AuthenticatedOpnameRegelsRoute
   '/_authenticated/outreach/templates': typeof AuthenticatedOutreachTemplatesRoute
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/quote/$token/pdf': typeof QuoteTokenPdfRoute
@@ -661,6 +671,7 @@ export interface FileRouteTypes {
     | '/netqloud/instellingen'
     | '/netqloud/klanten'
     | '/netqloud/servers'
+    | '/opname/regels'
     | '/outreach/templates'
     | '/accept/quote/$token'
     | '/quote/$token/pdf'
@@ -723,6 +734,7 @@ export interface FileRouteTypes {
     | '/netqloud/instellingen'
     | '/netqloud/klanten'
     | '/netqloud/servers'
+    | '/opname/regels'
     | '/outreach/templates'
     | '/accept/quote/$token'
     | '/quote/$token/pdf'
@@ -788,6 +800,7 @@ export interface FileRouteTypes {
     | '/_authenticated/netqloud/instellingen'
     | '/_authenticated/netqloud/klanten'
     | '/_authenticated/netqloud/servers'
+    | '/_authenticated/opname/regels'
     | '/_authenticated/outreach/templates'
     | '/accept/quote/$token'
     | '/quote/$token/pdf'
@@ -1047,6 +1060,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/outreach/templates'
       preLoaderRoute: typeof AuthenticatedOutreachTemplatesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/opname/regels': {
+      id: '/_authenticated/opname/regels'
+      path: '/regels'
+      fullPath: '/opname/regels'
+      preLoaderRoute: typeof AuthenticatedOpnameRegelsRouteImport
+      parentRoute: typeof AuthenticatedOpnameRoute
     }
     '/_authenticated/netqloud/servers': {
       id: '/_authenticated/netqloud/servers'
@@ -1436,6 +1456,17 @@ const AuthenticatedNetqloudRouteWithChildren =
     AuthenticatedNetqloudRouteChildren,
   )
 
+interface AuthenticatedOpnameRouteChildren {
+  AuthenticatedOpnameRegelsRoute: typeof AuthenticatedOpnameRegelsRoute
+}
+
+const AuthenticatedOpnameRouteChildren: AuthenticatedOpnameRouteChildren = {
+  AuthenticatedOpnameRegelsRoute: AuthenticatedOpnameRegelsRoute,
+}
+
+const AuthenticatedOpnameRouteWithChildren =
+  AuthenticatedOpnameRoute._addFileChildren(AuthenticatedOpnameRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdministratieRoute: typeof AuthenticatedAdministratieRoute
   AuthenticatedAiColumbusRoute: typeof AuthenticatedAiColumbusRouteWithChildren
@@ -1448,7 +1479,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedMailRoute: typeof AuthenticatedMailRouteWithChildren
   AuthenticatedNetqloudRoute: typeof AuthenticatedNetqloudRouteWithChildren
-  AuthenticatedOpnameRoute: typeof AuthenticatedOpnameRoute
+  AuthenticatedOpnameRoute: typeof AuthenticatedOpnameRouteWithChildren
   AuthenticatedProductenRoute: typeof AuthenticatedProductenRoute
   AuthenticatedQuotesRoute: typeof AuthenticatedQuotesRoute
   AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
@@ -1476,7 +1507,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedMailRoute: AuthenticatedMailRouteWithChildren,
   AuthenticatedNetqloudRoute: AuthenticatedNetqloudRouteWithChildren,
-  AuthenticatedOpnameRoute: AuthenticatedOpnameRoute,
+  AuthenticatedOpnameRoute: AuthenticatedOpnameRouteWithChildren,
   AuthenticatedProductenRoute: AuthenticatedProductenRoute,
   AuthenticatedQuotesRoute: AuthenticatedQuotesRoute,
   AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,

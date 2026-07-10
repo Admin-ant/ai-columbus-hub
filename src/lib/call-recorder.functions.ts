@@ -354,7 +354,7 @@ export const listCallRecordings = createServerFn({ method: "POST" })
 export const getCallRecording = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data, context }): Promise<{ row: Record<string, string | number | boolean | null> }> => {
     const { supabase } = context;
     const { data: row, error } = await supabase
       .from("call_recordings" as never)
