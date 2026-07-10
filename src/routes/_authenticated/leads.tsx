@@ -84,6 +84,7 @@ function LeadsPage() {
   const [stageFilter, setStageFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [periodFilter, setPeriodFilter] = useState<"7" | "30" | "90" | "all">("all");
+  const [sortBy, setSortBy] = useState<"created_desc" | "created_asc" | "name_asc" | "name_desc" | "company_asc" | "stage_asc" | "value_desc" | "value_asc">("created_desc");
   const [openLead, setOpenLead] = useState<Lead | null>(null);
   const [winLeadRow, setWinLeadRow] = useState<Lead | null>(null);
   const [loseLeadRow, setLoseLeadRow] = useState<Lead | null>(null);
