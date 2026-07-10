@@ -338,7 +338,7 @@ export function DashboardOverview({
               Periode: {range.label}
             </p>
           </div>
-          <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
+          <Select value={period} onValueChange={(v) => onPeriodChange(v as PeriodKey)}>
             <SelectTrigger className="w-[200px]">
               <SelectValue />
             </SelectTrigger>
