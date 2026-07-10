@@ -127,6 +127,8 @@ function ProjectsDashboardPage() {
   }, [rows, statusFilter, monthFilter, search]);
 
   const total = useMemo(() => filtered.reduce((s, r) => s + Number(r.value_cents ?? 0), 0), [filtered]);
+  const monthlyTotal = useMemo(() => filtered.reduce((s, r) => s + Number((r as any).monthly_value_cents ?? 0), 0), [filtered]);
+  const oneTimeTotal = useMemo(() => filtered.reduce((s, r) => s + Number((r as any).one_time_cents ?? 0), 0), [filtered]);
 
   async function updateRow(id: string, patch: Partial<ProjectRow>) {
     const prev = rows;
