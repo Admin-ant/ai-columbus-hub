@@ -1127,6 +1127,9 @@ function CreateLeadDialog({
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<LeadFormErrors>({});
+  const [aiText, setAiText] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const extractLeadFn = useServerFn(extractLeadFromText);
 
   useEffect(() => {
     if (open) {
@@ -1140,8 +1143,41 @@ function CreateLeadDialog({
       setValue("0");
       setNotes("");
       setErrors({});
+      setAiText("");
+      setAiLoading(false);
     }
   }, [open]);
+
+  async function runAiExtract() {
+    const text = aiText.trim();
+    if (!text) {
+      toast.error("Plak eerst wat tekst.");
+      return;
+    }
+    setAiLoading(true);
+    try {
+      const r = await extractLeadFn({ data: { text } });
+      let filled = 0;
+      if (r.name) { setName(r.name); filled++; }
+      if (r.company) { setCompany(r.company); filled++; }
+      if (r.contact_person) { setContactPerson(r.contact_person); filled++; }
+      if (r.email) { setEmail(r.email); filled++; }
+      if (r.phone) { setPhone(r.phone); filled++; }
+      if (r.source) { setSource(r.source); filled++; }
+      if (r.estimated_value_eur != null) { setValue(String(r.estimated_value_eur)); filled++; }
+      if (r.notes) { setNotes(r.notes); filled++; }
+      if (filled === 0) {
+        toast.warning("AI kon geen velden herkennen. Vul handmatig aan.");
+      } else {
+        toast.success(`AI heeft ${filled} veld${filled === 1 ? "" : "en"} ingevuld — controleer even.`);
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "AI-invullen mislukt");
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
 
   async function save() {
     if (!organizationId) {
