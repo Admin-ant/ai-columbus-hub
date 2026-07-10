@@ -2,7 +2,7 @@ import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, UserPlus, KeyRound, Trash2, ShieldCheck, Shield, Mail, RotateCcw } from "lucide-react";
+import { Loader2, UserPlus, KeyRound, Trash2, ShieldCheck, Shield, Mail, RotateCcw, Send } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -13,6 +13,7 @@ import {
   deleteUser,
   getInviteTemplate,
   saveInviteTemplate,
+  resendInvite,
 } from "@/lib/users.functions";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
