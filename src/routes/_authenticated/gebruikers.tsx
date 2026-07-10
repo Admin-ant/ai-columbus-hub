@@ -327,7 +327,20 @@ function GebruikersPage() {
                       >
                         {isAdmin ? <ShieldCheck className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => { setPwdUser(row); setNewPwd(""); }}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleResend(row)}
+                        disabled={resendingId === row.id}
+                        title="Uitnodiging opnieuw versturen"
+                      >
+                        {resendingId === row.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Send className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => { setPwdUser(row); setNewPwd(""); }} title="Wachtwoord aanpassen">
                         <KeyRound className="h-4 w-4" />
                       </Button>
                       <AlertDialog>
