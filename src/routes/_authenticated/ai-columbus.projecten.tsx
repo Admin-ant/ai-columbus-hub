@@ -342,13 +342,21 @@ function ProjectsDashboardPage() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Waarde (€)</Label>
+                  <Label>Totale deal-waarde (€)</Label>
                   <Input type="number" step="0.01" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Doelmaand</Label>
                   <Input type="month" value={form.target_month ? form.target_month.slice(0,7) : ""}
                     onChange={(e) => setForm({ ...form, target_month: e.target.value ? `${e.target.value}-01` : "" })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Maandelijkse opbrengst (€)</Label>
+                  <Input type="number" step="0.01" value={form.monthly} onChange={(e) => setForm({ ...form, monthly: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Eenmalige kosten (€)</Label>
+                  <Input type="number" step="0.01" value={form.one_time} onChange={(e) => setForm({ ...form, one_time: e.target.value })} />
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label>Status</Label>
