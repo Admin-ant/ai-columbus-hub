@@ -79,6 +79,7 @@ function OpnamePage() {
   const [workflowStage, setWorkflowStage] = useState<string>("");
   const [title, setTitle] = useState<string>("");
   const [newLeadOpen, setNewLeadOpen] = useState(false);
+  const [newClientOpen, setNewClientOpen] = useState(false);
 
   const [recState, setRecState] = useState<RecState>("idle");
   const [durationSec, setDurationSec] = useState(0);
