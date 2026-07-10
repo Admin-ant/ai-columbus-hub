@@ -159,7 +159,7 @@ export function MonthlyPipelinePanel({
           <div>
             <h2 className="text-base font-semibold">Maandelijkse omzetpijplijn</h2>
             <p className="text-xs text-muted-foreground">
-              Klant · pot. waarde/maand · ingangsdatum
+              Klant · pot. waarde/maand · ingangsdatum · toekomst begrensd op {range.label}
             </p>
           </div>
           {filtersActive && (
