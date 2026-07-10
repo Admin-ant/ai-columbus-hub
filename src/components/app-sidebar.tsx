@@ -109,6 +109,7 @@ const sections: NavSection[] = [
 ];
 
 const adminItems: NavItem[] = [
+  { title: "Opname", url: "/opname", icon: Mic },
   { title: "Administratie", url: "/administratie", icon: FileText, requiredRole: "admin" },
   { title: "Gebruikers", url: "/gebruikers", icon: UserCog, requiredRole: "admin" },
 ];
