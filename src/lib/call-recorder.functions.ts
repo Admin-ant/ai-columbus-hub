@@ -519,7 +519,7 @@ export const quickCreateLead = createServerFn({ method: "POST" })
         company: data.company ?? null,
         email: data.email ?? null,
         phone: data.phone ?? null,
-        stage: "nieuw",
+        stage: "nieuwe",
         source: "handmatig",
         created_by: userId,
       } as never)
