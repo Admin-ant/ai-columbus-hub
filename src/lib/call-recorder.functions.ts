@@ -296,14 +296,22 @@ export const finalizeCallRecording = createServerFn({ method: "POST" })
       if (!tErr) tasksCreated += 1;
     }
 
-    const finalStage = data.apply_stage
+    let finalStage = data.apply_stage
       ? (ruleStage ?? (data.suggested_stage && VALID_STAGES.includes(data.suggested_stage) ? data.suggested_stage : null))
       : null;
     if (rec.lead_id) {
       const upd: Record<string, unknown> = { last_contact_at: new Date().toISOString() };
       if (finalStage) upd.stage = finalStage;
-      await supabase.from("leads").update(upd as never).eq("id", rec.lead_id);
+      const { error: leadErr } = await supabase.from("leads").update(upd as never).eq("id", rec.lead_id);
+      if (leadErr) {
+        // Retry without stage so last_contact_at still lands, and report the failure
+        if (finalStage) {
+          await supabase.from("leads").update({ last_contact_at: new Date().toISOString() } as never).eq("id", rec.lead_id);
+        }
+        throw new Error(`Lead-update mislukt: ${leadErr.message}`);
+      }
     }
+    if (!data.apply_stage) finalStage = null;
 
     await supabase
       .from("call_recordings" as never)
