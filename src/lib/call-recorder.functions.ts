@@ -150,7 +150,7 @@ report_markdown moet EXACT deze secties bevatten:
 ### 🤝 3. Gemaakte afspraken & Vervolgacties
 ### 💰 4. Commerciële kansen & Workflow-advies
 
-suggested_stage moet zijn: nieuw, in_gesprek, voorstel, onderhandeling, gewonnen, verloren of null. Max 6 tasks. Alles NL. Geen markdown-fences.`;
+suggested_stage moet één van deze zijn: nieuwe, contact_opgenomen, op_afspraak, in_contact, in_afwachting, even_on_hold, offerte_verzonden, gewonnen, verloren, of null. Max 6 tasks. Alles NL. Geen markdown-fences.`;
 
       const chatRes = await fetch(LOVABLE_CHAT, {
         method: "POST",
