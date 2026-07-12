@@ -894,6 +894,11 @@ function WinLeadDialog({
   const [setup, setSetup] = useState("0");
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
+  const [created, setCreated] = useState<{
+    clientId: string;
+    projectId: string;
+    contractId: string;
+  } | null>(null);
 
   useEffect(() => {
     if (lead) {
@@ -901,6 +906,7 @@ function WinLeadDialog({
       setMonthly(lead.value != null ? String(lead.value) : "0");
       setSetup("0");
       setStartDate(new Date().toISOString().slice(0, 10));
+      setCreated(null);
     }
   }, [lead]);
 
@@ -917,15 +923,12 @@ function WinLeadDialog({
           title,
         },
       });
-      toast.success("Klant, project en contract aangemaakt", {
-        description: "Open het contract om de eerste factuur te genereren.",
-        action: {
-          label: "Open contract",
-          onClick: () => {
-            window.location.href = `/contracten/${r.contractId}`;
-          },
-        },
+      setCreated({
+        clientId: r.clientId,
+        projectId: r.projectId,
+        contractId: r.contractId,
       });
+      toast.success("Klant, project en contract aangemaakt");
       onDone();
     } catch (e) {
       toast.error((e as Error).message);
@@ -934,62 +937,113 @@ function WinLeadDialog({
     }
   };
 
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      setCreated(null);
+      onClose();
+    }
+  };
+
   return (
-    <Dialog open={!!lead} onOpenChange={(o) => !o && onClose()}>
+    <Dialog open={!!lead} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Zet lead op gewonnen</DialogTitle>
-          <DialogDescription>Maakt automatisch klant, project en contract aan.</DialogDescription>
+          <DialogTitle>{created ? "Lead gewonnen 🎉" : "Zet lead op gewonnen"}</DialogTitle>
+          <DialogDescription>
+            {created
+              ? "Klant, project en contract zijn aangemaakt. Ga direct verder:"
+              : "Maakt automatisch klant, project en contract aan."}
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs font-medium">Titel van het contract</label>
-            <input
-              className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium">Maandbedrag (€)</label>
-              <input
-                className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                type="number"
-                step="0.01"
-                value={monthly}
-                onChange={(e) => setMonthly(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium">Setup (€)</label>
-              <input
-                className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                type="number"
-                step="0.01"
-                value={setup}
-                onChange={(e) => setSetup(e.target.value)}
-              />
-            </div>
-            <div className="col-span-2">
-              <label className="text-xs font-medium">Startdatum</label>
-              <input
-                className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
+
+        {created ? (
+          <div className="space-y-2">
+            <Link
+              to="/contracten/$contractId"
+              params={{ contractId: created.contractId }}
+              onClick={() => handleOpenChange(false)}
+              className="flex items-center justify-between rounded-md border border-border bg-card px-3 py-2 text-sm hover:bg-accent"
+            >
+              <span className="font-medium">📄 Open contract</span>
+              <span className="text-xs text-muted-foreground">→</span>
+            </Link>
+            <Link
+              to="/ai-columbus/projecten/$projectId"
+              params={{ projectId: created.projectId }}
+              onClick={() => handleOpenChange(false)}
+              className="flex items-center justify-between rounded-md border border-border bg-card px-3 py-2 text-sm hover:bg-accent"
+            >
+              <span className="font-medium">🗂️ Open project</span>
+              <span className="text-xs text-muted-foreground">→</span>
+            </Link>
+            <Link
+              to="/ai-columbus/klanten/$clientId"
+              params={{ clientId: created.clientId }}
+              onClick={() => handleOpenChange(false)}
+              className="flex items-center justify-between rounded-md border border-border bg-card px-3 py-2 text-sm hover:bg-accent"
+            >
+              <span className="font-medium">👤 Open klant</span>
+              <span className="text-xs text-muted-foreground">→</span>
+            </Link>
+            <div className="flex justify-end pt-2">
+              <Button variant="outline" onClick={() => handleOpenChange(false)}>
+                Sluiten
+              </Button>
             </div>
           </div>
-        </div>
-        <div className="flex justify-end gap-2 mt-4">
-          <Button variant="outline" onClick={onClose}>
-            Annuleer
-          </Button>
-          <Button onClick={save} disabled={saving}>
-            {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Bevestig gewonnen
-          </Button>
-        </div>
+        ) : (
+          <>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium">Titel van het contract</label>
+                <input
+                  className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium">Maandbedrag (€)</label>
+                  <input
+                    className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    type="number"
+                    step="0.01"
+                    value={monthly}
+                    onChange={(e) => setMonthly(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium">Setup (€)</label>
+                  <input
+                    className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    type="number"
+                    step="0.01"
+                    value={setup}
+                    onChange={(e) => setSetup(e.target.value)}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-xs font-medium">Startdatum</label>
+                  <input
+                    className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={() => handleOpenChange(false)}>
+                Annuleer
+              </Button>
+              <Button onClick={save} disabled={saving}>
+                {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Bevestig gewonnen
+              </Button>
+            </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
