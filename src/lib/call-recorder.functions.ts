@@ -6,7 +6,19 @@ const LOVABLE_CHAT = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const LOVABLE_STT = "https://ai.gateway.lovable.dev/v1/audio/transcriptions";
 const STT_MODEL = "openai/gpt-4o-mini-transcribe";
 const CHAT_MODEL = "google/gemini-2.5-flash";
-const VALID_STAGES = ["nieuw", "in_gesprek", "voorstel", "onderhandeling", "gewonnen", "verloren"];
+const VALID_STAGES = [
+  "nieuwe",
+  "contact_opgenomen",
+  "op_afspraak",
+  "in_contact",
+  "in_afwachting",
+  "even_on_hold",
+  "offerte_verzonden",
+  "gewonnen",
+  "verloren",
+  "klant",
+  "ai_columbus",
+];
 
 /* ============================================================ create row */
 
