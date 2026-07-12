@@ -42,10 +42,13 @@ type Task = { title: string; body: string; due_in_days: number };
 type HistoryRow = Awaited<ReturnType<typeof listCallRecordings>>["rows"][number];
 
 const WORKFLOW_STAGES = [
-  { value: "nieuw", label: "Nieuw" },
-  { value: "in_gesprek", label: "In gesprek" },
-  { value: "voorstel", label: "Voorstel gedaan" },
-  { value: "onderhandeling", label: "Onderhandeling" },
+  { value: "nieuwe", label: "Nieuw" },
+  { value: "contact_opgenomen", label: "Contact opgenomen" },
+  { value: "op_afspraak", label: "Op afspraak" },
+  { value: "in_contact", label: "In gesprek" },
+  { value: "in_afwachting", label: "In afwachting" },
+  { value: "even_on_hold", label: "Even on hold" },
+  { value: "offerte_verzonden", label: "Offerte verzonden" },
   { value: "gewonnen", label: "Gewonnen" },
   { value: "verloren", label: "Verloren" },
 ];

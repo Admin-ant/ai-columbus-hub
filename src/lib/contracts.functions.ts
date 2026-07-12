@@ -227,22 +227,50 @@ export const generateInvoiceNow = createServerFn({ method: "POST" })
     if (cErr) throw new Error(cErr.message);
     if (!c) throw new Error("Contract niet gevonden");
 
+    const status = (c as any).status as string;
+    if (status !== "active") {
+      throw new Error(
+        `Contract is ${status} — activeer het contract eerst voordat je handmatig een factuur genereert.`,
+      );
+    }
+    if (!(c as any).auto_invoice) {
+      throw new Error("Automatische facturatie staat uit voor dit contract — zet dit eerst aan.");
+    }
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // If next_invoice_date is in the future, temporarily pull it forward
-    // so the shared generator picks this contract up.
+    // so the shared generator picks this contract up. Restore afterwards.
     const today = new Date().toISOString().slice(0, 10);
     const originalNext = (c as any).next_invoice_date as string | null;
-    if (!originalNext || originalNext > today) {
+    const pulledForward = !originalNext || originalNext > today;
+    if (pulledForward) {
       await supabaseAdmin
         .from("contracts")
-        .update({ next_invoice_date: today, status: "active", auto_invoice: true } as never)
+        .update({ next_invoice_date: today } as never)
         .eq("id", data.contractId);
     }
 
     const { data: result, error } = await supabaseAdmin.rpc("generate_recurring_invoices", {
       _only_contract_id: data.contractId,
     });
+
+    // If the generator did not advance next_invoice_date (e.g. it errored),
+    // restore the original date so we don't leave the contract in a pulled-forward state.
+    if (pulledForward) {
+      const { data: after } = await supabaseAdmin
+        .from("contracts")
+        .select("next_invoice_date")
+        .eq("id", data.contractId)
+        .maybeSingle();
+      if ((after as any)?.next_invoice_date === today) {
+        await supabaseAdmin
+          .from("contracts")
+          .update({ next_invoice_date: originalNext } as never)
+          .eq("id", data.contractId);
+      }
+    }
+
     if (error) throw new Error(error.message);
     const first = Array.isArray(result) ? result[0] : result;
     return { ok: true, invoiceId: first?.invoice_id ?? null, status: first?.status ?? "no-op" };

@@ -6,7 +6,19 @@ const LOVABLE_CHAT = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const LOVABLE_STT = "https://ai.gateway.lovable.dev/v1/audio/transcriptions";
 const STT_MODEL = "openai/gpt-4o-mini-transcribe";
 const CHAT_MODEL = "google/gemini-2.5-flash";
-const VALID_STAGES = ["nieuw", "in_gesprek", "voorstel", "onderhandeling", "gewonnen", "verloren"];
+const VALID_STAGES = [
+  "nieuwe",
+  "contact_opgenomen",
+  "op_afspraak",
+  "in_contact",
+  "in_afwachting",
+  "even_on_hold",
+  "offerte_verzonden",
+  "gewonnen",
+  "verloren",
+  "klant",
+  "ai_columbus",
+];
 
 /* ============================================================ create row */
 
@@ -138,7 +150,7 @@ report_markdown moet EXACT deze secties bevatten:
 ### 🤝 3. Gemaakte afspraken & Vervolgacties
 ### 💰 4. Commerciële kansen & Workflow-advies
 
-suggested_stage moet zijn: nieuw, in_gesprek, voorstel, onderhandeling, gewonnen, verloren of null. Max 6 tasks. Alles NL. Geen markdown-fences.`;
+suggested_stage moet één van deze zijn: nieuwe, contact_opgenomen, op_afspraak, in_contact, in_afwachting, even_on_hold, offerte_verzonden, gewonnen, verloren, of null. Max 6 tasks. Alles NL. Geen markdown-fences.`;
 
       const chatRes = await fetch(LOVABLE_CHAT, {
         method: "POST",
@@ -284,14 +296,22 @@ export const finalizeCallRecording = createServerFn({ method: "POST" })
       if (!tErr) tasksCreated += 1;
     }
 
-    const finalStage = data.apply_stage
+    let finalStage = data.apply_stage
       ? (ruleStage ?? (data.suggested_stage && VALID_STAGES.includes(data.suggested_stage) ? data.suggested_stage : null))
       : null;
     if (rec.lead_id) {
       const upd: Record<string, unknown> = { last_contact_at: new Date().toISOString() };
       if (finalStage) upd.stage = finalStage;
-      await supabase.from("leads").update(upd as never).eq("id", rec.lead_id);
+      const { error: leadErr } = await supabase.from("leads").update(upd as never).eq("id", rec.lead_id);
+      if (leadErr) {
+        // Retry without stage so last_contact_at still lands, and report the failure
+        if (finalStage) {
+          await supabase.from("leads").update({ last_contact_at: new Date().toISOString() } as never).eq("id", rec.lead_id);
+        }
+        throw new Error(`Lead-update mislukt: ${leadErr.message}`);
+      }
     }
+    if (!data.apply_stage) finalStage = null;
 
     await supabase
       .from("call_recordings" as never)
@@ -499,7 +519,7 @@ export const quickCreateLead = createServerFn({ method: "POST" })
         company: data.company ?? null,
         email: data.email ?? null,
         phone: data.phone ?? null,
-        stage: "nieuw",
+        stage: "nieuwe",
         source: "handmatig",
         created_by: userId,
       } as never)
