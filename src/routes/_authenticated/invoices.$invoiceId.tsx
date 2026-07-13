@@ -826,13 +826,21 @@ function InvoiceDetailPage() {
       <Dialog open={emailOpen} onOpenChange={setEmailOpen}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle>{t("invoices.compose_email")}</DialogTitle>
-            <DialogDescription>{invoice.invoice_number} — {invoice.client_name}</DialogDescription>
+            <DialogTitle>
+              {emailMode === "reminder" ? "Betaalherinnering versturen" : t("invoices.compose_email")}
+            </DialogTitle>
+            <DialogDescription>
+              {invoice.invoice_number} — {invoice.client_name}
+              {emailMode === "reminder" && daysOverdue > 0 ? ` · ${daysOverdue} dagen over vervaldatum` : ""}
+            </DialogDescription>
           </DialogHeader>
           <EmailForm
+            key={emailMode}
             invoice={invoice}
             defaultTo={client?.email ?? ""}
             defaultFilename={suggestedFilename}
+            initialSubject={emailMode === "reminder" ? reminderDefaults.subject : undefined}
+            initialBody={emailMode === "reminder" ? reminderDefaults.body : undefined}
             attachments={attachments}
             buildPdf={buildPdf}
             currentPaymentLink={currentPaymentLink}
