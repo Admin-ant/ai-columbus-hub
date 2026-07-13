@@ -512,6 +512,7 @@ function AgendaPage() {
           key={editing?.id ?? "new"}
           orgId={currentOrganizationId}
           clients={clients}
+          orgAddress={orgAddress}
           initial={editing}
           open={open}
           onOpenChange={setOpen}
