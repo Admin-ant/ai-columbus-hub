@@ -1227,6 +1227,53 @@ export type Database = {
           },
         ]
       }
+      invoice_payment_events: {
+        Row: {
+          amount_cents: number | null
+          created_at: string
+          event_type: string
+          id: string
+          invoice_id: string
+          metadata: Json
+          method: string | null
+          mollie_payment_id: string | null
+          organization_id: string
+          status: string | null
+        }
+        Insert: {
+          amount_cents?: number | null
+          created_at?: string
+          event_type: string
+          id?: string
+          invoice_id: string
+          metadata?: Json
+          method?: string | null
+          mollie_payment_id?: string | null
+          organization_id: string
+          status?: string | null
+        }
+        Update: {
+          amount_cents?: number | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          invoice_id?: string
+          metadata?: Json
+          method?: string | null
+          mollie_payment_id?: string | null
+          organization_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_payment_events_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           amount: number
@@ -1249,6 +1296,7 @@ export type Database = {
           paid_at: string | null
           payment_link_url: string | null
           pdf_filename: string | null
+          preferred_payment_method: string | null
           project_id: string | null
           quote_id: string | null
           sent_at: string | null
@@ -1279,6 +1327,7 @@ export type Database = {
           paid_at?: string | null
           payment_link_url?: string | null
           pdf_filename?: string | null
+          preferred_payment_method?: string | null
           project_id?: string | null
           quote_id?: string | null
           sent_at?: string | null
@@ -1309,6 +1358,7 @@ export type Database = {
           paid_at?: string | null
           payment_link_url?: string | null
           pdf_filename?: string | null
+          preferred_payment_method?: string | null
           project_id?: string | null
           quote_id?: string | null
           sent_at?: string | null
