@@ -186,6 +186,7 @@ function AgendaPage() {
   const { currentOrganizationId, currentOrganization, loading: wsLoading } = useWorkspace();
   const [items, setItems] = useState<Appointment[]>([]);
   const [clients, setClients] = useState<ClientRow[]>([]);
+  const [orgAddress, setOrgAddress] = useState<OrgAddress>(null);
   const [loading, setLoading] = useState(true);
   const [scope, setScope] = useState<"upcoming" | "past" | "all">("upcoming");
   const [statusFilter, setStatusFilter] = useState<"all" | "scheduled" | "sent" | "confirmed" | "reschedule" | "cancelled">("all");
@@ -204,7 +205,7 @@ function AgendaPage() {
       return;
     }
     setLoading(true);
-    const [{ data: appts, error }, { data: cl }] = await Promise.all([
+    const [{ data: appts, error }, { data: cl }, { data: org }] = await Promise.all([
       supabase
         .from("appointments")
         .select("*")
@@ -212,13 +213,19 @@ function AgendaPage() {
         .order("starts_at", { ascending: true }),
       supabase
         .from("clients")
-        .select("id,name,email,preferred_locale")
+        .select("id,name,email,preferred_locale,address_line1,address_line2,postal_code,city")
         .eq("organization_id", currentOrganizationId)
         .order("name"),
+      supabase
+        .from("organizations")
+        .select("name,address_line1,address_line2,postal_code,city")
+        .eq("id", currentOrganizationId)
+        .maybeSingle(),
     ]);
     if (error) toast.error(error.message);
     setItems((appts ?? []) as Appointment[]);
     setClients((cl ?? []) as ClientRow[]);
+    setOrgAddress((org ?? null) as OrgAddress);
     setLoading(false);
   }
 
