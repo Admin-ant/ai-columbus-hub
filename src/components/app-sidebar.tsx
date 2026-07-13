@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { useLeadsFunnelVisible } from "@/hooks/use-leads-funnel-visible";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 type NavItem = {
@@ -152,6 +153,7 @@ export function AppSidebar() {
   const { currentOrganization } = useWorkspace();
   const navigate = useNavigate();
   const currentPath = useRouterState({ select: (s) => s.location.pathname });
+  const [leadsFunnelVisible] = useLeadsFunnelVisible();
 
   const visibleAdmin = adminItems.filter((i) => !i.requiredRole || hasRole(i.requiredRole));
   const initials = (user?.email ?? "?").slice(0, 2).toUpperCase();
@@ -166,8 +168,23 @@ export function AppSidebar() {
   const orgInitial = (currentOrganization?.name ?? "?").slice(0, 1).toUpperCase();
   const brandColor = currentOrganization?.brand_color || undefined;
 
-  const activeGroups =
+  const baseGroups =
     currentOrganization?.slug === "netqloud" ? netqloudGroups : columbusGroups;
+
+  const activeGroups: NavGroup[] =
+    currentOrganization?.slug !== "netqloud" && leadsFunnelVisible
+      ? baseGroups.map((g) =>
+          g.label === "Algemeen"
+            ? {
+                ...g,
+                items: [
+                  ...g.items,
+                  { title: "Leads funnel", url: "/ai-columbus/leads", icon: Inbox },
+                ],
+              }
+            : g,
+        )
+      : baseGroups;
 
   return (
     <Sidebar collapsible="icon">

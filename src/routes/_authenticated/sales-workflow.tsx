@@ -59,11 +59,15 @@ export const Route = createFileRoute("/_authenticated/sales-workflow")({
   component: SalesWorkflowPage,
 });
 
-type StageKey = "lead" | "requirements" | "quote" | "signed" | "invoiced";
+type StageKey = "lead" | "requirements" | "quote" | "signed" | "invoiced" | "won" | "lost";
+
+const WON_STAGES = new Set(["klant", "gewonnen", "ai_columbus"]);
 
 function stageOf(l: PipelineLead): StageKey {
+  if (l.stage === "verloren") return "lost";
   if (l.invoice_count > 0 || l.contract) return "invoiced";
   if (l.quote?.signed_at) return "signed";
+  if (WON_STAGES.has(l.stage) && !l.contract) return "won";
   if (l.quote) return "quote";
   if (l.requirements) return "requirements";
   return "lead";
@@ -97,6 +101,8 @@ function SalesWorkflowPage() {
       quote: 0,
       signed: 0,
       invoiced: 0,
+      won: 0,
+      lost: 0,
     };
     let mrrCents = 0;
     let pipelineMonthlyCents = 0;
@@ -130,12 +136,14 @@ function SalesWorkflowPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-8">
         <KpiCard icon={Inbox} label="Leads" value={kpis.counts.lead} />
         <KpiCard icon={ClipboardList} label="Klantwensen" value={kpis.counts.requirements} />
         <KpiCard icon={Wand2} label="Offerte" value={kpis.counts.quote} />
         <KpiCard icon={FileSignature} label="Ondertekend" value={kpis.counts.signed} />
+        <KpiCard icon={Receipt} label="Gewonnen" value={kpis.counts.won} />
         <KpiCard icon={Receipt} label="Klant" value={kpis.counts.invoiced} />
+        <KpiCard icon={Inbox} label="Verloren" value={kpis.counts.lost} />
         <KpiCard
           icon={Receipt}
           label="Actieve MRR"
@@ -231,6 +239,8 @@ function stageBadge(s: StageKey) {
     quote: { label: "Offerte", variant: "secondary" },
     signed: { label: "Ondertekend", variant: "default" },
     invoiced: { label: "Klant", variant: "default" },
+    won: { label: "Gewonnen", variant: "default" },
+    lost: { label: "Verloren", variant: "outline" },
   };
   const cfg = map[s];
   return <Badge variant={cfg.variant}>{cfg.label}</Badge>;

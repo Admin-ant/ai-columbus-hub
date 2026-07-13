@@ -1,11 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Link2, ArrowRight } from "lucide-react";
+import { Link2, ArrowRight, Info, Workflow } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useLeadsFunnelVisible } from "@/hooks/use-leads-funnel-visible";
 
 export const Route = createFileRoute("/_authenticated/ai-columbus/instellingen")({
   head: () => ({ meta: [{ title: "AI van Columbus — Instellingen" }] }),
-  component: () => (
+  component: SettingsPage,
+});
+
+function SettingsPage() {
+  const [leadsFunnelVisible, setLeadsFunnelVisible] = useLeadsFunnelVisible();
+
+  return (
     <div className="mx-auto max-w-3xl space-y-4">
       <h1 className="text-2xl font-bold tracking-tight">Instellingen — AI van Columbus</h1>
 
@@ -30,11 +40,52 @@ export const Route = createFileRoute("/_authenticated/ai-columbus/instellingen")
 
       <Card>
         <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Workflow className="h-4 w-4" /> Sidebar-onderdelen
+          </CardTitle>
+          <CardDescription>Verberg of toon extra menu-items in de zijbalk.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-start justify-between gap-4 rounded-md border p-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="leads-funnel-toggle" className="text-sm font-medium">
+                  Leads funnel tonen
+                </Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3.5 w-3.5 cursor-help text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs text-xs">
+                      De losse Leads funnel is standaard verborgen omdat de Sales workflow
+                      alle fases (nieuw, contact, offerte, gewonnen en verloren) al
+                      afdekt. Zet dit aan als je toch de aparte Kanban-weergave wilt
+                      gebruiken.
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Toont het menu-item “Leads funnel” onder AI van Columbus.
+              </p>
+            </div>
+            <Switch
+              id="leads-funnel-toggle"
+              checked={leadsFunnelVisible}
+              onCheckedChange={setLeadsFunnelVisible}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Voorkeuren</CardTitle>
           <CardDescription>Overige instellingen voor deze omgeving.</CardDescription>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">Nog leeg.</CardContent>
       </Card>
     </div>
-  ),
-});
+  );
+}
