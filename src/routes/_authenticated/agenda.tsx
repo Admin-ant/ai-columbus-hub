@@ -386,14 +386,18 @@ function ApptCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <button onClick={onEdit} className="text-base font-semibold hover:underline">
+            <button onClick={onEdit} className={`text-base font-semibold hover:underline ${a.status === "cancelled" ? "line-through text-muted-foreground" : ""}`}>
               {a.title}
             </button>
-            {a.invite_sent_at && (
+            {a.status === "cancelled" ? (
+              <Badge variant="outline" className="bg-red-500/10 text-red-700 dark:text-red-300">
+                Geannuleerd
+              </Badge>
+            ) : a.invite_sent_at ? (
               <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
                 Uitnodiging verzonden
               </Badge>
-            )}
+            ) : null}
           </div>
           <div className="mt-1 text-sm text-muted-foreground">
             {time}
@@ -414,7 +418,7 @@ function ApptCard({
             size="sm"
             variant="outline"
             onClick={() => sendInvite(false)}
-            disabled={sending || !a.attendee_email}
+            disabled={sending || !a.attendee_email || a.status === "cancelled"}
           >
             {sending ? (
               <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -425,6 +429,22 @@ function ApptCard({
             )}
             {a.invite_sent_at ? "Opnieuw versturen" : "Uitnodigen"}
           </Button>
+          {a.status !== "cancelled" && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-amber-700 hover:text-amber-800"
+              onClick={async () => {
+                if (!confirm("Afspraak annuleren en klant een annulering mailen?")) return;
+                await sendInvite(true);
+              }}
+              disabled={sending || !a.attendee_email}
+              title={a.attendee_email ? "Annuleer + stuur cancellation .ics" : "Geen e-mail bekend"}
+            >
+              <Ban className="mr-1.5 h-3.5 w-3.5" />
+              Annuleren
+            </Button>
+          )}
           <Button size="sm" variant="ghost" onClick={onEdit}>
             Bewerken
           </Button>
