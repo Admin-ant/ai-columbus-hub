@@ -406,6 +406,16 @@ function InvoiceDetailPage() {
             <Badge variant="outline" className={`ml-3 ${STATUS_COLOR[invoice.status]}`}>
               {t(`invoices.status.${invoice.status}`)}
             </Badge>
+            {mollieBadgeStatus && (
+              <Badge variant="outline" className={`ml-2 ${MOLLIE_BADGE_COLOR[mollieBadgeStatus] ?? "bg-muted"}`}>
+                Mollie: {MOLLIE_BADGE_LABEL[mollieBadgeStatus] ?? mollieBadgeStatus}
+              </Badge>
+            )}
+            {preferredMethod && (
+              <Badge variant="secondary" className="ml-2 capitalize">
+                {preferredMethod}
+              </Badge>
+            )}
           </h1>
           <p className="text-sm text-muted-foreground">
             {invoice.client_name ?? "—"} · {new Date(invoice.issue_date).toLocaleDateString(i18n.resolvedLanguage ?? "nl")}
