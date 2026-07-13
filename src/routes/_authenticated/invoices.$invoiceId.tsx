@@ -1231,6 +1231,8 @@ function EmailForm({
   invoice,
   defaultTo,
   defaultFilename,
+  initialSubject,
+  initialBody,
   attachments,
   buildPdf,
   emailFn,
@@ -1241,6 +1243,8 @@ function EmailForm({
   invoice: Invoice;
   defaultTo: string;
   defaultFilename: string;
+  initialSubject?: string;
+  initialBody?: string;
   attachments: AttachmentRow[];
   buildPdf: () => ReturnType<typeof buildInvoicePdf> | null;
   emailFn: ReturnType<typeof useServerFn<typeof emailInvoice>>;
@@ -1254,9 +1258,10 @@ function EmailForm({
   const [includePayLink, setIncludePayLink] = useState<boolean>(canPay);
   const [to, setTo] = useState(defaultTo);
   const [cc, setCc] = useState("");
-  const [subject, setSubject] = useState(`Factuur {{invoice_number}}`);
+  const [subject, setSubject] = useState(initialSubject ?? `Factuur {{invoice_number}}`);
   const [body, setBody] = useState(
-    `Beste {{client_name}},\n\nBijgevoegd vind je factuur {{invoice_number}} van {{total}}. De vervaldatum is {{due_date}}.\n\nMet vriendelijke groet`,
+    initialBody ??
+      `Beste {{client_name}},\n\nBijgevoegd vind je factuur {{invoice_number}} van {{total}}. De vervaldatum is {{due_date}}.\n\nMet vriendelijke groet`,
   );
   const [filename, setFilename] = useState(defaultFilename);
   const [extraChecked, setExtraChecked] = useState<Record<string, boolean>>({});
