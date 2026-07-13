@@ -946,6 +946,23 @@ function AppointmentDialog({
               rows={3}
             />
           </div>
+          <div className="space-y-1.5">
+            <Label>Taal van uitnodigingsmail</Label>
+            <select
+              value={locale}
+              onChange={(e) => setLocale(e.target.value as "nl" | "en" | "de")}
+              className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+            >
+              {APPT_LOCALES.map((l) => (
+                <option key={l.code} value={l.code}>
+                  {l.flag}  {l.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground">
+              Bepaalt de taal van de mail én de klantpagina (/afspraak/…). Wordt automatisch overgenomen uit klantvoorkeur.
+            </p>
+          </div>
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
