@@ -44,7 +44,7 @@ import {
 } from "@/components/ui/table";
 import { useWorkspace } from "@/hooks/use-workspace";
 
-export const Route = createFileRoute("/_authenticated/invoices")({
+export const Route = createFileRoute("/_authenticated/invoices/")({
   head: () => ({ meta: [{ title: "Facturen" }] }),
   component: InvoicesPage,
 });

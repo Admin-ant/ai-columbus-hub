@@ -24,7 +24,6 @@ import { Route as AuthenticatedOpnameRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedNetqloudRouteImport } from './routes/_authenticated/netqloud'
 import { Route as AuthenticatedMailRouteImport } from './routes/_authenticated/mail'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
-import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
 import { Route as AuthenticatedInkoopfacturenRouteImport } from './routes/_authenticated/inkoopfacturen'
 import { Route as AuthenticatedGebruikersRouteImport } from './routes/_authenticated/gebruikers'
 import { Route as AuthenticatedEnterpriseRouteImport } from './routes/_authenticated/enterprise'
@@ -35,6 +34,7 @@ import { Route as AuthenticatedAdministratieRouteImport } from './routes/_authen
 import { Route as AuthenticatedOutreachIndexRouteImport } from './routes/_authenticated/outreach.index'
 import { Route as AuthenticatedOfferteStudioIndexRouteImport } from './routes/_authenticated/offerte-studio.index'
 import { Route as AuthenticatedNetqloudIndexRouteImport } from './routes/_authenticated/netqloud.index'
+import { Route as AuthenticatedInvoicesIndexRouteImport } from './routes/_authenticated/invoices.index'
 import { Route as AuthenticatedAnalyticsIndexRouteImport } from './routes/_authenticated/analytics.index'
 import { Route as AuthenticatedAiColumbusIndexRouteImport } from './routes/_authenticated/ai-columbus.index'
 import { Route as QuoteTokenPdfRouteImport } from './routes/quote.$token.pdf'
@@ -150,11 +150,6 @@ const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
   path: '/leads',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedInvoicesRoute = AuthenticatedInvoicesRouteImport.update({
-  id: '/invoices',
-  path: '/invoices',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedInkoopfacturenRoute =
   AuthenticatedInkoopfacturenRouteImport.update({
     id: '/inkoopfacturen',
@@ -210,6 +205,12 @@ const AuthenticatedNetqloudIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedNetqloudRoute,
+  } as any)
+const AuthenticatedInvoicesIndexRoute =
+  AuthenticatedInvoicesIndexRouteImport.update({
+    id: '/invoices/',
+    path: '/invoices/',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAnalyticsIndexRoute =
   AuthenticatedAnalyticsIndexRouteImport.update({
@@ -276,9 +277,9 @@ const AuthenticatedKpiMetricRoute = AuthenticatedKpiMetricRouteImport.update({
 } as any)
 const AuthenticatedInvoicesInvoiceIdRoute =
   AuthenticatedInvoicesInvoiceIdRouteImport.update({
-    id: '/$invoiceId',
-    path: '/$invoiceId',
-    getParentRoute: () => AuthenticatedInvoicesRoute,
+    id: '/invoices/$invoiceId',
+    path: '/invoices/$invoiceId',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedInkoopfacturenExpenseIdRoute =
   AuthenticatedInkoopfacturenExpenseIdRouteImport.update({
@@ -454,7 +455,6 @@ export interface FileRoutesByFullPath {
   '/enterprise': typeof AuthenticatedEnterpriseRoute
   '/gebruikers': typeof AuthenticatedGebruikersRoute
   '/inkoopfacturen': typeof AuthenticatedInkoopfacturenRouteWithChildren
-  '/invoices': typeof AuthenticatedInvoicesRouteWithChildren
   '/leads': typeof AuthenticatedLeadsRoute
   '/mail': typeof AuthenticatedMailRouteWithChildren
   '/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
@@ -488,6 +488,7 @@ export interface FileRoutesByFullPath {
   '/quote/$token/pdf': typeof QuoteTokenPdfRoute
   '/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
   '/analytics/': typeof AuthenticatedAnalyticsIndexRoute
+  '/invoices/': typeof AuthenticatedInvoicesIndexRoute
   '/netqloud/': typeof AuthenticatedNetqloudIndexRoute
   '/offerte-studio/': typeof AuthenticatedOfferteStudioIndexRoute
   '/outreach/': typeof AuthenticatedOutreachIndexRoute
@@ -518,7 +519,6 @@ export interface FileRoutesByTo {
   '/enterprise': typeof AuthenticatedEnterpriseRoute
   '/gebruikers': typeof AuthenticatedGebruikersRoute
   '/inkoopfacturen': typeof AuthenticatedInkoopfacturenRouteWithChildren
-  '/invoices': typeof AuthenticatedInvoicesRouteWithChildren
   '/leads': typeof AuthenticatedLeadsRoute
   '/mail': typeof AuthenticatedMailRouteWithChildren
   '/opname': typeof AuthenticatedOpnameRouteWithChildren
@@ -552,6 +552,7 @@ export interface FileRoutesByTo {
   '/quote/$token/pdf': typeof QuoteTokenPdfRoute
   '/ai-columbus': typeof AuthenticatedAiColumbusIndexRoute
   '/analytics': typeof AuthenticatedAnalyticsIndexRoute
+  '/invoices': typeof AuthenticatedInvoicesIndexRoute
   '/netqloud': typeof AuthenticatedNetqloudIndexRoute
   '/offerte-studio': typeof AuthenticatedOfferteStudioIndexRoute
   '/outreach': typeof AuthenticatedOutreachIndexRoute
@@ -585,7 +586,6 @@ export interface FileRoutesById {
   '/_authenticated/enterprise': typeof AuthenticatedEnterpriseRoute
   '/_authenticated/gebruikers': typeof AuthenticatedGebruikersRoute
   '/_authenticated/inkoopfacturen': typeof AuthenticatedInkoopfacturenRouteWithChildren
-  '/_authenticated/invoices': typeof AuthenticatedInvoicesRouteWithChildren
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/mail': typeof AuthenticatedMailRouteWithChildren
   '/_authenticated/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
@@ -620,6 +620,7 @@ export interface FileRoutesById {
   '/quote/$token/pdf': typeof QuoteTokenPdfRoute
   '/_authenticated/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
   '/_authenticated/analytics/': typeof AuthenticatedAnalyticsIndexRoute
+  '/_authenticated/invoices/': typeof AuthenticatedInvoicesIndexRoute
   '/_authenticated/netqloud/': typeof AuthenticatedNetqloudIndexRoute
   '/_authenticated/offerte-studio/': typeof AuthenticatedOfferteStudioIndexRoute
   '/_authenticated/outreach/': typeof AuthenticatedOutreachIndexRoute
@@ -654,7 +655,6 @@ export interface FileRouteTypes {
     | '/enterprise'
     | '/gebruikers'
     | '/inkoopfacturen'
-    | '/invoices'
     | '/leads'
     | '/mail'
     | '/netqloud'
@@ -688,6 +688,7 @@ export interface FileRouteTypes {
     | '/quote/$token/pdf'
     | '/ai-columbus/'
     | '/analytics/'
+    | '/invoices/'
     | '/netqloud/'
     | '/offerte-studio/'
     | '/outreach/'
@@ -718,7 +719,6 @@ export interface FileRouteTypes {
     | '/enterprise'
     | '/gebruikers'
     | '/inkoopfacturen'
-    | '/invoices'
     | '/leads'
     | '/mail'
     | '/opname'
@@ -752,6 +752,7 @@ export interface FileRouteTypes {
     | '/quote/$token/pdf'
     | '/ai-columbus'
     | '/analytics'
+    | '/invoices'
     | '/netqloud'
     | '/offerte-studio'
     | '/outreach'
@@ -784,7 +785,6 @@ export interface FileRouteTypes {
     | '/_authenticated/enterprise'
     | '/_authenticated/gebruikers'
     | '/_authenticated/inkoopfacturen'
-    | '/_authenticated/invoices'
     | '/_authenticated/leads'
     | '/_authenticated/mail'
     | '/_authenticated/netqloud'
@@ -819,6 +819,7 @@ export interface FileRouteTypes {
     | '/quote/$token/pdf'
     | '/_authenticated/ai-columbus/'
     | '/_authenticated/analytics/'
+    | '/_authenticated/invoices/'
     | '/_authenticated/netqloud/'
     | '/_authenticated/offerte-studio/'
     | '/_authenticated/outreach/'
@@ -969,13 +970,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLeadsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/invoices': {
-      id: '/_authenticated/invoices'
-      path: '/invoices'
-      fullPath: '/invoices'
-      preLoaderRoute: typeof AuthenticatedInvoicesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/inkoopfacturen': {
       id: '/_authenticated/inkoopfacturen'
       path: '/inkoopfacturen'
@@ -1045,6 +1039,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/netqloud/'
       preLoaderRoute: typeof AuthenticatedNetqloudIndexRouteImport
       parentRoute: typeof AuthenticatedNetqloudRoute
+    }
+    '/_authenticated/invoices/': {
+      id: '/_authenticated/invoices/'
+      path: '/invoices'
+      fullPath: '/invoices/'
+      preLoaderRoute: typeof AuthenticatedInvoicesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/analytics/': {
       id: '/_authenticated/analytics/'
@@ -1125,10 +1126,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/invoices/$invoiceId': {
       id: '/_authenticated/invoices/$invoiceId'
-      path: '/$invoiceId'
+      path: '/invoices/$invoiceId'
       fullPath: '/invoices/$invoiceId'
       preLoaderRoute: typeof AuthenticatedInvoicesInvoiceIdRouteImport
-      parentRoute: typeof AuthenticatedInvoicesRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/inkoopfacturen/$expenseId': {
       id: '/_authenticated/inkoopfacturen/$expenseId'
@@ -1432,19 +1433,6 @@ const AuthenticatedInkoopfacturenRouteWithChildren =
     AuthenticatedInkoopfacturenRouteChildren,
   )
 
-interface AuthenticatedInvoicesRouteChildren {
-  AuthenticatedInvoicesInvoiceIdRoute: typeof AuthenticatedInvoicesInvoiceIdRoute
-}
-
-const AuthenticatedInvoicesRouteChildren: AuthenticatedInvoicesRouteChildren = {
-  AuthenticatedInvoicesInvoiceIdRoute: AuthenticatedInvoicesInvoiceIdRoute,
-}
-
-const AuthenticatedInvoicesRouteWithChildren =
-  AuthenticatedInvoicesRoute._addFileChildren(
-    AuthenticatedInvoicesRouteChildren,
-  )
-
 interface AuthenticatedMailRouteChildren {
   AuthenticatedMailSettingsRoute: typeof AuthenticatedMailSettingsRoute
 }
@@ -1495,7 +1483,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEnterpriseRoute: typeof AuthenticatedEnterpriseRoute
   AuthenticatedGebruikersRoute: typeof AuthenticatedGebruikersRoute
   AuthenticatedInkoopfacturenRoute: typeof AuthenticatedInkoopfacturenRouteWithChildren
-  AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRouteWithChildren
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedMailRoute: typeof AuthenticatedMailRouteWithChildren
   AuthenticatedNetqloudRoute: typeof AuthenticatedNetqloudRouteWithChildren
@@ -1506,9 +1493,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedCrmActivitiesRoute: typeof AuthenticatedCrmActivitiesRoute
+  AuthenticatedInvoicesInvoiceIdRoute: typeof AuthenticatedInvoicesInvoiceIdRoute
   AuthenticatedKpiMetricRoute: typeof AuthenticatedKpiMetricRoute
   AuthenticatedOutreachTemplatesRoute: typeof AuthenticatedOutreachTemplatesRoute
   AuthenticatedAnalyticsIndexRoute: typeof AuthenticatedAnalyticsIndexRoute
+  AuthenticatedInvoicesIndexRoute: typeof AuthenticatedInvoicesIndexRoute
   AuthenticatedOfferteStudioIndexRoute: typeof AuthenticatedOfferteStudioIndexRoute
   AuthenticatedOutreachIndexRoute: typeof AuthenticatedOutreachIndexRoute
   AuthenticatedOfferteStudioQIdRoute: typeof AuthenticatedOfferteStudioQIdRoute
@@ -1524,7 +1513,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGebruikersRoute: AuthenticatedGebruikersRoute,
   AuthenticatedInkoopfacturenRoute:
     AuthenticatedInkoopfacturenRouteWithChildren,
-  AuthenticatedInvoicesRoute: AuthenticatedInvoicesRouteWithChildren,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedMailRoute: AuthenticatedMailRouteWithChildren,
   AuthenticatedNetqloudRoute: AuthenticatedNetqloudRouteWithChildren,
@@ -1535,9 +1523,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedCrmActivitiesRoute: AuthenticatedCrmActivitiesRoute,
+  AuthenticatedInvoicesInvoiceIdRoute: AuthenticatedInvoicesInvoiceIdRoute,
   AuthenticatedKpiMetricRoute: AuthenticatedKpiMetricRoute,
   AuthenticatedOutreachTemplatesRoute: AuthenticatedOutreachTemplatesRoute,
   AuthenticatedAnalyticsIndexRoute: AuthenticatedAnalyticsIndexRoute,
+  AuthenticatedInvoicesIndexRoute: AuthenticatedInvoicesIndexRoute,
   AuthenticatedOfferteStudioIndexRoute: AuthenticatedOfferteStudioIndexRoute,
   AuthenticatedOutreachIndexRoute: AuthenticatedOutreachIndexRoute,
   AuthenticatedOfferteStudioQIdRoute: AuthenticatedOfferteStudioQIdRoute,
