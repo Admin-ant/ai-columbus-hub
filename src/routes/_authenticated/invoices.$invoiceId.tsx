@@ -1490,6 +1490,41 @@ function EmailForm({
           )}
         </div>
       </div>
+      {sendStatus && (
+        <div
+          className={
+            sendStatus.type === "success"
+              ? "flex items-start gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300"
+              : "flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+          }
+          role={sendStatus.type === "error" ? "alert" : "status"}
+        >
+          {sendStatus.type === "success" ? (
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+          ) : (
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          )}
+          <div className="min-w-0 flex-1">
+            <div className="font-medium">
+              {sendStatus.type === "success" ? "E-mail verzonden" : "Verzenden mislukt"}
+            </div>
+            <div className="mt-0.5 break-words text-xs opacity-90">
+              {sendStatus.type === "success"
+                ? `Verzonden naar ${sendStatus.to}`
+                : sendStatus.message}
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-6 shrink-0 px-1.5 text-xs"
+            onClick={() => setSendStatus(null)}
+          >
+            Sluit
+          </Button>
+        </div>
+      )}
       <DialogFooter>
         <Button type="submit" disabled={sending}>
           {sending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
