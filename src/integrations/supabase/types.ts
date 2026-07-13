@@ -81,6 +81,7 @@ export type Database = {
           id: string
           invite_sent_at: string | null
           lead_id: string | null
+          locale: string
           location: string | null
           organization_id: string
           reschedule_note: string | null
@@ -105,6 +106,7 @@ export type Database = {
           id?: string
           invite_sent_at?: string | null
           lead_id?: string | null
+          locale?: string
           location?: string | null
           organization_id: string
           reschedule_note?: string | null
@@ -129,6 +131,7 @@ export type Database = {
           id?: string
           invite_sent_at?: string | null
           lead_id?: string | null
+          locale?: string
           location?: string | null
           organization_id?: string
           reschedule_note?: string | null
@@ -446,6 +449,7 @@ export type Database = {
           organization_id: string | null
           phone: string | null
           postal_code: string | null
+          preferred_locale: string | null
           start_date: string | null
           updated_at: string
           vat_number: string | null
@@ -471,6 +475,7 @@ export type Database = {
           organization_id?: string | null
           phone?: string | null
           postal_code?: string | null
+          preferred_locale?: string | null
           start_date?: string | null
           updated_at?: string
           vat_number?: string | null
@@ -496,6 +501,7 @@ export type Database = {
           organization_id?: string | null
           phone?: string | null
           postal_code?: string | null
+          preferred_locale?: string | null
           start_date?: string | null
           updated_at?: string
           vat_number?: string | null
