@@ -3111,6 +3111,20 @@ export type Database = {
           out_project_id: string
         }[]
       }
+      create_customer_from_lead: {
+        Args: {
+          _lead_id: string
+          _monthly_cents: number
+          _setup_cents: number
+          _start_date: string
+          _title: string
+        }
+        Returns: {
+          out_client_id: string
+          out_contract_id: string
+          out_project_id: string
+        }[]
+      }
       finalize_signed_quote: {
         Args: { _quote_id: string }
         Returns: {

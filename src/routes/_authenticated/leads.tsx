@@ -19,12 +19,13 @@ import {
   LayoutGrid,
   Table as TableIcon,
   Sparkles,
+  Briefcase,
 } from "lucide-react";
 import { extractLeadFromText } from "@/lib/leads-ai.functions";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { z } from "zod";
-import { winLead, loseLead } from "@/lib/pipeline.functions";
+import { winLead, loseLead, createCustomerFromLead } from "@/lib/pipeline.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { Button } from "@/components/ui/button";
@@ -188,10 +189,12 @@ function LeadsPage() {
   const [view, setView] = useState<"kanban" | "table">("kanban");
   const [openLead, setOpenLead] = useState<Lead | null>(null);
   const [winLeadRow, setWinLeadRow] = useState<Lead | null>(null);
+  const [preCustomerLeadRow, setPreCustomerLeadRow] = useState<Lead | null>(null);
   const [loseLeadRow, setLoseLeadRow] = useState<Lead | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [editLead, setEditLead] = useState<Lead | null>(null);
   const fnWin = useServerFn(winLead);
+  const fnCreateCustomer = useServerFn(createCustomerFromLead);
   const fnLose = useServerFn(loseLead);
 
   const load = useCallback(async () => {
@@ -726,6 +729,14 @@ function LeadsPage() {
                           <Button
                             size="sm"
                             variant="ghost"
+                            title="Maak alvast klant, project en contract aan"
+                            onClick={() => setPreCustomerLeadRow(l)}
+                          >
+                            <Briefcase className="h-3.5 w-3.5 text-sky-600" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             title="Zet op verloren"
                             onClick={() => setLoseLeadRow(l)}
                             disabled={l.stage === "verloren"}
@@ -761,6 +772,7 @@ function LeadsPage() {
             leads={baseFiltered}
             loading={loading}
             onWin={setWinLeadRow}
+            onCreateCustomer={setPreCustomerLeadRow}
             onLose={setLoseLeadRow}
             onEdit={setEditLead}
             onDetail={setOpenLead}
@@ -791,7 +803,16 @@ function LeadsPage() {
           lead={winLeadRow}
           onClose={() => setWinLeadRow(null)}
           onSaved={() => load()}
-          fnWin={fnWin}
+          fn={fnWin}
+          mode="win"
+        />
+
+        <WinLeadDialog
+          lead={preCustomerLeadRow}
+          onClose={() => setPreCustomerLeadRow(null)}
+          onSaved={() => load()}
+          fn={fnCreateCustomer}
+          mode="customer"
         />
 
         <LoseLeadDialog
@@ -879,12 +900,14 @@ function WinLeadDialog({
   lead,
   onClose,
   onSaved,
-  fnWin,
+  fn,
+  mode,
 }: {
   lead: Lead | null;
   onClose: () => void;
   onSaved: () => void;
-  fnWin: ReturnType<typeof useServerFn<typeof winLead>>;
+  fn: ReturnType<typeof useServerFn<typeof winLead>>;
+  mode: "win" | "customer";
 }) {
   const [title, setTitle] = useState("");
   const [monthly, setMonthly] = useState("0");
@@ -911,7 +934,7 @@ function WinLeadDialog({
     if (!lead) return;
     setSaving(true);
     try {
-      const r = await fnWin({
+      const r = await fn({
         data: {
           leadId: lead.id,
           monthlyCents: Math.round(parseFloat(monthly || "0") * 100),
@@ -945,11 +968,21 @@ function WinLeadDialog({
     <Dialog open={!!lead} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{created ? "Lead gewonnen 🎉" : "Zet lead op gewonnen"}</DialogTitle>
+          <DialogTitle>
+            {created
+              ? mode === "win"
+                ? "Lead gewonnen 🎉"
+                : "Klant aangemaakt ✅"
+              : mode === "win"
+                ? "Zet lead op gewonnen"
+                : "Maak alvast klant, project en contract aan"}
+          </DialogTitle>
           <DialogDescription>
             {created
               ? "Klant, project en contract zijn aangemaakt. Ga direct verder:"
-              : "Maakt automatisch klant, project en contract aan."}
+              : mode === "win"
+                ? "Maakt automatisch klant, project en contract aan en zet de lead op gewonnen."
+                : "Maakt klant, project en contract aan. De lead blijft in zijn huidige fase staan."}
           </DialogDescription>
         </DialogHeader>
 
@@ -1669,6 +1702,7 @@ function KanbanBoard({
   leads,
   loading,
   onWin,
+  onCreateCustomer,
   onLose,
   onEdit,
   onDetail,
@@ -1677,6 +1711,7 @@ function KanbanBoard({
   leads: Lead[];
   loading: boolean;
   onWin: (l: Lead) => void;
+  onCreateCustomer: (l: Lead) => void;
   onLose: (l: Lead) => void;
   onEdit: (l: Lead) => void;
   onDetail: (l: Lead) => void;
@@ -1705,6 +1740,7 @@ function KanbanBoard({
               column={column}
               leads={items}
               onWin={onWin}
+              onCreateCustomer={onCreateCustomer}
               onLose={onLose}
               onEdit={onEdit}
               onDetail={onDetail}
@@ -1720,6 +1756,7 @@ function KanbanColumn({
   column,
   leads,
   onWin,
+  onCreateCustomer,
   onLose,
   onEdit,
   onDetail,
@@ -1727,6 +1764,7 @@ function KanbanColumn({
   column: KanbanColumn;
   leads: Lead[];
   onWin: (l: Lead) => void;
+  onCreateCustomer: (l: Lead) => void;
   onLose: (l: Lead) => void;
   onEdit: (l: Lead) => void;
   onDetail: (l: Lead) => void;
@@ -1762,6 +1800,7 @@ function KanbanColumn({
                 key={l.id}
                 lead={l}
                 onWin={onWin}
+                onCreateCustomer={onCreateCustomer}
                 onLose={onLose}
                 onEdit={onEdit}
                 onDetail={onDetail}
@@ -1777,12 +1816,14 @@ function KanbanColumn({
 function KanbanCard({
   lead,
   onWin,
+  onCreateCustomer,
   onLose,
   onEdit,
   onDetail,
 }: {
   lead: Lead;
   onWin: (l: Lead) => void;
+  onCreateCustomer: (l: Lead) => void;
   onLose: (l: Lead) => void;
   onEdit: (l: Lead) => void;
   onDetail: (l: Lead) => void;
@@ -1845,6 +1886,15 @@ function KanbanCard({
           disabled={lead.stage === "gewonnen"}
         >
           <Trophy className="h-3.5 w-3.5 text-emerald-600" />
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 w-7 p-0"
+          title="Maak alvast klant, project en contract aan"
+          onClick={() => onCreateCustomer(lead)}
+        >
+          <Briefcase className="h-3.5 w-3.5 text-sky-600" />
         </Button>
         <Button
           size="sm"
