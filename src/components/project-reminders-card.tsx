@@ -63,7 +63,7 @@ export function ProjectRemindersCard() {
     return () => {
       cancelled = true;
     };
-  }, [currentOrganizationId]);
+  }, [currentOrganizationId, windowDays]);
 
   const total = waiting.length + upcoming.length;
 
