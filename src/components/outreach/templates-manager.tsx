@@ -38,12 +38,29 @@ const CHANNEL_LABEL: Record<TemplateChannel, string> = {
   whatsapp: "WhatsApp",
 };
 
-const SAMPLE = {
-  contact_name: "Sanne",
+const DEFAULT_SAMPLE = {
+  contact_name: "Sanne de Vries",
   company: "Voorbeeld BV",
   province: "Noord-Holland",
   sender_name: "Jouw Naam",
+  appointment_title: "Kennismakingsgesprek",
+  appointment_date: new Date().toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long", year: "numeric" }),
+  appointment_time: "14:00",
+  appointment_location: "Online (Google Meet)",
+  appointment_link: "https://app.aivancolumbus.com/afspraak/voorbeeld-token",
 };
+type SampleKey = keyof typeof DEFAULT_SAMPLE;
+const SAMPLE_FIELDS: { key: SampleKey; label: string }[] = [
+  { key: "contact_name", label: "Naam contact" },
+  { key: "company", label: "Bedrijf" },
+  { key: "province", label: "Provincie" },
+  { key: "sender_name", label: "Afzender" },
+  { key: "appointment_title", label: "Afspraak titel" },
+  { key: "appointment_date", label: "Afspraak datum" },
+  { key: "appointment_time", label: "Afspraak tijd" },
+  { key: "appointment_location", label: "Afspraak locatie" },
+  { key: "appointment_link", label: "Afspraak link" },
+];
 
 type TemplateVersion = {
   id: string;
