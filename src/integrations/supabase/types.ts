@@ -1227,6 +1227,44 @@ export type Database = {
           },
         ]
       }
+      invoice_number_sequences: {
+        Row: {
+          created_at: string
+          id: string
+          next_seq: number
+          organization_id: string
+          prefix: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          next_seq?: number
+          organization_id: string
+          prefix: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          next_seq?: number
+          organization_id?: string
+          prefix?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_number_sequences_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_payment_events: {
         Row: {
           amount_cents: number | null
@@ -1907,6 +1945,7 @@ export type Database = {
       }
       organizations: {
         Row: {
+          account_holder: string | null
           address_line1: string | null
           address_line2: string | null
           bic: string | null
@@ -1932,8 +1971,10 @@ export type Database = {
           slug: string
           tax_number: string | null
           updated_at: string
+          website: string | null
         }
         Insert: {
+          account_holder?: string | null
           address_line1?: string | null
           address_line2?: string | null
           bic?: string | null
@@ -1959,8 +2000,10 @@ export type Database = {
           slug: string
           tax_number?: string | null
           updated_at?: string
+          website?: string | null
         }
         Update: {
+          account_holder?: string | null
           address_line1?: string | null
           address_line2?: string | null
           bic?: string | null
@@ -1986,6 +2029,7 @@ export type Database = {
           slug?: string
           tax_number?: string | null
           updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }
