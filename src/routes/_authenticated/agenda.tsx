@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { CalendarDays, ChevronLeft, ChevronRight, Loader2, Mail, Plus, Send, Trash2, X, Ban, CalendarClock } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Download, Loader2, Mail, Plus, Send, Trash2, X, Ban, CalendarClock } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -63,6 +63,89 @@ function toLocalInput(iso: string): string {
 }
 function fromLocalInput(v: string): string {
   return new Date(v).toISOString();
+}
+
+function icsDate(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return (
+    d.getUTCFullYear().toString() +
+    pad(d.getUTCMonth() + 1) +
+    pad(d.getUTCDate()) +
+    "T" +
+    pad(d.getUTCHours()) +
+    pad(d.getUTCMinutes()) +
+    pad(d.getUTCSeconds()) +
+    "Z"
+  );
+}
+function icsEscape(s: string): string {
+  return s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+}
+
+function exportIcs(
+  all: Appointment[],
+  opts: { selectedDay: string | null; month: Date; orgName?: string | null },
+) {
+  let subset: Appointment[];
+  let label: string;
+  if (opts.selectedDay) {
+    subset = all.filter((a) => new Date(a.starts_at).toISOString().slice(0, 10) === opts.selectedDay);
+    label = opts.selectedDay;
+  } else {
+    const y = opts.month.getFullYear();
+    const m = opts.month.getMonth();
+    const from = new Date(y, m, 1).getTime();
+    const to = new Date(y, m + 1, 1).getTime();
+    subset = all.filter((a) => {
+      const t = new Date(a.starts_at).getTime();
+      return t >= from && t < to;
+    });
+    label = `${y}-${String(m + 1).padStart(2, "0")}`;
+  }
+  if (subset.length === 0) {
+    toast.info("Geen afspraken in deze periode");
+    return;
+  }
+  const now = icsDate(new Date().toISOString());
+  const lines: string[] = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//AI van Columbus//Agenda Export//NL",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+  ];
+  for (const a of subset) {
+    lines.push(
+      "BEGIN:VEVENT",
+      `UID:${a.id}@aivancolumbus`,
+      `DTSTAMP:${now}`,
+      `DTSTART:${icsDate(a.starts_at)}`,
+      `DTEND:${icsDate(a.ends_at)}`,
+      `SUMMARY:${icsEscape(a.title)}`,
+      `STATUS:${a.status === "cancelled" ? "CANCELLED" : "CONFIRMED"}`,
+    );
+    if (a.description) lines.push(`DESCRIPTION:${icsEscape(a.description)}`);
+    if (a.location) lines.push(`LOCATION:${icsEscape(a.location)}`);
+    if (a.attendee_email) {
+      lines.push(
+        `ATTENDEE;CN=${icsEscape(a.attendee_name ?? a.attendee_email)}:mailto:${a.attendee_email}`,
+      );
+    }
+    lines.push("END:VEVENT");
+  }
+  lines.push("END:VCALENDAR");
+  const blob = new Blob([lines.join("\r\n")], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  const slug = (opts.orgName ?? "agenda").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "agenda";
+  a.download = `${slug}-${label}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast.success(`${subset.length} afspra${subset.length === 1 ? "ak" : "ken"} geëxporteerd`);
 }
 
 function AgendaPage() {
@@ -183,17 +266,28 @@ function AgendaPage() {
             Beheer afspraken en verstuur direct een agenda-uitnodiging per e-mail.
           </p>
         </div>
-        {currentOrganizationId && (
-          <Button
-            onClick={() => {
-              setEditing(null);
-              setOpen(true);
-            }}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Nieuwe afspraak
-          </Button>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {currentOrganizationId && items.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={() => exportIcs(items, { selectedDay, month, orgName: currentOrganization?.name })}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Exporteer {selectedDay ? "dag" : "maand"} (.ics)
+            </Button>
+          )}
+          {currentOrganizationId && (
+            <Button
+              onClick={() => {
+                setEditing(null);
+                setOpen(true);
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Nieuwe afspraak
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="rounded-lg border bg-card p-4">
