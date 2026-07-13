@@ -1800,6 +1800,7 @@ function KanbanColumn({
                 key={l.id}
                 lead={l}
                 onWin={onWin}
+                onCreateCustomer={onCreateCustomer}
                 onLose={onLose}
                 onEdit={onEdit}
                 onDetail={onDetail}
@@ -1815,12 +1816,14 @@ function KanbanColumn({
 function KanbanCard({
   lead,
   onWin,
+  onCreateCustomer,
   onLose,
   onEdit,
   onDetail,
 }: {
   lead: Lead;
   onWin: (l: Lead) => void;
+  onCreateCustomer: (l: Lead) => void;
   onLose: (l: Lead) => void;
   onEdit: (l: Lead) => void;
   onDetail: (l: Lead) => void;
