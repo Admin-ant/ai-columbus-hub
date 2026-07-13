@@ -64,6 +64,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
   const [channel, setChannel] = useState<TemplateChannel>("email");
   const [versions, setVersions] = useState<TemplateVersion[]>([]);
   const [previewVersion, setPreviewVersion] = useState<TemplateVersion | null>(null);
+  const [search, setSearch] = useState("");
 
   async function load() {
     if (!organizationId) {
