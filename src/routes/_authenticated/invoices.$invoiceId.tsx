@@ -4,8 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
+  AlertCircle,
   ArrowLeft,
   Check,
+  CheckCircle2,
   Copy,
   Download,
   Eye,
@@ -13,9 +15,17 @@ import {
   Mail,
   Paperclip,
   Pencil,
+  Save,
   Trash2,
   Upload,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
