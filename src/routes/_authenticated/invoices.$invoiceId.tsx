@@ -104,6 +104,27 @@ type OrgRow = {
   bic: string | null;
 };
 
+const MOLLIE_BADGE_COLOR: Record<string, string> = {
+  created: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+  open: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  pending: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  paid: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  failed: "bg-red-500/15 text-red-700 dark:text-red-300",
+  expired: "bg-red-500/15 text-red-700 dark:text-red-300",
+  canceled: "bg-muted text-muted-foreground",
+  revoked: "bg-muted text-muted-foreground",
+};
+const MOLLIE_BADGE_LABEL: Record<string, string> = {
+  created: "Aangemaakt",
+  open: "Open",
+  pending: "In behandeling",
+  paid: "Betaald",
+  failed: "Mislukt",
+  expired: "Verlopen",
+  canceled: "Geannuleerd",
+  revoked: "Ingetrokken",
+};
+
 const STATUS_COLOR: Record<InvoiceStatus, string> = {
   draft: "bg-muted text-foreground",
   sent: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
