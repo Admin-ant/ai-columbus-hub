@@ -413,7 +413,7 @@ export const createDeliveryProjectFromLead = createServerFn({ method: "POST" })
 
     const { data: contract } = await context.supabase
       .from("contracts")
-      .select("id,project_id,monthly_amount_cents")
+      .select("id,project_id,monthly_amount_cents,status,start_date,next_invoice_date")
       .eq("client_id", lead.converted_client_id)
       .order("created_at", { ascending: false })
       .limit(1)
@@ -422,6 +422,14 @@ export const createDeliveryProjectFromLead = createServerFn({ method: "POST" })
     const projectName = data.name?.trim() || `Project — ${lead.company ?? lead.name}`;
     const valueCents = Number(contract?.monthly_amount_cents ?? 0) || Math.round(Number(lead.potential_monthly_value ?? 0) * 100);
 
+    // Prefill delivery_status obv contract-status
+    const deliveryStatus: "nieuw" | "in_uitvoering" =
+      contract?.status === "active" ? "in_uitvoering" : "nieuw";
+
+    // Prefill opleverdatum: expliciet > contract.start_date > next_invoice_date
+    const rawTarget = data.targetMonth ?? contract?.start_date ?? contract?.next_invoice_date ?? null;
+    const targetMonth = rawTarget ? String(rawTarget).slice(0, 10) : null;
+
     const { data: project, error: projErr } = await context.supabase
       .from("projects")
       .insert({
@@ -429,14 +437,30 @@ export const createDeliveryProjectFromLead = createServerFn({ method: "POST" })
         client_id: lead.converted_client_id,
         name: projectName,
         status: "contract_getekend",
-        delivery_status: "nieuw",
+        delivery_status: deliveryStatus,
         value_cents: valueCents,
-        target_month: data.targetMonth ?? null,
+        target_month: targetMonth,
         created_by: context.userId,
       } as never)
       .select("id")
       .single();
     if (projErr) throw new Error(projErr.message);
+
+    // Trigger log_project_delivery_status_change vult automatisch de eerste
+    // historie-invoer bij INSERT. Voor de zekerheid: indien nog geen rij bestaat, insert er één.
+    const { count: histCount } = await context.supabase
+      .from("project_delivery_status_history")
+      .select("id", { count: "exact", head: true })
+      .eq("project_id", project.id);
+    if (!histCount) {
+      await context.supabase.from("project_delivery_status_history").insert({
+        project_id: project.id,
+        organization_id: lead.organization_id,
+        old_status: null,
+        new_status: deliveryStatus,
+        changed_by: context.userId,
+      } as never);
+    }
 
     if (contract && !contract.project_id) {
       await context.supabase

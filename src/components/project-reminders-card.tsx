@@ -1,23 +1,58 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Bell, ChevronDown, Clock, Hourglass, Loader2 } from "lucide-react";
+import { Bell, ChevronDown, Clock, Hourglass, Loader2, MoreHorizontal } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { useReminderSettings } from "@/hooks/use-reminder-settings";
+
+type DeliveryStatus =
+  | "nieuw"
+  | "in_uitvoering"
+  | "wacht_op_klant"
+  | "on_hold"
+  | "opgeleverd"
+  | "geannuleerd";
+
+const STATUS_LABELS: Record<DeliveryStatus, string> = {
+  nieuw: "Nieuw",
+  in_uitvoering: "In uitvoering",
+  wacht_op_klant: "Wacht op klant",
+  on_hold: "On hold",
+  opgeleverd: "Opgeleverd",
+  geannuleerd: "Geannuleerd",
+};
+
+const STATUS_OPTIONS: DeliveryStatus[] = [
+  "nieuw",
+  "in_uitvoering",
+  "wacht_op_klant",
+  "on_hold",
+  "opgeleverd",
+  "geannuleerd",
+];
 
 type Row = {
   id: string;
   name: string;
-  delivery_status: string | null;
+  delivery_status: DeliveryStatus | null;
   target_month: string | null;
 };
 
 function daysUntil(dateStr: string) {
   const d = new Date(dateStr);
-  const diff = Math.ceil((d.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-  return diff;
+  return Math.ceil((d.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 }
 
 export function ProjectRemindersCard() {
@@ -27,6 +62,8 @@ export function ProjectRemindersCard() {
   const [upcoming, setUpcoming] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [pendingId, setPendingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!currentOrganizationId) return;
@@ -49,7 +86,7 @@ export function ProjectRemindersCard() {
           .select("id,name,delivery_status,target_month")
           .eq("organization_id", currentOrganizationId)
           .not("target_month", "is", null)
-          .not("delivery_status", "in", "(opgeleverd,geannuleerd)")
+          .not("delivery_status", "in", "(opgeleverd,geannuleerd,wacht_op_klant)")
           .lte("target_month", inWindow.toISOString().slice(0, 10))
           .order("target_month", { ascending: true })
           .limit(20),
@@ -62,7 +99,22 @@ export function ProjectRemindersCard() {
     return () => {
       cancelled = true;
     };
-  }, [currentOrganizationId, windowDays]);
+  }, [currentOrganizationId, windowDays, reloadKey]);
+
+  async function changeStatus(projectId: string, next: DeliveryStatus) {
+    setPendingId(projectId);
+    const { error } = await supabase
+      .from("projects")
+      .update({ delivery_status: next })
+      .eq("id", projectId);
+    setPendingId(null);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(`Status → ${STATUS_LABELS[next]}`);
+    setReloadKey((k) => k + 1);
+  }
 
   const total = waiting.length + upcoming.length;
 
@@ -104,67 +156,56 @@ export function ProjectRemindersCard() {
       {open && total > 0 && (
         <CardContent className="space-y-4 pt-0">
           {waiting.length > 0 && (
-            <div>
-              <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase text-muted-foreground">
-                <Hourglass className="h-3.5 w-3.5" /> Wacht op klant ({waiting.length})
-              </div>
-              <ul className="space-y-1.5">
-                {waiting.map((p) => (
-                  <li key={p.id}>
-                    <Link
-                      to="/ai-columbus/projecten/$projectId"
-                      params={{ projectId: p.id }}
-                      className="flex items-center justify-between rounded-md border bg-background px-3 py-2 text-sm hover:bg-muted"
-                    >
-                      <span className="truncate">{p.name}</span>
-                      {p.target_month && (
-                        <span className="ml-2 text-xs text-muted-foreground">
-                          {new Date(p.target_month).toLocaleDateString("nl-NL", {
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </span>
-                      )}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <Section
+              icon={<Hourglass className="h-3.5 w-3.5" />}
+              title={`Wacht op klant (${waiting.length})`}
+            >
+              {waiting.map((p) => (
+                <ReminderRow
+                  key={p.id}
+                  project={p}
+                  right={
+                    p.target_month
+                      ? new Date(p.target_month).toLocaleDateString("nl-NL", {
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "—"
+                  }
+                  pending={pendingId === p.id}
+                  onStatus={(s) => changeStatus(p.id, s)}
+                />
+              ))}
+            </Section>
           )}
           {upcoming.length > 0 && (
-            <div>
-              <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase text-muted-foreground">
-                <Clock className="h-3.5 w-3.5" /> Deadline binnen {windowDays} dagen ({upcoming.length})
-              </div>
-              <ul className="space-y-1.5">
-                {upcoming.map((p) => {
-                  const d = p.target_month ? daysUntil(p.target_month) : null;
-                  const overdue = d !== null && d < -overdueDays;
-                  return (
-                    <li key={p.id}>
-                      <Link
-                        to="/ai-columbus/projecten/$projectId"
-                        params={{ projectId: p.id }}
-                        className="flex items-center justify-between rounded-md border bg-background px-3 py-2 text-sm hover:bg-muted"
-                      >
-                        <span className="truncate">{p.name}</span>
-                        <span
-                          className={`ml-2 text-xs ${overdue ? "font-semibold text-destructive" : "text-muted-foreground"}`}
-                        >
-                          {d === null
-                            ? "—"
-                            : overdue
-                              ? `${Math.abs(d)}d te laat`
-                              : d === 0
-                                ? "vandaag"
-                                : `over ${d}d`}
-                        </span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+            <Section
+              icon={<Clock className="h-3.5 w-3.5" />}
+              title={`Deadline binnen ${windowDays} dagen (${upcoming.length})`}
+            >
+              {upcoming.map((p) => {
+                const d = p.target_month ? daysUntil(p.target_month) : null;
+                const overdue = d !== null && d < -overdueDays;
+                const label =
+                  d === null
+                    ? "—"
+                    : overdue
+                      ? `${Math.abs(d)}d te laat`
+                      : d === 0
+                        ? "vandaag"
+                        : `over ${d}d`;
+                return (
+                  <ReminderRow
+                    key={p.id}
+                    project={p}
+                    right={label}
+                    rightClass={overdue ? "font-semibold text-destructive" : "text-muted-foreground"}
+                    pending={pendingId === p.id}
+                    onStatus={(s) => changeStatus(p.id, s)}
+                  />
+                );
+              })}
+            </Section>
           )}
         </CardContent>
       )}
@@ -172,3 +213,79 @@ export function ProjectRemindersCard() {
   );
 }
 
+function Section({
+  icon,
+  title,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase text-muted-foreground">
+        {icon} {title}
+      </div>
+      <ul className="space-y-1.5">{children}</ul>
+    </div>
+  );
+}
+
+function ReminderRow({
+  project,
+  right,
+  rightClass = "text-muted-foreground",
+  pending,
+  onStatus,
+}: {
+  project: Row;
+  right: string;
+  rightClass?: string;
+  pending: boolean;
+  onStatus: (s: DeliveryStatus) => void;
+}) {
+  return (
+    <li className="flex items-center gap-1.5 rounded-md border bg-background pr-1 hover:bg-muted">
+      <Link
+        to="/ai-columbus/projecten/$projectId"
+        params={{ projectId: project.id }}
+        className="flex flex-1 items-center justify-between gap-2 px-3 py-2 text-sm"
+      >
+        <span className="truncate">{project.name}</span>
+        <span className={`ml-2 shrink-0 text-xs ${rightClass}`}>{right}</span>
+      </Link>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 shrink-0"
+            aria-label="Wijzig status"
+            disabled={pending}
+          >
+            {pending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <MoreHorizontal className="h-3.5 w-3.5" />
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Wijzig status</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {STATUS_OPTIONS.map((s) => (
+            <DropdownMenuItem
+              key={s}
+              disabled={s === project.delivery_status}
+              onClick={() => onStatus(s)}
+            >
+              {STATUS_LABELS[s]}
+              {s === project.delivery_status ? " · huidig" : ""}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </li>
+  );
+}
