@@ -197,11 +197,17 @@ function AgendaPage() {
     const now = Date.now();
     const filtered = items.filter((a) => {
       if (selectedDay) {
-        return new Date(a.starts_at).toISOString().slice(0, 10) === selectedDay;
+        if (new Date(a.starts_at).toISOString().slice(0, 10) !== selectedDay) return false;
+      } else {
+        const t = new Date(a.starts_at).getTime();
+        if (scope === "upcoming" && t < now - 3600_000) return false;
+        if (scope === "past" && t >= now - 3600_000) return false;
       }
-      const t = new Date(a.starts_at).getTime();
-      if (scope === "upcoming") return t >= now - 3600_000;
-      if (scope === "past") return t < now - 3600_000;
+      if (statusFilter === "cancelled") return a.status === "cancelled";
+      if (statusFilter === "scheduled") return a.status !== "cancelled" && !a.invite_sent_at;
+      if (statusFilter === "sent") return a.status !== "cancelled" && !!a.invite_sent_at && !a.confirmed_at && !a.reschedule_requested_at;
+      if (statusFilter === "confirmed") return a.status !== "cancelled" && !!a.confirmed_at;
+      if (statusFilter === "reschedule") return a.status !== "cancelled" && !!a.reschedule_requested_at && !a.confirmed_at;
       return true;
     });
     const map = new Map<string, Appointment[]>();
@@ -217,7 +223,7 @@ function AgendaPage() {
       map.set(key, arr);
     }
     return Array.from(map.entries());
-  }, [items, scope, selectedDay]);
+  }, [items, scope, selectedDay, statusFilter]);
 
   const monthGrid = useMemo(() => {
     const y = month.getFullYear();
