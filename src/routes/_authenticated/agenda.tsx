@@ -154,6 +154,7 @@ function AgendaPage() {
   const [clients, setClients] = useState<ClientRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [scope, setScope] = useState<"upcoming" | "past" | "all">("upcoming");
+  const [statusFilter, setStatusFilter] = useState<"all" | "scheduled" | "sent" | "confirmed" | "reschedule" | "cancelled">("all");
   const [editing, setEditing] = useState<Appointment | null>(null);
   const [open, setOpen] = useState(false);
   const [month, setMonth] = useState(() => {
