@@ -66,9 +66,7 @@ export const listSalesPipeline = createServerFn({ method: "POST" })
       .from("leads")
       .select(
         `
-        id,name,company,email,phone,stage,source,created_at,potential_monthly_value,converted_client_id,
-        client_requirements(id,scope,one_time_cents,recurring_cents,notes),
-        quotes:quotes!quotes_lead_id_fkey(id,title,status,total_amount,signed_at,public_token,sent_at,paid_at,created_at)
+        id,name,company,email,phone,stage,source,created_at,potential_monthly_value,converted_client_id
         `,
       )
       .eq("organization_id", data.organizationId)
@@ -76,20 +74,56 @@ export const listSalesPipeline = createServerFn({ method: "POST" })
       .limit(200);
     if (error) throw new Error(error.message);
 
+    const leadIds = (leads ?? []).map((lead) => lead.id);
+
+    const [{ data: requirementsRows, error: reqError }, { data: quoteRows, error: quoteError }] =
+      leadIds.length > 0
+        ? await Promise.all([
+            context.supabase
+              .from("client_requirements")
+              .select("id,lead_id,scope,one_time_cents,recurring_cents,notes")
+              .eq("organization_id", data.organizationId)
+              .in("lead_id", leadIds),
+            context.supabase
+              .from("quotes")
+              .select("id,lead_id,title,status,total_amount,signed_at,public_token,sent_at,paid_at,created_at")
+              .eq("organization_id", data.organizationId)
+              .in("lead_id", leadIds),
+          ])
+        : [
+            { data: [], error: null },
+            { data: [], error: null },
+          ];
+
+    if (reqError) throw new Error(reqError.message);
+    if (quoteError) throw new Error(quoteError.message);
+
+    const requirementsByLeadId = new Map(
+      (requirementsRows ?? []).map((req) => [req.lead_id, req]),
+    );
+    const quotesByLeadId = new Map<string, Array<{
+      id: string;
+      lead_id: string | null;
+      title: string;
+      status: string;
+      total_amount: number;
+      signed_at: string | null;
+      public_token: string;
+      sent_at: string | null;
+      paid_at: string | null;
+      created_at: string;
+    }>>();
+    for (const quote of quoteRows ?? []) {
+      if (!quote.lead_id) continue;
+      const existing = quotesByLeadId.get(quote.lead_id) ?? [];
+      existing.push(quote);
+      quotesByLeadId.set(quote.lead_id, existing);
+    }
+
     const results: PipelineLead[] = [];
     for (const l of leads ?? []) {
-      const req = Array.isArray(l.client_requirements) ? l.client_requirements[0] : null;
-      const quotesArr = (l.quotes ?? []) as Array<{
-        id: string;
-        title: string;
-        status: string;
-        total_amount: number;
-        signed_at: string | null;
-        public_token: string;
-        sent_at: string | null;
-        paid_at: string | null;
-        created_at: string;
-      }>;
+      const req = requirementsByLeadId.get(l.id) ?? null;
+      const quotesArr = quotesByLeadId.get(l.id) ?? [];
       const quote = quotesArr
         .slice()
         .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""))[0] ?? null;
