@@ -236,9 +236,14 @@ export const sendAppointmentInvite = createServerFn({ method: "POST" })
     const respBody = await res.text();
     if (!res.ok) throw new Error(`Resend ${res.status}: ${respBody.slice(0, 300)}`);
 
+    const patch: Record<string, unknown> = { invite_sent_at: new Date().toISOString() };
+    if (data.cancel) {
+      patch.status = "cancelled";
+      patch.cancelled_at = new Date().toISOString();
+    }
     await context.supabase
       .from("appointments")
-      .update({ invite_sent_at: new Date().toISOString() } as never)
+      .update(patch as never)
       .eq("id", a.id);
 
     return { ok: true };
