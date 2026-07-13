@@ -246,7 +246,7 @@ function AgendaPage() {
     const now = Date.now();
     const filtered = items.filter((a) => {
       if (selectedDay) {
-        if (new Date(a.starts_at).toISOString().slice(0, 10) !== selectedDay) return false;
+        if (localDateKey(a.starts_at) !== selectedDay) return false;
       } else {
         const t = new Date(a.starts_at).getTime();
         if (scope === "upcoming" && t < now - 3600_000) return false;
