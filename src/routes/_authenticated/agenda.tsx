@@ -55,7 +55,39 @@ type Appointment = {
   created_at: string;
 };
 
-type ClientRow = { id: string; name: string; email: string | null; preferred_locale: string | null };
+type ClientRow = {
+  id: string;
+  name: string;
+  email: string | null;
+  preferred_locale: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  postal_code: string | null;
+  city: string | null;
+};
+type OrgAddress = {
+  name: string;
+  address_line1: string | null;
+  address_line2: string | null;
+  postal_code: string | null;
+  city: string | null;
+} | null;
+
+function formatAddress(a: {
+  name?: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  postal_code: string | null;
+  city: string | null;
+}): string {
+  const parts = [
+    a.name ?? null,
+    a.address_line1,
+    a.address_line2,
+    [a.postal_code, a.city].filter(Boolean).join(" ").trim() || null,
+  ].filter((p): p is string => !!p && p.trim().length > 0);
+  return parts.join(", ");
+}
 
 function toLocalInput(iso: string): string {
   const d = new Date(iso);
