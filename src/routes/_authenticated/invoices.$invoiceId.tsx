@@ -185,6 +185,27 @@ function InvoiceDetailPage() {
     [i18n.resolvedLanguage],
   );
 
+  // Bepaal terug-navigatie op basis van de vorige pagina (Boekhouding of Facturen)
+  const [backTo, setBackLink] = useState<"/invoices" | "/boekhouding">("/invoices");
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem(`invoice-back:${invoiceId}`);
+      if (stored === "/boekhouding" || stored === "/invoices") {
+        setBackLink(stored);
+        return;
+      }
+      const ref = document.referrer ? new URL(document.referrer) : null;
+      if (ref && ref.origin === window.location.origin) {
+        const dest = ref.pathname.startsWith("/boekhouding") ? "/boekhouding" : "/invoices";
+        setBackLink(dest);
+        sessionStorage.setItem(`invoice-back:${invoiceId}`, dest);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [invoiceId]);
+  const backLabel = backTo === "/boekhouding" ? t("invoices.back_to_accounting", { defaultValue: "Terug naar Boekhouding" }) : t("invoices.back_to_list");
+
   const load = useCallback(async () => {
     setLoading(true);
     const { data: inv, error } = await supabase
@@ -383,8 +404,8 @@ function InvoiceDetailPage() {
         {t("invoices.not_found")}
         <div className="mt-4">
           <Button asChild variant="outline" size="sm">
-            <Link to="/invoices">
-              <ArrowLeft className="mr-1 h-4 w-4" /> {t("invoices.back_to_list")}
+            <Link to={backTo}>
+              <ArrowLeft className="mr-1 h-4 w-4" /> {backLabel}
             </Link>
           </Button>
         </div>
@@ -433,8 +454,8 @@ function InvoiceDetailPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
-            <Link to="/invoices">
-              <ArrowLeft className="mr-1 h-4 w-4" /> {t("invoices.back_to_list")}
+            <Link to={backTo}>
+              <ArrowLeft className="mr-1 h-4 w-4" /> {backLabel}
             </Link>
           </Button>
           <h1 className="text-2xl font-bold tracking-tight">
