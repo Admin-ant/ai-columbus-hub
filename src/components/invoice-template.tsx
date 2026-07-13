@@ -338,15 +338,20 @@ export function InvoiceTemplate({
             </p>
           )}
           {payment_link_url && (
-            <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-emerald-900">
-              💳 Direct online betalen:{" "}
-              <a href={payment_link_url} className="font-medium underline">
-                {payment_link_url}
-              </a>
-              <span className="ml-2 text-xs text-emerald-700">
-                (Totaal: {formatCents(total_cents, language, currency)})
-              </span>
-            </p>
+            <div className="flex items-start gap-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-emerald-900">
+              <div className="flex-1">
+                <p>
+                  💳 Direct online betalen:{" "}
+                  <a href={payment_link_url} className="font-medium underline break-all">
+                    {payment_link_url}
+                  </a>
+                </p>
+                <p className="mt-1 text-xs text-emerald-700">
+                  Totaal: {formatCents(total_cents, language, currency)} · Scan de QR-code met je bank-app
+                </p>
+              </div>
+              <PaymentQrCode url={payment_link_url} />
+            </div>
           )}
         </footer>
 
