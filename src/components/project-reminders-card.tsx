@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Bell, Clock, Hourglass, Loader2 } from "lucide-react";
+import { Bell, ChevronDown, Clock, Hourglass, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { useReminderSettings } from "@/hooks/use-reminder-settings";
-
-
 
 type Row = {
   id: string;
@@ -28,6 +26,7 @@ export function ProjectRemindersCard() {
   const [waiting, setWaiting] = useState<Row[]>([]);
   const [upcoming, setUpcoming] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (!currentOrganizationId) return;
@@ -68,88 +67,108 @@ export function ProjectRemindersCard() {
   const total = waiting.length + upcoming.length;
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <Bell className="h-4 w-4 text-brand" />
-          <CardTitle className="text-base">Herinneringen — projecten</CardTitle>
-          {total > 0 && <Badge variant="secondary">{total}</Badge>}
+    <Card className="border-brand/60 bg-brand/5 transition-all hover:border-brand hover:shadow-md">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-3 p-6 text-left"
+      >
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
+          <Bell className="h-5 w-5" />
         </div>
-        <CardDescription>Projecten die aandacht nodig hebben.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {loading ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Laden…
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h3 className="truncate text-base font-semibold leading-none tracking-tight">
+              Herinneringen — projecten
+            </h3>
+            {loading ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+            ) : total > 0 ? (
+              <Badge variant="secondary">{total}</Badge>
+            ) : null}
           </div>
-        ) : total === 0 ? (
-          <p className="text-sm text-muted-foreground">Geen openstaande herinneringen. 🎉</p>
-        ) : (
-          <>
-            {waiting.length > 0 && (
-              <div>
-                <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase text-muted-foreground">
-                  <Hourglass className="h-3.5 w-3.5" /> Wacht op klant ({waiting.length})
-                </div>
-                <ul className="space-y-1.5">
-                  {waiting.map((p) => (
+          <p className="mt-1.5 truncate text-sm text-muted-foreground">
+            {loading
+              ? "Projecten worden geladen…"
+              : total === 0
+                ? "Geen openstaande herinneringen. 🎉"
+                : `${waiting.length} wachten op klant · ${upcoming.length} deadline binnen ${windowDays} dagen`}
+          </p>
+        </div>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open && total > 0 && (
+        <CardContent className="space-y-4 pt-0">
+          {waiting.length > 0 && (
+            <div>
+              <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase text-muted-foreground">
+                <Hourglass className="h-3.5 w-3.5" /> Wacht op klant ({waiting.length})
+              </div>
+              <ul className="space-y-1.5">
+                {waiting.map((p) => (
+                  <li key={p.id}>
+                    <Link
+                      to="/ai-columbus/projecten/$projectId"
+                      params={{ projectId: p.id }}
+                      className="flex items-center justify-between rounded-md border bg-background px-3 py-2 text-sm hover:bg-muted"
+                    >
+                      <span className="truncate">{p.name}</span>
+                      {p.target_month && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {new Date(p.target_month).toLocaleDateString("nl-NL", {
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {upcoming.length > 0 && (
+            <div>
+              <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase text-muted-foreground">
+                <Clock className="h-3.5 w-3.5" /> Deadline binnen {windowDays} dagen ({upcoming.length})
+              </div>
+              <ul className="space-y-1.5">
+                {upcoming.map((p) => {
+                  const d = p.target_month ? daysUntil(p.target_month) : null;
+                  const overdue = d !== null && d < -overdueDays;
+                  return (
                     <li key={p.id}>
                       <Link
                         to="/ai-columbus/projecten/$projectId"
                         params={{ projectId: p.id }}
-                        className="flex items-center justify-between rounded-md border px-3 py-2 text-sm hover:bg-muted"
+                        className="flex items-center justify-between rounded-md border bg-background px-3 py-2 text-sm hover:bg-muted"
                       >
                         <span className="truncate">{p.name}</span>
-                        {p.target_month && (
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            {new Date(p.target_month).toLocaleDateString("nl-NL", { month: "short", year: "numeric" })}
-                          </span>
-                        )}
+                        <span
+                          className={`ml-2 text-xs ${overdue ? "font-semibold text-destructive" : "text-muted-foreground"}`}
+                        >
+                          {d === null
+                            ? "—"
+                            : overdue
+                              ? `${Math.abs(d)}d te laat`
+                              : d === 0
+                                ? "vandaag"
+                                : `over ${d}d`}
+                        </span>
                       </Link>
                     </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {upcoming.length > 0 && (
-              <div>
-                <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase text-muted-foreground">
-                  <Clock className="h-3.5 w-3.5" /> Deadline binnen {windowDays} dagen ({upcoming.length})
-                </div>
-                <ul className="space-y-1.5">
-                  {upcoming.map((p) => {
-                    const d = p.target_month ? daysUntil(p.target_month) : null;
-                    const overdue = d !== null && d < -overdueDays;
-
-                    return (
-                      <li key={p.id}>
-                        <Link
-                          to="/ai-columbus/projecten/$projectId"
-                          params={{ projectId: p.id }}
-                          className="flex items-center justify-between rounded-md border px-3 py-2 text-sm hover:bg-muted"
-                        >
-                          <span className="truncate">{p.name}</span>
-                          <span
-                            className={`ml-2 text-xs ${overdue ? "font-semibold text-destructive" : "text-muted-foreground"}`}
-                          >
-                            {d === null
-                              ? "—"
-                              : overdue
-                                ? `${Math.abs(d)}d te laat`
-                                : d === 0
-                                  ? "vandaag"
-                                  : `over ${d}d`}
-                          </span>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
-          </>
-        )}
-      </CardContent>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+        </CardContent>
+      )}
     </Card>
   );
 }
+
