@@ -724,6 +724,8 @@ function InvoiceDetailPage() {
             defaultFilename={suggestedFilename}
             attachments={attachments}
             buildPdf={buildPdf}
+            currentPaymentLink={currentPaymentLink}
+            preferredMethod={preferredMethod}
             onSent={(to) => {
               setEmailOpen(false);
               setConfirmOpen({ to });
