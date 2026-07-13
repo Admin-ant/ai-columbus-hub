@@ -44,6 +44,7 @@ import { Route as AuthenticatedOpnameRegelsRouteImport } from './routes/_authent
 import { Route as AuthenticatedNetqloudServersRouteImport } from './routes/_authenticated/netqloud.servers'
 import { Route as AuthenticatedNetqloudKlantenRouteImport } from './routes/_authenticated/netqloud.klanten'
 import { Route as AuthenticatedNetqloudInstellingenRouteImport } from './routes/_authenticated/netqloud.instellingen'
+import { Route as AuthenticatedMailTemplatesRouteImport } from './routes/_authenticated/mail.templates'
 import { Route as AuthenticatedMailSettingsRouteImport } from './routes/_authenticated/mail.settings'
 import { Route as AuthenticatedKpiMetricRouteImport } from './routes/_authenticated/kpi.$metric'
 import { Route as AuthenticatedInvoicesInvoiceIdRouteImport } from './routes/_authenticated/invoices.$invoiceId'
@@ -264,6 +265,12 @@ const AuthenticatedNetqloudInstellingenRoute =
     path: '/instellingen',
     getParentRoute: () => AuthenticatedNetqloudRoute,
   } as any)
+const AuthenticatedMailTemplatesRoute =
+  AuthenticatedMailTemplatesRouteImport.update({
+    id: '/templates',
+    path: '/templates',
+    getParentRoute: () => AuthenticatedMailRoute,
+  } as any)
 const AuthenticatedMailSettingsRoute =
   AuthenticatedMailSettingsRouteImport.update({
     id: '/settings',
@@ -479,6 +486,7 @@ export interface FileRoutesByFullPath {
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/kpi/$metric': typeof AuthenticatedKpiMetricRoute
   '/mail/settings': typeof AuthenticatedMailSettingsRoute
+  '/mail/templates': typeof AuthenticatedMailTemplatesRoute
   '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
@@ -543,6 +551,7 @@ export interface FileRoutesByTo {
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/kpi/$metric': typeof AuthenticatedKpiMetricRoute
   '/mail/settings': typeof AuthenticatedMailSettingsRoute
+  '/mail/templates': typeof AuthenticatedMailTemplatesRoute
   '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
@@ -611,6 +620,7 @@ export interface FileRoutesById {
   '/_authenticated/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/_authenticated/kpi/$metric': typeof AuthenticatedKpiMetricRoute
   '/_authenticated/mail/settings': typeof AuthenticatedMailSettingsRoute
+  '/_authenticated/mail/templates': typeof AuthenticatedMailTemplatesRoute
   '/_authenticated/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
   '/_authenticated/netqloud/klanten': typeof AuthenticatedNetqloudKlantenRoute
   '/_authenticated/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
@@ -679,6 +689,7 @@ export interface FileRouteTypes {
     | '/invoices/$invoiceId'
     | '/kpi/$metric'
     | '/mail/settings'
+    | '/mail/templates'
     | '/netqloud/instellingen'
     | '/netqloud/klanten'
     | '/netqloud/servers'
@@ -743,6 +754,7 @@ export interface FileRouteTypes {
     | '/invoices/$invoiceId'
     | '/kpi/$metric'
     | '/mail/settings'
+    | '/mail/templates'
     | '/netqloud/instellingen'
     | '/netqloud/klanten'
     | '/netqloud/servers'
@@ -810,6 +822,7 @@ export interface FileRouteTypes {
     | '/_authenticated/invoices/$invoiceId'
     | '/_authenticated/kpi/$metric'
     | '/_authenticated/mail/settings'
+    | '/_authenticated/mail/templates'
     | '/_authenticated/netqloud/instellingen'
     | '/_authenticated/netqloud/klanten'
     | '/_authenticated/netqloud/servers'
@@ -1109,6 +1122,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/netqloud/instellingen'
       preLoaderRoute: typeof AuthenticatedNetqloudInstellingenRouteImport
       parentRoute: typeof AuthenticatedNetqloudRoute
+    }
+    '/_authenticated/mail/templates': {
+      id: '/_authenticated/mail/templates'
+      path: '/templates'
+      fullPath: '/mail/templates'
+      preLoaderRoute: typeof AuthenticatedMailTemplatesRouteImport
+      parentRoute: typeof AuthenticatedMailRoute
     }
     '/_authenticated/mail/settings': {
       id: '/_authenticated/mail/settings'
@@ -1435,10 +1455,12 @@ const AuthenticatedInkoopfacturenRouteWithChildren =
 
 interface AuthenticatedMailRouteChildren {
   AuthenticatedMailSettingsRoute: typeof AuthenticatedMailSettingsRoute
+  AuthenticatedMailTemplatesRoute: typeof AuthenticatedMailTemplatesRoute
 }
 
 const AuthenticatedMailRouteChildren: AuthenticatedMailRouteChildren = {
   AuthenticatedMailSettingsRoute: AuthenticatedMailSettingsRoute,
+  AuthenticatedMailTemplatesRoute: AuthenticatedMailTemplatesRoute,
 }
 
 const AuthenticatedMailRouteWithChildren =
