@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
   ArrowLeft,
+  Check,
+  Copy,
   Download,
   Eye,
   Loader2,
