@@ -355,7 +355,7 @@ function ProjectDetailPage() {
               <Textarea rows={5} value={form.notes ?? ""} onChange={e => setForm({ ...form, notes: e.target.value })} />
             </div>
           </CardContent>
-        </Card>
+        </Card>}
 
         <div className="space-y-4">
           <Card>
