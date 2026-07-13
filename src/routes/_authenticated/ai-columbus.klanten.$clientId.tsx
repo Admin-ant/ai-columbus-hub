@@ -257,6 +257,7 @@ function ClientDetailPage() {
           <TabsTrigger value="contacten"><Users className="mr-2 h-4 w-4" /> Contactpersonen</TabsTrigger>
           <TabsTrigger value="projecten"><Briefcase className="mr-2 h-4 w-4" /> Projecten <Badge variant="secondary" className="ml-2">{projects.length}</Badge></TabsTrigger>
           <TabsTrigger value="betalingen"><CreditCard className="mr-2 h-4 w-4" /> Betalingen <Badge variant="secondary" className="ml-2">{invoices.length}</Badge></TabsTrigger>
+          <TabsTrigger value="afspraken"><CalendarDays className="mr-2 h-4 w-4" /> Afspraken <Badge variant="secondary" className="ml-2">{appointments.length}</Badge></TabsTrigger>
         </TabsList>
 
         <TabsContent value="overzicht" className="mt-4">
