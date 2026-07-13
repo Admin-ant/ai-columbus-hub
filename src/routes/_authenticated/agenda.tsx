@@ -840,6 +840,7 @@ function AppointmentDialog({
       ends_at: fromLocalInput(endsAt),
       attendee_name: attendeeName.trim() || null,
       attendee_email: attendeeEmail.trim() || null,
+      locale,
     };
     try {
       let id: string;
