@@ -1093,6 +1093,17 @@ function EmailForm({
     ? `${previewBodyBase}\n\nBetaal direct online via Mollie:\n${previewPayLink}`
     : previewBodyBase;
 
+  const copyText = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(label);
+      toast.success(`"${label}" gekopieerd naar klembord`);
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch {
+      toast.error("Kon niet kopiëren naar klembord");
+    }
+  };
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const doc = buildPdf();
