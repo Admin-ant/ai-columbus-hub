@@ -790,10 +790,7 @@ function LeadsPage() {
         <WinLeadDialog
           lead={winLeadRow}
           onClose={() => setWinLeadRow(null)}
-          onDone={() => {
-            setWinLeadRow(null);
-            load();
-          }}
+          onSaved={() => load()}
           fnWin={fnWin}
         />
 
@@ -881,12 +878,12 @@ function StatCard({ label, value, accent }: { label: string; value: number; acce
 function WinLeadDialog({
   lead,
   onClose,
-  onDone,
+  onSaved,
   fnWin,
 }: {
   lead: Lead | null;
   onClose: () => void;
-  onDone: () => void;
+  onSaved: () => void;
   fnWin: ReturnType<typeof useServerFn<typeof winLead>>;
 }) {
   const [title, setTitle] = useState("");
@@ -908,7 +905,7 @@ function WinLeadDialog({
       setStartDate(new Date().toISOString().slice(0, 10));
       setCreated(null);
     }
-  }, [lead]);
+  }, [lead?.id]);
 
   const save = async () => {
     if (!lead) return;
@@ -929,7 +926,7 @@ function WinLeadDialog({
         contractId: r.contractId,
       });
       toast.success("Klant, project en contract aangemaakt");
-      onDone();
+      onSaved();
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
