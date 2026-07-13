@@ -284,31 +284,31 @@ function AgendaPage() {
     const cells: Array<{ date: Date; key: string; inMonth: boolean; count: number }> = [];
     const counts = new Map<string, number>();
     for (const a of items) {
-      const k = new Date(a.starts_at).toISOString().slice(0, 10);
+      const k = localDateKey(a.starts_at);
       counts.set(k, (counts.get(k) ?? 0) + 1);
     }
     // leading days from previous month
     for (let i = startOffset; i > 0; i--) {
       const d = new Date(y, m, 1 - i);
-      const key = d.toISOString().slice(0, 10);
+      const key = localDateKey(d);
       cells.push({ date: d, key, inMonth: false, count: counts.get(key) ?? 0 });
     }
     for (let d = 1; d <= daysInMonth; d++) {
       const dt = new Date(y, m, d);
-      const key = dt.toISOString().slice(0, 10);
+      const key = localDateKey(dt);
       cells.push({ date: dt, key, inMonth: true, count: counts.get(key) ?? 0 });
     }
     // trailing days
     while (cells.length % 7 !== 0) {
       const last = cells[cells.length - 1].date;
       const d = new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1);
-      const key = d.toISOString().slice(0, 10);
+      const key = localDateKey(d);
       cells.push({ date: d, key, inMonth: false, count: counts.get(key) ?? 0 });
     }
     return cells;
   }, [items, month]);
 
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = localDateKey(new Date());
 
 
   return (
