@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Sparkles, Users, Settings, ArrowRight, Workflow } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ProjectRemindersCard } from "@/components/project-reminders-card";
 
 export const Route = createFileRoute("/_authenticated/ai-columbus/")({
   head: () => ({ meta: [{ title: "AI van Columbus — Dashboard" }] }),
@@ -17,7 +18,7 @@ const tiles = [
     featured: true,
   },
   { title: "Klanten", description: "Beheer klanten van AI van Columbus.", url: "/ai-columbus/klanten", icon: Users, featured: false },
-  { title: "Projecten", description: "Loop lopende projecten door.", url: "/ai-columbus/projecten", icon: Sparkles, featured: false },
+  { title: "Projecten (uitvoering)", description: "Loop lopende projecten door.", url: "/ai-columbus/projecten", icon: Sparkles, featured: false },
   { title: "Instellingen", description: "Voorkeuren voor AI van Columbus.", url: "/ai-columbus/instellingen", icon: Settings, featured: false },
 ] as const;
 
@@ -28,6 +29,7 @@ function AiColumbusDashboard() {
         <h1 className="text-2xl font-bold tracking-tight">AI van Columbus</h1>
         <p className="text-sm text-muted-foreground">Kies een onderdeel binnen deze omgeving.</p>
       </div>
+      <ProjectRemindersCard />
       <div className="grid gap-4 sm:grid-cols-2">
         {tiles.map((t) => (
           <Link key={t.url} to={t.url} className="group">

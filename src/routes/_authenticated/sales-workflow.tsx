@@ -42,8 +42,11 @@ import {
   upsertRequirements,
   aiDraftRequirements,
   generateQuoteFromRequirements,
+  createDeliveryProjectFromLead,
   type PipelineLead,
 } from "@/lib/sales-workflow.functions";
+import { useNavigate } from "@tanstack/react-router";
+import { FolderPlus } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/sales-workflow")({
   head: () => ({
@@ -326,12 +329,14 @@ function PipelineRow({
               </Link>
             </Button>
           )}
-          {row.contract?.project_id && (
+          {row.contract?.project_id ? (
             <Button asChild size="sm" variant="outline">
               <Link to="/ai-columbus/projecten/$projectId" params={{ projectId: row.contract.project_id }}>
                 Naar project <ArrowRight className="ml-1 h-3 w-3" />
               </Link>
             </Button>
+          ) : (
+            row.converted_client_id && <CreateProjectButton row={row} onDone={onChanged} />
           )}
         </div>
       </TableCell>
@@ -373,6 +378,35 @@ function GenerateButton({
     >
       {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Wand2 className="mr-1 h-3 w-3" />}
       Offerte genereren
+    </Button>
+  );
+}
+
+function CreateProjectButton({ row, onDone }: { row: PipelineLead; onDone: () => void }) {
+  const createFn = useServerFn(createDeliveryProjectFromLead);
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      disabled={busy}
+      onClick={async () => {
+        try {
+          setBusy(true);
+          const { projectId } = await createFn({ data: { leadId: row.id } });
+          toast.success("Project aangemaakt in Projecten (uitvoering)");
+          onDone();
+          navigate({ to: "/ai-columbus/projecten/$projectId", params: { projectId } });
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "Kon project niet aanmaken");
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <FolderPlus className="mr-1 h-3 w-3" />}
+      Maak project aan
     </Button>
   );
 }
