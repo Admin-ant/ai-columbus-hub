@@ -80,6 +80,7 @@ const AppointmentSchema = z.object({
   ends_at: z.string(),
   attendee_name: z.string().max(200).optional().nullable(),
   attendee_email: z.string().email().optional().nullable().or(z.literal("")),
+  locale: z.enum(["nl", "en", "de"]).optional().default("nl"),
 });
 
 export const createAppointment = createServerFn({ method: "POST" })
