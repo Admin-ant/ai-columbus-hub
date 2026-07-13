@@ -98,6 +98,10 @@
     "open": "Outstanding",
     "empty": "No invoices yet",
     "created": "Invoice {{number}} created",
+    "back_to_list": "Back to invoices",
+    "back_to_accounting": "Back to Accounting",
+    "not_found": "Invoice not found",
+    "not_found_description": "The requested invoice does not exist or you don't have access. Check the address or return to the overview.",
     "status": {
       "draft": "Draft",
       "sent": "Sent",
