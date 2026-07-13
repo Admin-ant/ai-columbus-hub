@@ -35,6 +35,7 @@ function ClientDetailPage() {
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
   const [logs, setLogs] = useState<Record<string, LogRow[]>>({});
+  const [appointments, setAppointments] = useState<AppointmentRow[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
