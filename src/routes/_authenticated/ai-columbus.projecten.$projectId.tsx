@@ -47,10 +47,11 @@ const DELIVERY_META: Record<DeliveryStatus, { label: string; cls: string }> = {
 const DELIVERY_KEYS = Object.keys(DELIVERY_META) as DeliveryStatus[];
 
 type Related = {
-  contract: { id: string; title: string | null; monthly_amount_cents: number; status: string } | null;
+  contract: { id: string; title: string | null; monthly_amount_cents: number; setup_fee_cents: number | null; status: string } | null;
   client: { id: string; name: string } | null;
   invoices: { id: string; invoice_number: string; total_cents: number; status: string }[];
 };
+
 
 function ProjectDetailPage() {
   const { projectId } = Route.useParams();
