@@ -442,6 +442,37 @@ function InvoiceDetailPage() {
   };
   const currentPaymentLink = invExt.payment_link_url ?? invExt.mollie_checkout_url ?? null;
   const preferredMethod = invExt.preferred_payment_method ?? null;
+
+  const isUnpaid =
+    invoice.status !== "paid" && invoice.status !== "cancelled" && invoice.status !== "draft";
+  const daysOverdue = (() => {
+    if (!isUnpaid || !invoice.due_date) return 0;
+    const due = new Date(invoice.due_date);
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - due.getTime()) / 86400000);
+    return diff > 0 ? diff : 0;
+  })();
+  const reminderDefaults = (() => {
+    const eurFmt = new Intl.NumberFormat("nl-NL", { style: "currency", currency: invoice.currency ?? "EUR" });
+    const dueFmt = invoice.due_date ? new Date(invoice.due_date).toLocaleDateString("nl-NL") : "";
+    const subject =
+      daysOverdue > 0
+        ? `Betaalherinnering — factuur ${invoice.invoice_number} (${daysOverdue} dagen over vervaldatum)`
+        : `Betaalherinnering — factuur ${invoice.invoice_number}`;
+    const overdueLine =
+      daysOverdue > 0
+        ? `Volgens onze administratie is deze factuur ${daysOverdue} dagen over de vervaldatum (${dueFmt}) en nog niet betaald.`
+        : `Deze factuur vervalt op ${dueFmt} en staat op dit moment nog open.`;
+    const body =
+      `Beste {{client_name}},\n\n` +
+      `${overdueLine}\n\n` +
+      `Het openstaande bedrag is ${eurFmt.format(invoice.total_cents / 100)}.\n` +
+      `Wij verzoeken u vriendelijk de betaling zo spoedig mogelijk te voldoen. Heeft u de betaling inmiddels verricht, dan kunt u deze mail als niet verzonden beschouwen.\n\n` +
+      `Bij vragen of onduidelijkheden kunt u ons gerust bereiken.\n\n` +
+      `Met vriendelijke groet`;
+    return { subject, body };
+  })();
+
   // Laatste webhook-status uit events
   const latestWebhookStatus = paymentEvents.find(
     (e) => e.event_type === "webhook" || e.event_type === "polled",
