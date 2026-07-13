@@ -59,11 +59,15 @@ export const Route = createFileRoute("/_authenticated/sales-workflow")({
   component: SalesWorkflowPage,
 });
 
-type StageKey = "lead" | "requirements" | "quote" | "signed" | "invoiced";
+type StageKey = "lead" | "requirements" | "quote" | "signed" | "invoiced" | "won" | "lost";
+
+const WON_STAGES = new Set(["klant", "gewonnen", "ai_columbus"]);
 
 function stageOf(l: PipelineLead): StageKey {
+  if (l.stage === "verloren") return "lost";
   if (l.invoice_count > 0 || l.contract) return "invoiced";
   if (l.quote?.signed_at) return "signed";
+  if (WON_STAGES.has(l.stage) && !l.contract) return "won";
   if (l.quote) return "quote";
   if (l.requirements) return "requirements";
   return "lead";
