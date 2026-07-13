@@ -53,7 +53,7 @@ export function WorkspaceSwitcher() {
         {organizations.map((org) => (
           <DropdownMenuItem
             key={org.id}
-            onClick={() => setCurrentOrganizationId(org.id)}
+            onClick={() => selectOrg(org.id, org.slug)}
             className="flex items-center justify-between"
           >
             <span className="flex items-center gap-2">
