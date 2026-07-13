@@ -23,6 +23,7 @@ import {
 import {
   createAppointment,
   deleteAppointment,
+  rescheduleAppointment,
   sendAppointmentInvite,
   updateAppointment,
 } from "@/lib/appointments.functions";
