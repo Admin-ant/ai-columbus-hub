@@ -185,6 +185,27 @@ function InvoiceDetailPage() {
     [i18n.resolvedLanguage],
   );
 
+  // Bepaal terug-navigatie op basis van de vorige pagina (Boekhouding of Facturen)
+  const [backTo, setBackLink] = useState<"/invoices" | "/boekhouding">("/invoices");
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem(`invoice-back:${invoiceId}`);
+      if (stored === "/boekhouding" || stored === "/invoices") {
+        setBackLink(stored);
+        return;
+      }
+      const ref = document.referrer ? new URL(document.referrer) : null;
+      if (ref && ref.origin === window.location.origin) {
+        const dest = ref.pathname.startsWith("/boekhouding") ? "/boekhouding" : "/invoices";
+        setBackLink(dest);
+        sessionStorage.setItem(`invoice-back:${invoiceId}`, dest);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [invoiceId]);
+  const backLabel = backTo === "/boekhouding" ? t("invoices.back_to_accounting", { defaultValue: "Terug naar Boekhouding" }) : t("invoices.back_to_list");
+
   const load = useCallback(async () => {
     setLoading(true);
     const { data: inv, error } = await supabase
