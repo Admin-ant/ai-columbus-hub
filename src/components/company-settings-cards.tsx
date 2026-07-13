@@ -45,6 +45,42 @@ const EMPTY: OrgFormRow = {
   invoice_prefix: "",
 };
 
+// --- Validation helpers ---
+function normalizeIban(v: string) {
+  return v.replace(/\s+/g, "").toUpperCase();
+}
+function isValidIban(raw: string): boolean {
+  const v = normalizeIban(raw);
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/.test(v)) return false;
+  const rearranged = v.slice(4) + v.slice(0, 4);
+  const expanded = rearranged.replace(/[A-Z]/g, (c) => String(c.charCodeAt(0) - 55));
+  // mod-97 in chunks (JS numbers can't hold full IBAN)
+  let remainder = 0;
+  for (let i = 0; i < expanded.length; i += 7) {
+    const block = String(remainder) + expanded.slice(i, i + 7);
+    remainder = parseInt(block, 10) % 97;
+  }
+  return remainder === 1;
+}
+function isValidKvk(raw: string): boolean {
+  return /^\d{8}$/.test(raw.replace(/\s+/g, ""));
+}
+function isValidVat(raw: string): boolean {
+  // EU VAT: 2-letter country code + up to 12 alphanumerics. NL: NL + 9 digits + B + 2 digits.
+  const v = raw.replace(/\s+/g, "").toUpperCase();
+  if (/^NL/.test(v)) return /^NL\d{9}B\d{2}$/.test(v);
+  return /^[A-Z]{2}[A-Z0-9]{2,12}$/.test(v);
+}
+
+function validateField(key: "iban" | "kvk_number" | "tax_number", value: string): string | null {
+  const v = value.trim();
+  if (v === "") return null;
+  if (key === "iban" && !isValidIban(v)) return "Ongeldig IBAN (controleer landcode en controlegetal)";
+  if (key === "kvk_number" && !isValidKvk(v)) return "KvK-nummer moet uit 8 cijfers bestaan";
+  if (key === "tax_number" && !isValidVat(v)) return "Ongeldig BTW-nummer (bijv. NL123456789B01)";
+  return null;
+}
+
 interface SeqRow {
   id: string;
   year: number;
