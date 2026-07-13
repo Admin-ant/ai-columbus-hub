@@ -1702,6 +1702,7 @@ function KanbanBoard({
   leads,
   loading,
   onWin,
+  onCreateCustomer,
   onLose,
   onEdit,
   onDetail,
@@ -1710,6 +1711,7 @@ function KanbanBoard({
   leads: Lead[];
   loading: boolean;
   onWin: (l: Lead) => void;
+  onCreateCustomer: (l: Lead) => void;
   onLose: (l: Lead) => void;
   onEdit: (l: Lead) => void;
   onDetail: (l: Lead) => void;
@@ -1738,6 +1740,7 @@ function KanbanBoard({
               column={column}
               leads={items}
               onWin={onWin}
+              onCreateCustomer={onCreateCustomer}
               onLose={onLose}
               onEdit={onEdit}
               onDetail={onDetail}
@@ -1753,6 +1756,7 @@ function KanbanColumn({
   column,
   leads,
   onWin,
+  onCreateCustomer,
   onLose,
   onEdit,
   onDetail,
@@ -1760,6 +1764,7 @@ function KanbanColumn({
   column: KanbanColumn;
   leads: Lead[];
   onWin: (l: Lead) => void;
+  onCreateCustomer: (l: Lead) => void;
   onLose: (l: Lead) => void;
   onEdit: (l: Lead) => void;
   onDetail: (l: Lead) => void;
