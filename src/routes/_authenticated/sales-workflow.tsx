@@ -42,8 +42,11 @@ import {
   upsertRequirements,
   aiDraftRequirements,
   generateQuoteFromRequirements,
+  createDeliveryProjectFromLead,
   type PipelineLead,
 } from "@/lib/sales-workflow.functions";
+import { useNavigate } from "@tanstack/react-router";
+import { FolderPlus } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/sales-workflow")({
   head: () => ({
