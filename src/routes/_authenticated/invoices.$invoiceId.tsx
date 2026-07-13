@@ -535,9 +535,20 @@ function InvoiceDetailPage() {
           <Button variant="outline" size="sm" onClick={() => setDownloadOpen(true)}>
             <Download className="mr-1 h-4 w-4" /> {t("invoices.download_pdf")}
           </Button>
-          <Button size="sm" onClick={() => setEmailOpen(true)}>
+          <Button size="sm" onClick={() => { setEmailMode("normal"); setEmailOpen(true); }}>
             <Mail className="mr-1 h-4 w-4" /> {t("invoices.email")}
           </Button>
+          {isUnpaid && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { setEmailMode("reminder"); setEmailOpen(true); }}
+              className={daysOverdue > 0 ? "border-red-500/50 text-red-700 dark:text-red-300" : ""}
+            >
+              <Send className="mr-1 h-4 w-4" />
+              {daysOverdue > 0 ? `Herinnering (${daysOverdue}d over)` : "Herinnering"}
+            </Button>
+          )}
           {isDraft && (
             <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
               <Pencil className="mr-1 h-4 w-4" /> {t("invoices.edit")}
