@@ -175,6 +175,7 @@ function InvoiceDetailPage() {
   const refreshMollieFn = useServerFn(refreshMollieInvoiceStatus);
   const [loading, setLoading] = useState(true);
   const [emailOpen, setEmailOpen] = useState(false);
+  const [emailMode, setEmailMode] = useState<"normal" | "reminder">("normal");
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
