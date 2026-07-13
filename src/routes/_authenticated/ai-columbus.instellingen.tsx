@@ -99,6 +99,69 @@ function SettingsPage() {
 
       <Card>
         <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-4 w-4" /> Project-herinneringen
+          </CardTitle>
+          <CardDescription>
+            Bepaal wanneer projecten met status “wacht op klant” of een opleverdatum
+            als herinnering op het dashboard verschijnen.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="reminder-window" className="text-sm font-medium">
+                Reminder-venster (dagen)
+              </Label>
+              <Input
+                id="reminder-window"
+                type="number"
+                min={1}
+                max={365}
+                value={reminderSettings.windowDays}
+                onChange={(e) => onWindowChange(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Toon projecten met een opleverdatum binnen dit aantal dagen. Standaard {DEFAULT_WINDOW_DAYS}.
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="reminder-overdue" className="text-sm font-medium">
+                “Te laat” drempel (dagen)
+              </Label>
+              <Input
+                id="reminder-overdue"
+                type="number"
+                min={0}
+                max={365}
+                value={reminderSettings.overdueDays}
+                onChange={(e) => onOverdueChange(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Markeer een project pas als “te laat” zodra de opleverdatum dit aantal
+                dagen verstreken is. Standaard {DEFAULT_OVERDUE_DAYS} (direct rood zodra
+                de datum voorbij is).
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() =>
+              updateReminderSettings({
+                windowDays: DEFAULT_WINDOW_DAYS,
+                overdueDays: DEFAULT_OVERDUE_DAYS,
+              })
+            }
+          >
+            Herstel standaardwaarden
+          </Button>
+        </CardContent>
+      </Card>
+
+
+      <Card>
+        <CardHeader>
           <CardTitle>Voorkeuren</CardTitle>
           <CardDescription>Overige instellingen voor deze omgeving.</CardDescription>
         </CardHeader>
