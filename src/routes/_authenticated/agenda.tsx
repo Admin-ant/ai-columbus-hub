@@ -46,6 +46,9 @@ type Appointment = {
   attendee_email: string | null;
   status: string;
   invite_sent_at: string | null;
+  confirmed_at: string | null;
+  reschedule_requested_at: string | null;
+  reschedule_note: string | null;
   created_at: string;
 };
 
