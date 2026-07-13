@@ -358,6 +358,39 @@ function InvoiceDetailPage() {
 
   const isDraft = invoice.status === "draft";
   const suggestedFilename = invoice.pdf_filename || suggestInvoiceFilename(invoice.invoice_number, invoice.client_name);
+  const invExt = invoice as unknown as {
+    mollie_checkout_url?: string | null;
+    payment_link_url?: string | null;
+    mollie_payment_id?: string | null;
+    preferred_payment_method?: MolliePaymentMethod | null;
+  };
+  const currentPaymentLink = invExt.payment_link_url ?? invExt.mollie_checkout_url ?? null;
+  const preferredMethod = invExt.preferred_payment_method ?? null;
+  // Laatste webhook-status uit events
+  const latestWebhookStatus = paymentEvents.find(
+    (e) => e.event_type === "webhook" || e.event_type === "polled",
+  )?.status ?? null;
+  const mollieBadgeStatus: string | null = invoice.status === "paid"
+    ? "paid"
+    : currentPaymentLink
+      ? latestWebhookStatus ?? "open"
+      : latestWebhookStatus === "revoked" || paymentEvents.some((e) => e.event_type === "revoked")
+        ? null
+        : null;
+
+  async function handleRefreshMollie() {
+    if (!invExt.mollie_payment_id) return;
+    setRefreshingMollie(true);
+    try {
+      const r = await refreshMollieFn({ data: { invoice_id: invoice.id } });
+      toast.success(`Mollie status: ${r.status ?? "onbekend"}`);
+      void load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Kon status niet ophalen");
+    } finally {
+      setRefreshingMollie(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
