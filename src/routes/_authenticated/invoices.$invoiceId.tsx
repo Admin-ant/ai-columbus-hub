@@ -584,6 +584,21 @@ function InvoiceDetailPage() {
           <Button variant="outline" size="sm" onClick={() => setDownloadOpen(true)}>
             <Download className="mr-1 h-4 w-4" /> {t("invoices.download_pdf")}
           </Button>
+          {invoice.status === "paid" && (
+            <>
+              <Button variant="outline" size="sm" onClick={downloadReceipt}>
+                <Download className="mr-1 h-4 w-4" /> Betaalbewijs
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={markUnpaid}
+                className="border-amber-500/50 text-amber-700 dark:text-amber-300"
+              >
+                Terug op onbetaald
+              </Button>
+            </>
+          )}
           <Button size="sm" onClick={() => { setEmailMode("normal"); setEmailOpen(true); }}>
             <Mail className="mr-1 h-4 w-4" /> {t("invoices.email")}
           </Button>
