@@ -148,6 +148,27 @@ function ProjectDetailPage() {
   const currentDelivery = (((form as any).delivery_status ?? (project as any).delivery_status) as DeliveryStatus) ?? "nieuw";
   const salesStatus = project.status;
 
+  // Project-specifieke KPI's (mirror van de projectenlijst, gescoped op dit project)
+  const contractActive = related.contract && related.contract.status === "active";
+  const monthlyCents = contractActive ? Number(related.contract!.monthly_amount_cents ?? 0) : 0;
+  const setupCents = contractActive ? Number(related.contract!.setup_fee_cents ?? 0) : 0;
+  const totalDealCents = Number(project.value_cents ?? 0);
+  const isInProgress = currentDelivery === "in_uitvoering" ? 1 : 0;
+  const isWaiting = currentDelivery === "on_hold" || currentDelivery === "wacht_op_klant" ? 1 : 0;
+  const now = new Date();
+  const deliveredThisMonth =
+    currentDelivery === "opgeleverd" &&
+    deliveryHistory.some((h) => {
+      if (h.new_status !== "opgeleverd") return false;
+      const d = new Date(h.changed_at);
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    })
+      ? 1
+      : 0;
+  const activeMrr = contractActive ? monthlyCents : 0;
+
+
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
