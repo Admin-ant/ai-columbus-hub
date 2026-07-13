@@ -208,7 +208,7 @@ export const listInvoicePaymentEvents = createServerFn({ method: "GET" })
       status: string | null;
       amount_cents: number | null;
       method: string | null;
-      metadata: Record<string, unknown> | null;
+      metadata: unknown;
       created_at: string;
     }> };
   });
