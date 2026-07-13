@@ -935,7 +935,15 @@ function InvoicesTab({
             <TableBody>
               {invoices.map((inv) => (
                 <TableRow key={inv.id}>
-                  <TableCell className="font-mono text-sm">{inv.invoice_number}</TableCell>
+                  <TableCell className="font-mono text-sm">
+                    <Link
+                      to="/invoices/$invoiceId"
+                      params={{ invoiceId: inv.id }}
+                      className="text-brand hover:underline"
+                    >
+                      {inv.invoice_number}
+                    </Link>
+                  </TableCell>
                   <TableCell className="font-medium">{inv.client_name ?? "—"}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {new Date(inv.due_date).toLocaleDateString(lang)}
