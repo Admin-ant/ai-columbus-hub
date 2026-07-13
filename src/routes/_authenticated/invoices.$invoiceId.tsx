@@ -574,6 +574,78 @@ function InvoiceDetailPage() {
       </section>
 
       <section className="rounded-lg border">
+        <div className="flex items-center justify-between border-b px-4 py-2">
+          <div className="text-sm font-semibold">Mollie betaling</div>
+          <div className="flex items-center gap-2">
+            {currentPaymentLink && (
+              <div className="rounded bg-white p-1" title="Scan om te betalen">
+                <QRCodeSVG value={currentPaymentLink} size={56} level="M" />
+              </div>
+            )}
+            {invExt.mollie_payment_id && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefreshMollie}
+                disabled={refreshingMollie}
+              >
+                {refreshingMollie ? (
+                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-1 h-4 w-4" />
+                )}
+                Status verversen
+              </Button>
+            )}
+          </div>
+        </div>
+        {paymentEvents.length === 0 ? (
+          <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+            Nog geen betalings-events. Maak een betaallink aan via het factuurvoorbeeld.
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Datum</TableHead>
+                <TableHead>Event</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Methode</TableHead>
+                <TableHead className="text-right">Bedrag</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paymentEvents.map((e) => (
+                <TableRow key={e.id}>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {new Date(e.created_at).toLocaleString(i18n.resolvedLanguage ?? "nl")}
+                  </TableCell>
+                  <TableCell className="text-sm capitalize">{e.event_type}</TableCell>
+                  <TableCell>
+                    {e.status && (
+                      <Badge
+                        variant="outline"
+                        className={MOLLIE_BADGE_COLOR[e.status] ?? "bg-muted"}
+                      >
+                        {MOLLIE_BADGE_LABEL[e.status] ?? e.status}
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-xs capitalize text-muted-foreground">
+                    {e.method ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-sm">
+                    {e.amount_cents != null ? eur.format(e.amount_cents / 100) : "—"}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </section>
+
+
+      <section className="rounded-lg border">
         <div className="border-b px-4 py-2 text-sm font-semibold">{t("invoices.email_log")}</div>
         {emailLog.length === 0 ? (
           <div className="px-4 py-6 text-center text-sm text-muted-foreground">
