@@ -299,9 +299,9 @@ function ProjectDetailPage() {
         })}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className={`grid gap-4 ${showDetails ? "lg:grid-cols-3" : "lg:grid-cols-1"}`}>
 
-        <Card className="lg:col-span-2">
+        {showDetails && <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Projectgegevens</CardTitle>
             <CardDescription>Uitvoering en delivery van dit project</CardDescription>
