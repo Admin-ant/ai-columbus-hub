@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Loader2, Search, X, Trash2, ExternalLink, Download, FileSpreadsheet, Eye } from "lucide-react";
+import { Plus, Loader2, Search, X, Trash2, ExternalLink, Download, FileSpreadsheet, Eye, ArrowRight, Info } from "lucide-react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 
@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -25,12 +26,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/_authenticated/ai-columbus/projecten")({
-  head: () => ({ meta: [{ title: "Projecten dashboard" }] }),
+  head: () => ({ meta: [{ title: "Projecten (uitvoering)" }] }),
   component: ProjectsDashboardPage,
 });
 
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
 type ProjectStatus = Database["public"]["Enums"]["project_status"];
+type DeliveryStatus = Database["public"]["Enums"]["project_delivery_status"];
 type ClientLite = { id: string; name: string };
 
 const EUR = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
@@ -43,18 +45,17 @@ const STATUS_META: Record<ProjectStatus, { label: string; cls: string }> = {
   contract_getekend:   { label: "Contract getekend",   cls: "bg-emerald-700 text-foreground" },
   on_hold:             { label: "On hold",             cls: "bg-slate-400 text-foreground" },
 };
-const STATUS_KEYS = Object.keys(STATUS_META) as ProjectStatus[];
 
-function monthKey(d: Date | string | null) {
-  if (!d) return "";
-  const dt = typeof d === "string" ? new Date(d) : d;
-  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}`;
-}
-function monthLabel(d: Date | string | null) {
-  if (!d) return "—";
-  const dt = typeof d === "string" ? new Date(d) : d;
-  return dt.toLocaleDateString("nl-NL", { month: "short", year: "2-digit" }).replace(".", "");
-}
+const DELIVERY_META: Record<DeliveryStatus, { label: string; cls: string }> = {
+  nieuw:          { label: "Nieuw",            cls: "bg-blue-500 text-foreground" },
+  in_uitvoering:  { label: "In uitvoering",    cls: "bg-emerald-600 text-foreground" },
+  wacht_op_klant: { label: "Wacht op klant",   cls: "bg-amber-500 text-foreground" },
+  on_hold:        { label: "On hold",          cls: "bg-slate-400 text-foreground" },
+  opgeleverd:     { label: "Opgeleverd",       cls: "bg-emerald-800 text-foreground" },
+  geannuleerd:    { label: "Geannuleerd",      cls: "bg-red-500 text-foreground" },
+};
+const DELIVERY_KEYS = Object.keys(DELIVERY_META) as DeliveryStatus[];
+
 
 function ProjectsDashboardPage() {
   const { user } = useAuth();
