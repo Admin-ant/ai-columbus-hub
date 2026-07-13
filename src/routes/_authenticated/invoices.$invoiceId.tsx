@@ -1075,7 +1075,77 @@ function EmailForm({
   const [filename, setFilename] = useState(defaultFilename);
   const [extraChecked, setExtraChecked] = useState<Record<string, boolean>>({});
   const [sending, setSending] = useState(false);
+  const [sendStatus, setSendStatus] = useState<
+    | { type: "success"; to: string }
+    | { type: "error"; message: string }
+    | null
+  >(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  // Email templates (per organisatie, in localStorage)
+  type EmailTpl = { id: string; name: string; subject: string; body: string };
+  const tplStorageKey = `invoice-email-templates:${invoice.organization_id}`;
+  const [templates, setTemplates] = useState<EmailTpl[]>([]);
+  const [selectedTplId, setSelectedTplId] = useState<string>("");
+  const [saveTplOpen, setSaveTplOpen] = useState(false);
+  const [newTplName, setNewTplName] = useState("");
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(tplStorageKey);
+      if (raw) setTemplates(JSON.parse(raw) as EmailTpl[]);
+    } catch {
+      /* ignore */
+    }
+  }, [tplStorageKey]);
+
+  const persistTemplates = (next: EmailTpl[]) => {
+    setTemplates(next);
+    try {
+      localStorage.setItem(tplStorageKey, JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const applyTemplate = (id: string) => {
+    setSelectedTplId(id);
+    const tpl = templates.find((t) => t.id === id);
+    if (tpl) {
+      setSubject(tpl.subject);
+      setBody(tpl.body);
+    }
+  };
+
+  const saveTemplate = () => {
+    const name = newTplName.trim();
+    if (!name) {
+      toast.error("Geef de template een naam");
+      return;
+    }
+    const tpl: EmailTpl = {
+      id: (globalThis.crypto?.randomUUID?.() ?? String(Date.now())),
+      name,
+      subject,
+      body,
+    };
+    const next = [...templates.filter((t) => t.name !== name), tpl];
+    persistTemplates(next);
+    setSelectedTplId(tpl.id);
+    setNewTplName("");
+    setSaveTplOpen(false);
+    toast.success(`Template "${name}" opgeslagen`);
+  };
+
+  const deleteTemplate = () => {
+    if (!selectedTplId) return;
+    const tpl = templates.find((t) => t.id === selectedTplId);
+    if (!tpl) return;
+    if (!confirm(`Template "${tpl.name}" verwijderen?`)) return;
+    persistTemplates(templates.filter((t) => t.id !== selectedTplId));
+    setSelectedTplId("");
+    toast.success("Template verwijderd");
+  };
 
   const previewPayLink = includePayLink && canPay
     ? (currentPaymentLink ?? "https://www.mollie.com/checkout/… (wordt aangemaakt bij verzenden)")
