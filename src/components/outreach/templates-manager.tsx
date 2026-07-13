@@ -38,12 +38,29 @@ const CHANNEL_LABEL: Record<TemplateChannel, string> = {
   whatsapp: "WhatsApp",
 };
 
-const SAMPLE = {
-  contact_name: "Sanne",
+const DEFAULT_SAMPLE = {
+  contact_name: "Sanne de Vries",
   company: "Voorbeeld BV",
   province: "Noord-Holland",
   sender_name: "Jouw Naam",
+  appointment_title: "Kennismakingsgesprek",
+  appointment_date: new Date().toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long", year: "numeric" }),
+  appointment_time: "14:00",
+  appointment_location: "Online (Google Meet)",
+  appointment_link: "https://app.aivancolumbus.com/afspraak/voorbeeld-token",
 };
+type SampleKey = keyof typeof DEFAULT_SAMPLE;
+const SAMPLE_FIELDS: { key: SampleKey; label: string }[] = [
+  { key: "contact_name", label: "Naam contact" },
+  { key: "company", label: "Bedrijf" },
+  { key: "province", label: "Provincie" },
+  { key: "sender_name", label: "Afzender" },
+  { key: "appointment_title", label: "Afspraak titel" },
+  { key: "appointment_date", label: "Afspraak datum" },
+  { key: "appointment_time", label: "Afspraak tijd" },
+  { key: "appointment_location", label: "Afspraak locatie" },
+  { key: "appointment_link", label: "Afspraak link" },
+];
 
 type TemplateVersion = {
   id: string;
@@ -65,6 +82,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
   const [versions, setVersions] = useState<TemplateVersion[]>([]);
   const [previewVersion, setPreviewVersion] = useState<TemplateVersion | null>(null);
   const [search, setSearch] = useState("");
+  const [sample, setSample] = useState<Record<SampleKey, string>>(DEFAULT_SAMPLE);
 
   async function load() {
     if (!organizationId) {
@@ -380,13 +398,13 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
               <>
                 <div className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">Onderwerp</div>
                 <div className="mb-3 font-medium text-foreground">
-                  {renderTokens(preview.subject, SAMPLE)}
+                  {renderTokens(preview.subject, sample)}
                 </div>
               </>
             )}
             <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Inhoud</div>
             <div className="whitespace-pre-wrap leading-relaxed text-foreground">
-              {renderTokens(preview.body, SAMPLE)}
+              {renderTokens(preview.body, sample)}
             </div>
           </div>
         ) : (
@@ -394,10 +412,41 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
             Selecteer een sjabloon
           </div>
         )}
-        <div className="text-[10px] text-muted-foreground">
-          Variabelen ({TEMPLATE_TOKENS.join(", ")}) worden automatisch ingevuld vanuit prospect-data.
+
+        {/* Live variabelen — pas aan om direct in de preview te zien */}
+        <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
+          <div className="mb-2 flex items-center justify-between">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Voorbeeldvariabelen
+            </div>
+            <button
+              type="button"
+              onClick={() => setSample(DEFAULT_SAMPLE)}
+              className="text-[10px] text-muted-foreground hover:text-foreground underline"
+            >
+              Reset
+            </button>
+          </div>
+          <div className="space-y-1.5">
+            {SAMPLE_FIELDS.map((f) => (
+              <div key={f.key} className="grid grid-cols-[90px_1fr] items-center gap-2">
+                <Label className="text-[10px] text-muted-foreground truncate" title={f.label}>
+                  {f.label}
+                </Label>
+                <Input
+                  value={sample[f.key]}
+                  onChange={(e) => setSample((s) => ({ ...s, [f.key]: e.target.value }))}
+                  className="h-7 border-input bg-background text-[11px] text-foreground shadow-sm"
+                />
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 text-[10px] text-muted-foreground">
+            Alleen voor preview — echte waarden komen uit prospect- en afspraakdata.
+          </div>
         </div>
       </div>
+
 
       {/* Version history */}
       <div className="space-y-2 xl:block hidden">

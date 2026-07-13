@@ -20,6 +20,11 @@ export const TEMPLATE_TOKENS = [
   "{{company}}",
   "{{province}}",
   "{{sender_name}}",
+  "{{appointment_title}}",
+  "{{appointment_date}}",
+  "{{appointment_time}}",
+  "{{appointment_location}}",
+  "{{appointment_link}}",
 ] as const;
 
 export type TemplateChannel = "email" | "linkedin" | "whatsapp";
@@ -42,6 +47,11 @@ export type TokenVars = {
   company?: string | null;
   province?: string | null;
   sender_name?: string | null;
+  appointment_title?: string | null;
+  appointment_date?: string | null;
+  appointment_time?: string | null;
+  appointment_location?: string | null;
+  appointment_link?: string | null;
 };
 
 export function renderTokens(text: string, vars: TokenVars): string {
