@@ -1891,6 +1891,15 @@ function KanbanCard({
           size="sm"
           variant="ghost"
           className="h-7 w-7 p-0"
+          title="Maak alvast klant, project en contract aan"
+          onClick={() => onCreateCustomer(lead)}
+        >
+          <Briefcase className="h-3.5 w-3.5 text-sky-600" />
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 w-7 p-0"
           title="Zet op verloren"
           onClick={() => onLose(lead)}
           disabled={lead.stage === "verloren"}
