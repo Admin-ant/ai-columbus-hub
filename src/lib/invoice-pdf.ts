@@ -31,6 +31,7 @@ export interface InvoicePdfData {
   vat_cents: number;
   total_cents: number;
   status: string;
+  paid_at?: string | null;
   notes?: string | null;
   lines: InvoicePdfLine[];
 }
@@ -101,12 +102,24 @@ export function buildInvoicePdf(
   doc.setFont("helvetica", "bold");
   doc.setTextColor(60, 60, 60);
   doc.setFontSize(9);
+  const statusLabels: Record<string, { nl: string; en: string }> = {
+    draft: { nl: "Concept", en: "Draft" },
+    sent: { nl: "Verzonden", en: "Sent" },
+    paid: { nl: "Betaald", en: "Paid" },
+    overdue: { nl: "Vervallen", en: "Overdue" },
+    cancelled: { nl: "Geannuleerd", en: "Cancelled" },
+  };
+  const statusLabel =
+    statusLabels[inv.status]?.[lang === "en" ? "en" : "nl"] ?? inv.status;
   const meta: Array<[string, string]> = [
     [lang === "en" ? "Invoice #" : "Factuurnr.", inv.invoice_number],
     [lang === "en" ? "Issue date" : "Factuurdatum", fmtDate(inv.issue_date, lang)],
     [lang === "en" ? "Due date" : "Vervaldatum", fmtDate(inv.due_date, lang)],
-    ["Status", inv.status],
+    ["Status", statusLabel],
   ];
+  if (inv.paid_at) {
+    meta.push([lang === "en" ? "Paid on" : "Betaald op", fmtDate(inv.paid_at, lang)]);
+  }
   let my = y;
   meta.forEach(([k, v]) => {
     doc.setFont("helvetica", "bold");
@@ -229,6 +242,35 @@ export function buildInvoicePdf(
       doc.setFontSize(8);
       doc.setTextColor(160, 160, 160);
       doc.text(`${i} / ${pages}`, pageW - 40, pageH - 24, { align: "right" });
+    }
+  }
+
+  // "Betaald" stempel wanneer factuur is voldaan
+  if (inv.status === "paid") {
+    const pages = doc.getNumberOfPages();
+    const stampLabel = lang === "en" ? "PAID" : "BETAALD";
+    const dateLabel = inv.paid_at
+      ? (lang === "en" ? "on " : "op ") + fmtDate(inv.paid_at, lang)
+      : "";
+    for (let i = 1; i <= pages; i++) {
+      doc.setPage(i);
+      doc.saveGraphicsState();
+      doc.setGState(doc.GState({ opacity: 0.18 }));
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(96);
+      doc.setTextColor(16, 160, 90);
+      doc.text(stampLabel, pageW / 2, pageH / 2, {
+        align: "center",
+        angle: 20,
+      });
+      if (dateLabel) {
+        doc.setFontSize(18);
+        doc.text(dateLabel, pageW / 2, pageH / 2 + 40, {
+          align: "center",
+          angle: 20,
+        });
+      }
+      doc.restoreGraphicsState();
     }
   }
 
