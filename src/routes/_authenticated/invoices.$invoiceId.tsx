@@ -1065,6 +1065,7 @@ function EmailForm({
   const [filename, setFilename] = useState(defaultFilename);
   const [extraChecked, setExtraChecked] = useState<Record<string, boolean>>({});
   const [sending, setSending] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const previewPayLink = includePayLink && canPay
     ? (currentPaymentLink ?? "https://www.mollie.com/checkout/… (wordt aangemaakt bij verzenden)")
