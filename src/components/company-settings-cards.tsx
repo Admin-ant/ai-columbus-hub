@@ -264,15 +264,15 @@ export function CompanySettingsCards() {
                 <Field label="Telefoonnummer" value={form.phone} onChange={(v) => patch("phone", v)} />
                 <Field label="E-mail" value={form.email} onChange={(v) => patch("email", v)} />
                 <Field label="Website" value={form.website} onChange={(v) => patch("website", v)} />
-                <Field label="KvK-nummer" value={form.kvk_number} onChange={(v) => patch("kvk_number", v)} />
-                <Field label="BTW-nummer" value={form.tax_number} onChange={(v) => patch("tax_number", v)} />
-                <Field label="IBAN" value={form.iban} onChange={(v) => patch("iban", v)} />
+                <Field label="KvK-nummer" value={form.kvk_number} onChange={(v) => patch("kvk_number", v)} error={errors.kvk_number} placeholder="12345678" />
+                <Field label="BTW-nummer" value={form.tax_number} onChange={(v) => patch("tax_number", v)} error={errors.tax_number} placeholder="NL123456789B01" />
+                <Field label="IBAN" value={form.iban} onChange={(v) => patch("iban", v)} error={errors.iban} placeholder="NL33 RABO 0176 0067 37" />
                 <Field label="BIC" value={form.bic} onChange={(v) => patch("bic", v)} />
                 <Field label="Tenaamstelling (t.n.v.)" value={form.account_holder} onChange={(v) => patch("account_holder", v)} />
                 <Field label="Factuurprefix" value={form.invoice_prefix} onChange={(v) => patch("invoice_prefix", v)} />
               </div>
               <div className="flex justify-end">
-                <Button onClick={saveOrg} disabled={saving} size="sm">
+                <Button onClick={saveOrg} disabled={saving || hasErrors} size="sm">
                   {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                   Opslaan
                 </Button>
