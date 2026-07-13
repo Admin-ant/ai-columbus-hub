@@ -46,6 +46,9 @@ type Appointment = {
   attendee_email: string | null;
   status: string;
   invite_sent_at: string | null;
+  confirmed_at: string | null;
+  reschedule_requested_at: string | null;
+  reschedule_note: string | null;
   created_at: string;
 };
 
@@ -393,11 +396,25 @@ function ApptCard({
               <Badge variant="outline" className="bg-red-500/10 text-red-700 dark:text-red-300">
                 Geannuleerd
               </Badge>
-            ) : a.invite_sent_at ? (
-              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
-                Uitnodiging verzonden
-              </Badge>
-            ) : null}
+            ) : (
+              <>
+                {a.confirmed_at && (
+                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                    ✓ Bevestigd door klant
+                  </Badge>
+                )}
+                {a.reschedule_requested_at && !a.confirmed_at && (
+                  <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                    ↻ Verzoek tot verzetten
+                  </Badge>
+                )}
+                {a.invite_sent_at && !a.confirmed_at && !a.reschedule_requested_at && (
+                  <Badge variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-300">
+                    Uitnodiging verzonden
+                  </Badge>
+                )}
+              </>
+            )}
           </div>
           <div className="mt-1 text-sm text-muted-foreground">
             {time}
@@ -407,6 +424,12 @@ function ApptCard({
             <div className="mt-1 text-sm text-muted-foreground">
               Met: {a.attendee_name ?? ""}
               {a.attendee_email ? ` <${a.attendee_email}>` : ""}
+            </div>
+          )}
+          {a.reschedule_note && (
+            <div className="mt-2 rounded-md border-l-2 border-amber-400 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+              <div className="text-xs font-semibold uppercase tracking-wide">Voorstel klant</div>
+              <div className="whitespace-pre-wrap">{a.reschedule_note}</div>
             </div>
           )}
           {a.description && (
