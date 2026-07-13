@@ -379,7 +379,7 @@ function InvoiceDetailPage() {
         : null;
 
   async function handleRefreshMollie() {
-    if (!invExt.mollie_payment_id) return;
+    if (!invExt.mollie_payment_id || !invoice) return;
     setRefreshingMollie(true);
     try {
       const r = await refreshMollieFn({ data: { invoice_id: invoice.id } });
