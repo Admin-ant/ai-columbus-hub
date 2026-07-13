@@ -31,6 +31,7 @@ export interface InvoicePdfData {
   vat_cents: number;
   total_cents: number;
   status: string;
+  paid_at?: string | null;
   notes?: string | null;
   lines: InvoicePdfLine[];
 }
