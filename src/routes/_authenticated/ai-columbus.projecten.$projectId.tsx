@@ -47,10 +47,11 @@ const DELIVERY_META: Record<DeliveryStatus, { label: string; cls: string }> = {
 const DELIVERY_KEYS = Object.keys(DELIVERY_META) as DeliveryStatus[];
 
 type Related = {
-  contract: { id: string; title: string | null; monthly_amount_cents: number; status: string } | null;
+  contract: { id: string; title: string | null; monthly_amount_cents: number; setup_fee_cents: number | null; status: string } | null;
   client: { id: string; name: string } | null;
   invoices: { id: string; invoice_number: string; total_cents: number; status: string }[];
 };
+
 
 function ProjectDetailPage() {
   const { projectId } = Route.useParams();
@@ -83,7 +84,7 @@ function ProjectDetailPage() {
     // Gerelateerd
     if (row) {
       const [{ data: contract }, { data: client }, { data: invoices }] = await Promise.all([
-        supabase.from("contracts").select("id,title,monthly_amount_cents,status").eq("project_id", row.id).maybeSingle(),
+        supabase.from("contracts").select("id,title,monthly_amount_cents,setup_fee_cents,status").eq("project_id", row.id).maybeSingle(),
         row.client_id ? supabase.from("clients").select("id,name").eq("id", row.client_id).maybeSingle() : Promise.resolve({ data: null }),
         supabase.from("invoices").select("id,invoice_number,total_cents,status").eq("project_id", row.id).order("issue_date", { ascending: false }),
       ]);
@@ -147,6 +148,27 @@ function ProjectDetailPage() {
   const currentDelivery = (((form as any).delivery_status ?? (project as any).delivery_status) as DeliveryStatus) ?? "nieuw";
   const salesStatus = project.status;
 
+  // Project-specifieke KPI's (mirror van de projectenlijst, gescoped op dit project)
+  const contractActive = related.contract && related.contract.status === "active";
+  const monthlyCents = contractActive ? Number(related.contract!.monthly_amount_cents ?? 0) : 0;
+  const setupCents = contractActive ? Number(related.contract!.setup_fee_cents ?? 0) : 0;
+  const totalDealCents = Number(project.value_cents ?? 0);
+  const isInProgress = currentDelivery === "in_uitvoering" ? 1 : 0;
+  const isWaiting = currentDelivery === "on_hold" || currentDelivery === "wacht_op_klant" ? 1 : 0;
+  const now = new Date();
+  const deliveredThisMonth =
+    currentDelivery === "opgeleverd" &&
+    deliveryHistory.some((h) => {
+      if (h.new_status !== "opgeleverd") return false;
+      const d = new Date(h.changed_at);
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    })
+      ? 1
+      : 0;
+  const activeMrr = contractActive ? monthlyCents : 0;
+
+
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
@@ -172,7 +194,66 @@ function ProjectDetailPage() {
         </div>
       </div>
 
+      {/* Delivery KPI's — gescoped op dit project */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">In uitvoering</div>
+          <div className="mt-2 text-2xl font-bold tabular-nums">{isInProgress}</div>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">On hold / wacht op klant</div>
+          <div className="mt-2 text-2xl font-bold tabular-nums">{isWaiting}</div>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Opgeleverd deze maand</div>
+          <div className="mt-2 text-2xl font-bold tabular-nums">{deliveredThisMonth}</div>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Actieve MRR</div>
+          <div className="mt-2 text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{EUR.format(activeMrr / 100)}</div>
+        </div>
+      </div>
+
+      {/* Financiële samenvatting — dit project */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Maandelijkse opbrengst (dit project)</div>
+          <div className="mt-2 text-xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{EUR.format(monthlyCents / 100)}</div>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Eenmalige kosten (dit project)</div>
+          <div className="mt-2 text-xl font-bold tabular-nums text-indigo-600 dark:text-indigo-400">{EUR.format(setupCents / 100)}</div>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Totale deal-waarde (dit project)</div>
+          <div className="mt-2 text-xl font-bold tabular-nums">{EUR.format(totalDealCents / 100)}</div>
+        </div>
+      </div>
+
+      {/* Delivery-status kaarten — markeer huidige status */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {DELIVERY_KEYS.map((s) => {
+          const active = currentDelivery === s;
+          const count = active ? 1 : 0;
+          const amount = active ? totalDealCents : 0;
+          return (
+            <div
+              key={s}
+              className={`rounded-lg border bg-card p-3 text-left transition-shadow ${active ? "ring-2 ring-primary" : "opacity-70"}`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className={`inline-block h-2.5 w-2.5 rounded-full ${DELIVERY_META[s].cls.split(" ")[0]}`} />
+                <span className="text-xs font-medium text-muted-foreground">{count}</span>
+              </div>
+              <div className="mt-2 text-xs font-medium leading-tight">{DELIVERY_META[s].label}</div>
+              <div className="mt-1 text-base font-semibold tabular-nums">{EUR.format(amount / 100)}</div>
+            </div>
+          );
+        })}
+      </div>
+
       <div className="grid gap-4 lg:grid-cols-3">
+
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Projectgegevens</CardTitle>
