@@ -114,9 +114,11 @@ type OrgRow = {
   country: string | null;
   email: string | null;
   phone: string | null;
+  website: string | null;
   kvk_number: string | null;
   iban: string | null;
   bic: string | null;
+  account_holder: string | null;
   brand_logo_url: string | null;
   logo_url: string | null;
 };
@@ -237,7 +239,7 @@ function InvoiceDetailPage() {
         .order("created_at", { ascending: false }),
       supabase
         .from("organizations")
-        .select("id,name,tax_number,address_line1,address_line2,postal_code,city,country,email,phone,kvk_number,iban,bic,brand_logo_url,logo_url")
+        .select("id,name,tax_number,address_line1,address_line2,postal_code,city,country,email,phone,website,kvk_number,iban,bic,account_holder,brand_logo_url,logo_url")
         .eq("id", (inv as Invoice).organization_id)
         .maybeSingle(),
       (inv as Invoice).client_id
@@ -833,11 +835,11 @@ function InvoiceDetailPage() {
             postal_city: [org?.postal_code, org?.city].filter(Boolean).join(" "),
             country: org?.country ?? null,
             phone: org?.phone ?? null,
-            website: null,
+            website: org?.website ?? null,
             kvk: org?.kvk_number ?? null,
             vat: org?.tax_number ?? null,
             iban: org?.iban ?? null,
-            account_holder: org?.name ?? null,
+            account_holder: org?.account_holder ?? org?.name ?? null,
             logo_url: org?.brand_logo_url ?? org?.logo_url ?? null,
           },
           client: {

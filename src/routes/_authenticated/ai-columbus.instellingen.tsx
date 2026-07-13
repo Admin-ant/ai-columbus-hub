@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLeadsFunnelVisible } from "@/hooks/use-leads-funnel-visible";
 import { useReminderSettings, DEFAULT_WINDOW_DAYS, DEFAULT_OVERDUE_DAYS } from "@/hooks/use-reminder-settings";
+import { CompanySettingsCards } from "@/components/company-settings-cards";
 
 
 export const Route = createFileRoute("/_authenticated/ai-columbus/instellingen")({
@@ -36,6 +37,8 @@ function SettingsPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-4">
       <h1 className="text-2xl font-bold tracking-tight">Instellingen — AI van Columbus</h1>
+
+      <CompanySettingsCards />
 
       <Card>
         <CardHeader>
