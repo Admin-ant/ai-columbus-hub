@@ -79,6 +79,7 @@ function InvoicesPage() {
   const { currentOrganizationId, currentOrganization, loading: wsLoading } = useWorkspace();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"all" | "paid" | "open" | "reminder" | "draft">("all");
 
   const eur = useMemo(
     () =>
