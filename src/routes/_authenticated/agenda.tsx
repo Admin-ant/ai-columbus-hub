@@ -117,6 +117,14 @@ function icsEscape(s: string): string {
   return s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
 }
 
+function localDateKey(d: Date | string): string {
+  const dt = typeof d === "string" ? new Date(d) : d;
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, "0");
+  const day = String(dt.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function exportIcs(
   all: Appointment[],
   opts: { selectedDay: string | null; month: Date; orgName?: string | null },
@@ -124,7 +132,7 @@ function exportIcs(
   let subset: Appointment[];
   let label: string;
   if (opts.selectedDay) {
-    subset = all.filter((a) => new Date(a.starts_at).toISOString().slice(0, 10) === opts.selectedDay);
+    subset = all.filter((a) => localDateKey(a.starts_at) === opts.selectedDay);
     label = opts.selectedDay;
   } else {
     const y = opts.month.getFullYear();
