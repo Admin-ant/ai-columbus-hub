@@ -1,5 +1,6 @@
 import { Check, ChevronDown, Building2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -14,8 +15,15 @@ import { useWorkspace } from "@/hooks/use-workspace";
 
 export function WorkspaceSwitcher() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { organizations, currentOrganization, currentOrganizationId, setCurrentOrganizationId, isHoldingAdmin, loading } =
     useWorkspace();
+
+  function selectOrg(id: string, slug: string) {
+    setCurrentOrganizationId(id);
+    if (slug === "netqloud") navigate({ to: "/netqloud" });
+    else if (slug === "ai-columbus") navigate({ to: "/ai-columbus" });
+  }
 
   if (loading) return null;
   if (organizations.length === 0) return null;
