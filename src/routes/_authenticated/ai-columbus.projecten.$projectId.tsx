@@ -55,6 +55,7 @@ type Related = {
 
 function ProjectDetailPage() {
   const { projectId } = Route.useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [project, setProject] = useState<ProjectRow | null>(null);
   const [deliveryHistory, setDeliveryHistory] = useState<DeliveryHistoryRow[]>([]);
@@ -64,6 +65,8 @@ function ProjectDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<Partial<ProjectRow>>({});
+  const [showDetails, setShowDetails] = useState(true);
+  const [siblings, setSiblings] = useState<{ id: string; name: string }[]>([]);
 
   async function load() {
     setLoading(true);
