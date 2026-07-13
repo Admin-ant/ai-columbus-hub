@@ -1,78 +1,85 @@
-## Doel
+# Plan: Projecten → Uitvoering / Delivery
 
-Netqloud en AI van Columbus volledig scheiden in de sidebar. Wanneer je in Columbus werkt zie je alleen Columbus-onderdelen; wanneer je in Netqloud werkt zie je alleen Netqloud-onderdelen. Schakelen tussen bedrijven doe je via de bedrijfs-switcher bovenin (of via de knop in de sidebar).
+Doel: Sales Workflow blijft de verkoopfunnel (lead → offerte → contract). Projecten wordt de plek voor lopende projecten *ná* de handtekening: opleveren, notities, doelmaand, on-hold, statusgeschiedenis.
 
-Voor nu bouwen we in Netqloud nog geen nieuwe functionaliteit — puur de scheiding.
+## 1. Database — nieuwe delivery-statussen
 
-## Wat er nu mis gaat
+Nieuwe enum `project_delivery_status` toevoegen naast de bestaande `project_status`:
 
-In `src/components/app-sidebar.tsx` staan drie dingen tegelijk zichtbaar:
-1. Een grote "Algemeen"-lijst (Sales Workflow, Offerte Studio, Cold Outreach, Leads, Contracten, Mail, CRM, Enterprise, Teams) — die hoort feitelijk bij Columbus.
-2. Een sectie "AI van Columbus" met eigen submenu.
-3. Een sectie "Netqloud" met eigen submenu.
+- `nieuw` — contract getekend, nog niet gestart
+- `in_uitvoering` — actief werk
+- `wacht_op_klant` — wacht op input klant
+- `on_hold` — gepauzeerd
+- `opgeleverd` — klaar / live
+- `geannuleerd` — gestopt na tekenen
 
-Daardoor lijken alle Columbus-schermen ook bij Netqloud te horen, en zie je in Columbus alsnog Netqloud in het menu staan. Dat is verwarrend.
+Kolom `delivery_status` toevoegen aan `public.projects` (default `nieuw`). Bestaande `status`-kolom blijft staan voor backwards compat en voor de DB-trigger die 'm nu vult bij lead-conversie. Nieuwe kolom is leidend voor de UI van Projecten.
 
-## Nieuwe structuur van de sidebar
+Bestaande rijen migreren:
+- `contract_getekend` → `delivery_status = 'nieuw'`
+- `on_hold` → `delivery_status = 'on_hold'`
+- alles daarvoor (`contact_gezocht`, `afspraak_geboekt`, `offerte_verstuurd`, `contract_verstuurd`) → `delivery_status = 'nieuw'` én er komt een filter zodat ze standaard niet in de nieuwe Projecten-lijst verschijnen (alleen projecten met een contract of expliciete delivery-status ≠ default).
 
-De sidebar wordt afhankelijk van de **actieve omgeving** (`currentOrganization` uit `useWorkspace`):
+Statushistorie: bestaande `project_status_history` blijft werken voor `status`. Een nieuwe tabel `project_delivery_status_history` + trigger logt wijzigingen van `delivery_status` (zelfde vorm: old/new/changed_by/changed_at).
 
-- **Als actieve omgeving = AI van Columbus**  
-  Toon alleen Columbus-gerelateerde items:
-  - Overzicht (dashboard)
-  - Sales Workflow
-  - Leads funnel
-  - Offerte Studio
-  - Cold Outreach
-  - Contracten
-  - Mail (+ instellingen + templates)
-  - CRM Activiteiten
-  - Klanten
-  - Projecten dashboard
-  - Offertes
-  - Facturen
-  - Inkoopfacturen
-  - Modellen & gebruik
-  - Rapportages
-  - Logs
-  - Instellingen (Columbus)
+## 2. UI — Projecten-lijst (`/ai-columbus/projecten`)
 
-- **Als actieve omgeving = Netqloud**  
-  Toon alleen Netqloud-items (voorlopig alleen de bestaande stubs):
-  - Dashboard
-  - Klanten
-  - Servers
-  - Offertes
-  - Facturen
-  - Inkoopfacturen
-  - Instellingen
-  - (Enterprise / Teams verplaatsen we hier niet naartoe — die blijven Columbus, tenzij je anders wilt)
+- Titel wordt **"Projecten (uitvoering)"** met korte uitleg: *"Lopende projecten na contractondertekening. Voor de verkoopfunnel: Sales Workflow."*
+- Standaardfilter: alleen projecten met een gekoppeld actief contract of met `delivery_status` ≠ null. Toggle "Toon alle projecten" voor de oude weergave.
+- Statuskolom + kleuren gebruiken `delivery_status` in plaats van `status`.
+- Filterdropdown vervangt sales-statussen door delivery-statussen.
+- KPI's boven de tabel:
+  - Aantal in uitvoering
+  - Aantal on hold / wacht op klant
+  - Aantal opgeleverd deze maand
+  - Totaal MRR van actieve projecten (via gekoppelde contracten)
+- Kolom "Contract" toegevoegd → link naar `/contracten/$id` als aanwezig.
+- Knop "Nieuw project" blijft, maar formulier vraagt om `delivery_status` (niet meer sales-status).
+- Link naar Sales Workflow bovenaan: *"Nog geen contract? → Sales Workflow"*.
 
-- **Beheer-sectie** (Opname, Administratie, Gebruikers) blijft altijd zichtbaar voor admins — dat is holding-breed.
+## 3. UI — Projectdetail (`/ai-columbus/projecten/$projectId`)
 
-De bovenste header van de sidebar laat duidelijk zien in welk bedrijf je zit (naam + brand color, dat blok bestaat al). De "AI van Columbus" / "Netqloud" secties met "Open omgeving" verdwijnen — schakelen gaat via de **WorkspaceSwitcher** in de topbar (die staat al klaar in `src/components/workspace-switcher.tsx`).
+- Statusveld toont `delivery_status` met de nieuwe waarden.
+- Statusgeschiedenis-blok toont geschiedenis van `delivery_status` (nieuwe tabel).
+- Nieuwe sectie **"Gerelateerd"**: links naar Klant, Contract, Facturen, en (als aanwezig) originele Lead / Offerte.
+- Sales-status (`status`) wordt read-only getoond als "Herkomst" (bv. "Contract getekend via lead X op 12-05-2026") maar niet meer bewerkbaar hier.
 
-## Wisselen van bedrijf
+## 4. Sales Workflow — kleine aanvulling
 
-- Bovenin blijft de bestaande WorkspaceSwitcher; als je daar Netqloud kiest, verandert de sidebar meteen naar het Netqloud-menu en navigeert de app naar `/netqloud`.
-- Kies je Columbus, dan verandert de sidebar naar het Columbus-menu en gaat de app naar `/ai-columbus` (of `/` overzicht — zie vraag hieronder).
+- Rij in de pipeline waar `contract` actief is: knop **"Naar project"** die linkt naar de bijbehorende `/ai-columbus/projecten/$id`.
+- Zo is de overgang van verkoop → uitvoering één klik.
 
-## Wat we NIET aanraken
+## 5. Sidebar / navigatie
 
-- Geen database-wijzigingen.
-- Geen nieuwe Netqloud-schermen; de bestaande stub-pagina's (`netqloud.index`, `netqloud.klanten`, `netqloud.servers`, `netqloud.instellingen`) blijven zoals ze zijn.
-- Routes verplaatsen we niet — Columbus-routes blijven op hun huidige URL's. Alleen de zichtbaarheid in het menu verandert per actieve omgeving.
+- Label "Projecten" wordt **"Projecten (uitvoering)"** voor duidelijkheid.
+- Positie blijft in de "Algemeen"-groep, direct onder Sales Workflow — dat leest als de logische volgorde: eerst verkopen, dan uitvoeren.
 
-## Technische wijzigingen
+## 6. Uit scope (nu niet)
 
-Alleen `src/components/app-sidebar.tsx`:
-- `topItems`, `sections`, `adminItems` vervangen door twee menu-definities: `columbusMenu` en `netqloudMenu`.
-- Op basis van `currentOrganization?.slug` (`"ai-columbus"` of `"netqloud"`) render je het juiste menu.
-- Sectie "Open omgeving" met submenu verwijderen.
-- Beheer-blok blijft, ongewijzigd.
+- Geen nieuwe taken/subtaken per project (kan later).
+- Geen tijdregistratie of urenboeking.
+- Oude `project_status` enum niet verwijderen — blijft bestaan zodat DB-triggers en bestaande data intact blijven.
 
-## Vraag voordat ik het bouw
+## Technische details
 
-Wanneer je van Columbus naar Netqloud switcht, wil je dan:
-- **(a)** automatisch naar het Netqloud-dashboard (`/netqloud`) gestuurd worden, of
-- **(b)** blijven waar je bent en alleen het menu zien veranderen?
+```text
+public.projects
+  + delivery_status project_delivery_status NOT NULL DEFAULT 'nieuw'
+
+public.project_delivery_status_history
+  id, project_id, organization_id, old_status, new_status,
+  changed_by, changed_at
+
+trigger log_project_delivery_status_change (analoog aan bestaande)
+
+enum project_delivery_status:
+  nieuw | in_uitvoering | wacht_op_klant | on_hold | opgeleverd | geannuleerd
+```
+
+Front-end raakt alleen:
+- `src/routes/_authenticated/ai-columbus.projecten.tsx`
+- `src/routes/_authenticated/ai-columbus.projecten.$projectId.tsx`
+- `src/routes/_authenticated/sales-workflow.tsx` (knop "Naar project")
+- `src/components/app-sidebar.tsx` (label)
+
+Geen wijzigingen aan de bestaande lead-conversie-functies of aan Sales Workflow-logica zelf.

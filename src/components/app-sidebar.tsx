@@ -64,7 +64,7 @@ const columbusGroups: NavGroup[] = [
       { title: "Overzicht", url: "/", icon: LayoutDashboard },
       { title: "Dashboard", url: "/ai-columbus", icon: Sparkles },
       { title: "Sales Workflow", url: "/sales-workflow", icon: Workflow },
-      { title: "Projecten", url: "/ai-columbus/projecten", icon: LayoutDashboard },
+      { title: "Projecten (uitvoering)", url: "/ai-columbus/projecten", icon: LayoutDashboard },
       { title: "Klanten", url: "/ai-columbus/klanten", icon: Users },
     ],
   },

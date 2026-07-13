@@ -326,6 +326,13 @@ function PipelineRow({
               </Link>
             </Button>
           )}
+          {row.contract?.project_id && (
+            <Button asChild size="sm" variant="outline">
+              <Link to="/ai-columbus/projecten/$projectId" params={{ projectId: row.contract.project_id }}>
+                Naar project <ArrowRight className="ml-1 h-3 w-3" />
+              </Link>
+            </Button>
+          )}
         </div>
       </TableCell>
     </TableRow>
