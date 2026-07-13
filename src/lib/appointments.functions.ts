@@ -303,7 +303,7 @@ export const sendAppointmentInvite = createServerFn({ method: "POST" })
       cancelled: data.cancel === true,
     });
 
-    const subject = `${data.cancel ? t.subjectPrefixCancel + " " : ""}${a.title} — ${dateStr}`;
+
 
     // Pre-log in mail_messages so it shows up in the user's Sent folder
     const { data: logRow } = await context.supabase
