@@ -117,6 +117,8 @@ type OrgRow = {
   kvk_number: string | null;
   iban: string | null;
   bic: string | null;
+  brand_logo_url: string | null;
+  logo_url: string | null;
 };
 
 const MOLLIE_BADGE_COLOR: Record<string, string> = {
