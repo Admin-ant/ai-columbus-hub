@@ -151,8 +151,19 @@ export function CompanySettingsCards() {
     setForm((p) => ({ ...p, [k]: v }));
   }
 
+  const errors = {
+    iban: validateField("iban", form.iban),
+    kvk_number: validateField("kvk_number", form.kvk_number),
+    tax_number: validateField("tax_number", form.tax_number),
+  };
+  const hasErrors = Boolean(errors.iban || errors.kvk_number || errors.tax_number);
+
   async function saveOrg() {
     if (!orgId) return;
+    if (hasErrors) {
+      toast.error("Corrigeer de gemarkeerde velden voor je opslaat");
+      return;
+    }
     setSaving(true);
     // Empty string -> null so template hides the field.
     const nullify = (s: string) => (s.trim() === "" ? null : s.trim());
@@ -166,9 +177,9 @@ export function CompanySettingsCards() {
       phone: nullify(form.phone),
       email: nullify(form.email),
       website: nullify(form.website),
-      kvk_number: nullify(form.kvk_number),
-      tax_number: nullify(form.tax_number),
-      iban: nullify(form.iban),
+      kvk_number: form.kvk_number.trim() === "" ? null : form.kvk_number.replace(/\s+/g, ""),
+      tax_number: form.tax_number.trim() === "" ? null : form.tax_number.replace(/\s+/g, "").toUpperCase(),
+      iban: form.iban.trim() === "" ? null : normalizeIban(form.iban),
       bic: nullify(form.bic),
       account_holder: nullify(form.account_holder),
       invoice_prefix: form.invoice_prefix.trim() || "INV",
