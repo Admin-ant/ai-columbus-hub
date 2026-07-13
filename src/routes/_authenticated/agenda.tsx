@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { CalendarDays, ChevronLeft, ChevronRight, Loader2, Mail, Plus, Send, Trash2, X, Ban, CalendarClock } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Download, Loader2, Mail, Plus, Send, Trash2, X, Ban, CalendarClock } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
