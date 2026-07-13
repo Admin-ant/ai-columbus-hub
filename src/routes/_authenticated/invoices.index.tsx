@@ -181,6 +181,7 @@ function InvoicesPage() {
                 <TableHead>Klant</TableHead>
                 <TableHead>{t("invoices.issue_date")}</TableHead>
                 <TableHead>{t("invoices.due_date")}</TableHead>
+                <TableHead>Betaald op</TableHead>
                 <TableHead className="text-right">{t("invoices.amount")}</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="w-10 text-right">{t("invoices.actions")}</TableHead>
