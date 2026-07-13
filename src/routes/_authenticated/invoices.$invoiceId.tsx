@@ -1173,6 +1173,25 @@ function EmailForm({
           </div>
         </div>
       )}
+      {canPay && (
+        <div className="rounded-md border bg-muted/30 p-3 text-sm">
+          <label className="flex items-start gap-2">
+            <Checkbox
+              checked={includePayLink}
+              onCheckedChange={(c) => setIncludePayLink(c === true)}
+              className="mt-0.5"
+            />
+            <span>
+              <span className="font-medium">Mollie betaallink toevoegen</span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">
+                {currentPaymentLink
+                  ? "Bestaande betaallink wordt hergebruikt en toegevoegd aan onderwerp en bericht."
+                  : "Er wordt automatisch een nieuwe betaallink aangemaakt en toegevoegd aan onderwerp en bericht."}
+              </span>
+            </span>
+          </label>
+        </div>
+      )}
       <DialogFooter>
         <Button type="submit" disabled={sending}>
           {sending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
