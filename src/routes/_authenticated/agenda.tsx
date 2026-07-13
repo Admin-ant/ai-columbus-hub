@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { CalendarDays, ChevronLeft, ChevronRight, Download, Loader2, Mail, Plus, Send, Trash2, X, Ban, CalendarClock } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Download, Eye, Loader2, Mail, Plus, Send, Trash2, X, Ban, CalendarClock } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -27,6 +27,7 @@ import {
   sendAppointmentInvite,
   updateAppointment,
 } from "@/lib/appointments.functions";
+import { APPT_LOCALES, normalizeLocale } from "@/lib/appointment-i18n";
 
 export const Route = createFileRoute("/_authenticated/agenda")({
   head: () => ({ meta: [{ title: "Agenda" }] }),
