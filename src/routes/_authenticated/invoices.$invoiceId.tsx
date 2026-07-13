@@ -51,10 +51,12 @@ import {
 import { InvoicePreviewDialog } from "@/components/invoice-preview-dialog";
 import type { InvoiceTemplateProps, InvoiceTemplateLineKind } from "@/components/invoice-template";
 import {
+  createMollieInvoicePayment,
   listInvoicePaymentEvents,
   refreshMollieInvoiceStatus,
   type MolliePaymentMethod,
 } from "@/lib/mollie-invoice.functions";
+import { Checkbox } from "@/components/ui/checkbox";
 import { QRCodeSVG } from "qrcode.react";
 import { RefreshCw } from "lucide-react";
 
