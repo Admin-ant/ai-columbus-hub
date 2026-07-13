@@ -1258,18 +1258,66 @@ function EmailForm({
         </div>
       )}
       <div className="space-y-1.5">
-        <Label>Voorbeeld</Label>
+        <div className="flex items-center justify-between">
+          <Label>Voorbeeld</Label>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={() => copyText(`Onderwerp: ${previewSubject}\n\n${previewBody}`, "Voorbeeld e-mail")}
+          >
+            {copiedField === "Voorbeeld e-mail" ? <Check className="mr-1 h-3 w-3" /> : <Copy className="mr-1 h-3 w-3" />}
+            Kopieer voorbeeld
+          </Button>
+        </div>
         <div className="rounded-md border bg-background">
-          <div className="border-b px-3 py-2 text-xs">
-            <span className="text-muted-foreground">Onderwerp: </span>
-            <span className="font-medium">{previewSubject || <em className="text-muted-foreground">(leeg)</em>}</span>
+          <div className="flex items-start justify-between gap-2 border-b px-3 py-2 text-xs">
+            <div className="min-w-0">
+              <span className="text-muted-foreground">Onderwerp: </span>
+              <span className="font-medium">{previewSubject || <em className="text-muted-foreground">(leeg)</em>}</span>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-6 shrink-0 px-1.5"
+              onClick={() => copyText(previewSubject, "Onderwerp")}
+              title="Onderwerp kopiëren"
+            >
+              {copiedField === "Onderwerp" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+            </Button>
           </div>
-          <div className="max-h-64 overflow-y-auto whitespace-pre-wrap px-3 py-2 text-sm">
-            {previewBody || <em className="text-muted-foreground">(leeg)</em>}
+          <div className="relative">
+            <div className="max-h-64 overflow-y-auto whitespace-pre-wrap px-3 py-2 pr-10 text-sm">
+              {previewBody || <em className="text-muted-foreground">(leeg)</em>}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-2 top-2 h-6 px-1.5"
+              onClick={() => copyText(previewBody, "Bericht")}
+              title="Bericht kopiëren"
+            >
+              {copiedField === "Bericht" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+            </Button>
           </div>
           {previewPayLink && (
-            <div className="border-t bg-muted/30 px-3 py-1.5 text-[11px] text-muted-foreground">
-              Betaallink in voorbeeld: <span className="font-mono">{previewPayLink}</span>
+            <div className="flex items-start justify-between gap-2 border-t bg-muted/30 px-3 py-1.5 text-[11px] text-muted-foreground">
+              <span className="min-w-0">
+                Betaallink in voorbeeld: <span className="font-mono break-all">{previewPayLink}</span>
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 shrink-0 px-1.5"
+                onClick={() => copyText(previewPayLink, "Betaallink")}
+                title="Betaallink kopiëren"
+              >
+                {copiedField === "Betaallink" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+              </Button>
             </div>
           )}
         </div>
