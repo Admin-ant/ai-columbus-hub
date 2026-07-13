@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Loader2, Mail, Phone, StickyNote, History, Save, ExternalLink } from "lucide-react";
+import { ArrowLeft, Loader2, Mail, Phone, StickyNote, History, Save, ExternalLink, ChevronLeft, ChevronRight, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -55,6 +55,7 @@ type Related = {
 
 function ProjectDetailPage() {
   const { projectId } = Route.useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [project, setProject] = useState<ProjectRow | null>(null);
   const [deliveryHistory, setDeliveryHistory] = useState<DeliveryHistoryRow[]>([]);
@@ -64,9 +65,17 @@ function ProjectDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<Partial<ProjectRow>>({});
+  const [showDetails, setShowDetails] = useState(true);
+  const [siblings, setSiblings] = useState<{ id: string; name: string }[]>([]);
 
   async function load() {
     setLoading(true);
+    setProject(null);
+    setRelated({ contract: null, client: null, invoices: [] });
+    setDeliveryHistory([]);
+    setSalesHistory([]);
+    setProfiles({});
+    setForm({});
     const [{ data: p, error: pe }, { data: dh }, { data: sh }] = await Promise.all([
       supabase.from("projects").select("*").eq("id", projectId).maybeSingle(),
       supabase.from("project_delivery_status_history").select("*").eq("project_id", projectId).order("changed_at", { ascending: false }),
@@ -109,6 +118,17 @@ function ProjectDetailPage() {
   }
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [projectId]);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("projects").select("id,name").order("created_at", { ascending: false });
+      setSiblings((data ?? []) as { id: string; name: string }[]);
+    })();
+  }, []);
+
+  const currentIndex = siblings.findIndex((s) => s.id === projectId);
+  const prevProject = currentIndex > 0 ? siblings[currentIndex - 1] : null;
+  const nextProject = currentIndex >= 0 && currentIndex < siblings.length - 1 ? siblings[currentIndex + 1] : null;
 
   async function save() {
     if (!project) return;
@@ -171,7 +191,7 @@ function ProjectDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" asChild><Link to="/ai-columbus/projecten"><ArrowLeft className="mr-2 h-4 w-4" /> Projecten</Link></Button>
           <div>
@@ -181,7 +201,34 @@ function ProjectDetailPage() {
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!prevProject}
+            onClick={() => prevProject && navigate({ to: "/ai-columbus/projecten/$projectId", params: { projectId: prevProject.id } })}
+            title={prevProject?.name ?? ""}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!nextProject}
+            onClick={() => nextProject && navigate({ to: "/ai-columbus/projecten/$projectId", params: { projectId: nextProject.id } })}
+            title={nextProject?.name ?? ""}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          <Select value={projectId} onValueChange={(v) => navigate({ to: "/ai-columbus/projecten/$projectId", params: { projectId: v } })}>
+            <SelectTrigger className="h-9 w-[220px]"><SelectValue placeholder="Kies project" /></SelectTrigger>
+            <SelectContent>
+              {siblings.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Button variant="outline" size="sm" onClick={() => setShowDetails((v) => !v)}>
+            {showDetails ? <><EyeOff className="mr-2 h-4 w-4" /> Details verbergen</> : <><Eye className="mr-2 h-4 w-4" /> Details tonen</>}
+          </Button>
           {form.contact_email && (
             <Button variant="outline" size="sm" asChild><a href={`mailto:${form.contact_email}`}><Mail className="mr-2 h-4 w-4" /> Mail</a></Button>
           )}
@@ -252,9 +299,9 @@ function ProjectDetailPage() {
         })}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className={`grid gap-4 ${showDetails ? "lg:grid-cols-3" : "lg:grid-cols-1"}`}>
 
-        <Card className="lg:col-span-2">
+        {showDetails && <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Projectgegevens</CardTitle>
             <CardDescription>Uitvoering en delivery van dit project</CardDescription>
@@ -308,7 +355,7 @@ function ProjectDetailPage() {
               <Textarea rows={5} value={form.notes ?? ""} onChange={e => setForm({ ...form, notes: e.target.value })} />
             </div>
           </CardContent>
-        </Card>
+        </Card>}
 
         <div className="space-y-4">
           <Card>
