@@ -48,6 +48,8 @@ import {
   removeInvoiceAttachment,
   updateInvoice,
 } from "@/lib/invoice-actions.functions";
+import { InvoicePreviewDialog } from "@/components/invoice-preview-dialog";
+import type { InvoiceTemplateProps, InvoiceTemplateLineKind } from "@/components/invoice-template";
 
 type Invoice = Database["public"]["Tables"]["invoices"]["Row"];
 type InvoiceLine = Database["public"]["Tables"]["invoice_lines"]["Row"];
