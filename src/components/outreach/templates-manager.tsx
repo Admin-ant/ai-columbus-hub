@@ -189,13 +189,28 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
     toast.message(`Versie ${v.version} geladen — klik op Opslaan om te bevestigen`);
   }
 
-  const visible = templates.filter((t) => t.channel === channel);
+  const q = search.trim().toLowerCase();
+  const visible = templates.filter(
+    (t) =>
+      t.channel === channel &&
+      (q === "" ||
+        t.name.toLowerCase().includes(q) ||
+        (t.subject ?? "").toLowerCase().includes(q) ||
+        (t.description ?? "").toLowerCase().includes(q) ||
+        (t.body ?? "").toLowerCase().includes(q)),
+  );
   const preview = previewVersion ?? editing;
 
   return (
     <div className="grid gap-4 xl:grid-cols-[240px_1fr_280px_240px] lg:grid-cols-[240px_1fr_280px]">
       {/* List */}
       <div className="space-y-3">
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Zoek in sjablonen…"
+          className="border-input bg-background text-xs text-foreground placeholder:text-muted-foreground shadow-sm"
+        />
         <Tabs value={channel} onValueChange={(v) => setChannel(v as TemplateChannel)}>
           <TabsList className="grid w-full grid-cols-3 border border-border bg-card text-card-foreground">
             <TabsTrigger value="email"><Mail className="h-3.5 w-3.5" /></TabsTrigger>
