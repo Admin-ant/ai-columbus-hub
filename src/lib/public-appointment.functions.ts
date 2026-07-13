@@ -17,6 +17,7 @@ type PublicAppt = {
   reschedule_requested_at: string | null;
   reschedule_note: string | null;
   organization_name: string | null;
+  locale: string;
 };
 
 export const getAppointmentByToken = createServerFn({ method: "GET" })
@@ -26,7 +27,7 @@ export const getAppointmentByToken = createServerFn({ method: "GET" })
     const { data: row, error } = await supabaseAdmin
       .from("appointments")
       .select(
-        "id,title,description,location,starts_at,ends_at,attendee_name,attendee_email,status,confirmed_at,reschedule_requested_at,reschedule_note,organization_id",
+        "id,title,description,location,starts_at,ends_at,attendee_name,attendee_email,status,confirmed_at,reschedule_requested_at,reschedule_note,organization_id,locale",
       )
       .eq("confirm_token", data.token)
       .maybeSingle();
@@ -54,6 +55,7 @@ export const getAppointmentByToken = createServerFn({ method: "GET" })
       reschedule_requested_at: (r.reschedule_requested_at as string | null) ?? null,
       reschedule_note: (r.reschedule_note as string | null) ?? null,
       organization_name,
+      locale: (r.locale as string | null) ?? "nl",
     };
     return out;
   });

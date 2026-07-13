@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { apptDict, normalizeLocale, type ApptLocale } from "@/lib/appointment-i18n";
 
 function pad(n: number) {
   return String(n).padStart(2, "0");
@@ -79,6 +80,7 @@ const AppointmentSchema = z.object({
   ends_at: z.string(),
   attendee_name: z.string().max(200).optional().nullable(),
   attendee_email: z.string().email().optional().nullable().or(z.literal("")),
+  locale: z.enum(["nl", "en", "de"]).optional().default("nl"),
 });
 
 export const createAppointment = createServerFn({ method: "POST" })
@@ -96,6 +98,7 @@ export const createAppointment = createServerFn({ method: "POST" })
       ends_at: data.ends_at,
       attendee_name: data.attendee_name || null,
       attendee_email: data.attendee_email || null,
+      locale: data.locale ?? "nl",
       created_by: context.userId,
     };
     const { data: created, error } = await context.supabase
@@ -204,6 +207,7 @@ export const sendAppointmentInvite = createServerFn({ method: "POST" })
       ics_uid: string;
       ics_sequence: number;
       confirm_token: string;
+      locale: string | null;
     };
     if (!a.attendee_email) throw new Error("Geen e-mailadres van deelnemer bekend");
 
@@ -217,6 +221,8 @@ export const sendAppointmentInvite = createServerFn({ method: "POST" })
     const fromName = s?.from_name || "AI van Columbus";
     const from = `${fromName} <${fromEmail}>`;
 
+    const locale = normalizeLocale(a.locale);
+    const t = apptDict(locale);
     const method = data.cancel ? "CANCEL" : "REQUEST";
     const ics = buildIcs({
       uid: a.ics_uid,
@@ -235,23 +241,23 @@ export const sendAppointmentInvite = createServerFn({ method: "POST" })
 
     const startDate = new Date(a.starts_at);
     const endDate = new Date(a.ends_at);
-    const dateStr = startDate.toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-    const timeStr = `${startDate.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })} – ${endDate.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}`;
+    const dateStr = startDate.toLocaleDateString(t.bcp47, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    const timeStr = `${startDate.toLocaleTimeString(t.bcp47, { hour: "2-digit", minute: "2-digit" })} – ${endDate.toLocaleTimeString(t.bcp47, { hour: "2-digit", minute: "2-digit" })}`;
     const dt = `${dateStr} · ${timeStr}`;
 
     const appUrl = process.env.APP_PUBLIC_URL || "https://ai-columbus-hub.lovable.app";
     const actionUrl = `${appUrl}/afspraak/${a.confirm_token}`;
     const logoUrl = `${appUrl}/__l5e/assets-v1/85be082d-1ee9-479b-8166-888a14e2734d/logo-columbus-full.png`;
 
-    const heading = data.cancel ? "Afspraak geannuleerd" : "Bevestig je afspraak";
-    const intro = data.cancel
-      ? `Beste ${a.attendee_name ?? "relatie"}, hierbij bevestigen we dat onderstaande afspraak is geannuleerd.`
-      : `Beste ${a.attendee_name ?? "relatie"}, we kijken uit naar onderstaande afspraak. Laat even weten of het schikt met de knop hieronder.`;
+    const attendeeDisplayName = a.attendee_name ?? t.fallbackName;
+    const heading = data.cancel ? t.headingCancelled : t.headingConfirm;
+    const intro = data.cancel ? t.introCancelled(attendeeDisplayName) : t.introConfirm(attendeeDisplayName);
     const customMessage = data.message?.trim() ? data.message.trim() : "";
 
-    const bodyText = `${intro}\n\n${a.title}\n${dt}${a.location ? `\nLocatie: ${a.location}` : ""}${a.description ? `\n\n${a.description}` : ""}${customMessage ? `\n\n${customMessage}` : ""}\n\nBevestig of verzet je afspraak:\n${actionUrl}\n\nMet vriendelijke groet,\n${fromName}`;
+    const bodyText = `${intro}\n\n${a.title}\n${dt}${a.location ? `\n${t.locationLabel}: ${a.location}` : ""}${a.description ? `\n\n${a.description}` : ""}${customMessage ? `\n\n${customMessage}` : ""}\n\n${actionUrl}\n\n${t.signature}\n${fromName}`;
 
     const html = renderAppointmentHtml({
+      locale,
       heading,
       intro,
       title: a.title,
@@ -274,7 +280,7 @@ export const sendAppointmentInvite = createServerFn({ method: "POST" })
       body: JSON.stringify({
         from,
         to: [a.attendee_email],
-        subject: `${data.cancel ? "[Geannuleerd] " : ""}${a.title} — ${dateStr}`,
+        subject: `${data.cancel ? t.subjectPrefixCancel + " " : ""}${a.title} — ${dateStr}`,
         html,
         text: bodyText,
         reply_to: s?.reply_to || undefined,
@@ -301,7 +307,85 @@ export const sendAppointmentInvite = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const PreviewSchema = z.object({
+  locale: z.enum(["nl", "en", "de"]).optional().default("nl"),
+  variant: z.enum(["confirm", "cancel", "reschedule"]).optional().default("confirm"),
+  title: z.string().max(200).optional(),
+  attendee_name: z.string().max(200).optional(),
+  location: z.string().max(300).optional(),
+  description: z.string().max(4000).optional(),
+  custom_message: z.string().max(4000).optional(),
+  starts_at: z.string().optional(),
+  ends_at: z.string().optional(),
+});
+
+/**
+ * Renders the appointment email as HTML with sample data — never sends anything.
+ * For the internal preview page in the app.
+ */
+export const previewAppointmentEmailHtml = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => PreviewSchema.parse(d))
+  .handler(async ({ data }) => {
+    const locale = normalizeLocale(data.locale) as ApptLocale;
+    const t = apptDict(locale);
+    const now = Date.now();
+    const startsAt = data.starts_at ?? new Date(now + 2 * 24 * 3600_000).toISOString();
+    const endsAt = data.ends_at ?? new Date(new Date(startsAt).getTime() + 30 * 60_000).toISOString();
+    const startDate = new Date(startsAt);
+    const endDate = new Date(endsAt);
+    const dateStr = startDate.toLocaleDateString(t.bcp47, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    const timeStr = `${startDate.toLocaleTimeString(t.bcp47, { hour: "2-digit", minute: "2-digit" })} – ${endDate.toLocaleTimeString(t.bcp47, { hour: "2-digit", minute: "2-digit" })}`;
+    const appUrl = process.env.APP_PUBLIC_URL || "https://ai-columbus-hub.lovable.app";
+    const logoUrl = `${appUrl}/__l5e/assets-v1/85be082d-1ee9-479b-8166-888a14e2734d/logo-columbus-full.png`;
+    const sampleTokens: Record<string, string> = {
+      confirm: "preview-confirm-abc123",
+      cancel: "preview-cancel-abc123",
+      reschedule: "preview-reschedule-abc123",
+    };
+    const actionUrl = `${appUrl}/afspraak/${sampleTokens[data.variant]}`;
+
+    const attendeeName = data.attendee_name?.trim() || (locale === "en" ? "Alex" : locale === "de" ? "Alex" : "Sander");
+    const cancelled = data.variant === "cancel";
+    const heading =
+      data.variant === "cancel"
+        ? t.headingCancelled
+        : data.variant === "reschedule"
+          ? t.headingRescheduled
+          : t.headingConfirm;
+    const intro =
+      data.variant === "cancel"
+        ? t.introCancelled(attendeeName)
+        : data.variant === "reschedule"
+          ? t.introRescheduled(attendeeName)
+          : t.introConfirm(attendeeName);
+
+    const html = renderAppointmentHtml({
+      locale,
+      heading,
+      intro,
+      title: data.title?.trim() || (locale === "en" ? "Intro call — AI implementation" : locale === "de" ? "Kennenlerngespräch — KI-Einführung" : "Kennismaking AI-implementatie"),
+      dateStr,
+      timeStr,
+      location: data.location?.trim() || (locale === "en" ? "Google Meet" : locale === "de" ? "Google Meet" : "Google Meet"),
+      description:
+        data.description?.trim() ||
+        (locale === "en"
+          ? "Short online intro where we discuss your current workflow and show how AI van Columbus can help with quotes, invoicing and lead follow-up."
+          : locale === "de"
+            ? "Kurzes Online-Kennenlernen: Wir besprechen euren aktuellen Workflow und zeigen, wie AI van Columbus bei Angeboten, Rechnungen und Lead-Follow-up unterstützt."
+            : "Korte online kennismaking waarin we jullie huidige workflow bespreken en laten zien hoe AI van Columbus kan helpen bij offertes, facturatie en leadopvolging."),
+      customMessage: data.custom_message?.trim() ?? "",
+      actionUrl,
+      fromName: "AI van Columbus",
+      logoUrl,
+      cancelled,
+    });
+    return { html, subject: `${cancelled ? t.subjectPrefixCancel + " " : ""}${data.title?.trim() || "Kennismaking"} — ${dateStr}` };
+  });
+
 function renderAppointmentHtml(opts: {
+  locale: ApptLocale;
   heading: string;
   intro: string;
   title: string;
@@ -315,17 +399,18 @@ function renderAppointmentHtml(opts: {
   logoUrl: string;
   cancelled: boolean;
 }): string {
+  const t = apptDict(opts.locale);
   const accent = "#ff6a3d";
   const btnPrimary = `background:${accent};color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;display:inline-block;font-size:15px;`;
   const btnSecondary = `background:#ffffff;color:#1a1a1a;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;display:inline-block;font-size:15px;border:1.5px solid #e5e0d5;margin-left:8px;`;
   const buttons = opts.cancelled
     ? ""
     : `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:24px 0"><tr>
-         <td><a href="${escapeAttr(opts.actionUrl)}?a=confirm" style="${btnPrimary}">✓ Bevestigen</a></td>
-         <td><a href="${escapeAttr(opts.actionUrl)}?a=reschedule" style="${btnSecondary}">↻ Verzetten</a></td>
+         <td><a href="${escapeAttr(opts.actionUrl)}?a=confirm" style="${btnPrimary}">${escapeHtml(t.btnConfirm)}</a></td>
+         <td><a href="${escapeAttr(opts.actionUrl)}?a=reschedule" style="${btnSecondary}">${escapeHtml(t.btnReschedule)}</a></td>
        </tr></table>`;
 
-  return `<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(opts.title)}</title></head>
+  return `<!doctype html><html lang="${opts.locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(opts.title)}</title></head>
 <body style="margin:0;padding:0;background:#faf7f2;font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a1a">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#faf7f2;padding:32px 12px">
   <tr><td align="center">
@@ -348,14 +433,14 @@ function renderAppointmentHtml(opts: {
           ${opts.description ? `<div style="background:#faf7f2;border-radius:10px;padding:16px 18px;font-size:14px;line-height:1.6;color:#3a3a3a;white-space:pre-wrap;margin-bottom:8px">${escapeHtml(opts.description)}</div>` : ""}
           ${opts.customMessage ? `<div style="border-left:3px solid ${accent};padding:6px 0 6px 14px;font-size:14px;line-height:1.6;color:#3a3a3a;white-space:pre-wrap;margin-top:16px">${escapeHtml(opts.customMessage)}</div>` : ""}
           ${buttons}
-          ${opts.cancelled ? `<p style="margin:8px 0 0;font-size:13px;color:#8a8a8a">Deze afspraak staat als geannuleerd in je agenda.</p>` : `<p style="margin:8px 0 0;font-size:13px;color:#8a8a8a">Werkt de knop niet? Open dan deze link: <a href="${escapeAttr(opts.actionUrl)}" style="color:${accent}">${escapeHtml(opts.actionUrl)}</a></p>`}
+          ${opts.cancelled ? `<p style="margin:8px 0 0;font-size:13px;color:#8a8a8a">${escapeHtml(t.cancelledFootnote)}</p>` : `<p style="margin:8px 0 0;font-size:13px;color:#8a8a8a">${escapeHtml(t.linkFallback)} <a href="${escapeAttr(opts.actionUrl)}" style="color:${accent}">${escapeHtml(opts.actionUrl)}</a></p>`}
         </div>
         <div style="background:#faf7f2;padding:16px 32px;text-align:center;font-size:12px;color:#8a8a8a;border-top:1px solid #efe9dd">
-          Met vriendelijke groet, ${escapeHtml(opts.fromName)}
+          ${escapeHtml(t.signature)} ${escapeHtml(opts.fromName)}
         </div>
       </td></tr>
       <tr><td align="center" style="padding-top:16px;font-size:11px;color:#a8a29a">
-        Deze mail is verzonden vanuit AI van Columbus • ${escapeHtml(opts.dateStr)}
+        ${escapeHtml(t.footerFrom)} ${escapeHtml(opts.fromName)} • ${escapeHtml(opts.dateStr)}
       </td></tr>
     </table>
   </td></tr>

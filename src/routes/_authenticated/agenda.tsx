@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { CalendarDays, ChevronLeft, ChevronRight, Download, Loader2, Mail, Plus, Send, Trash2, X, Ban, CalendarClock } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Download, Eye, Loader2, Mail, Plus, Send, Trash2, X, Ban, CalendarClock } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -27,6 +27,7 @@ import {
   sendAppointmentInvite,
   updateAppointment,
 } from "@/lib/appointments.functions";
+import { APPT_LOCALES, normalizeLocale } from "@/lib/appointment-i18n";
 
 export const Route = createFileRoute("/_authenticated/agenda")({
   head: () => ({ meta: [{ title: "Agenda" }] }),
@@ -50,10 +51,11 @@ type Appointment = {
   confirmed_at: string | null;
   reschedule_requested_at: string | null;
   reschedule_note: string | null;
+  locale: string | null;
   created_at: string;
 };
 
-type ClientRow = { id: string; name: string; email: string | null };
+type ClientRow = { id: string; name: string; email: string | null; preferred_locale: string | null };
 
 function toLocalInput(iso: string): string {
   const d = new Date(iso);
@@ -178,7 +180,7 @@ function AgendaPage() {
         .order("starts_at", { ascending: true }),
       supabase
         .from("clients")
-        .select("id,name,email")
+        .select("id,name,email,preferred_locale")
         .eq("organization_id", currentOrganizationId)
         .order("name"),
     ]);
@@ -283,6 +285,12 @@ function AgendaPage() {
               Exporteer {selectedDay ? "dag" : "maand"} (.ics)
             </Button>
           )}
+          <Button variant="outline" asChild>
+            <Link to="/mail/appointment-preview">
+              <Eye className="mr-2 h-4 w-4" />
+              Preview mail
+            </Link>
+          </Button>
           {currentOrganizationId && (
             <Button
               onClick={() => {
@@ -801,6 +809,7 @@ function AppointmentDialog({
     initial ? toLocalInput(initial.ends_at) : toLocalInput(new Date(Date.now() + 5400_000).toISOString()),
   );
   const [sendNow, setSendNow] = useState(!initial);
+  const [locale, setLocale] = useState<"nl" | "en" | "de">(normalizeLocale(initial?.locale));
   const [saving, setSaving] = useState(false);
 
   function pickClient(id: string) {
@@ -809,6 +818,7 @@ function AppointmentDialog({
     if (c) {
       if (!attendeeName) setAttendeeName(c.name);
       if (!attendeeEmail && c.email) setAttendeeEmail(c.email);
+      if (!initial && c.preferred_locale) setLocale(normalizeLocale(c.preferred_locale));
     }
   }
 
@@ -830,6 +840,7 @@ function AppointmentDialog({
       ends_at: fromLocalInput(endsAt),
       attendee_name: attendeeName.trim() || null,
       attendee_email: attendeeEmail.trim() || null,
+      locale,
     };
     try {
       let id: string;
@@ -934,6 +945,23 @@ function AppointmentDialog({
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
             />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Taal van uitnodigingsmail</Label>
+            <select
+              value={locale}
+              onChange={(e) => setLocale(e.target.value as "nl" | "en" | "de")}
+              className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+            >
+              {APPT_LOCALES.map((l) => (
+                <option key={l.code} value={l.code}>
+                  {l.flag}  {l.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground">
+              Bepaalt de taal van de mail én de klantpagina (/afspraak/…). Wordt automatisch overgenomen uit klantvoorkeur.
+            </p>
           </div>
           <label className="flex items-center gap-2 text-sm">
             <input

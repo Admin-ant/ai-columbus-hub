@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import logoAsset from "@/assets/logo-columbus-full.png.asset.json";
+import { apptDict, normalizeLocale } from "@/lib/appointment-i18n";
 import {
   confirmAppointmentByToken,
   getAppointmentByToken,
@@ -30,14 +31,14 @@ export const Route = createFileRoute("/afspraak/$token")({
   },
   errorComponent: () => (
     <ErrorShell
-      title="Link niet geldig"
-      message="Deze afspraaklink werkt niet meer. Neem contact op met de organisator."
+      title={apptDict("nl").errorTitle}
+      message={apptDict("nl").errorMessage}
     />
   ),
   notFoundComponent: () => (
     <ErrorShell
-      title="Afspraak niet gevonden"
-      message="Deze afspraaklink is ongeldig of ingetrokken."
+      title={apptDict("nl").notFoundTitle}
+      message={apptDict("nl").notFoundMessage}
     />
   ),
   component: AppointmentPublicPage,
@@ -62,6 +63,8 @@ function AppointmentPublicPage() {
   const [showReschedule, setShowReschedule] = useState(false);
   const [note, setNote] = useState("");
 
+  const locale = normalizeLocale(appt.locale);
+  const t = apptDict(locale);
   const start = new Date(appt.starts_at);
   const end = new Date(appt.ends_at);
   const cancelled = appt.status === "cancelled";
@@ -81,10 +84,10 @@ function AppointmentPublicPage() {
     setBusy("confirm");
     try {
       await confirmFn({ data: { token } });
-      toast.success("Bedankt! Je afspraak is bevestigd.");
+      toast.success(t.publicToast_confirmed);
       await reload();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Er ging iets mis");
+      toast.error(e instanceof Error ? e.message : t.publicToast_generic);
     } finally {
       setBusy(null);
     }
@@ -94,19 +97,19 @@ function AppointmentPublicPage() {
     setBusy("reschedule");
     try {
       await rescheduleFn({ data: { token, note } });
-      toast.success("Verzoek tot verzetten verstuurd");
+      toast.success(t.publicToast_rescheduleSent);
       setShowReschedule(false);
       setNote("");
       await reload();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Er ging iets mis");
+      toast.error(e instanceof Error ? e.message : t.publicToast_generic);
     } finally {
       setBusy(null);
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#faf7f2] via-white to-[#f4efe7] px-4 py-10 sm:py-16">
+    <div className="min-h-screen bg-gradient-to-b from-[#faf7f2] via-white to-[#f4efe7] px-4 py-10 sm:py-16" lang={locale}>
       <div className="mx-auto max-w-xl">
         <div className="mb-6 flex justify-center">
           <img src={logoAsset.url} alt="AI van Columbus" className="h-14 w-auto" />
@@ -115,19 +118,19 @@ function AppointmentPublicPage() {
         <div className="overflow-hidden rounded-2xl border border-black/5 bg-card shadow-xl">
           <div className="relative bg-gradient-to-br from-[#ff6a3d] via-[#ff8a4a] to-[#ffb37a] p-6 text-white">
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/80">
-              {appt.organization_name ?? "Afspraakbevestiging"}
+              {appt.organization_name ?? t.publicPageTitle}
             </p>
             <h1 className="mt-1 text-2xl font-bold leading-tight sm:text-3xl">{appt.title}</h1>
             <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 opacity-90" />
-                <span>{start.toLocaleDateString("nl-NL", DATE_FMT)}</span>
+                <span>{start.toLocaleDateString(t.bcp47, DATE_FMT)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 opacity-90" />
                 <span>
-                  {start.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })} –{" "}
-                  {end.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}
+                  {start.toLocaleTimeString(t.bcp47, { hour: "2-digit", minute: "2-digit" })} –{" "}
+                  {end.toLocaleTimeString(t.bcp47, { hour: "2-digit", minute: "2-digit" })}
                 </span>
               </div>
             </div>
@@ -140,7 +143,7 @@ function AppointmentPublicPage() {
                   <div className="flex items-start gap-3">
                     <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
                     <div>
-                      <dt className="text-xs uppercase tracking-wide text-muted-foreground">Locatie</dt>
+                      <dt className="text-xs uppercase tracking-wide text-muted-foreground">{t.publicLocationLabel}</dt>
                       <dd className="font-medium">{appt.location}</dd>
                     </div>
                   </div>
@@ -149,7 +152,7 @@ function AppointmentPublicPage() {
                   <div className="flex items-start gap-3">
                     <User className="mt-0.5 h-4 w-4 text-muted-foreground" />
                     <div>
-                      <dt className="text-xs uppercase tracking-wide text-muted-foreground">Voor</dt>
+                      <dt className="text-xs uppercase tracking-wide text-muted-foreground">{t.publicWhoLabel}</dt>
                       <dd className="font-medium">{appt.attendee_name}</dd>
                     </div>
                   </div>
@@ -164,6 +167,8 @@ function AppointmentPublicPage() {
             )}
 
             <StatusBanner
+              t={t}
+              locale={locale}
               cancelled={cancelled}
               confirmed={confirmed}
               rescheduleRequested={rescheduleRequested}
@@ -180,7 +185,7 @@ function AppointmentPublicPage() {
                   className="bg-[#ff6a3d] text-white hover:bg-[#e85a30]"
                 >
                   <CheckCircle2 className="mr-2 h-4 w-4" />
-                  {confirmed ? "Bevestigd" : busy === "confirm" ? "Bezig…" : "Bevestigen"}
+                  {confirmed ? t.publicButtonConfirmed : busy === "confirm" ? t.publicButtonWorking : t.publicButtonConfirm}
                 </Button>
                 <Button
                   size="lg"
@@ -189,17 +194,17 @@ function AppointmentPublicPage() {
                   disabled={busy !== null}
                 >
                   <RefreshCw className="mr-2 h-4 w-4" />
-                  Verzetten
+                  {t.publicButtonReschedule}
                 </Button>
               </div>
             )}
 
             {!cancelled && showReschedule && (
               <div className="space-y-3 rounded-lg border border-dashed p-4">
-                <p className="text-sm font-medium">Op welke momenten kan het wél?</p>
+                <p className="text-sm font-medium">{t.publicRescheduleQuestion}</p>
                 <Textarea
                   rows={4}
-                  placeholder="Bijv. woensdag na 15:00 of donderdagochtend"
+                  placeholder={t.publicReschedulePlaceholder}
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                 />
@@ -209,10 +214,10 @@ function AppointmentPublicPage() {
                     disabled={busy !== null}
                     className="bg-[#ff6a3d] text-white hover:bg-[#e85a30]"
                   >
-                    {busy === "reschedule" ? "Bezig…" : "Verstuur verzoek"}
+                    {busy === "reschedule" ? t.publicRescheduleBusy : t.publicRescheduleSubmit}
                   </Button>
                   <Button variant="ghost" onClick={() => setShowReschedule(false)} disabled={busy !== null}>
-                    Terug
+                    {t.publicRescheduleBack}
                   </Button>
                 </div>
               </div>
@@ -220,12 +225,12 @@ function AppointmentPublicPage() {
           </div>
 
           <div className="border-t bg-muted/30 px-6 py-4 text-center text-xs text-muted-foreground">
-            Vragen? Antwoord direct op de bevestigingsmail — dan komt je bericht bij ons binnen.
+            {t.footerContact}
           </div>
         </div>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          Gemaakt met ♥ door {appt.organization_name ?? "AI van Columbus"}
+          {t.footerMadeWith(appt.organization_name ?? "AI van Columbus")}
         </p>
       </div>
     </div>
@@ -233,23 +238,30 @@ function AppointmentPublicPage() {
 }
 
 function StatusBanner({
+  t,
+  locale,
   cancelled,
   confirmed,
   rescheduleRequested,
   confirmedAt,
   rescheduleAt,
 }: {
+  t: ReturnType<typeof apptDict>;
+  locale: string;
   cancelled: boolean;
   confirmed: boolean;
   rescheduleRequested: boolean;
   confirmedAt: string | null;
   rescheduleAt: string | null;
 }) {
+  const fmtDT = (iso: string) =>
+    new Date(iso).toLocaleString(t.bcp47, { dateStyle: "long", timeStyle: "short" });
+  void locale;
   if (cancelled) {
     return (
       <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
         <XCircle className="mt-0.5 h-4 w-4" />
-        <span>Deze afspraak is geannuleerd.</span>
+        <span>{t.bannerCancelled}</span>
       </div>
     );
   }
@@ -257,10 +269,7 @@ function StatusBanner({
     return (
       <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
         <CheckCircle2 className="mt-0.5 h-4 w-4" />
-        <span>
-          Bevestigd op{" "}
-          {confirmedAt ? new Date(confirmedAt).toLocaleString("nl-NL", { dateStyle: "long", timeStyle: "short" }) : ""}.
-        </span>
+        <span>{confirmedAt ? t.bannerConfirmedAt(fmtDT(confirmedAt)) : t.bannerConfirmedAt("")}</span>
       </div>
     );
   }
@@ -269,9 +278,8 @@ function StatusBanner({
       <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
         <RefreshCw className="mt-0.5 h-4 w-4" />
         <span>
-          Verzoek tot verzetten ontvangen{" "}
-          {rescheduleAt ? `op ${new Date(rescheduleAt).toLocaleString("nl-NL", { dateStyle: "long", timeStyle: "short" })}` : ""}
-          . We nemen zo snel mogelijk contact op met een nieuw voorstel.
+          {rescheduleAt ? t.bannerRescheduleReceived(fmtDT(rescheduleAt)) : t.bannerRescheduleReceived("")}
+          {t.bannerRescheduleFollowup}
         </span>
       </div>
     );
