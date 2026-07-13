@@ -24,6 +24,7 @@ function daysUntil(dateStr: string) {
 
 export function ProjectRemindersCard() {
   const { currentOrganizationId } = useWorkspace();
+  const [{ windowDays, overdueDays }] = useReminderSettings();
   const [waiting, setWaiting] = useState<Row[]>([]);
   const [upcoming, setUpcoming] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,8 +34,9 @@ export function ProjectRemindersCard() {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const in30 = new Date();
-      in30.setDate(in30.getDate() + 30);
+      const inWindow = new Date();
+      inWindow.setDate(inWindow.getDate() + windowDays);
+
       const [{ data: w }, { data: u }] = await Promise.all([
         supabase
           .from("projects")
