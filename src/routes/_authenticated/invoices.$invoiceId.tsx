@@ -433,8 +433,8 @@ function InvoiceDetailPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
-            <Link to="/invoices">
-              <ArrowLeft className="mr-1 h-4 w-4" /> {t("invoices.back_to_list")}
+            <Link to={backTo}>
+              <ArrowLeft className="mr-1 h-4 w-4" /> {backLabel}
             </Link>
           </Button>
           <h1 className="text-2xl font-bold tracking-tight">
