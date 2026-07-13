@@ -372,9 +372,14 @@ function InvoiceDetailPage() {
   async function markUnpaid() {
     if (!invoice) return;
     if (!window.confirm("Deze factuur terugzetten op onbetaald? De betaal-datum en stempel worden verwijderd.")) return;
+    // Kies status op basis van vervaldatum, zodat lijst-badge en KPI-tellingen
+    // (die op vervaldatum kijken) consistent blijven.
+    const today = new Date().toISOString().slice(0, 10);
+    const nextStatus: InvoiceStatus =
+      invoice.due_date && invoice.due_date < today ? "overdue" : "sent";
     const { error } = await supabase
       .from("invoices")
-      .update({ status: "sent", paid_at: null })
+      .update({ status: nextStatus, paid_at: null })
       .eq("id", invoice.id);
     if (error) return toast.error(error.message);
     toast.success("Factuur teruggezet op onbetaald");
