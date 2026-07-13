@@ -135,7 +135,7 @@ export const listSalesPipeline = createServerFn({ method: "POST" })
         const [{ data: c }, { count }] = await Promise.all([
           context.supabase
             .from("contracts")
-            .select("id,status,monthly_amount_cents,setup_fee_cents,next_invoice_date")
+            .select("id,status,monthly_amount_cents,setup_fee_cents,next_invoice_date,project_id")
             .eq("client_id", l.converted_client_id)
             .order("created_at", { ascending: false })
             .limit(1)
