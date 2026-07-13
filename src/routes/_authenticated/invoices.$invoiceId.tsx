@@ -78,6 +78,16 @@ type AttachmentRow = {
   size_bytes: number | null;
   created_at: string;
 };
+type PaymentEventRow = {
+  id: string;
+  event_type: string;
+  mollie_payment_id: string | null;
+  status: string | null;
+  amount_cents: number | null;
+  method: string | null;
+  metadata: unknown;
+  created_at: string;
+};
 type OrgRow = {
   id: string;
   name: string;
