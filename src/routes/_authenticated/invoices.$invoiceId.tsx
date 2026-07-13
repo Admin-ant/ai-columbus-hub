@@ -118,6 +118,10 @@ function InvoiceDetailPage() {
   const [client, setClient] = useState<{ email: string | null; address_line1: string | null; postal_code: string | null; city: string | null } | null>(null);
   const [emailLog, setEmailLog] = useState<EmailLogRow[]>([]);
   const [attachments, setAttachments] = useState<AttachmentRow[]>([]);
+  const [paymentEvents, setPaymentEvents] = useState<PaymentEventRow[]>([]);
+  const [refreshingMollie, setRefreshingMollie] = useState(false);
+  const listEventsFn = useServerFn(listInvoicePaymentEvents);
+  const refreshMollieFn = useServerFn(refreshMollieInvoiceStatus);
   const [loading, setLoading] = useState(true);
   const [emailOpen, setEmailOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
