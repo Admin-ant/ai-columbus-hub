@@ -192,6 +192,72 @@ function AgendaPage() {
         )}
       </div>
 
+      <div className="rounded-lg border bg-card p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div className="min-w-[10rem] text-center text-sm font-semibold">
+              {month.toLocaleDateString("nl-NL", { month: "long", year: "numeric" })}
+            </div>
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="ml-2 h-7 text-xs"
+              onClick={() => {
+                const d = new Date();
+                setMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+                setSelectedDay(null);
+              }}
+            >
+              Vandaag
+            </Button>
+          </div>
+          {selectedDay && (
+            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelectedDay(null)}>
+              <X className="mr-1 h-3 w-3" /> Dagfilter wissen
+            </Button>
+          )}
+        </div>
+        <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-medium uppercase text-muted-foreground">
+          {["ma", "di", "wo", "do", "vr", "za", "zo"].map((d) => (
+            <div key={d} className="py-1">{d}</div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-1">
+          {monthGrid.map((c) => {
+            const isSelected = selectedDay === c.key;
+            const isToday = c.key === todayKey;
+            return (
+              <button
+                key={c.key}
+                type="button"
+                onClick={() => setSelectedDay(isSelected ? null : c.key)}
+                className={`aspect-square rounded-md border p-1 text-left text-xs transition-colors ${
+                  !c.inMonth ? "text-muted-foreground/40" : ""
+                } ${isSelected ? "border-brand bg-brand/10" : "hover:bg-accent/50"} ${
+                  isToday ? "font-bold" : ""
+                }`}
+              >
+                <div>{c.date.getDate()}</div>
+                {c.count > 0 && (
+                  <div className="mt-0.5 flex flex-wrap gap-0.5">
+                    {Array.from({ length: Math.min(c.count, 3) }).map((_, i) => (
+                      <span key={i} className="inline-block h-1.5 w-1.5 rounded-full bg-brand" />
+                    ))}
+                    {c.count > 3 && <span className="text-[9px] text-muted-foreground">+{c.count - 3}</span>}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="flex flex-wrap items-center gap-2">
         {(
           [
@@ -204,13 +270,20 @@ function AgendaPage() {
             key={f.k}
             size="sm"
             variant={scope === f.k ? "default" : "outline"}
-            onClick={() => setScope(f.k)}
+            onClick={() => { setScope(f.k); setSelectedDay(null); }}
             className="h-7 text-xs"
+            disabled={!!selectedDay}
           >
             {f.label}
           </Button>
         ))}
+        {selectedDay && (
+          <span className="text-xs text-muted-foreground">
+            Filter: {new Date(selectedDay).toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long" })}
+          </span>
+        )}
       </div>
+
 
       {loading ? (
         <div className="flex items-center justify-center py-20 text-muted-foreground">
