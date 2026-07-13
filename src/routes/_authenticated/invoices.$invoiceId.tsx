@@ -237,7 +237,7 @@ function InvoiceDetailPage() {
         .order("created_at", { ascending: false }),
       supabase
         .from("organizations")
-        .select("id,name,tax_number,address_line1,address_line2,postal_code,city,country,email,phone,kvk_number,iban,bic")
+        .select("id,name,tax_number,address_line1,address_line2,postal_code,city,country,email,phone,kvk_number,iban,bic,brand_logo_url,logo_url")
         .eq("id", (inv as Invoice).organization_id)
         .maybeSingle(),
       (inv as Invoice).client_id
