@@ -54,6 +54,7 @@ export type PipelineLead = {
     monthly_amount_cents: number;
     setup_fee_cents: number;
     next_invoice_date: string | null;
+    project_id: string | null;
   } | null;
   invoice_count: number;
 };
