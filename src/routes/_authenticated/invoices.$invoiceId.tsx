@@ -383,8 +383,8 @@ function InvoiceDetailPage() {
         {t("invoices.not_found")}
         <div className="mt-4">
           <Button asChild variant="outline" size="sm">
-            <Link to="/invoices">
-              <ArrowLeft className="mr-1 h-4 w-4" /> {t("invoices.back_to_list")}
+            <Link to={backTo}>
+              <ArrowLeft className="mr-1 h-4 w-4" /> {backLabel}
             </Link>
           </Button>
         </div>
