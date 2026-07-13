@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { apptDict, normalizeLocale, type ApptLocale } from "@/lib/appointment-i18n";
 
 function pad(n: number) {
   return String(n).padStart(2, "0");
