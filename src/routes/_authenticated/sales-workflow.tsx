@@ -101,6 +101,8 @@ function SalesWorkflowPage() {
       quote: 0,
       signed: 0,
       invoiced: 0,
+      won: 0,
+      lost: 0,
     };
     let mrrCents = 0;
     let pipelineMonthlyCents = 0;
@@ -134,12 +136,14 @@ function SalesWorkflowPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-8">
         <KpiCard icon={Inbox} label="Leads" value={kpis.counts.lead} />
         <KpiCard icon={ClipboardList} label="Klantwensen" value={kpis.counts.requirements} />
         <KpiCard icon={Wand2} label="Offerte" value={kpis.counts.quote} />
         <KpiCard icon={FileSignature} label="Ondertekend" value={kpis.counts.signed} />
+        <KpiCard icon={Receipt} label="Gewonnen" value={kpis.counts.won} />
         <KpiCard icon={Receipt} label="Klant" value={kpis.counts.invoiced} />
+        <KpiCard icon={Inbox} label="Verloren" value={kpis.counts.lost} />
         <KpiCard
           icon={Receipt}
           label="Actieve MRR"
