@@ -423,8 +423,8 @@ export const createDeliveryProjectFromLead = createServerFn({ method: "POST" })
     const valueCents = Number(contract?.monthly_amount_cents ?? 0) || Math.round(Number(lead.potential_monthly_value ?? 0) * 100);
 
     // Prefill delivery_status obv contract-status
-    const deliveryStatus: "nieuw" | "in_uitvoering" | "on_hold" =
-      contract?.status === "active" ? "in_uitvoering" : contract?.status === "on_hold" ? "on_hold" : "nieuw";
+    const deliveryStatus: "nieuw" | "in_uitvoering" =
+      contract?.status === "active" ? "in_uitvoering" : "nieuw";
 
     // Prefill opleverdatum: expliciet > contract.start_date > next_invoice_date
     const rawTarget = data.targetMonth ?? contract?.start_date ?? contract?.next_invoice_date ?? null;
