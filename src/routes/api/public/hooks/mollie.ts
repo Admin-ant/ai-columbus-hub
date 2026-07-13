@@ -38,13 +38,51 @@ export const Route = createFileRoute("/api/public/hooks/mollie")({
           id: string;
           status: string;
           paidAt?: string | null;
-          metadata?: { quote_id?: string; token?: string } | null;
+          metadata?: {
+            quote_id?: string;
+            token?: string;
+            invoice_id?: string;
+            invoice_number?: string;
+          } | null;
         };
 
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+        // --- Path A: betaling gekoppeld aan een bestaande factuur ---
+        const invoiceId = payment.metadata?.invoice_id;
+        if (invoiceId) {
+          if (payment.status === "paid") {
+            const paidAtIso = payment.paidAt ?? new Date().toISOString();
+            const { data: existing } = await supabaseAdmin
+              .from("invoices")
+              .select("id, status, paid_at")
+              .eq("id", invoiceId)
+              .maybeSingle();
+            if (existing && (existing as { paid_at: string | null }).paid_at == null) {
+              await supabaseAdmin
+                .from("invoices")
+                .update({
+                  status: "paid",
+                  paid_at: paidAtIso,
+                  mollie_payment_id: payment.id,
+                } as never)
+                .eq("id", invoiceId);
+              try {
+                await supabaseAdmin.rpc("post_invoice_journal", {
+                  _invoice_id: invoiceId,
+                } as never);
+              } catch {
+                /* journal is best-effort */
+              }
+            }
+          }
+          return new Response("ok", { status: 200 });
+        }
+
+        // --- Path B: betaling gekoppeld aan een offerte (legacy quote flow) ---
         const token = payment.metadata?.token;
         if (!token) return new Response("ok", { status: 200 });
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: q } = await supabaseAdmin
           .from("quotes")
           .select("id, organization_id, total_amount, paid_at")
