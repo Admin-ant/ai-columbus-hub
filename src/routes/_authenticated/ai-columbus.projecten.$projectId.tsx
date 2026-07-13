@@ -191,7 +191,7 @@ function ProjectDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" asChild><Link to="/ai-columbus/projecten"><ArrowLeft className="mr-2 h-4 w-4" /> Projecten</Link></Button>
           <div>
@@ -201,7 +201,34 @@ function ProjectDetailPage() {
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!prevProject}
+            onClick={() => prevProject && navigate({ to: "/ai-columbus/projecten/$projectId", params: { projectId: prevProject.id } })}
+            title={prevProject?.name ?? ""}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!nextProject}
+            onClick={() => nextProject && navigate({ to: "/ai-columbus/projecten/$projectId", params: { projectId: nextProject.id } })}
+            title={nextProject?.name ?? ""}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          <Select value={projectId} onValueChange={(v) => navigate({ to: "/ai-columbus/projecten/$projectId", params: { projectId: v } })}>
+            <SelectTrigger className="h-9 w-[220px]"><SelectValue placeholder="Kies project" /></SelectTrigger>
+            <SelectContent>
+              {siblings.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Button variant="outline" size="sm" onClick={() => setShowDetails((v) => !v)}>
+            {showDetails ? <><EyeOff className="mr-2 h-4 w-4" /> Details verbergen</> : <><Eye className="mr-2 h-4 w-4" /> Details tonen</>}
+          </Button>
           {form.contact_email && (
             <Button variant="outline" size="sm" asChild><a href={`mailto:${form.contact_email}`}><Mail className="mr-2 h-4 w-4" /> Mail</a></Button>
           )}
