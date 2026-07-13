@@ -1186,8 +1186,14 @@ function EmailForm({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    setSendStatus(null);
     const doc = buildPdf();
-    if (!doc) return toast.error("PDF kon niet worden gebouwd");
+    if (!doc) {
+      const msg = "PDF kon niet worden gebouwd";
+      toast.error(msg);
+      setSendStatus({ type: "error", message: msg });
+      return;
+    }
     setSending(true);
     try {
       // Zorg eerst voor een Mollie betaallink indien gewenst
@@ -1207,7 +1213,9 @@ function EmailForm({
             payLink = r.checkoutUrl;
           }
         } catch (err) {
-          toast.error("Kon geen betaallink aanmaken: " + (err instanceof Error ? err.message : String(err)));
+          const msg = "Kon geen betaallink aanmaken: " + (err instanceof Error ? err.message : String(err));
+          toast.error(msg);
+          setSendStatus({ type: "error", message: msg });
           setSending(false);
           return;
         }
@@ -1263,10 +1271,14 @@ function EmailForm({
           mark_as_sent: true,
         },
       });
-      toast.success(t("invoices.email_sent", { to: toList.join(", ") }));
-      onSent(toList.join(", "));
+      const toJoined = toList.join(", ");
+      toast.success(t("invoices.email_sent", { to: toJoined }));
+      setSendStatus({ type: "success", to: toJoined });
+      onSent(toJoined);
     } catch (e) {
-      toast.error(t("invoices.email_failed", { msg: e instanceof Error ? e.message : String(e) }));
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(t("invoices.email_failed", { msg }));
+      setSendStatus({ type: "error", message: msg });
     } finally {
       setSending(false);
     }
