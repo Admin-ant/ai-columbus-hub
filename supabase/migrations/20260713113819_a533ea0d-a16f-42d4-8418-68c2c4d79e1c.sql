@@ -1,0 +1,1 @@
+UPDATE public.organizations SET brand_logo_url = '/__l5e/assets-v1/312d2e54-6aba-4e4a-9ad2-fbd4d1c851b3/logo-columbus.png' WHERE id = 'd30d790a-7167-4ede-94b4-ad6b7d408a8a';

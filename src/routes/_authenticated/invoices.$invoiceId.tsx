@@ -117,6 +117,8 @@ type OrgRow = {
   kvk_number: string | null;
   iban: string | null;
   bic: string | null;
+  brand_logo_url: string | null;
+  logo_url: string | null;
 };
 
 const MOLLIE_BADGE_COLOR: Record<string, string> = {
@@ -235,7 +237,7 @@ function InvoiceDetailPage() {
         .order("created_at", { ascending: false }),
       supabase
         .from("organizations")
-        .select("id,name,tax_number,address_line1,address_line2,postal_code,city,country,email,phone,kvk_number,iban,bic")
+        .select("id,name,tax_number,address_line1,address_line2,postal_code,city,country,email,phone,kvk_number,iban,bic,brand_logo_url,logo_url")
         .eq("id", (inv as Invoice).organization_id)
         .maybeSingle(),
       (inv as Invoice).client_id
@@ -836,7 +838,7 @@ function InvoiceDetailPage() {
             vat: org?.tax_number ?? null,
             iban: org?.iban ?? null,
             account_holder: org?.name ?? null,
-            logo_url: null,
+            logo_url: org?.brand_logo_url ?? org?.logo_url ?? null,
           },
           client: {
             customer_number: null,
