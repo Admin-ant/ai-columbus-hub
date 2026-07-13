@@ -1169,6 +1169,13 @@ function EmailForm({
       <div className="space-y-1.5">
         <Label>{t("invoices.message")}</Label>
         <Textarea rows={6} value={body} onChange={(e) => setBody(e.target.value)} required />
+        <p className="text-xs text-muted-foreground">
+          Variabelen in onderwerp en bericht:{" "}
+          <code>{"{{client_name}}"}</code>, <code>{"{{invoice_number}}"}</code>,{" "}
+          <code>{"{{total}}"}</code>, <code>{"{{subtotal}}"}</code>, <code>{"{{vat}}"}</code>,{" "}
+          <code>{"{{due_date}}"}</code>, <code>{"{{issue_date}}"}</code>,{" "}
+          <code>{"{{payment_link}}"}</code>.
+        </p>
       </div>
       <div className="space-y-1.5">
         <Label>Bijlage-naam</Label>
