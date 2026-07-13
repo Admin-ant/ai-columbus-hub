@@ -57,6 +57,7 @@ import {
   type MolliePaymentMethod,
 } from "@/lib/mollie-invoice.functions";
 import { Checkbox } from "@/components/ui/checkbox";
+import { formatCents } from "@/lib/currency";
 import { QRCodeSVG } from "qrcode.react";
 import { RefreshCw } from "lucide-react";
 
@@ -1055,9 +1056,9 @@ function EmailForm({
   const [includePayLink, setIncludePayLink] = useState<boolean>(canPay);
   const [to, setTo] = useState(defaultTo);
   const [cc, setCc] = useState("");
-  const [subject, setSubject] = useState(`Factuur ${invoice.invoice_number}`);
+  const [subject, setSubject] = useState(`Factuur {{invoice_number}}`);
   const [body, setBody] = useState(
-    `Beste ${invoice.client_name ?? ""},\n\nBijgevoegd vind je factuur ${invoice.invoice_number}. De vervaldatum is ${new Date(invoice.due_date).toLocaleDateString("nl")}.\n\nMet vriendelijke groet`,
+    `Beste {{client_name}},\n\nBijgevoegd vind je factuur {{invoice_number}} van {{total}}. De vervaldatum is {{due_date}}.\n\nMet vriendelijke groet`,
   );
   const [filename, setFilename] = useState(defaultFilename);
   const [extraChecked, setExtraChecked] = useState<Record<string, boolean>>({});
@@ -1092,12 +1093,29 @@ function EmailForm({
         }
       }
 
-      const finalSubject = payLink
-        ? `${subject.trim()} — Betaal online: ${payLink}`
-        : subject.trim();
-      const finalBody = payLink
-        ? `${body.trim()}\n\nBetaal direct online via Mollie:\n${payLink}`
-        : body.trim();
+      const vars: Record<string, string> = {
+        client_name: invoice.client_name ?? "",
+        invoice_number: invoice.invoice_number ?? "",
+        total: formatCents(invoice.total_cents, "nl", invoice.currency ?? "EUR"),
+        subtotal: formatCents(invoice.subtotal_cents, "nl", invoice.currency ?? "EUR"),
+        vat: formatCents(invoice.vat_cents, "nl", invoice.currency ?? "EUR"),
+        due_date: invoice.due_date ? new Date(invoice.due_date).toLocaleDateString("nl") : "",
+        issue_date: invoice.issue_date ? new Date(invoice.issue_date).toLocaleDateString("nl") : "",
+        payment_link: payLink ?? "",
+      };
+      const applyVars = (s: string) =>
+        s.replace(/\{\{?\s*(\w+)\s*\}?\}/g, (m, k: string) =>
+          Object.prototype.hasOwnProperty.call(vars, k) ? vars[k] : m,
+        );
+
+      const subjectFilled = applyVars(subject.trim());
+      const bodyFilled = applyVars(body.trim());
+      const finalSubject = payLink && !subjectFilled.includes(payLink)
+        ? `${subjectFilled} — Betaal online: ${payLink}`
+        : subjectFilled;
+      const finalBody = payLink && !bodyFilled.includes(payLink)
+        ? `${bodyFilled}\n\nBetaal direct online via Mollie:\n${payLink}`
+        : bodyFilled;
 
       // Upload PDF to mail-attachments bucket
       const blob = doc.output("blob");
@@ -1151,6 +1169,13 @@ function EmailForm({
       <div className="space-y-1.5">
         <Label>{t("invoices.message")}</Label>
         <Textarea rows={6} value={body} onChange={(e) => setBody(e.target.value)} required />
+        <p className="text-xs text-muted-foreground">
+          Variabelen in onderwerp en bericht:{" "}
+          <code>{"{{client_name}}"}</code>, <code>{"{{invoice_number}}"}</code>,{" "}
+          <code>{"{{total}}"}</code>, <code>{"{{subtotal}}"}</code>, <code>{"{{vat}}"}</code>,{" "}
+          <code>{"{{due_date}}"}</code>, <code>{"{{issue_date}}"}</code>,{" "}
+          <code>{"{{payment_link}}"}</code>.
+        </p>
       </div>
       <div className="space-y-1.5">
         <Label>Bijlage-naam</Label>
