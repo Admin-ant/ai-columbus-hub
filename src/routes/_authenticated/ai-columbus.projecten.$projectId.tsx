@@ -70,6 +70,12 @@ function ProjectDetailPage() {
 
   async function load() {
     setLoading(true);
+    setProject(null);
+    setRelated({ contract: null, client: null, invoices: [] });
+    setDeliveryHistory([]);
+    setSalesHistory([]);
+    setProfiles({});
+    setForm({});
     const [{ data: p, error: pe }, { data: dh }, { data: sh }] = await Promise.all([
       supabase.from("projects").select("*").eq("id", projectId).maybeSingle(),
       supabase.from("project_delivery_status_history").select("*").eq("project_id", projectId).order("changed_at", { ascending: false }),
