@@ -277,6 +277,158 @@ export function buildInvoicePdf(
   return doc;
 }
 
+export function buildPaymentReceiptPdf(
+  inv: InvoicePdfData,
+  tpl: PdfTemplate,
+  lang: string,
+): jsPDF {
+  const theme = THEMES[tpl.theme];
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const fmt = (c: number) => fmtCents(c, lang);
+  let y = 48;
+
+  if (tpl.logoDataUrl) {
+    try {
+      const mime = tpl.logoDataUrl.startsWith("data:image/png") ? "PNG" : "JPEG";
+      doc.addImage(tpl.logoDataUrl, mime, pageW - 40 - 80, 32, 80, 40, undefined, "FAST");
+    } catch {
+      /* ignore */
+    }
+  }
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.setTextColor(...theme.head);
+  doc.text(lang === "en" ? "Payment receipt" : "Betaalbewijs", 40, y);
+  y += 6;
+  doc.setDrawColor(...theme.accent);
+  doc.setLineWidth(1.2);
+  doc.line(40, y, 220, y);
+  y += 22;
+
+  // Sender
+  doc.setFontSize(10);
+  doc.setTextColor(30, 30, 30);
+  doc.setFont("helvetica", "bold");
+  doc.text(inv.organization_name ?? "", 40, y);
+  doc.setFont("helvetica", "normal");
+  let sy = y + 14;
+  [
+    inv.organization_address ?? "",
+    inv.organization_email ?? "",
+    inv.organization_kvk ? `KvK: ${inv.organization_kvk}` : "",
+    inv.organization_vat ? `BTW: ${inv.organization_vat}` : "",
+  ]
+    .filter(Boolean)
+    .forEach((l) => {
+      doc.text(l, 40, sy);
+      sy += 12;
+    });
+
+  // Meta right
+  const metaX = pageW - 40;
+  const metaLabelX = metaX - 200;
+  doc.setFontSize(9);
+  const paidDate = inv.paid_at ? fmtDate(inv.paid_at, lang) : fmtDate(new Date().toISOString(), lang);
+  const meta: Array<[string, string]> = [
+    [lang === "en" ? "Invoice #" : "Factuurnr.", inv.invoice_number],
+    [lang === "en" ? "Issue date" : "Factuurdatum", fmtDate(inv.issue_date, lang)],
+    [lang === "en" ? "Paid on" : "Betaald op", paidDate],
+  ];
+  let my = y;
+  meta.forEach(([k, v]) => {
+    doc.setFont("helvetica", "bold");
+    doc.text(k, metaLabelX, my);
+    doc.setFont("helvetica", "normal");
+    doc.text(v, metaX, my, { align: "right" });
+    my += 14;
+  });
+
+  y = Math.max(sy, my) + 12;
+
+  // Bill-to
+  doc.setFontSize(9);
+  doc.setTextColor(120, 120, 120);
+  doc.setFont("helvetica", "bold");
+  doc.text(lang === "en" ? "RECEIVED FROM" : "ONTVANGEN VAN", 40, y);
+  y += 14;
+  doc.setFontSize(11);
+  doc.setTextColor(20, 20, 20);
+  doc.setFont("helvetica", "bold");
+  doc.text(inv.client_name ?? "—", 40, y);
+  y += 14;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  [inv.client_address ?? "", inv.client_email ?? ""].filter(Boolean).forEach((l) => {
+    doc.text(l, 40, y);
+    y += 12;
+  });
+  y += 12;
+
+  // Confirmation text
+  doc.setFontSize(11);
+  doc.setTextColor(30, 30, 30);
+  const intro =
+    lang === "en"
+      ? `We hereby confirm that we have received full payment of ${fmt(inv.total_cents)} for invoice ${inv.invoice_number}${inv.paid_at ? ` on ${paidDate}` : ""}.`
+      : `Hierbij bevestigen wij de volledige ontvangst van ${fmt(inv.total_cents)} voor factuur ${inv.invoice_number}${inv.paid_at ? ` op ${paidDate}` : ""}.`;
+  const wrapped = doc.splitTextToSize(intro, pageW - 80);
+  doc.text(wrapped, 40, y);
+  y += wrapped.length * 14 + 12;
+
+  // Totals block
+  const totalsX = pageW - 40;
+  const labelX = totalsX - 200;
+  doc.setFontSize(10);
+  doc.setTextColor(60, 60, 60);
+  const rows: Array<[string, string, boolean]> = [
+    [lang === "en" ? "Subtotal" : "Subtotaal", fmt(inv.subtotal_cents), false],
+    ["BTW", fmt(inv.vat_cents), false],
+    [lang === "en" ? "Amount paid" : "Ontvangen bedrag", fmt(inv.total_cents), true],
+  ];
+  rows.forEach(([label, val, bold]) => {
+    doc.setFont("helvetica", bold ? "bold" : "normal");
+    if (bold) {
+      doc.setTextColor(...theme.head);
+      doc.setFontSize(12);
+    }
+    doc.text(label, labelX, y);
+    doc.text(val, totalsX, y, { align: "right" });
+    y += bold ? 18 : 14;
+    if (bold) {
+      doc.setFontSize(10);
+      doc.setTextColor(60, 60, 60);
+    }
+  });
+
+  // "PAID" stamp
+  doc.saveGraphicsState();
+  doc.setGState(doc.GState({ opacity: 0.18 }));
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(96);
+  doc.setTextColor(16, 160, 90);
+  doc.text(lang === "en" ? "PAID" : "BETAALD", pageW / 2, pageH / 2, {
+    align: "center",
+    angle: 20,
+  });
+  doc.restoreGraphicsState();
+
+  if (tpl.footerText) {
+    doc.setFontSize(8);
+    doc.setTextColor(140, 140, 140);
+    doc.text(tpl.footerText, pageW / 2, pageH - 24, { align: "center" });
+  }
+
+  return doc;
+}
+
+export function suggestReceiptFilename(invoiceNumber: string, clientName?: string | null) {
+  const slug = (clientName ?? "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return `betaalbewijs-${invoiceNumber}${slug ? "-" + slug : ""}.pdf`;
+}
+
 export function suggestInvoiceFilename(invoiceNumber: string, clientName?: string | null) {
   const slug = (clientName ?? "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   return `factuur-${invoiceNumber}${slug ? "-" + slug : ""}.pdf`;

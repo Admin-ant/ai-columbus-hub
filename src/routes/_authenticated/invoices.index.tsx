@@ -79,6 +79,7 @@ function InvoicesPage() {
   const { currentOrganizationId, currentOrganization, loading: wsLoading } = useWorkspace();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"all" | "paid" | "open" | "reminder" | "draft">("all");
 
   const eur = useMemo(
     () =>
@@ -144,6 +145,36 @@ function InvoicesPage() {
     return t;
   }, [invoices]);
 
+  const filteredInvoices = useMemo(() => {
+    const now = Date.now();
+    return invoices.filter((i) => {
+      if (filter === "all") return true;
+      if (filter === "paid") return i.status === "paid";
+      if (filter === "draft") return i.status === "draft";
+      if (filter === "open") return i.status === "sent" || i.status === "overdue";
+      if (filter === "reminder") {
+        if (i.status !== "sent" && i.status !== "overdue") return false;
+        if (!i.due_date) return false;
+        return new Date(i.due_date).getTime() < now;
+      }
+      return true;
+    });
+  }, [invoices, filter]);
+
+  const counts = useMemo(() => {
+    const now = Date.now();
+    const c = { all: invoices.length, paid: 0, open: 0, reminder: 0, draft: 0 };
+    invoices.forEach((i) => {
+      if (i.status === "paid") c.paid++;
+      else if (i.status === "draft") c.draft++;
+      else if (i.status === "sent" || i.status === "overdue") {
+        c.open++;
+        if (i.due_date && new Date(i.due_date).getTime() < now) c.reminder++;
+      }
+    });
+    return c;
+  }, [invoices]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -164,13 +195,36 @@ function InvoicesPage() {
         <SummaryCard label={t("invoices.open")} value={eur.format(totals.open)} />
       </div>
 
+      <div className="flex flex-wrap items-center gap-2">
+        {([
+          { k: "all", label: "Alle", n: counts.all },
+          { k: "open", label: "Open", n: counts.open },
+          { k: "reminder", label: "Herinnering", n: counts.reminder },
+          { k: "paid", label: "Betaald", n: counts.paid },
+          { k: "draft", label: "Concept", n: counts.draft },
+        ] as const).map((f) => (
+          <Button
+            key={f.k}
+            size="sm"
+            variant={filter === f.k ? "default" : "outline"}
+            onClick={() => setFilter(f.k)}
+            className="h-7 text-xs"
+          >
+            {f.label}
+            <span className="ml-1.5 rounded bg-background/40 px-1.5 text-[10px] font-mono">
+              {f.n}
+            </span>
+          </Button>
+        ))}
+      </div>
+
       {loading ? (
         <div className="flex items-center justify-center py-20 text-muted-foreground">
           <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("common.loading")}
         </div>
-      ) : invoices.length === 0 ? (
+      ) : filteredInvoices.length === 0 ? (
         <div className="rounded-lg border border-dashed py-16 text-center text-sm text-muted-foreground">
-          {t("invoices.empty")}
+          {invoices.length === 0 ? t("invoices.empty") : "Geen facturen in dit filter"}
         </div>
       ) : (
         <div className="rounded-lg border">
@@ -188,7 +242,7 @@ function InvoicesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {invoices.map((inv) => (
+              {filteredInvoices.map((inv) => (
                 <TableRow key={inv.id}>
                   <TableCell className="font-mono text-sm">
                     <Link
