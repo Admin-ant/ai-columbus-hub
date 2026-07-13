@@ -183,17 +183,28 @@ function AgendaPage() {
             Beheer afspraken en verstuur direct een agenda-uitnodiging per e-mail.
           </p>
         </div>
-        {currentOrganizationId && (
-          <Button
-            onClick={() => {
-              setEditing(null);
-              setOpen(true);
-            }}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Nieuwe afspraak
-          </Button>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {currentOrganizationId && items.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={() => exportIcs(items, { selectedDay, month, orgName: currentOrganization?.name })}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Exporteer {selectedDay ? "dag" : "maand"} (.ics)
+            </Button>
+          )}
+          {currentOrganizationId && (
+            <Button
+              onClick={() => {
+                setEditing(null);
+                setOpen(true);
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Nieuwe afspraak
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="rounded-lg border bg-card p-4">
