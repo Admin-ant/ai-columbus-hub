@@ -1064,6 +1064,32 @@ function EmailForm({
   const [extraChecked, setExtraChecked] = useState<Record<string, boolean>>({});
   const [sending, setSending] = useState(false);
 
+  const previewPayLink = includePayLink && canPay
+    ? (currentPaymentLink ?? "https://www.mollie.com/checkout/… (wordt aangemaakt bij verzenden)")
+    : null;
+  const previewVars: Record<string, string> = {
+    client_name: invoice.client_name ?? "",
+    invoice_number: invoice.invoice_number ?? "",
+    total: formatCents(invoice.total_cents, "nl", invoice.currency ?? "EUR"),
+    subtotal: formatCents(invoice.subtotal_cents, "nl", invoice.currency ?? "EUR"),
+    vat: formatCents(invoice.vat_cents, "nl", invoice.currency ?? "EUR"),
+    due_date: invoice.due_date ? new Date(invoice.due_date).toLocaleDateString("nl") : "",
+    issue_date: invoice.issue_date ? new Date(invoice.issue_date).toLocaleDateString("nl") : "",
+    payment_link: previewPayLink ?? "",
+  };
+  const applyPreviewVars = (s: string) =>
+    s.replace(/\{\{?\s*(\w+)\s*\}?\}/g, (m, k: string) =>
+      Object.prototype.hasOwnProperty.call(previewVars, k) ? previewVars[k] : m,
+    );
+  const previewSubjectBase = applyPreviewVars(subject);
+  const previewBodyBase = applyPreviewVars(body);
+  const previewSubject = previewPayLink && !previewSubjectBase.includes(previewPayLink)
+    ? `${previewSubjectBase} — Betaal online: ${previewPayLink}`
+    : previewSubjectBase;
+  const previewBody = previewPayLink && !previewBodyBase.includes(previewPayLink)
+    ? `${previewBodyBase}\n\nBetaal direct online via Mollie:\n${previewPayLink}`
+    : previewBodyBase;
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const doc = buildPdf();
@@ -1217,6 +1243,23 @@ function EmailForm({
           </label>
         </div>
       )}
+      <div className="space-y-1.5">
+        <Label>Voorbeeld</Label>
+        <div className="rounded-md border bg-background">
+          <div className="border-b px-3 py-2 text-xs">
+            <span className="text-muted-foreground">Onderwerp: </span>
+            <span className="font-medium">{previewSubject || <em className="text-muted-foreground">(leeg)</em>}</span>
+          </div>
+          <div className="max-h-64 overflow-y-auto whitespace-pre-wrap px-3 py-2 text-sm">
+            {previewBody || <em className="text-muted-foreground">(leeg)</em>}
+          </div>
+          {previewPayLink && (
+            <div className="border-t bg-muted/30 px-3 py-1.5 text-[11px] text-muted-foreground">
+              Betaallink in voorbeeld: <span className="font-mono">{previewPayLink}</span>
+            </div>
+          )}
+        </div>
+      </div>
       <DialogFooter>
         <Button type="submit" disabled={sending}>
           {sending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
