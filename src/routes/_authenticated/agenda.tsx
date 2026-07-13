@@ -348,8 +348,10 @@ function ApptCard({
   onChanged: () => void | Promise<void>;
 }) {
   const invite = useServerFn(sendAppointmentInvite);
+  const reschedule = useServerFn(rescheduleAppointment);
   const remove = useServerFn(deleteAppointment);
   const [sending, setSending] = useState(false);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const start = new Date(a.starts_at);
   const end = new Date(a.ends_at);
   const time = `${start.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })} – ${end.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}`;
