@@ -50,10 +50,11 @@ type Appointment = {
   confirmed_at: string | null;
   reschedule_requested_at: string | null;
   reschedule_note: string | null;
+  locale: string | null;
   created_at: string;
 };
 
-type ClientRow = { id: string; name: string; email: string | null };
+type ClientRow = { id: string; name: string; email: string | null; preferred_locale: string | null };
 
 function toLocalInput(iso: string): string {
   const d = new Date(iso);
