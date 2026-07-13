@@ -1092,6 +1092,7 @@ export type Database = {
           description: string
           id: string
           invoice_id: string
+          line_type: Database["public"]["Enums"]["invoice_line_type"]
           position: number
           product_id: string | null
           quantity: number
@@ -1107,6 +1108,7 @@ export type Database = {
           description: string
           id?: string
           invoice_id: string
+          line_type?: Database["public"]["Enums"]["invoice_line_type"]
           position?: number
           product_id?: string | null
           quantity?: number
@@ -1122,6 +1124,7 @@ export type Database = {
           description?: string
           id?: string
           invoice_id?: string
+          line_type?: Database["public"]["Enums"]["invoice_line_type"]
           position?: number
           product_id?: string | null
           quantity?: number
@@ -1240,8 +1243,11 @@ export type Database = {
           invoice_number: string
           issue_date: string
           last_emailed_at: string | null
+          mollie_checkout_url: string | null
+          mollie_payment_id: string | null
           organization_id: string
           paid_at: string | null
+          payment_link_url: string | null
           pdf_filename: string | null
           project_id: string | null
           quote_id: string | null
@@ -1267,8 +1273,11 @@ export type Database = {
           invoice_number: string
           issue_date?: string
           last_emailed_at?: string | null
+          mollie_checkout_url?: string | null
+          mollie_payment_id?: string | null
           organization_id: string
           paid_at?: string | null
+          payment_link_url?: string | null
           pdf_filename?: string | null
           project_id?: string | null
           quote_id?: string | null
@@ -1294,8 +1303,11 @@ export type Database = {
           invoice_number?: string
           issue_date?: string
           last_emailed_at?: string | null
+          mollie_checkout_url?: string | null
+          mollie_payment_id?: string | null
           organization_id?: string
           paid_at?: string | null
+          payment_link_url?: string | null
           pdf_filename?: string | null
           project_id?: string | null
           quote_id?: string | null
@@ -3227,6 +3239,7 @@ export type Database = {
       billing_frequency: "monthly" | "quarterly" | "yearly"
       contract_status: "draft" | "active" | "paused" | "cancelled" | "ended"
       discount_type: "none" | "one_time" | "recurring"
+      invoice_line_type: "item" | "service_fee" | "discount" | "shipping"
       invoice_status: "draft" | "sent" | "paid" | "overdue" | "cancelled"
       lead_stage:
         | "nieuwe"
@@ -3410,6 +3423,7 @@ export const Constants = {
       billing_frequency: ["monthly", "quarterly", "yearly"],
       contract_status: ["draft", "active", "paused", "cancelled", "ended"],
       discount_type: ["none", "one_time", "recurring"],
+      invoice_line_type: ["item", "service_fee", "discount", "shipping"],
       invoice_status: ["draft", "sent", "paid", "overdue", "cancelled"],
       lead_stage: [
         "nieuwe",
