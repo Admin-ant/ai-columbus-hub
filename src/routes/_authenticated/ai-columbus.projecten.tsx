@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Loader2, Search, X, Trash2, ExternalLink, Download, FileSpreadsheet, Eye, ArrowRight, Info } from "lucide-react";
+import { Plus, Loader2, Search, X, Trash2, ExternalLink, Download, FileSpreadsheet, Eye, Info } from "lucide-react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 
@@ -31,20 +31,10 @@ export const Route = createFileRoute("/_authenticated/ai-columbus/projecten")({
 });
 
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
-type ProjectStatus = Database["public"]["Enums"]["project_status"];
 type DeliveryStatus = Database["public"]["Enums"]["project_delivery_status"];
 type ClientLite = { id: string; name: string };
 
 const EUR = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
-
-const STATUS_META: Record<ProjectStatus, { label: string; cls: string }> = {
-  contact_gezocht:     { label: "Contact gezocht",     cls: "bg-blue-500 text-foreground" },
-  afspraak_geboekt:    { label: "Afspraak geboekt",    cls: "bg-green-500 text-foreground" },
-  offerte_verstuurd:   { label: "Offerte verstuurd",   cls: "bg-yellow-400 text-foreground" },
-  contract_verstuurd:  { label: "Contract verstuurd",  cls: "bg-orange-500 text-foreground" },
-  contract_getekend:   { label: "Contract getekend",   cls: "bg-emerald-700 text-foreground" },
-  on_hold:             { label: "On hold",             cls: "bg-slate-400 text-foreground" },
-};
 
 const DELIVERY_META: Record<DeliveryStatus, { label: string; cls: string }> = {
   nieuw:          { label: "Nieuw",            cls: "bg-blue-500 text-foreground" },
@@ -56,17 +46,29 @@ const DELIVERY_META: Record<DeliveryStatus, { label: string; cls: string }> = {
 };
 const DELIVERY_KEYS = Object.keys(DELIVERY_META) as DeliveryStatus[];
 
+function monthKey(d: Date | string | null) {
+  if (!d) return "";
+  const dt = typeof d === "string" ? new Date(d) : d;
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}`;
+}
+function monthLabel(d: Date | string | null) {
+  if (!d) return "—";
+  const dt = typeof d === "string" ? new Date(d) : d;
+  return dt.toLocaleDateString("nl-NL", { month: "short", year: "2-digit" }).replace(".", "");
+}
 
 function ProjectsDashboardPage() {
   const { user } = useAuth();
   const { currentOrganizationId, currentOrganization, loading: wsLoading } = useWorkspace();
   const [rows, setRows] = useState<ProjectRow[]>([]);
+  const [contractsMap, setContractsMap] = useState<Record<string, { id: string; monthly_amount_cents: number; status: string }>>({});
   const [clients, setClients] = useState<ClientLite[]>([]);
   const [profiles, setProfiles] = useState<Record<string, { display_name: string | null; email: string | null }>>({});
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [monthFilter, setMonthFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [showAll, setShowAll] = useState(false);
   const [open, setOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [exportType, setExportType] = useState<"csv" | "xlsx" | null>(null);
@@ -74,7 +76,7 @@ function ProjectsDashboardPage() {
   const [form, setForm] = useState({
     name: "", value: "0", monthly: "0", one_time: "0",
     target_month: "", client_id: "" as string,
-    status: "contact_gezocht" as ProjectStatus,
+    delivery_status: "nieuw" as DeliveryStatus,
     contact_name: "", contact_email: "", contact_phone: "", notes: "",
   });
 
@@ -88,6 +90,17 @@ function ProjectsDashboardPage() {
     if (error) toast.error(error.message);
     const list = (data ?? []) as ProjectRow[];
     setRows(list);
+
+    // Contracts per project (voor "Contract"-kolom en MRR-KPI)
+    const { data: contracts } = await supabase
+      .from("contracts")
+      .select("id,project_id,monthly_amount_cents,status")
+      .eq("organization_id", currentOrganizationId);
+    const cmap: Record<string, { id: string; monthly_amount_cents: number; status: string }> = {};
+    (contracts ?? []).forEach((c: any) => {
+      if (c.project_id) cmap[c.project_id] = { id: c.id, monthly_amount_cents: Number(c.monthly_amount_cents ?? 0), status: c.status };
+    });
+    setContractsMap(cmap);
 
     const ids = Array.from(new Set(list.map((r) => r.last_modified_by).filter(Boolean))) as string[];
     if (ids.length) {
@@ -114,10 +127,20 @@ function ProjectsDashboardPage() {
     return Array.from(set).sort();
   }, [rows]);
 
+  // Default: alleen projecten met contract of andere delivery-status dan 'nieuw'
+  // Uitzondering: als de gebruiker "Toon alle projecten" aan zet.
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return rows.filter((r) => {
-      if (statusFilter !== "all" && r.status !== statusFilter) return false;
+      const ds = (r as any).delivery_status as DeliveryStatus | null;
+      const hasContract = !!contractsMap[r.id];
+      if (!showAll) {
+        // Toon alleen items die "in delivery" zijn.
+        if (!hasContract && (!ds || ds === "nieuw") && r.status !== "contract_getekend" && r.status !== "on_hold") {
+          return false;
+        }
+      }
+      if (statusFilter !== "all" && ds !== statusFilter) return false;
       if (monthFilter !== "all" && monthKey(r.target_month) !== monthFilter) return false;
       if (q) {
         const hay = `${r.name} ${r.contact_name ?? ""} ${r.contact_email ?? ""} ${r.notes ?? ""}`.toLowerCase();
@@ -125,11 +148,27 @@ function ProjectsDashboardPage() {
       }
       return true;
     });
-  }, [rows, statusFilter, monthFilter, search]);
+  }, [rows, contractsMap, showAll, statusFilter, monthFilter, search]);
 
   const total = useMemo(() => filtered.reduce((s, r) => s + Number(r.value_cents ?? 0), 0), [filtered]);
   const monthlyTotal = useMemo(() => filtered.reduce((s, r) => s + Number((r as any).monthly_value_cents ?? 0), 0), [filtered]);
   const oneTimeTotal = useMemo(() => filtered.reduce((s, r) => s + Number((r as any).one_time_cents ?? 0), 0), [filtered]);
+
+  // KPI's boven de tabel
+  const kpi = useMemo(() => {
+    let inProgress = 0, waiting = 0, deliveredThisMonth = 0, activeMrr = 0;
+    const now = new Date();
+    const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    for (const r of filtered) {
+      const ds = (r as any).delivery_status as DeliveryStatus | null;
+      if (ds === "in_uitvoering") inProgress++;
+      if (ds === "wacht_op_klant" || ds === "on_hold") waiting++;
+      if (ds === "opgeleverd" && r.last_modified_at && r.last_modified_at.slice(0, 7) === ym) deliveredThisMonth++;
+      const c = contractsMap[r.id];
+      if (c && c.status === "active") activeMrr += c.monthly_amount_cents;
+    }
+    return { inProgress, waiting, deliveredThisMonth, activeMrr };
+  }, [filtered, contractsMap]);
 
   async function updateRow(id: string, patch: Partial<ProjectRow>) {
     const prev = rows;
@@ -166,7 +205,11 @@ function ProjectsDashboardPage() {
       monthly_value_cents: Math.round((Number(form.monthly) || 0) * 100),
       one_time_cents: Math.round((Number(form.one_time) || 0) * 100),
       target_month: form.target_month || null,
-      status: form.status,
+      // Nieuw project uit dit scherm = een handmatig delivery-project.
+      // We zetten status op contract_getekend (bestaande enum) zodat het meteen zichtbaar is,
+      // en delivery_status stuurt de rest.
+      status: "contract_getekend",
+      delivery_status: form.delivery_status,
       client_id: form.client_id || null,
       contact_name: form.contact_name || null,
       contact_email: form.contact_email || null,
@@ -179,35 +222,38 @@ function ProjectsDashboardPage() {
     if (error) return toast.error(error.message);
     toast.success("Project toegevoegd");
     setOpen(false);
-    setForm({ name: "", value: "0", monthly: "0", one_time: "0", target_month: "", client_id: "", status: "contact_gezocht", contact_name: "", contact_email: "", contact_phone: "", notes: "" });
+    setForm({ name: "", value: "0", monthly: "0", one_time: "0", target_month: "", client_id: "", delivery_status: "nieuw", contact_name: "", contact_email: "", contact_phone: "", notes: "" });
     load();
   }
 
   const filtersActive = statusFilter !== "all" || monthFilter !== "all" || search !== "";
 
   function buildExportRows() {
-    return filtered.map((r) => ({
-      Project: r.name,
-      "Waarde (EUR)": Number(r.value_cents ?? 0) / 100,
-      "Maandelijkse opbrengst (EUR)": Number((r as any).monthly_value_cents ?? 0) / 100,
-      "Eenmalige kosten (EUR)": Number((r as any).one_time_cents ?? 0) / 100,
-      Maand: r.target_month ? monthLabel(r.target_month) : "",
-      Status: STATUS_META[r.status].label,
-      Contactpersoon: r.contact_name ?? "",
-      Email: r.contact_email ?? "",
-      Telefoon: r.contact_phone ?? "",
-      Notities: r.notes ?? "",
-      "Laatst gewijzigd door":
-        (r.last_modified_by && (profiles[r.last_modified_by]?.display_name || profiles[r.last_modified_by]?.email)) || "",
-      "Laatst gewijzigd op": r.last_modified_at
-        ? new Date(r.last_modified_at).toLocaleString("nl-NL", { dateStyle: "short", timeStyle: "short" })
-        : "",
-    }));
+    return filtered.map((r) => {
+      const ds = (r as any).delivery_status as DeliveryStatus | null;
+      return {
+        Project: r.name,
+        "Waarde (EUR)": Number(r.value_cents ?? 0) / 100,
+        "Maandelijkse opbrengst (EUR)": Number((r as any).monthly_value_cents ?? 0) / 100,
+        "Eenmalige kosten (EUR)": Number((r as any).one_time_cents ?? 0) / 100,
+        Maand: r.target_month ? monthLabel(r.target_month) : "",
+        Status: ds ? DELIVERY_META[ds].label : "—",
+        Contactpersoon: r.contact_name ?? "",
+        Email: r.contact_email ?? "",
+        Telefoon: r.contact_phone ?? "",
+        Notities: r.notes ?? "",
+        "Laatst gewijzigd door":
+          (r.last_modified_by && (profiles[r.last_modified_by]?.display_name || profiles[r.last_modified_by]?.email)) || "",
+        "Laatst gewijzigd op": r.last_modified_at
+          ? new Date(r.last_modified_at).toLocaleString("nl-NL", { dateStyle: "short", timeStyle: "short" })
+          : "",
+      };
+    });
   }
 
   function filterSummary() {
     const parts: string[] = [];
-    parts.push(`Status: ${statusFilter === "all" ? "Alle" : STATUS_META[statusFilter as ProjectStatus].label}`);
+    parts.push(`Status: ${statusFilter === "all" ? "Alle" : DELIVERY_META[statusFilter as DeliveryStatus].label}`);
     parts.push(`Maand: ${monthFilter === "all" ? "Alle" : monthLabel(`${monthFilter}-01`)}`);
     if (search) parts.push(`Zoekterm: ${search}`);
     return parts.join(" · ");
@@ -268,8 +314,7 @@ function ProjectsDashboardPage() {
     ];
     const ws = XLSX.utils.aoa_to_sheet(dataAoa);
     ws["!cols"] = headers.map((h) => ({ wch: h === "Notities" ? 40 : h === "Project" ? 24 : 18 }));
-    // Currency format on value column (index 1) for data + total rows
-    const headerRowIdx = 6; // 1-based: 5 meta rows + headers at row 6
+    const headerRowIdx = 6;
     for (let i = 0; i < rows.length; i++) {
       const cell = XLSX.utils.encode_cell({ r: headerRowIdx + i, c: 1 });
       if (ws[cell]) ws[cell].z = '€ #,##0.00;€ -#,##0.00;-';
@@ -285,19 +330,25 @@ function ProjectsDashboardPage() {
 
   const exportPreviewRows = buildExportRows();
 
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            {currentOrganization?.name ?? ""} — Projecten dashboard
+            {currentOrganization?.name ?? ""} — Projecten (uitvoering)
           </h1>
           <p className="text-sm text-muted-foreground">
-            Overzicht van status en voortgang van klanten/projecten.
+            Lopende projecten na contractondertekening.
+            Voor de verkoopfunnel:{" "}
+            <Link to="/sales-workflow" className="text-primary underline">Sales Workflow</Link>.
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/sales-workflow">
+              Nog geen contract? → Sales Workflow
+            </Link>
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" disabled={filtered.length === 0}>
@@ -313,161 +364,180 @@ function ProjectsDashboardPage() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="mr-2 h-4 w-4" /> Nieuw project toevoegen</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Nieuw project</DialogTitle>
-              <DialogDescription>{currentOrganization?.name}</DialogDescription>
-            </DialogHeader>
-            <form onSubmit={createRow} className="space-y-3">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label>Naam *</Label>
-                  <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button><Plus className="mr-2 h-4 w-4" /> Nieuw project</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Nieuw project</DialogTitle>
+                <DialogDescription>{currentOrganization?.name}</DialogDescription>
+              </DialogHeader>
+              <form onSubmit={createRow} className="space-y-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label>Naam *</Label>
+                    <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label>Klant</Label>
+                    <Select value={form.client_id || "__none"} onValueChange={(v) => {
+                      const id = v === "__none" ? "" : v;
+                      const c = clients.find(c => c.id === id);
+                      setForm({ ...form, client_id: id, name: form.name || (c?.name ?? "") });
+                    }}>
+                      <SelectTrigger><SelectValue placeholder="Geen klant" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">Geen klant</SelectItem>
+                        {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Totale deal-waarde (€)</Label>
+                    <Input type="number" step="0.01" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Doelmaand / opleverdatum</Label>
+                    <Input type="month" value={form.target_month ? form.target_month.slice(0,7) : ""}
+                      onChange={(e) => setForm({ ...form, target_month: e.target.value ? `${e.target.value}-01` : "" })} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Maandelijkse opbrengst (€)</Label>
+                    <Input type="number" step="0.01" value={form.monthly} onChange={(e) => setForm({ ...form, monthly: e.target.value })} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Eenmalige kosten (€)</Label>
+                    <Input type="number" step="0.01" value={form.one_time} onChange={(e) => setForm({ ...form, one_time: e.target.value })} />
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label>Delivery-status</Label>
+                    <Select value={form.delivery_status} onValueChange={(v) => setForm({ ...form, delivery_status: v as DeliveryStatus })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {DELIVERY_KEYS.map((s) => <SelectItem key={s} value={s}>{DELIVERY_META[s].label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Contactpersoon</Label>
+                    <Input value={form.contact_name} onChange={(e) => setForm({ ...form, contact_name: e.target.value })} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>E-mail</Label>
+                    <Input type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} />
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label>Telefoon</Label>
+                    <Input value={form.contact_phone} onChange={(e) => setForm({ ...form, contact_phone: e.target.value })} />
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label>Notities</Label>
+                    <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                  </div>
                 </div>
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label>Klant</Label>
-                  <Select value={form.client_id || "__none"} onValueChange={(v) => {
-                    const id = v === "__none" ? "" : v;
-                    const c = clients.find(c => c.id === id);
-                    setForm({ ...form, client_id: id, name: form.name || (c?.name ?? "") });
-                  }}>
-                    <SelectTrigger><SelectValue placeholder="Geen klant" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none">Geen klant</SelectItem>
-                      {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                <DialogFooter>
+                  <Button type="submit" disabled={saving}>
+                    {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Opslaan
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={exportOpen} onOpenChange={setExportOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Eye className="h-5 w-5" /> Exportvoorbeeld
+                </DialogTitle>
+                <DialogDescription>
+                  Controleer welke rijen en filters worden meegenomen in de export.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-lg border bg-muted/40 p-3">
+                    <div className="text-xs text-muted-foreground">Aantal rijen</div>
+                    <div className="text-2xl font-semibold tabular-nums">{exportPreviewRows.length}</div>
+                  </div>
+                  <div className="rounded-lg border bg-muted/40 p-3">
+                    <div className="text-xs text-muted-foreground">Totale waarde</div>
+                    <div className="text-2xl font-semibold tabular-nums">{EUR.format(total / 100)}</div>
+                  </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Totale deal-waarde (€)</Label>
-                  <Input type="number" step="0.01" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} />
+                  <div className="text-xs font-medium text-muted-foreground">Actieve filters</div>
+                  <div className="rounded-md border bg-card p-2.5 text-sm">{filterSummary()}</div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Doelmaand</Label>
-                  <Input type="month" value={form.target_month ? form.target_month.slice(0,7) : ""}
-                    onChange={(e) => setForm({ ...form, target_month: e.target.value ? `${e.target.value}-01` : "" })} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Maandelijkse opbrengst (€)</Label>
-                  <Input type="number" step="0.01" value={form.monthly} onChange={(e) => setForm({ ...form, monthly: e.target.value })} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Eenmalige kosten (€)</Label>
-                  <Input type="number" step="0.01" value={form.one_time} onChange={(e) => setForm({ ...form, one_time: e.target.value })} />
-                </div>
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label>Status</Label>
-                  <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as ProjectStatus })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {STATUS_KEYS.map((s) => <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Contactpersoon</Label>
-                  <Input value={form.contact_name} onChange={(e) => setForm({ ...form, contact_name: e.target.value })} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>E-mail</Label>
-                  <Input type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} />
-                </div>
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label>Telefoon</Label>
-                  <Input value={form.contact_phone} onChange={(e) => setForm({ ...form, contact_phone: e.target.value })} />
-                </div>
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label>Notities</Label>
-                  <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-                </div>
+                {exportPreviewRows.length > 0 && (
+                  <div className="space-y-1.5">
+                    <div className="text-xs font-medium text-muted-foreground">
+                      Eerste {Math.min(exportPreviewRows.length, 5)} project{exportPreviewRows.length === 1 ? "" : "en"}
+                    </div>
+                    <ul className="max-h-32 overflow-auto rounded-md border bg-card text-sm">
+                      {exportPreviewRows.slice(0, 5).map((r, i) => (
+                        <li key={i} className="flex items-center justify-between border-b px-3 py-1.5 last:border-b-0">
+                          <span className="truncate pr-2">{r.Project}</span>
+                          <span className="tabular-nums text-muted-foreground">{EUR.format(Number(r["Waarde (EUR)"]))}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
-              <DialogFooter>
-                <Button type="submit" disabled={saving}>
-                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Opslaan
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button variant="outline" onClick={() => setExportOpen(false)}>Annuleren</Button>
+                <Button onClick={() => exportType && runExport(exportType)} disabled={!exportType || exportPreviewRows.length === 0}>
+                  {exportType === "xlsx" ? <FileSpreadsheet className="mr-2 h-4 w-4" /> : <Download className="mr-2 h-4 w-4" />}
+                  Exporteer {exportType === "xlsx" ? "Excel" : "CSV"}
                 </Button>
               </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={exportOpen} onOpenChange={setExportOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Eye className="h-5 w-5" /> Exportvoorbeeld
-              </DialogTitle>
-              <DialogDescription>
-                Controleer welke rijen en filters worden meegenomen in de export.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-2">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg border bg-muted/40 p-3">
-                  <div className="text-xs text-muted-foreground">Aantal rijen</div>
-                  <div className="text-2xl font-semibold tabular-nums">{exportPreviewRows.length}</div>
-                </div>
-                <div className="rounded-lg border bg-muted/40 p-3">
-                  <div className="text-xs text-muted-foreground">Totale waarde</div>
-                  <div className="text-2xl font-semibold tabular-nums">{EUR.format(total / 100)}</div>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <div className="text-xs font-medium text-muted-foreground">Actieve filters</div>
-                <div className="rounded-md border bg-card p-2.5 text-sm">{filterSummary()}</div>
-              </div>
-              {exportPreviewRows.length > 0 && (
-                <div className="space-y-1.5">
-                  <div className="text-xs font-medium text-muted-foreground">
-                    Eerste {Math.min(exportPreviewRows.length, 5)} project{exportPreviewRows.length === 1 ? "" : "en"}
-                  </div>
-                  <ul className="max-h-32 overflow-auto rounded-md border bg-card text-sm">
-                    {exportPreviewRows.slice(0, 5).map((r, i) => (
-                      <li key={i} className="flex items-center justify-between border-b px-3 py-1.5 last:border-b-0">
-                        <span className="truncate pr-2">{r.Project}</span>
-                        <span className="tabular-nums text-muted-foreground">{EUR.format(Number(r["Waarde (EUR)"]))}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button variant="outline" onClick={() => setExportOpen(false)}>Annuleren</Button>
-              <Button onClick={() => exportType && runExport(exportType)} disabled={!exportType || exportPreviewRows.length === 0}>
-                {exportType === "xlsx" ? <FileSpreadsheet className="mr-2 h-4 w-4" /> : <Download className="mr-2 h-4 w-4" />}
-                Exporteer {exportType === "xlsx" ? "Excel" : "CSV"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
+      {/* Delivery KPI's */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">In uitvoering</div>
+          <div className="mt-2 text-2xl font-bold tabular-nums">{kpi.inProgress}</div>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">On hold / wacht op klant</div>
+          <div className="mt-2 text-2xl font-bold tabular-nums">{kpi.waiting}</div>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Opgeleverd deze maand</div>
+          <div className="mt-2 text-2xl font-bold tabular-nums">{kpi.deliveredThisMonth}</div>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Actieve MRR</div>
+          <div className="mt-2 text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{EUR.format(kpi.activeMrr / 100)}</div>
+        </div>
+      </div>
+
+      {/* Financiële samenvatting van huidige filter */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <div className="rounded-lg border bg-card p-4">
-          <div className="text-xs uppercase tracking-wide text-muted-foreground">Maandelijkse opbrengst</div>
-          <div className="mt-2 text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{EUR.format(monthlyTotal / 100)}</div>
-          <div className="mt-1 text-xs text-muted-foreground">Som van alle {filtered.length} projecten in filter</div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Maandelijkse opbrengst (in filter)</div>
+          <div className="mt-2 text-xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{EUR.format(monthlyTotal / 100)}</div>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <div className="text-xs uppercase tracking-wide text-muted-foreground">Eenmalige kosten</div>
-          <div className="mt-2 text-2xl font-bold tabular-nums text-indigo-600 dark:text-indigo-400">{EUR.format(oneTimeTotal / 100)}</div>
-          <div className="mt-1 text-xs text-muted-foreground">Totaal eenmalig / setup</div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Eenmalige kosten (in filter)</div>
+          <div className="mt-2 text-xl font-bold tabular-nums text-indigo-600 dark:text-indigo-400">{EUR.format(oneTimeTotal / 100)}</div>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <div className="text-xs uppercase tracking-wide text-muted-foreground">Totale deal-waarde</div>
-          <div className="mt-2 text-2xl font-bold tabular-nums">{EUR.format(total / 100)}</div>
-          <div className="mt-1 text-xs text-muted-foreground">Som van 'Waarde' kolom</div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Totale deal-waarde (in filter)</div>
+          <div className="mt-2 text-xl font-bold tabular-nums">{EUR.format(total / 100)}</div>
         </div>
       </div>
 
+      {/* Delivery-status kaarten */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {STATUS_KEYS.map((s) => {
-          const items = rows.filter((r) => r.status === s);
+        {DELIVERY_KEYS.map((s) => {
+          const items = rows.filter((r) => (r as any).delivery_status === s);
           const sum = items.reduce((acc, r) => acc + Number(r.value_cents ?? 0), 0);
           const active = statusFilter === s;
           return (
@@ -475,10 +545,10 @@ function ProjectsDashboardPage() {
               onClick={() => setStatusFilter(active ? "all" : s)}
               className={`rounded-lg border bg-card p-3 text-left transition-shadow hover:shadow-md ${active ? "ring-2 ring-primary" : ""}`}>
               <div className="flex items-center justify-between gap-2">
-                <span className={`inline-block h-2.5 w-2.5 rounded-full ${STATUS_META[s].cls.split(" ")[0]}`} />
+                <span className={`inline-block h-2.5 w-2.5 rounded-full ${DELIVERY_META[s].cls.split(" ")[0]}`} />
                 <span className="text-xs font-medium text-muted-foreground">{items.length}</span>
               </div>
-              <div className="mt-2 text-xs font-medium leading-tight">{STATUS_META[s].label}</div>
+              <div className="mt-2 text-xs font-medium leading-tight">{DELIVERY_META[s].label}</div>
               <div className="mt-1 text-base font-semibold tabular-nums">{EUR.format(sum / 100)}</div>
             </button>
           );
@@ -496,7 +566,7 @@ function ProjectsDashboardPage() {
             <SelectTrigger className="h-9 w-[180px]"><SelectValue placeholder="Status" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Alle statussen</SelectItem>
-              {STATUS_KEYS.map((s) => <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>)}
+              {DELIVERY_KEYS.map((s) => <SelectItem key={s} value={s}>{DELIVERY_META[s].label}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={monthFilter} onValueChange={setMonthFilter}>
@@ -508,6 +578,13 @@ function ProjectsDashboardPage() {
               ))}
             </SelectContent>
           </Select>
+          <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-2 py-1">
+            <Switch checked={showAll} onCheckedChange={setShowAll} id="show-all" />
+            <Label htmlFor="show-all" className="text-xs">Toon alle projecten</Label>
+            <span title="Standaard toont deze lijst alleen projecten met een contract of andere delivery-status. Zet dit aan om ook oude/verkoopfase-projecten te zien.">
+              <Info className="h-3 w-3 text-muted-foreground" />
+            </span>
+          </div>
           {filtersActive && (
             <Button variant="ghost" size="sm" className="h-9"
               onClick={() => { setStatusFilter("all"); setMonthFilter("all"); setSearch(""); }}>
@@ -527,23 +604,26 @@ function ProjectsDashboardPage() {
                 <tr className="border-b bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-2 font-medium">Project</th>
                   <th className="px-4 py-2 text-right font-medium">Waarde</th>
-                  <th className="px-4 py-2 text-right font-medium">Mnd opbrengst</th>
+                  <th className="px-4 py-2 text-right font-medium">Mnd</th>
                   <th className="px-4 py-2 text-right font-medium">Eenmalig</th>
-                  <th className="px-4 py-2 font-medium">Maand</th>
-                  <th className="px-4 py-2 font-medium">Status</th>
+                  <th className="px-4 py-2 font-medium">Doelmaand</th>
+                  <th className="px-4 py-2 font-medium">Delivery-status</th>
+                  <th className="px-4 py-2 font-medium">Contract</th>
                   <th className="px-4 py-2 font-medium">Contact</th>
-                  <th className="px-4 py-2 font-medium">Laatste actie / Notities</th>
+                  <th className="px-4 py-2 font-medium">Notities</th>
                   <th className="px-4 py-2 font-medium">Laatst gewijzigd</th>
                   <th className="px-2 py-2"></th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 && (
-                  <tr><td colSpan={10} className="px-4 py-8 text-center text-muted-foreground">Geen projecten met deze filters.</td></tr>
+                  <tr><td colSpan={11} className="px-4 py-8 text-center text-muted-foreground">Geen projecten met deze filters.</td></tr>
                 )}
                 {filtered.map((r) => {
                   const prof = r.last_modified_by ? profiles[r.last_modified_by] : null;
                   const who = prof?.display_name || prof?.email || "—";
+                  const ds = ((r as any).delivery_status as DeliveryStatus) ?? "nieuw";
+                  const contract = contractsMap[r.id];
                   return (
                     <tr key={r.id} className="border-b align-top hover:bg-muted/20">
                       <td className="px-4 py-2 font-medium">
@@ -577,21 +657,32 @@ function ProjectsDashboardPage() {
                           className="h-8 w-[130px] text-xs" />
                       </td>
                       <td className="px-4 py-2">
-                        <Select value={r.status} onValueChange={(v) => updateRow(r.id, { status: v as ProjectStatus })}>
+                        <Select value={ds} onValueChange={(v) => updateRow(r.id, { delivery_status: v as DeliveryStatus } as any)}>
                           <SelectTrigger className="h-8 w-[170px] border-0 p-0 [&>span]:w-full">
-                            <Badge className={`${STATUS_META[r.status].cls} w-full justify-center`}>
-                              {STATUS_META[r.status].label}
+                            <Badge className={`${DELIVERY_META[ds].cls} w-full justify-center`}>
+                              {DELIVERY_META[ds].label}
                             </Badge>
                           </SelectTrigger>
                           <SelectContent>
-                            {STATUS_KEYS.map((s) => (
+                            {DELIVERY_KEYS.map((s) => (
                               <SelectItem key={s} value={s}>
-                                <span className={`mr-2 inline-block h-2 w-2 rounded-full ${STATUS_META[s].cls.split(" ")[0]}`} />
-                                {STATUS_META[s].label}
+                                <span className={`mr-2 inline-block h-2 w-2 rounded-full ${DELIVERY_META[s].cls.split(" ")[0]}`} />
+                                {DELIVERY_META[s].label}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
+                      </td>
+                      <td className="px-4 py-2 text-xs">
+                        {contract ? (
+                          <Link to="/contracten/$contractId" params={{ contractId: contract.id }}
+                            className="inline-flex items-center gap-1 text-primary hover:underline">
+                            {EUR.format(contract.monthly_amount_cents / 100)}/mnd
+                            <ExternalLink className="h-3 w-3" />
+                          </Link>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-2 text-xs">
                         <EditableText placeholder="Naam" value={r.contact_name ?? ""}
@@ -628,7 +719,7 @@ function ProjectsDashboardPage() {
                   <td className="px-4 py-3 text-right tabular-nums">{EUR.format(total / 100)}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400">{EUR.format(monthlyTotal / 100)}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-indigo-600 dark:text-indigo-400">{EUR.format(oneTimeTotal / 100)}</td>
-                  <td colSpan={6}></td>
+                  <td colSpan={7}></td>
                 </tr>
               </tfoot>
             </table>
