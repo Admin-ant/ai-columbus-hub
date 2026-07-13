@@ -89,7 +89,12 @@ function InvoicesPage() {
   const { currentOrganizationId, currentOrganization, loading: wsLoading } = useWorkspace();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "paid" | "open" | "reminder" | "draft">("all");
+  const search = Route.useSearch();
+  const [filter, setFilter] = useState<FilterKey>(search.filter ?? "all");
+  useEffect(() => {
+    if (search.filter && search.filter !== filter) setFilter(search.filter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.filter]);
 
   const eur = useMemo(
     () =>
