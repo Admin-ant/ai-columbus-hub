@@ -979,13 +979,71 @@ function AppointmentDialog({
               />
             </div>
           </div>
-          <div className="space-y-1.5">
-            <Label>Locatie</Label>
+          <div className="space-y-2 rounded-md border p-3">
+            <Label>Waar vindt de afspraak plaats?</Label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => chooseMode("online")}
+                className={`flex-1 rounded-md border px-3 py-2 text-sm ${locationMode === "online" ? "border-primary bg-primary/10 font-medium" : "hover:bg-muted"}`}
+              >
+                💻 Online
+              </button>
+              <button
+                type="button"
+                onClick={() => chooseMode("onsite")}
+                className={`flex-1 rounded-md border px-3 py-2 text-sm ${locationMode === "onsite" ? "border-primary bg-primary/10 font-medium" : "hover:bg-muted"}`}
+              >
+                📍 Op locatie
+              </button>
+            </div>
+            {locationMode === "onsite" && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => applyOnsitePick("client")}
+                  disabled={!clientAddress}
+                  className={`rounded-md border px-2.5 py-1 text-xs ${onsitePick === "client" ? "border-primary bg-primary/10 font-medium" : "hover:bg-muted"} disabled:cursor-not-allowed disabled:opacity-40`}
+                  title={clientAddress || "Kies een klant met adres"}
+                >
+                  Bij klant
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyOnsitePick("office")}
+                  disabled={!officeAddress}
+                  className={`rounded-md border px-2.5 py-1 text-xs ${onsitePick === "office" ? "border-primary bg-primary/10 font-medium" : "hover:bg-muted"} disabled:cursor-not-allowed disabled:opacity-40`}
+                  title={officeAddress || "Vul eerst je kantooradres in bij Organisatie"}
+                >
+                  Op ons kantoor
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyOnsitePick("custom")}
+                  className={`rounded-md border px-2.5 py-1 text-xs ${onsitePick === "custom" ? "border-primary bg-primary/10 font-medium" : "hover:bg-muted"}`}
+                >
+                  Ander adres
+                </button>
+              </div>
+            )}
             <Input
               value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Bijv. Google Meet-link of adres"
+              onChange={(e) => {
+                setLocation(e.target.value);
+                if (locationMode === "onsite") setOnsitePick("custom");
+              }}
+              placeholder={locationMode === "online" ? "Bijv. Google Meet-link" : "Straat 1, 1234 AB Stad"}
             />
+            {locationMode === "onsite" && onsitePick === "client" && !clientAddress && (
+              <p className="text-xs text-muted-foreground">
+                Deze klant heeft nog geen adres. Vul het aan in Klanten of kies een ander adres.
+              </p>
+            )}
+            {locationMode === "onsite" && onsitePick === "office" && !officeAddress && (
+              <p className="text-xs text-muted-foreground">
+                Je organisatie heeft nog geen kantooradres. Vul deze aan in Organisatie-instellingen.
+              </p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label>Klant</Label>
