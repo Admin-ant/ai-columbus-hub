@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { CreditCard, Loader2, Printer, X, Copy, Link2 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
+import { QRCodeSVG } from "qrcode.react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -10,10 +11,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { InvoiceTemplate, type InvoiceTemplateProps } from "@/components/invoice-template";
 import {
   createMollieInvoicePayment,
   revokeMollieInvoicePayment,
+  type MolliePaymentMethod,
 } from "@/lib/mollie-invoice.functions";
 
 interface Props {
@@ -22,20 +33,28 @@ interface Props {
   invoiceId: string;
   invoiceStatus: string;
   data: InvoiceTemplateProps;
+  defaultPreferredMethod?: MolliePaymentMethod | null;
   onPaymentLinkChanged?: (url: string | null) => void;
 }
 
-/**
- * Preview-modal voor een factuur. Toont InvoiceTemplate 1-op-1 zoals
- * de PDF, met acties: printen / Save-as-PDF (via browser print),
- * Mollie-betaallink genereren en link kopieren.
- */
+const METHOD_OPTIONS: { value: MolliePaymentMethod | "any"; label: string }[] = [
+  { value: "any", label: "Alle methoden (klant kiest)" },
+  { value: "ideal", label: "iDEAL" },
+  { value: "creditcard", label: "Creditcard" },
+  { value: "bancontact", label: "Bancontact" },
+  { value: "paypal", label: "PayPal" },
+  { value: "banktransfer", label: "Overboeking" },
+  { value: "applepay", label: "Apple Pay" },
+  { value: "sofort", label: "SOFORT" },
+];
+
 export function InvoicePreviewDialog({
   open,
   onOpenChange,
   invoiceId,
   invoiceStatus,
   data,
+  defaultPreferredMethod,
   onPaymentLinkChanged,
 }: Props) {
   const printRef = useRef<HTMLDivElement>(null);
@@ -44,20 +63,30 @@ export function InvoicePreviewDialog({
   const createFn = useServerFn(createMollieInvoicePayment);
   const revokeFn = useServerFn(revokeMollieInvoicePayment);
   const [paymentLink, setPaymentLink] = useState<string | null>(data.payment_link_url ?? null);
+  const [method, setMethod] = useState<MolliePaymentMethod | "any">(
+    defaultPreferredMethod ?? "any",
+  );
+  const [restrict, setRestrict] = useState(false);
 
   useEffect(() => {
     setPaymentLink(data.payment_link_url ?? null);
   }, [data.payment_link_url]);
 
+  useEffect(() => {
+    if (defaultPreferredMethod) setMethod(defaultPreferredMethod);
+  }, [defaultPreferredMethod]);
+
   function handlePrint() {
-    // Scope de print naar #invoice-print-area via CSS in de dialog.
     window.print();
   }
 
   async function handleCreateLink() {
     setCreatingLink(true);
     try {
-      const r = await createFn({ data: { invoice_id: invoiceId } });
+      const preferred = method === "any" ? null : method;
+      const r = await createFn({
+        data: { invoice_id: invoiceId, preferred_method: preferred, restrict: restrict && !!preferred },
+      });
       setPaymentLink(r.checkoutUrl);
       onPaymentLinkChanged?.(r.checkoutUrl);
       toast.success(r.reused ? "Bestaande betaallink hergebruikt" : "Betaallink aangemaakt");
@@ -116,41 +145,77 @@ export function InvoicePreviewDialog({
         `}</style>
 
         <DialogHeader className="no-print border-b px-6 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <DialogTitle>Factuurvoorbeeld — {data.invoice_number}</DialogTitle>
-            <div className="flex flex-wrap items-center gap-2">
-              {canPay && !paymentLink && (
-                <Button size="sm" onClick={handleCreateLink} disabled={creatingLink}>
-                  {creatingLink ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <CreditCard className="mr-2 h-4 w-4" />
-                  )}
-                  Mollie betaallink maken
-                </Button>
-              )}
-              {paymentLink && (
-                <>
-                  <Button asChild size="sm" variant="secondary">
-                    <a href={paymentLink} target="_blank" rel="noopener noreferrer">
-                      <Link2 className="mr-2 h-4 w-4" /> Open betaallink
-                    </a>
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={handleCopyLink}>
-                    <Copy className="mr-2 h-4 w-4" /> Kopieer
-                  </Button>
-                  {canPay && (
-                    <Button size="sm" variant="ghost" onClick={handleRevoke} disabled={revoking}>
-                      {revoking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <X className="mr-2 h-4 w-4" />}
-                      Verwijder
-                    </Button>
-                  )}
-                </>
-              )}
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-4">
+              <DialogTitle>Factuurvoorbeeld — {data.invoice_number}</DialogTitle>
               <Button size="sm" variant="outline" onClick={handlePrint}>
                 <Printer className="mr-2 h-4 w-4" /> Print / PDF
               </Button>
             </div>
+
+            {canPay && (
+              <div className="flex flex-wrap items-end gap-3 rounded-md border bg-muted/30 p-3">
+                <div className="min-w-[220px] flex-1">
+                  <Label className="text-xs">Betaalmethode voorkeur</Label>
+                  <Select
+                    value={method}
+                    onValueChange={(v) => setMethod(v as MolliePaymentMethod | "any")}
+                    disabled={!!paymentLink || creatingLink}
+                  >
+                    <SelectTrigger className="mt-1 h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {METHOD_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {method !== "any" && !paymentLink && (
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Checkbox
+                      checked={restrict}
+                      onCheckedChange={(c) => setRestrict(c === true)}
+                    />
+                    Alleen deze methode toestaan
+                  </label>
+                )}
+                <div className="flex flex-wrap items-center gap-2">
+                  {!paymentLink && (
+                    <Button size="sm" onClick={handleCreateLink} disabled={creatingLink}>
+                      {creatingLink ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <CreditCard className="mr-2 h-4 w-4" />
+                      )}
+                      Mollie betaallink maken
+                    </Button>
+                  )}
+                  {paymentLink && (
+                    <>
+                      <Button asChild size="sm" variant="secondary">
+                        <a href={paymentLink} target="_blank" rel="noopener noreferrer">
+                          <Link2 className="mr-2 h-4 w-4" /> Open betaallink
+                        </a>
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={handleCopyLink}>
+                        <Copy className="mr-2 h-4 w-4" /> Kopieer
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={handleRevoke} disabled={revoking}>
+                        {revoking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <X className="mr-2 h-4 w-4" />}
+                        Verwijder
+                      </Button>
+                    </>
+                  )}
+                </div>
+                {paymentLink && (
+                  <div className="ml-auto rounded bg-white p-1" title="Scan om te betalen">
+                    <QRCodeSVG value={paymentLink} size={72} level="M" />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </DialogHeader>
 
