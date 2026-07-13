@@ -389,6 +389,42 @@ function AgendaPage() {
         )}
       </div>
 
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs font-medium text-muted-foreground">Status:</span>
+        {(
+          [
+            { k: "all", label: "Alle" },
+            { k: "scheduled", label: "Gepland" },
+            { k: "sent", label: "Verzonden" },
+            { k: "confirmed", label: "Bevestigd" },
+            { k: "reschedule", label: "Verzet-verzoek" },
+            { k: "cancelled", label: "Geannuleerd" },
+          ] as const
+        ).map((f) => {
+          const count = items.filter((a) => {
+            if (f.k === "all") return true;
+            if (f.k === "cancelled") return a.status === "cancelled";
+            if (f.k === "scheduled") return a.status !== "cancelled" && !a.invite_sent_at;
+            if (f.k === "sent") return a.status !== "cancelled" && !!a.invite_sent_at && !a.confirmed_at && !a.reschedule_requested_at;
+            if (f.k === "confirmed") return a.status !== "cancelled" && !!a.confirmed_at;
+            if (f.k === "reschedule") return a.status !== "cancelled" && !!a.reschedule_requested_at && !a.confirmed_at;
+            return false;
+          }).length;
+          return (
+            <Button
+              key={f.k}
+              size="sm"
+              variant={statusFilter === f.k ? "default" : "outline"}
+              onClick={() => setStatusFilter(f.k)}
+              className="h-7 text-xs"
+            >
+              {f.label}
+              <span className="ml-1.5 rounded-full bg-black/10 px-1.5 py-0.5 text-[10px] dark:bg-white/10">{count}</span>
+            </Button>
+          );
+        })}
+      </div>
+
 
       {loading ? (
         <div className="flex items-center justify-center py-20 text-muted-foreground">
