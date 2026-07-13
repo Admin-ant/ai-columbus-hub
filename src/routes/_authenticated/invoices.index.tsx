@@ -181,6 +181,7 @@ function InvoicesPage() {
                 <TableHead>Klant</TableHead>
                 <TableHead>{t("invoices.issue_date")}</TableHead>
                 <TableHead>{t("invoices.due_date")}</TableHead>
+                <TableHead>Betaald op</TableHead>
                 <TableHead className="text-right">{t("invoices.amount")}</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="w-10 text-right">{t("invoices.actions")}</TableHead>
@@ -212,6 +213,11 @@ function InvoicesPage() {
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {new Date(inv.due_date).toLocaleDateString(i18n.resolvedLanguage ?? "nl")}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {inv.paid_at
+                      ? new Date(inv.paid_at).toLocaleDateString(i18n.resolvedLanguage ?? "nl")
+                      : "—"}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">{eur.format(Number(inv.amount))}</TableCell>
                   <TableCell>
