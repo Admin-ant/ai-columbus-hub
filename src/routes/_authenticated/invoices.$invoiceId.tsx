@@ -1092,12 +1092,29 @@ function EmailForm({
         }
       }
 
-      const finalSubject = payLink
-        ? `${subject.trim()} — Betaal online: ${payLink}`
-        : subject.trim();
-      const finalBody = payLink
-        ? `${body.trim()}\n\nBetaal direct online via Mollie:\n${payLink}`
-        : body.trim();
+      const vars: Record<string, string> = {
+        client_name: invoice.client_name ?? "",
+        invoice_number: invoice.invoice_number ?? "",
+        total: formatCents(invoice.total_cents, "nl", invoice.currency ?? "EUR"),
+        subtotal: formatCents(invoice.subtotal_cents, "nl", invoice.currency ?? "EUR"),
+        vat: formatCents(invoice.vat_cents, "nl", invoice.currency ?? "EUR"),
+        due_date: invoice.due_date ? new Date(invoice.due_date).toLocaleDateString("nl") : "",
+        issue_date: invoice.issue_date ? new Date(invoice.issue_date).toLocaleDateString("nl") : "",
+        payment_link: payLink ?? "",
+      };
+      const applyVars = (s: string) =>
+        s.replace(/\{\{?\s*(\w+)\s*\}?\}/g, (m, k: string) =>
+          Object.prototype.hasOwnProperty.call(vars, k) ? vars[k] : m,
+        );
+
+      const subjectFilled = applyVars(subject.trim());
+      const bodyFilled = applyVars(body.trim());
+      const finalSubject = payLink && !subjectFilled.includes(payLink)
+        ? `${subjectFilled} — Betaal online: ${payLink}`
+        : subjectFilled;
+      const finalBody = payLink && !bodyFilled.includes(payLink)
+        ? `${bodyFilled}\n\nBetaal direct online via Mollie:\n${payLink}`
+        : bodyFilled;
 
       // Upload PDF to mail-attachments bucket
       const blob = doc.output("blob");
