@@ -242,7 +242,7 @@ function InvoicesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {invoices.map((inv) => (
+              {filteredInvoices.map((inv) => (
                 <TableRow key={inv.id}>
                   <TableCell className="font-mono text-sm">
                     <Link
