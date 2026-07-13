@@ -1,11 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Link2, ArrowRight, Info, Workflow } from "lucide-react";
+import { Link2, ArrowRight, Info, Workflow, Bell } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLeadsFunnelVisible } from "@/hooks/use-leads-funnel-visible";
+import { useReminderSettings, DEFAULT_WINDOW_DAYS, DEFAULT_OVERDUE_DAYS } from "@/hooks/use-reminder-settings";
+
 
 export const Route = createFileRoute("/_authenticated/ai-columbus/instellingen")({
   head: () => ({ meta: [{ title: "AI van Columbus — Instellingen" }] }),
