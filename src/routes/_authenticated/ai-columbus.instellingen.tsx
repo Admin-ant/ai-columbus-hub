@@ -38,6 +38,8 @@ function SettingsPage() {
     <div className="mx-auto max-w-3xl space-y-4">
       <h1 className="text-2xl font-bold tracking-tight">Instellingen — AI van Columbus</h1>
 
+      <CompanySettingsCards />
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
