@@ -17,6 +17,21 @@ export const Route = createFileRoute("/_authenticated/ai-columbus/instellingen")
 
 function SettingsPage() {
   const [leadsFunnelVisible, setLeadsFunnelVisible] = useLeadsFunnelVisible();
+  const [reminderSettings, updateReminderSettings] = useReminderSettings();
+
+  function onWindowChange(v: string) {
+    const n = parseInt(v, 10);
+    if (Number.isFinite(n) && n >= 1 && n <= 365) {
+      updateReminderSettings({ windowDays: n });
+    }
+  }
+  function onOverdueChange(v: string) {
+    const n = parseInt(v, 10);
+    if (Number.isFinite(n) && n >= 0 && n <= 365) {
+      updateReminderSettings({ overdueDays: n });
+    }
+  }
+
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
