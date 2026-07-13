@@ -838,7 +838,7 @@ function InvoiceDetailPage() {
             vat: org?.tax_number ?? null,
             iban: org?.iban ?? null,
             account_holder: org?.name ?? null,
-            logo_url: null,
+            logo_url: org?.brand_logo_url ?? org?.logo_url ?? null,
           },
           client: {
             customer_number: null,
