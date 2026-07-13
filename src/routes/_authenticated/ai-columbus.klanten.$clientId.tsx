@@ -91,6 +91,13 @@ function ClientDetailPage() {
       } else {
         setLogs({});
       }
+
+      const { data: appts } = await supabase
+        .from("appointments")
+        .select("*")
+        .eq("client_id", clientId)
+        .order("starts_at", { ascending: false });
+      setAppointments((appts ?? []) as AppointmentRow[]);
     }
     setLoading(false);
   }
