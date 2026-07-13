@@ -51,7 +51,7 @@ export function ProjectRemindersCard() {
           .eq("organization_id", currentOrganizationId)
           .not("target_month", "is", null)
           .not("delivery_status", "in", "(opgeleverd,geannuleerd)")
-          .lte("target_month", in30.toISOString().slice(0, 10))
+          .lte("target_month", inWindow.toISOString().slice(0, 10))
           .order("target_month", { ascending: true })
           .limit(20),
       ]);
