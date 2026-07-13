@@ -1286,6 +1286,82 @@ function EmailForm({
 
   return (
     <form onSubmit={submit} className="space-y-3">
+      <div className="space-y-1.5 rounded-md border bg-muted/30 p-3">
+        <Label className="text-xs uppercase tracking-wide text-muted-foreground">E-mailtemplate</Label>
+        {saveTplOpen ? (
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input
+              autoFocus
+              value={newTplName}
+              onChange={(e) => setNewTplName(e.target.value)}
+              placeholder="Templatenaam"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  saveTemplate();
+                }
+              }}
+            />
+            <div className="flex gap-2">
+              <Button type="button" size="sm" onClick={saveTemplate}>
+                <Save className="mr-1 h-3.5 w-3.5" /> Opslaan
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setSaveTplOpen(false);
+                  setNewTplName("");
+                }}
+              >
+                Annuleer
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Select
+              value={selectedTplId || undefined}
+              onValueChange={applyTemplate}
+              disabled={templates.length === 0}
+            >
+              <SelectTrigger className="flex-1">
+                <SelectValue
+                  placeholder={templates.length === 0 ? "Nog geen templates opgeslagen" : "Kies een template…"}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {templates.map((tpl) => (
+                  <SelectItem key={tpl.id} value={tpl.id}>
+                    {tpl.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setNewTplName(
+                    templates.find((t) => t.id === selectedTplId)?.name ?? "",
+                  );
+                  setSaveTplOpen(true);
+                }}
+              >
+                <Save className="mr-1 h-3.5 w-3.5" /> Opslaan als template
+              </Button>
+              {selectedTplId && (
+                <Button type="button" size="sm" variant="ghost" onClick={deleteTemplate}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
       <div className="space-y-1.5">
         <Label>{t("invoices.to")}</Label>
         <Input value={to} onChange={(e) => setTo(e.target.value)} required placeholder="klant@voorbeeld.nl" />
