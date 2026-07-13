@@ -895,6 +895,86 @@ function InvoiceDetailPage() {
   );
 }
 
+function PaymentStatusEditor({ invoice, onChanged }: { invoice: Invoice; onChanged: () => void }) {
+  const { i18n } = useTranslation();
+  const [editing, setEditing] = useState(false);
+  const [date, setDate] = useState(
+    invoice.paid_at ? new Date(invoice.paid_at).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+  );
+  const [saving, setSaving] = useState(false);
+
+  async function save(nextStatus: InvoiceStatus, paidAt: string | null) {
+    setSaving(true);
+    const patch: { status: InvoiceStatus; paid_at: string | null } = {
+      status: nextStatus,
+      paid_at: paidAt,
+    };
+    const { error } = await supabase.from("invoices").update(patch).eq("id", invoice.id);
+    setSaving(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setEditing(false);
+    toast.success("Betaalstatus bijgewerkt");
+    onChanged();
+  }
+
+  const isPaid = invoice.status === "paid";
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-xs">
+      <span className="font-medium text-foreground">Betaalstatus:</span>
+      <Badge variant="outline" className={STATUS_COLOR[invoice.status]}>
+        {isPaid ? "Betaald" : invoice.status}
+      </Badge>
+      {isPaid && invoice.paid_at && !editing && (
+        <span>op {new Date(invoice.paid_at).toLocaleDateString(i18n.resolvedLanguage ?? "nl")}</span>
+      )}
+      {editing ? (
+        <div className="flex items-center gap-1">
+          <Input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="h-7 w-[140px]"
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7"
+            disabled={saving}
+            onClick={() => save("paid", new Date(date).toISOString())}
+          >
+            {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+          </Button>
+          <Button size="sm" variant="ghost" className="h-7" onClick={() => setEditing(false)}>
+            Annuleer
+          </Button>
+        </div>
+      ) : (
+        <>
+          <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => setEditing(true)}>
+            {isPaid ? "Datum wijzigen" : "Markeer als betaald"}
+          </Button>
+          {isPaid && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 px-2 text-xs"
+              onClick={() => save("sent", null)}
+              disabled={saving}
+            >
+              Ongedaan maken
+            </Button>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+
 function EditInvoiceForm({
   invoice,
   lines: initialLines,
