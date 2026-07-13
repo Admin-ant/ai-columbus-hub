@@ -1056,9 +1056,9 @@ function EmailForm({
   const [includePayLink, setIncludePayLink] = useState<boolean>(canPay);
   const [to, setTo] = useState(defaultTo);
   const [cc, setCc] = useState("");
-  const [subject, setSubject] = useState(`Factuur ${invoice.invoice_number}`);
+  const [subject, setSubject] = useState(`Factuur {{invoice_number}}`);
   const [body, setBody] = useState(
-    `Beste ${invoice.client_name ?? ""},\n\nBijgevoegd vind je factuur ${invoice.invoice_number}. De vervaldatum is ${new Date(invoice.due_date).toLocaleDateString("nl")}.\n\nMet vriendelijke groet`,
+    `Beste {{client_name}},\n\nBijgevoegd vind je factuur {{invoice_number}} van {{total}}. De vervaldatum is {{due_date}}.\n\nMet vriendelijke groet`,
   );
   const [filename, setFilename] = useState(defaultFilename);
   const [extraChecked, setExtraChecked] = useState<Record<string, boolean>>({});
