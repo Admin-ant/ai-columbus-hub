@@ -554,10 +554,11 @@ function InvoiceDetailPage() {
           </address>
         </div>
         <div className="mt-6 flex flex-wrap items-end justify-between gap-4 border-t pt-4">
-          <div className="text-xs text-muted-foreground">
+          <div className="space-y-2 text-xs text-muted-foreground">
             {invoice.last_emailed_at && (
-              <>Laatst gemaild: {new Date(invoice.last_emailed_at).toLocaleString(i18n.resolvedLanguage ?? "nl")}</>
+              <div>Laatst gemaild: {new Date(invoice.last_emailed_at).toLocaleString(i18n.resolvedLanguage ?? "nl")}</div>
             )}
+            <PaymentStatusEditor invoice={invoice} onChanged={load} />
           </div>
           <div className="text-right">
             <div className="text-xs uppercase text-muted-foreground">{t("invoices.total")}</div>
