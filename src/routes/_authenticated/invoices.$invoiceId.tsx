@@ -771,6 +771,7 @@ function InvoiceDetailPage() {
         onOpenChange={setPreviewOpen}
         invoiceId={invoice.id}
         invoiceStatus={invoice.status}
+        defaultPreferredMethod={preferredMethod}
         onPaymentLinkChanged={() => void load()}
         data={{
           organization: {
