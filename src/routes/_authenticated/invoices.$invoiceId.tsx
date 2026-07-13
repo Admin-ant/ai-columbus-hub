@@ -16,6 +16,7 @@ import {
   Paperclip,
   Pencil,
   Save,
+  Send,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -174,6 +175,7 @@ function InvoiceDetailPage() {
   const refreshMollieFn = useServerFn(refreshMollieInvoiceStatus);
   const [loading, setLoading] = useState(true);
   const [emailOpen, setEmailOpen] = useState(false);
+  const [emailMode, setEmailMode] = useState<"normal" | "reminder">("normal");
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -440,6 +442,37 @@ function InvoiceDetailPage() {
   };
   const currentPaymentLink = invExt.payment_link_url ?? invExt.mollie_checkout_url ?? null;
   const preferredMethod = invExt.preferred_payment_method ?? null;
+
+  const isUnpaid =
+    invoice.status !== "paid" && invoice.status !== "cancelled" && invoice.status !== "draft";
+  const daysOverdue = (() => {
+    if (!isUnpaid || !invoice.due_date) return 0;
+    const due = new Date(invoice.due_date);
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - due.getTime()) / 86400000);
+    return diff > 0 ? diff : 0;
+  })();
+  const reminderDefaults = (() => {
+    const eurFmt = new Intl.NumberFormat("nl-NL", { style: "currency", currency: invoice.currency ?? "EUR" });
+    const dueFmt = invoice.due_date ? new Date(invoice.due_date).toLocaleDateString("nl-NL") : "";
+    const subject =
+      daysOverdue > 0
+        ? `Betaalherinnering — factuur ${invoice.invoice_number} (${daysOverdue} dagen over vervaldatum)`
+        : `Betaalherinnering — factuur ${invoice.invoice_number}`;
+    const overdueLine =
+      daysOverdue > 0
+        ? `Volgens onze administratie is deze factuur ${daysOverdue} dagen over de vervaldatum (${dueFmt}) en nog niet betaald.`
+        : `Deze factuur vervalt op ${dueFmt} en staat op dit moment nog open.`;
+    const body =
+      `Beste {{client_name}},\n\n` +
+      `${overdueLine}\n\n` +
+      `Het openstaande bedrag is ${eurFmt.format(invoice.total_cents / 100)}.\n` +
+      `Wij verzoeken u vriendelijk de betaling zo spoedig mogelijk te voldoen. Heeft u de betaling inmiddels verricht, dan kunt u deze mail als niet verzonden beschouwen.\n\n` +
+      `Bij vragen of onduidelijkheden kunt u ons gerust bereiken.\n\n` +
+      `Met vriendelijke groet`;
+    return { subject, body };
+  })();
+
   // Laatste webhook-status uit events
   const latestWebhookStatus = paymentEvents.find(
     (e) => e.event_type === "webhook" || e.event_type === "polled",
@@ -502,9 +535,20 @@ function InvoiceDetailPage() {
           <Button variant="outline" size="sm" onClick={() => setDownloadOpen(true)}>
             <Download className="mr-1 h-4 w-4" /> {t("invoices.download_pdf")}
           </Button>
-          <Button size="sm" onClick={() => setEmailOpen(true)}>
+          <Button size="sm" onClick={() => { setEmailMode("normal"); setEmailOpen(true); }}>
             <Mail className="mr-1 h-4 w-4" /> {t("invoices.email")}
           </Button>
+          {isUnpaid && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { setEmailMode("reminder"); setEmailOpen(true); }}
+              className={daysOverdue > 0 ? "border-red-500/50 text-red-700 dark:text-red-300" : ""}
+            >
+              <Send className="mr-1 h-4 w-4" />
+              {daysOverdue > 0 ? `Herinnering (${daysOverdue}d over)` : "Herinnering"}
+            </Button>
+          )}
           {isDraft && (
             <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
               <Pencil className="mr-1 h-4 w-4" /> {t("invoices.edit")}
@@ -782,13 +826,21 @@ function InvoiceDetailPage() {
       <Dialog open={emailOpen} onOpenChange={setEmailOpen}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle>{t("invoices.compose_email")}</DialogTitle>
-            <DialogDescription>{invoice.invoice_number} — {invoice.client_name}</DialogDescription>
+            <DialogTitle>
+              {emailMode === "reminder" ? "Betaalherinnering versturen" : t("invoices.compose_email")}
+            </DialogTitle>
+            <DialogDescription>
+              {invoice.invoice_number} — {invoice.client_name}
+              {emailMode === "reminder" && daysOverdue > 0 ? ` · ${daysOverdue} dagen over vervaldatum` : ""}
+            </DialogDescription>
           </DialogHeader>
           <EmailForm
+            key={emailMode}
             invoice={invoice}
             defaultTo={client?.email ?? ""}
             defaultFilename={suggestedFilename}
+            initialSubject={emailMode === "reminder" ? reminderDefaults.subject : undefined}
+            initialBody={emailMode === "reminder" ? reminderDefaults.body : undefined}
             attachments={attachments}
             buildPdf={buildPdf}
             currentPaymentLink={currentPaymentLink}
@@ -1179,6 +1231,8 @@ function EmailForm({
   invoice,
   defaultTo,
   defaultFilename,
+  initialSubject,
+  initialBody,
   attachments,
   buildPdf,
   emailFn,
@@ -1189,6 +1243,8 @@ function EmailForm({
   invoice: Invoice;
   defaultTo: string;
   defaultFilename: string;
+  initialSubject?: string;
+  initialBody?: string;
   attachments: AttachmentRow[];
   buildPdf: () => ReturnType<typeof buildInvoicePdf> | null;
   emailFn: ReturnType<typeof useServerFn<typeof emailInvoice>>;
@@ -1202,9 +1258,10 @@ function EmailForm({
   const [includePayLink, setIncludePayLink] = useState<boolean>(canPay);
   const [to, setTo] = useState(defaultTo);
   const [cc, setCc] = useState("");
-  const [subject, setSubject] = useState(`Factuur {{invoice_number}}`);
+  const [subject, setSubject] = useState(initialSubject ?? `Factuur {{invoice_number}}`);
   const [body, setBody] = useState(
-    `Beste {{client_name}},\n\nBijgevoegd vind je factuur {{invoice_number}} van {{total}}. De vervaldatum is {{due_date}}.\n\nMet vriendelijke groet`,
+    initialBody ??
+      `Beste {{client_name}},\n\nBijgevoegd vind je factuur {{invoice_number}} van {{total}}. De vervaldatum is {{due_date}}.\n\nMet vriendelijke groet`,
   );
   const [filename, setFilename] = useState(defaultFilename);
   const [extraChecked, setExtraChecked] = useState<Record<string, boolean>>({});
