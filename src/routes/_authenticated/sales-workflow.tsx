@@ -239,6 +239,8 @@ function stageBadge(s: StageKey) {
     quote: { label: "Offerte", variant: "secondary" },
     signed: { label: "Ondertekend", variant: "default" },
     invoiced: { label: "Klant", variant: "default" },
+    won: { label: "Gewonnen", variant: "default" },
+    lost: { label: "Verloren", variant: "outline" },
   };
   const cfg = map[s];
   return <Badge variant={cfg.variant}>{cfg.label}</Badge>;
