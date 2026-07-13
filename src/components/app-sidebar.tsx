@@ -23,6 +23,7 @@ import {
   Inbox,
   Mic,
   Workflow,
+  CalendarDays,
 } from "lucide-react";
 
 import {
@@ -91,6 +92,7 @@ const columbusGroups: NavGroup[] = [
     label: "Communicatie",
     items: [
       { title: "Mail", url: "/mail", icon: Mail },
+      { title: "Agenda", url: "/agenda", icon: CalendarDays },
       { title: "Mail instellingen", url: "/mail/settings", icon: Settings },
     ],
   },

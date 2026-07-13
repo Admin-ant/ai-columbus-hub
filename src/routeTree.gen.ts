@@ -30,6 +30,7 @@ import { Route as AuthenticatedEnterpriseRouteImport } from './routes/_authentic
 import { Route as AuthenticatedContractenRouteImport } from './routes/_authenticated/contracten'
 import { Route as AuthenticatedBoekhoudingRouteImport } from './routes/_authenticated/boekhouding'
 import { Route as AuthenticatedAiColumbusRouteImport } from './routes/_authenticated/ai-columbus'
+import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
 import { Route as AuthenticatedAdministratieRouteImport } from './routes/_authenticated/administratie'
 import { Route as AuthenticatedOutreachIndexRouteImport } from './routes/_authenticated/outreach.index'
 import { Route as AuthenticatedOfferteStudioIndexRouteImport } from './routes/_authenticated/offerte-studio.index'
@@ -181,6 +182,11 @@ const AuthenticatedBoekhoudingRoute =
 const AuthenticatedAiColumbusRoute = AuthenticatedAiColumbusRouteImport.update({
   id: '/ai-columbus',
   path: '/ai-columbus',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAgendaRoute = AuthenticatedAgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdministratieRoute =
@@ -456,6 +462,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/visual-check': typeof VisualCheckRoute
   '/administratie': typeof AuthenticatedAdministratieRoute
+  '/agenda': typeof AuthenticatedAgendaRoute
   '/ai-columbus': typeof AuthenticatedAiColumbusRouteWithChildren
   '/boekhouding': typeof AuthenticatedBoekhoudingRouteWithChildren
   '/contracten': typeof AuthenticatedContractenRouteWithChildren
@@ -522,6 +529,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/visual-check': typeof VisualCheckRoute
   '/administratie': typeof AuthenticatedAdministratieRoute
+  '/agenda': typeof AuthenticatedAgendaRoute
   '/boekhouding': typeof AuthenticatedBoekhoudingRouteWithChildren
   '/contracten': typeof AuthenticatedContractenRouteWithChildren
   '/enterprise': typeof AuthenticatedEnterpriseRoute
@@ -589,6 +597,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/visual-check': typeof VisualCheckRoute
   '/_authenticated/administratie': typeof AuthenticatedAdministratieRoute
+  '/_authenticated/agenda': typeof AuthenticatedAgendaRoute
   '/_authenticated/ai-columbus': typeof AuthenticatedAiColumbusRouteWithChildren
   '/_authenticated/boekhouding': typeof AuthenticatedBoekhoudingRouteWithChildren
   '/_authenticated/contracten': typeof AuthenticatedContractenRouteWithChildren
@@ -659,6 +668,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/visual-check'
     | '/administratie'
+    | '/agenda'
     | '/ai-columbus'
     | '/boekhouding'
     | '/contracten'
@@ -725,6 +735,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/visual-check'
     | '/administratie'
+    | '/agenda'
     | '/boekhouding'
     | '/contracten'
     | '/enterprise'
@@ -791,6 +802,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/visual-check'
     | '/_authenticated/administratie'
+    | '/_authenticated/agenda'
     | '/_authenticated/ai-columbus'
     | '/_authenticated/boekhouding'
     | '/_authenticated/contracten'
@@ -1023,6 +1035,13 @@ declare module '@tanstack/react-router' {
       path: '/ai-columbus'
       fullPath: '/ai-columbus'
       preLoaderRoute: typeof AuthenticatedAiColumbusRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/agenda': {
+      id: '/_authenticated/agenda'
+      path: '/agenda'
+      fullPath: '/agenda'
+      preLoaderRoute: typeof AuthenticatedAgendaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/administratie': {
@@ -1499,6 +1518,7 @@ const AuthenticatedOpnameRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdministratieRoute: typeof AuthenticatedAdministratieRoute
+  AuthenticatedAgendaRoute: typeof AuthenticatedAgendaRoute
   AuthenticatedAiColumbusRoute: typeof AuthenticatedAiColumbusRouteWithChildren
   AuthenticatedBoekhoudingRoute: typeof AuthenticatedBoekhoudingRouteWithChildren
   AuthenticatedContractenRoute: typeof AuthenticatedContractenRouteWithChildren
@@ -1528,6 +1548,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdministratieRoute: AuthenticatedAdministratieRoute,
+  AuthenticatedAgendaRoute: AuthenticatedAgendaRoute,
   AuthenticatedAiColumbusRoute: AuthenticatedAiColumbusRouteWithChildren,
   AuthenticatedBoekhoudingRoute: AuthenticatedBoekhoudingRouteWithChildren,
   AuthenticatedContractenRoute: AuthenticatedContractenRouteWithChildren,

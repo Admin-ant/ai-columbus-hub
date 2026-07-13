@@ -44,8 +44,18 @@ import {
 } from "@/components/ui/table";
 import { useWorkspace } from "@/hooks/use-workspace";
 
+type FilterKey = "all" | "paid" | "open" | "reminder" | "draft";
+const VALID_FILTERS: FilterKey[] = ["all", "paid", "open", "reminder", "draft"];
+
 export const Route = createFileRoute("/_authenticated/invoices/")({
   head: () => ({ meta: [{ title: "Facturen" }] }),
+  validateSearch: (s: Record<string, unknown>): { filter?: FilterKey } => {
+    const f = s.filter;
+    if (typeof f === "string" && (VALID_FILTERS as string[]).includes(f)) {
+      return { filter: f as FilterKey };
+    }
+    return {};
+  },
   component: InvoicesPage,
 });
 
@@ -79,7 +89,12 @@ function InvoicesPage() {
   const { currentOrganizationId, currentOrganization, loading: wsLoading } = useWorkspace();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "paid" | "open" | "reminder" | "draft">("all");
+  const search = Route.useSearch();
+  const [filter, setFilter] = useState<FilterKey>(search.filter ?? "all");
+  useEffect(() => {
+    if (search.filter && search.filter !== filter) setFilter(search.filter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.filter]);
 
   const eur = useMemo(
     () =>

@@ -65,6 +65,91 @@ export type Database = {
           },
         ]
       }
+      appointments: {
+        Row: {
+          attendee_email: string | null
+          attendee_name: string | null
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          ends_at: string
+          ics_sequence: number
+          ics_uid: string
+          id: string
+          invite_sent_at: string | null
+          lead_id: string | null
+          location: string | null
+          organization_id: string
+          starts_at: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          attendee_email?: string | null
+          attendee_name?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_at: string
+          ics_sequence?: number
+          ics_uid?: string
+          id?: string
+          invite_sent_at?: string | null
+          lead_id?: string | null
+          location?: string | null
+          organization_id: string
+          starts_at: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          attendee_email?: string | null
+          attendee_name?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_at?: string
+          ics_sequence?: number
+          ics_uid?: string
+          id?: string
+          invite_sent_at?: string | null
+          lead_id?: string | null
+          location?: string | null
+          organization_id?: string
+          starts_at?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       call_recorder_rules: {
         Row: {
           action_kind: string
