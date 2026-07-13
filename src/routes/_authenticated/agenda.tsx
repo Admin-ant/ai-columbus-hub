@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { CalendarDays, Loader2, Mail, Plus, Send, Trash2, X } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Loader2, Mail, Plus, Send, Trash2, X, Ban } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -69,6 +69,11 @@ function AgendaPage() {
   const [scope, setScope] = useState<"upcoming" | "past" | "all">("upcoming");
   const [editing, setEditing] = useState<Appointment | null>(null);
   const [open, setOpen] = useState(false);
+  const [month, setMonth] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
   async function load() {
     if (!currentOrganizationId) {
@@ -103,6 +108,9 @@ function AgendaPage() {
   const grouped = useMemo(() => {
     const now = Date.now();
     const filtered = items.filter((a) => {
+      if (selectedDay) {
+        return new Date(a.starts_at).toISOString().slice(0, 10) === selectedDay;
+      }
       const t = new Date(a.starts_at).getTime();
       if (scope === "upcoming") return t >= now - 3600_000;
       if (scope === "past") return t < now - 3600_000;
@@ -121,7 +129,44 @@ function AgendaPage() {
       map.set(key, arr);
     }
     return Array.from(map.entries());
-  }, [items, scope]);
+  }, [items, scope, selectedDay]);
+
+  const monthGrid = useMemo(() => {
+    const y = month.getFullYear();
+    const m = month.getMonth();
+    const first = new Date(y, m, 1);
+    // Mon=0..Sun=6
+    const startOffset = (first.getDay() + 6) % 7;
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    const cells: Array<{ date: Date; key: string; inMonth: boolean; count: number }> = [];
+    const counts = new Map<string, number>();
+    for (const a of items) {
+      const k = new Date(a.starts_at).toISOString().slice(0, 10);
+      counts.set(k, (counts.get(k) ?? 0) + 1);
+    }
+    // leading days from previous month
+    for (let i = startOffset; i > 0; i--) {
+      const d = new Date(y, m, 1 - i);
+      const key = d.toISOString().slice(0, 10);
+      cells.push({ date: d, key, inMonth: false, count: counts.get(key) ?? 0 });
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dt = new Date(y, m, d);
+      const key = dt.toISOString().slice(0, 10);
+      cells.push({ date: dt, key, inMonth: true, count: counts.get(key) ?? 0 });
+    }
+    // trailing days
+    while (cells.length % 7 !== 0) {
+      const last = cells[cells.length - 1].date;
+      const d = new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1);
+      const key = d.toISOString().slice(0, 10);
+      cells.push({ date: d, key, inMonth: false, count: counts.get(key) ?? 0 });
+    }
+    return cells;
+  }, [items, month]);
+
+  const todayKey = new Date().toISOString().slice(0, 10);
+
 
   return (
     <div className="space-y-6">
@@ -147,6 +192,72 @@ function AgendaPage() {
         )}
       </div>
 
+      <div className="rounded-lg border bg-card p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div className="min-w-[10rem] text-center text-sm font-semibold">
+              {month.toLocaleDateString("nl-NL", { month: "long", year: "numeric" })}
+            </div>
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="ml-2 h-7 text-xs"
+              onClick={() => {
+                const d = new Date();
+                setMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+                setSelectedDay(null);
+              }}
+            >
+              Vandaag
+            </Button>
+          </div>
+          {selectedDay && (
+            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelectedDay(null)}>
+              <X className="mr-1 h-3 w-3" /> Dagfilter wissen
+            </Button>
+          )}
+        </div>
+        <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-medium uppercase text-muted-foreground">
+          {["ma", "di", "wo", "do", "vr", "za", "zo"].map((d) => (
+            <div key={d} className="py-1">{d}</div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-1">
+          {monthGrid.map((c) => {
+            const isSelected = selectedDay === c.key;
+            const isToday = c.key === todayKey;
+            return (
+              <button
+                key={c.key}
+                type="button"
+                onClick={() => setSelectedDay(isSelected ? null : c.key)}
+                className={`aspect-square rounded-md border p-1 text-left text-xs transition-colors ${
+                  !c.inMonth ? "text-muted-foreground/40" : ""
+                } ${isSelected ? "border-brand bg-brand/10" : "hover:bg-accent/50"} ${
+                  isToday ? "font-bold" : ""
+                }`}
+              >
+                <div>{c.date.getDate()}</div>
+                {c.count > 0 && (
+                  <div className="mt-0.5 flex flex-wrap gap-0.5">
+                    {Array.from({ length: Math.min(c.count, 3) }).map((_, i) => (
+                      <span key={i} className="inline-block h-1.5 w-1.5 rounded-full bg-brand" />
+                    ))}
+                    {c.count > 3 && <span className="text-[9px] text-muted-foreground">+{c.count - 3}</span>}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="flex flex-wrap items-center gap-2">
         {(
           [
@@ -159,13 +270,20 @@ function AgendaPage() {
             key={f.k}
             size="sm"
             variant={scope === f.k ? "default" : "outline"}
-            onClick={() => setScope(f.k)}
+            onClick={() => { setScope(f.k); setSelectedDay(null); }}
             className="h-7 text-xs"
+            disabled={!!selectedDay}
           >
             {f.label}
           </Button>
         ))}
+        {selectedDay && (
+          <span className="text-xs text-muted-foreground">
+            Filter: {new Date(selectedDay).toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long" })}
+          </span>
+        )}
       </div>
+
 
       {loading ? (
         <div className="flex items-center justify-center py-20 text-muted-foreground">
@@ -268,14 +386,18 @@ function ApptCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <button onClick={onEdit} className="text-base font-semibold hover:underline">
+            <button onClick={onEdit} className={`text-base font-semibold hover:underline ${a.status === "cancelled" ? "line-through text-muted-foreground" : ""}`}>
               {a.title}
             </button>
-            {a.invite_sent_at && (
+            {a.status === "cancelled" ? (
+              <Badge variant="outline" className="bg-red-500/10 text-red-700 dark:text-red-300">
+                Geannuleerd
+              </Badge>
+            ) : a.invite_sent_at ? (
               <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
                 Uitnodiging verzonden
               </Badge>
-            )}
+            ) : null}
           </div>
           <div className="mt-1 text-sm text-muted-foreground">
             {time}
@@ -296,7 +418,7 @@ function ApptCard({
             size="sm"
             variant="outline"
             onClick={() => sendInvite(false)}
-            disabled={sending || !a.attendee_email}
+            disabled={sending || !a.attendee_email || a.status === "cancelled"}
           >
             {sending ? (
               <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -307,6 +429,22 @@ function ApptCard({
             )}
             {a.invite_sent_at ? "Opnieuw versturen" : "Uitnodigen"}
           </Button>
+          {a.status !== "cancelled" && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-amber-700 hover:text-amber-800"
+              onClick={async () => {
+                if (!confirm("Afspraak annuleren en klant een annulering mailen?")) return;
+                await sendInvite(true);
+              }}
+              disabled={sending || !a.attendee_email}
+              title={a.attendee_email ? "Annuleer + stuur cancellation .ics" : "Geen e-mail bekend"}
+            >
+              <Ban className="mr-1.5 h-3.5 w-3.5" />
+              Annuleren
+            </Button>
+          )}
           <Button size="sm" variant="ghost" onClick={onEdit}>
             Bewerken
           </Button>

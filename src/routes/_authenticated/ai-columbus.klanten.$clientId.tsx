@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Loader2, Mail, Phone, Globe, Building2, MapPin, FileText, Briefcase, CreditCard, Users, Plus, Link2, Unlink, Pencil, Trash2, Search, History, ChevronDown, ChevronRight, Sparkles } from "lucide-react";
+import { ArrowLeft, Loader2, Mail, Phone, Globe, Building2, MapPin, FileText, Briefcase, CreditCard, Users, Plus, Link2, Unlink, Pencil, Trash2, Search, History, ChevronDown, ChevronRight, Sparkles, CalendarDays, Send, Ban } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +22,7 @@ type ClientRow = Database["public"]["Tables"]["clients"]["Row"];
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
 type InvoiceRow = Database["public"]["Tables"]["invoices"]["Row"];
 type LogRow = Database["public"]["Tables"]["invoice_link_log"]["Row"];
+type AppointmentRow = Database["public"]["Tables"]["appointments"]["Row"];
 
 const EUR = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
 
@@ -34,6 +35,7 @@ function ClientDetailPage() {
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
   const [logs, setLogs] = useState<Record<string, LogRow[]>>({});
+  const [appointments, setAppointments] = useState<AppointmentRow[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
@@ -89,6 +91,13 @@ function ClientDetailPage() {
       } else {
         setLogs({});
       }
+
+      const { data: appts } = await supabase
+        .from("appointments")
+        .select("*")
+        .eq("client_id", clientId)
+        .order("starts_at", { ascending: false });
+      setAppointments((appts ?? []) as AppointmentRow[]);
     }
     setLoading(false);
   }
@@ -248,6 +257,7 @@ function ClientDetailPage() {
           <TabsTrigger value="contacten"><Users className="mr-2 h-4 w-4" /> Contactpersonen</TabsTrigger>
           <TabsTrigger value="projecten"><Briefcase className="mr-2 h-4 w-4" /> Projecten <Badge variant="secondary" className="ml-2">{projects.length}</Badge></TabsTrigger>
           <TabsTrigger value="betalingen"><CreditCard className="mr-2 h-4 w-4" /> Betalingen <Badge variant="secondary" className="ml-2">{invoices.length}</Badge></TabsTrigger>
+          <TabsTrigger value="afspraken"><CalendarDays className="mr-2 h-4 w-4" /> Afspraken <Badge variant="secondary" className="ml-2">{appointments.length}</Badge></TabsTrigger>
         </TabsList>
 
         <TabsContent value="overzicht" className="mt-4">
@@ -521,6 +531,70 @@ function ClientDetailPage() {
                             </tr>
                           )}
                         </FragmentRow>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="afspraken" className="mt-4">
+          <Card>
+            <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-base"><CalendarDays className="h-4 w-4" /> Afspraken</CardTitle>
+                <CardDescription>Alle afspraken en verzonden uitnodigingen voor deze klant.</CardDescription>
+              </div>
+              <Button size="sm" asChild>
+                <Link to="/agenda"><Plus className="mr-2 h-4 w-4" /> Nieuwe afspraak</Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="p-0">
+              {appointments.length === 0 ? (
+                <p className="p-6 text-sm text-muted-foreground">Nog geen afspraken met deze klant. Maak er een aan via <Link to="/agenda" className="text-brand hover:underline">Agenda</Link>.</p>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 text-left">
+                    <tr>
+                      <th className="px-4 py-2 font-medium">Wanneer</th>
+                      <th className="px-4 py-2 font-medium">Titel</th>
+                      <th className="px-4 py-2 font-medium">Locatie</th>
+                      <th className="px-4 py-2 font-medium">Deelnemer</th>
+                      <th className="px-4 py-2 font-medium">Uitnodiging</th>
+                      <th className="px-4 py-2 font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {appointments.map((a) => {
+                      const start = new Date(a.starts_at);
+                      const end = new Date(a.ends_at);
+                      const cancelled = a.status === "cancelled";
+                      return (
+                        <tr key={a.id} className="border-t">
+                          <td className="px-4 py-2 whitespace-nowrap text-muted-foreground">
+                            <div>{start.toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}</div>
+                            <div className="text-xs">{start.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })} – {end.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}</div>
+                          </td>
+                          <td className={`px-4 py-2 font-medium ${cancelled ? "line-through text-muted-foreground" : ""}`}>{a.title}</td>
+                          <td className="px-4 py-2 text-muted-foreground">{a.location || "—"}</td>
+                          <td className="px-4 py-2 text-muted-foreground">{a.attendee_name || a.attendee_email || "—"}</td>
+                          <td className="px-4 py-2">
+                            {a.invite_sent_at ? (
+                              <Badge variant="outline" className="gap-1"><Send className="h-3 w-3" /> {new Date(a.invite_sent_at).toLocaleDateString("nl-NL")}</Badge>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2">
+                            {cancelled ? (
+                              <Badge variant="outline" className="gap-1 border-red-300 bg-red-500/10 text-red-700 dark:text-red-300"><Ban className="h-3 w-3" /> Geannuleerd</Badge>
+                            ) : (
+                              <Badge variant="outline">{a.status}</Badge>
+                            )}
+                          </td>
+                        </tr>
                       );
                     })}
                   </tbody>
