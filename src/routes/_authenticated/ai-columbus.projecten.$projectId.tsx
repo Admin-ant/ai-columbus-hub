@@ -194,7 +194,66 @@ function ProjectDetailPage() {
         </div>
       </div>
 
+      {/* Delivery KPI's — gescoped op dit project */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">In uitvoering</div>
+          <div className="mt-2 text-2xl font-bold tabular-nums">{isInProgress}</div>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">On hold / wacht op klant</div>
+          <div className="mt-2 text-2xl font-bold tabular-nums">{isWaiting}</div>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Opgeleverd deze maand</div>
+          <div className="mt-2 text-2xl font-bold tabular-nums">{deliveredThisMonth}</div>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Actieve MRR</div>
+          <div className="mt-2 text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{EUR.format(activeMrr / 100)}</div>
+        </div>
+      </div>
+
+      {/* Financiële samenvatting — dit project */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Maandelijkse opbrengst (dit project)</div>
+          <div className="mt-2 text-xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{EUR.format(monthlyCents / 100)}</div>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Eenmalige kosten (dit project)</div>
+          <div className="mt-2 text-xl font-bold tabular-nums text-indigo-600 dark:text-indigo-400">{EUR.format(setupCents / 100)}</div>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Totale deal-waarde (dit project)</div>
+          <div className="mt-2 text-xl font-bold tabular-nums">{EUR.format(totalDealCents / 100)}</div>
+        </div>
+      </div>
+
+      {/* Delivery-status kaarten — markeer huidige status */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {DELIVERY_KEYS.map((s) => {
+          const active = currentDelivery === s;
+          const count = active ? 1 : 0;
+          const amount = active ? totalDealCents : 0;
+          return (
+            <div
+              key={s}
+              className={`rounded-lg border bg-card p-3 text-left transition-shadow ${active ? "ring-2 ring-primary" : "opacity-70"}`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className={`inline-block h-2.5 w-2.5 rounded-full ${DELIVERY_META[s].cls.split(" ")[0]}`} />
+                <span className="text-xs font-medium text-muted-foreground">{count}</span>
+              </div>
+              <div className="mt-2 text-xs font-medium leading-tight">{DELIVERY_META[s].label}</div>
+              <div className="mt-1 text-base font-semibold tabular-nums">{EUR.format(amount / 100)}</div>
+            </div>
+          );
+        })}
+      </div>
+
       <div className="grid gap-4 lg:grid-cols-3">
+
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Projectgegevens</CardTitle>
