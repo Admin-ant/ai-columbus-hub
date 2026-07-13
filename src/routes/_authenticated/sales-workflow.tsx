@@ -382,6 +382,35 @@ function GenerateButton({
   );
 }
 
+function CreateProjectButton({ row, onDone }: { row: PipelineLead; onDone: () => void }) {
+  const createFn = useServerFn(createDeliveryProjectFromLead);
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      disabled={busy}
+      onClick={async () => {
+        try {
+          setBusy(true);
+          const { projectId } = await createFn({ data: { leadId: row.id } });
+          toast.success("Project aangemaakt in Projecten (uitvoering)");
+          onDone();
+          navigate({ to: "/ai-columbus/projecten/$projectId", params: { projectId } });
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "Kon project niet aanmaken");
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <FolderPlus className="mr-1 h-3 w-3" />}
+      Maak project aan
+    </Button>
+  );
+}
+
 function RequirementsDialog({
   lead,
   organizationId,
