@@ -214,6 +214,11 @@ function InvoicesPage() {
                   <TableCell className="text-sm text-muted-foreground">
                     {new Date(inv.due_date).toLocaleDateString(i18n.resolvedLanguage ?? "nl")}
                   </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {inv.paid_at
+                      ? new Date(inv.paid_at).toLocaleDateString(i18n.resolvedLanguage ?? "nl")
+                      : "—"}
+                  </TableCell>
                   <TableCell className="text-right tabular-nums">{eur.format(Number(inv.amount))}</TableCell>
                   <TableCell>
                     <Select value={inv.status} onValueChange={(v) => updateStatus(inv.id, v as InvoiceStatus)}>
