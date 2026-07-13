@@ -195,13 +195,36 @@ function InvoicesPage() {
         <SummaryCard label={t("invoices.open")} value={eur.format(totals.open)} />
       </div>
 
+      <div className="flex flex-wrap items-center gap-2">
+        {([
+          { k: "all", label: "Alle", n: counts.all },
+          { k: "open", label: "Open", n: counts.open },
+          { k: "reminder", label: "Herinnering", n: counts.reminder },
+          { k: "paid", label: "Betaald", n: counts.paid },
+          { k: "draft", label: "Concept", n: counts.draft },
+        ] as const).map((f) => (
+          <Button
+            key={f.k}
+            size="sm"
+            variant={filter === f.k ? "default" : "outline"}
+            onClick={() => setFilter(f.k)}
+            className="h-7 text-xs"
+          >
+            {f.label}
+            <span className="ml-1.5 rounded bg-background/40 px-1.5 text-[10px] font-mono">
+              {f.n}
+            </span>
+          </Button>
+        ))}
+      </div>
+
       {loading ? (
         <div className="flex items-center justify-center py-20 text-muted-foreground">
           <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("common.loading")}
         </div>
-      ) : invoices.length === 0 ? (
+      ) : filteredInvoices.length === 0 ? (
         <div className="rounded-lg border border-dashed py-16 text-center text-sm text-muted-foreground">
-          {t("invoices.empty")}
+          {invoices.length === 0 ? t("invoices.empty") : "Geen facturen in dit filter"}
         </div>
       ) : (
         <div className="rounded-lg border">
