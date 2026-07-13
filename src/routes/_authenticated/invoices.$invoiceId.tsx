@@ -1035,6 +1035,8 @@ function EmailForm({
   attachments,
   buildPdf,
   emailFn,
+  currentPaymentLink,
+  preferredMethod,
   onSent,
 }: {
   invoice: Invoice;
@@ -1043,9 +1045,14 @@ function EmailForm({
   attachments: AttachmentRow[];
   buildPdf: () => ReturnType<typeof buildInvoicePdf> | null;
   emailFn: ReturnType<typeof useServerFn<typeof emailInvoice>>;
+  currentPaymentLink: string | null;
+  preferredMethod: MolliePaymentMethod | null;
   onSent: (to: string) => void;
 }) {
   const { t } = useTranslation();
+  const createMollieFn = useServerFn(createMollieInvoicePayment);
+  const canPay = invoice.status !== "paid" && invoice.status !== "cancelled" && (invoice.total_cents ?? 0) > 0;
+  const [includePayLink, setIncludePayLink] = useState<boolean>(canPay);
   const [to, setTo] = useState(defaultTo);
   const [cc, setCc] = useState("");
   const [subject, setSubject] = useState(`Factuur ${invoice.invoice_number}`);
@@ -1062,6 +1069,36 @@ function EmailForm({
     if (!doc) return toast.error("PDF kon niet worden gebouwd");
     setSending(true);
     try {
+      // Zorg eerst voor een Mollie betaallink indien gewenst
+      let payLink: string | null = null;
+      if (includePayLink && canPay) {
+        try {
+          if (currentPaymentLink) {
+            payLink = currentPaymentLink;
+          } else {
+            const r = await createMollieFn({
+              data: {
+                invoice_id: invoice.id,
+                preferred_method: preferredMethod ?? null,
+                restrict: false,
+              },
+            });
+            payLink = r.checkoutUrl;
+          }
+        } catch (err) {
+          toast.error("Kon geen betaallink aanmaken: " + (err instanceof Error ? err.message : String(err)));
+          setSending(false);
+          return;
+        }
+      }
+
+      const finalSubject = payLink
+        ? `${subject.trim()} — Betaal online: ${payLink}`
+        : subject.trim();
+      const finalBody = payLink
+        ? `${body.trim()}\n\nBetaal direct online via Mollie:\n${payLink}`
+        : body.trim();
+
       // Upload PDF to mail-attachments bucket
       const blob = doc.output("blob");
       const uploadPath = `${invoice.organization_id}/invoice-${invoice.id}-${Date.now()}.pdf`;
@@ -1080,8 +1117,8 @@ function EmailForm({
           invoice_id: invoice.id,
           to: toList,
           cc: ccList,
-          subject: subject.trim(),
-          body: body.trim(),
+          subject: finalSubject,
+          body: finalBody,
           pdf_storage_path: uploadPath,
           pdf_filename: cleanName,
           extra_attachment_paths: extraPaths,
