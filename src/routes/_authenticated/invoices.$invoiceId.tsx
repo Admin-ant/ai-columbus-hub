@@ -1243,6 +1243,23 @@ function EmailForm({
           </label>
         </div>
       )}
+      <div className="space-y-1.5">
+        <Label>Voorbeeld</Label>
+        <div className="rounded-md border bg-background">
+          <div className="border-b px-3 py-2 text-xs">
+            <span className="text-muted-foreground">Onderwerp: </span>
+            <span className="font-medium">{previewSubject || <em className="text-muted-foreground">(leeg)</em>}</span>
+          </div>
+          <div className="max-h-64 overflow-y-auto whitespace-pre-wrap px-3 py-2 text-sm">
+            {previewBody || <em className="text-muted-foreground">(leeg)</em>}
+          </div>
+          {previewPayLink && (
+            <div className="border-t bg-muted/30 px-3 py-1.5 text-[11px] text-muted-foreground">
+              Betaallink in voorbeeld: <span className="font-mono">{previewPayLink}</span>
+            </div>
+          )}
+        </div>
+      </div>
       <DialogFooter>
         <Button type="submit" disabled={sending}>
           {sending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
