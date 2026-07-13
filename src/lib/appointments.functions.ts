@@ -385,6 +385,7 @@ export const previewAppointmentEmailHtml = createServerFn({ method: "POST" })
   });
 
 function renderAppointmentHtml(opts: {
+  locale: ApptLocale;
   heading: string;
   intro: string;
   title: string;
@@ -398,17 +399,18 @@ function renderAppointmentHtml(opts: {
   logoUrl: string;
   cancelled: boolean;
 }): string {
+  const t = apptDict(opts.locale);
   const accent = "#ff6a3d";
   const btnPrimary = `background:${accent};color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;display:inline-block;font-size:15px;`;
   const btnSecondary = `background:#ffffff;color:#1a1a1a;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;display:inline-block;font-size:15px;border:1.5px solid #e5e0d5;margin-left:8px;`;
   const buttons = opts.cancelled
     ? ""
     : `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:24px 0"><tr>
-         <td><a href="${escapeAttr(opts.actionUrl)}?a=confirm" style="${btnPrimary}">✓ Bevestigen</a></td>
-         <td><a href="${escapeAttr(opts.actionUrl)}?a=reschedule" style="${btnSecondary}">↻ Verzetten</a></td>
+         <td><a href="${escapeAttr(opts.actionUrl)}?a=confirm" style="${btnPrimary}">${escapeHtml(t.btnConfirm)}</a></td>
+         <td><a href="${escapeAttr(opts.actionUrl)}?a=reschedule" style="${btnSecondary}">${escapeHtml(t.btnReschedule)}</a></td>
        </tr></table>`;
 
-  return `<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(opts.title)}</title></head>
+  return `<!doctype html><html lang="${opts.locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(opts.title)}</title></head>
 <body style="margin:0;padding:0;background:#faf7f2;font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a1a">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#faf7f2;padding:32px 12px">
   <tr><td align="center">
@@ -431,14 +433,14 @@ function renderAppointmentHtml(opts: {
           ${opts.description ? `<div style="background:#faf7f2;border-radius:10px;padding:16px 18px;font-size:14px;line-height:1.6;color:#3a3a3a;white-space:pre-wrap;margin-bottom:8px">${escapeHtml(opts.description)}</div>` : ""}
           ${opts.customMessage ? `<div style="border-left:3px solid ${accent};padding:6px 0 6px 14px;font-size:14px;line-height:1.6;color:#3a3a3a;white-space:pre-wrap;margin-top:16px">${escapeHtml(opts.customMessage)}</div>` : ""}
           ${buttons}
-          ${opts.cancelled ? `<p style="margin:8px 0 0;font-size:13px;color:#8a8a8a">Deze afspraak staat als geannuleerd in je agenda.</p>` : `<p style="margin:8px 0 0;font-size:13px;color:#8a8a8a">Werkt de knop niet? Open dan deze link: <a href="${escapeAttr(opts.actionUrl)}" style="color:${accent}">${escapeHtml(opts.actionUrl)}</a></p>`}
+          ${opts.cancelled ? `<p style="margin:8px 0 0;font-size:13px;color:#8a8a8a">${escapeHtml(t.cancelledFootnote)}</p>` : `<p style="margin:8px 0 0;font-size:13px;color:#8a8a8a">${escapeHtml(t.linkFallback)} <a href="${escapeAttr(opts.actionUrl)}" style="color:${accent}">${escapeHtml(opts.actionUrl)}</a></p>`}
         </div>
         <div style="background:#faf7f2;padding:16px 32px;text-align:center;font-size:12px;color:#8a8a8a;border-top:1px solid #efe9dd">
-          Met vriendelijke groet, ${escapeHtml(opts.fromName)}
+          ${escapeHtml(t.signature)} ${escapeHtml(opts.fromName)}
         </div>
       </td></tr>
       <tr><td align="center" style="padding-top:16px;font-size:11px;color:#a8a29a">
-        Deze mail is verzonden vanuit AI van Columbus • ${escapeHtml(opts.dateStr)}
+        ${escapeHtml(t.footerFrom)} ${escapeHtml(opts.fromName)} • ${escapeHtml(opts.dateStr)}
       </td></tr>
     </table>
   </td></tr>
