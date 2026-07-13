@@ -1064,6 +1064,32 @@ function EmailForm({
   const [extraChecked, setExtraChecked] = useState<Record<string, boolean>>({});
   const [sending, setSending] = useState(false);
 
+  const previewPayLink = includePayLink && canPay
+    ? (currentPaymentLink ?? "https://www.mollie.com/checkout/… (wordt aangemaakt bij verzenden)")
+    : null;
+  const previewVars: Record<string, string> = {
+    client_name: invoice.client_name ?? "",
+    invoice_number: invoice.invoice_number ?? "",
+    total: formatCents(invoice.total_cents, "nl", invoice.currency ?? "EUR"),
+    subtotal: formatCents(invoice.subtotal_cents, "nl", invoice.currency ?? "EUR"),
+    vat: formatCents(invoice.vat_cents, "nl", invoice.currency ?? "EUR"),
+    due_date: invoice.due_date ? new Date(invoice.due_date).toLocaleDateString("nl") : "",
+    issue_date: invoice.issue_date ? new Date(invoice.issue_date).toLocaleDateString("nl") : "",
+    payment_link: previewPayLink ?? "",
+  };
+  const applyPreviewVars = (s: string) =>
+    s.replace(/\{\{?\s*(\w+)\s*\}?\}/g, (m, k: string) =>
+      Object.prototype.hasOwnProperty.call(previewVars, k) ? previewVars[k] : m,
+    );
+  const previewSubjectBase = applyPreviewVars(subject);
+  const previewBodyBase = applyPreviewVars(body);
+  const previewSubject = previewPayLink && !previewSubjectBase.includes(previewPayLink)
+    ? `${previewSubjectBase} — Betaal online: ${previewPayLink}`
+    : previewSubjectBase;
+  const previewBody = previewPayLink && !previewBodyBase.includes(previewPayLink)
+    ? `${previewBodyBase}\n\nBetaal direct online via Mollie:\n${previewPayLink}`
+    : previewBodyBase;
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const doc = buildPdf();
