@@ -251,9 +251,39 @@ export const sendAppointmentInvite = createServerFn({ method: "POST" })
     const logoUrl = `${appUrl}/__l5e/assets-v1/85be082d-1ee9-479b-8166-888a14e2734d/logo-columbus-full.png`;
 
     const attendeeDisplayName = a.attendee_name ?? t.fallbackName;
-    const heading = data.cancel ? t.headingCancelled : t.headingConfirm;
-    const intro = data.cancel ? t.introCancelled(attendeeDisplayName) : t.introConfirm(attendeeDisplayName);
+    let heading = data.cancel ? t.headingCancelled : t.headingConfirm;
+    let intro = data.cancel ? t.introCancelled(attendeeDisplayName) : t.introConfirm(attendeeDisplayName);
     const customMessage = data.message?.trim() ? data.message.trim() : "";
+    let subject = `${data.cancel ? t.subjectPrefixCancel + " " : ""}${a.title} — ${dateStr}`;
+
+    // Optional: override subject + intro from editable template "Afspraak bevestiging"
+    if (!data.cancel) {
+      const { data: tpl } = await context.supabase
+        .from("outreach_message_templates")
+        .select("subject, body")
+        .eq("organization_id", a.organization_id)
+        .eq("channel", "email")
+        .ilike("name", "Afspraak bevestiging")
+        .order("is_default", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const row = tpl as { subject: string | null; body: string | null } | null;
+      if (row && (row.subject || row.body)) {
+        const tokens: TokenVars = {
+          contact_name: attendeeDisplayName,
+          company: null,
+          province: null,
+          sender_name: fromName,
+          appointment_title: a.title,
+          appointment_date: dateStr,
+          appointment_time: timeStr,
+          appointment_location: a.location ?? "",
+          appointment_link: actionUrl,
+        };
+        if (row.subject && row.subject.trim()) subject = renderTokens(row.subject, tokens);
+        if (row.body && row.body.trim()) intro = renderTokens(row.body, tokens);
+      }
+    }
 
     const bodyText = `${intro}\n\n${a.title}\n${dt}${a.location ? `\n${t.locationLabel}: ${a.location}` : ""}${a.description ? `\n\n${a.description}` : ""}${customMessage ? `\n\n${customMessage}` : ""}\n\n${actionUrl}\n\n${t.signature}\n${fromName}`;
 
