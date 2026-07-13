@@ -22,6 +22,7 @@ type ClientRow = Database["public"]["Tables"]["clients"]["Row"];
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
 type InvoiceRow = Database["public"]["Tables"]["invoices"]["Row"];
 type LogRow = Database["public"]["Tables"]["invoice_link_log"]["Row"];
+type AppointmentRow = Database["public"]["Tables"]["appointments"]["Row"];
 
 const EUR = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
 
