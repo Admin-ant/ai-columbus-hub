@@ -245,6 +245,35 @@ export function buildInvoicePdf(
     }
   }
 
+  // "Betaald" stempel wanneer factuur is voldaan
+  if (inv.status === "paid") {
+    const pages = doc.getNumberOfPages();
+    const stampLabel = lang === "en" ? "PAID" : "BETAALD";
+    const dateLabel = inv.paid_at
+      ? (lang === "en" ? "on " : "op ") + fmtDate(inv.paid_at, lang)
+      : "";
+    for (let i = 1; i <= pages; i++) {
+      doc.setPage(i);
+      doc.saveGraphicsState();
+      doc.setGState(doc.GState({ opacity: 0.18 }));
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(96);
+      doc.setTextColor(16, 160, 90);
+      doc.text(stampLabel, pageW / 2, pageH / 2, {
+        align: "center",
+        angle: 20,
+      });
+      if (dateLabel) {
+        doc.setFontSize(18);
+        doc.text(dateLabel, pageW / 2, pageH / 2 + 40, {
+          align: "center",
+          angle: 20,
+        });
+      }
+      doc.restoreGraphicsState();
+    }
+  }
+
   return doc;
 }
 
