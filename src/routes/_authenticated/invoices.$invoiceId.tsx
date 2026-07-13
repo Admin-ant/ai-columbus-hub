@@ -350,6 +350,9 @@ function InvoiceDetailPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={() => setPreviewOpen(true)}>
+            <Eye className="mr-1 h-4 w-4" /> Voorbeeld
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setDownloadOpen(true)}>
             <Download className="mr-1 h-4 w-4" /> {t("invoices.download_pdf")}
           </Button>
