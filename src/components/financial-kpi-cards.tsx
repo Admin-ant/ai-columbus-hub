@@ -66,6 +66,7 @@ export function FinancialKpiCards({ organizationId }: { organizationId: string |
         icon={TrendingUp}
         tone="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
         loading={loading}
+        to="/leads"
       />
       <KpiCard
         label="Geprojecteerde Pijplijn"
@@ -73,6 +74,7 @@ export function FinancialKpiCards({ organizationId }: { organizationId: string |
         icon={Hourglass}
         tone="bg-blue-500/10 text-blue-600 dark:text-blue-400"
         loading={loading}
+        to="/leads"
       />
       <KpiCard
         label="Openstaand (nog binnen termijn)"
@@ -81,6 +83,8 @@ export function FinancialKpiCards({ organizationId }: { organizationId: string |
         icon={AlertCircle}
         tone="bg-amber-500/10 text-amber-600 dark:text-amber-400"
         loading={loading}
+        to="/invoices"
+        search={{ filter: "open" as const }}
       />
       <KpiCard
         label="Achterstallig (vervallen)"
@@ -89,8 +93,40 @@ export function FinancialKpiCards({ organizationId }: { organizationId: string |
         icon={AlertTriangle}
         tone="bg-red-500/10 text-red-600 dark:text-red-400"
         loading={loading}
+        to="/invoices"
+        search={{ filter: "reminder" as const }}
       />
     </div>
+  );
+}
+
+function KpiCard({
+  label, value, sub, icon: Icon, tone, loading, to, search,
+}: {
+  label: string; value: string; sub?: string; icon: typeof TrendingUp; tone: string; loading: boolean;
+  to?: string; search?: Record<string, string>;
+}) {
+  const inner = (
+    <div className="rounded-lg border bg-card p-4 h-full transition-colors hover:border-brand hover:bg-accent/40 cursor-pointer">
+      <div className="flex items-center justify-between">
+        <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
+        <div className={`flex h-8 w-8 items-center justify-center rounded-md ${tone}`}>
+          <Icon className="h-4 w-4" />
+        </div>
+      </div>
+      <div className="mt-2 text-2xl font-bold tabular-nums">
+        {loading ? "…" : value}
+      </div>
+      {sub && !loading && (
+        <div className="mt-1 text-xs text-muted-foreground">{sub}</div>
+      )}
+    </div>
+  );
+  if (!to) return inner;
+  return (
+    <Link to={to} search={search as never} className="block">
+      {inner}
+    </Link>
   );
 }
 
