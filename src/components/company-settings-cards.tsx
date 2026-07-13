@@ -45,6 +45,42 @@ const EMPTY: OrgFormRow = {
   invoice_prefix: "",
 };
 
+// --- Validation helpers ---
+function normalizeIban(v: string) {
+  return v.replace(/\s+/g, "").toUpperCase();
+}
+function isValidIban(raw: string): boolean {
+  const v = normalizeIban(raw);
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/.test(v)) return false;
+  const rearranged = v.slice(4) + v.slice(0, 4);
+  const expanded = rearranged.replace(/[A-Z]/g, (c) => String(c.charCodeAt(0) - 55));
+  // mod-97 in chunks (JS numbers can't hold full IBAN)
+  let remainder = 0;
+  for (let i = 0; i < expanded.length; i += 7) {
+    const block = String(remainder) + expanded.slice(i, i + 7);
+    remainder = parseInt(block, 10) % 97;
+  }
+  return remainder === 1;
+}
+function isValidKvk(raw: string): boolean {
+  return /^\d{8}$/.test(raw.replace(/\s+/g, ""));
+}
+function isValidVat(raw: string): boolean {
+  // EU VAT: 2-letter country code + up to 12 alphanumerics. NL: NL + 9 digits + B + 2 digits.
+  const v = raw.replace(/\s+/g, "").toUpperCase();
+  if (/^NL/.test(v)) return /^NL\d{9}B\d{2}$/.test(v);
+  return /^[A-Z]{2}[A-Z0-9]{2,12}$/.test(v);
+}
+
+function validateField(key: "iban" | "kvk_number" | "tax_number", value: string): string | null {
+  const v = value.trim();
+  if (v === "") return null;
+  if (key === "iban" && !isValidIban(v)) return "Ongeldig IBAN (controleer landcode en controlegetal)";
+  if (key === "kvk_number" && !isValidKvk(v)) return "KvK-nummer moet uit 8 cijfers bestaan";
+  if (key === "tax_number" && !isValidVat(v)) return "Ongeldig BTW-nummer (bijv. NL123456789B01)";
+  return null;
+}
+
 interface SeqRow {
   id: string;
   year: number;
@@ -115,8 +151,19 @@ export function CompanySettingsCards() {
     setForm((p) => ({ ...p, [k]: v }));
   }
 
+  const errors = {
+    iban: validateField("iban", form.iban),
+    kvk_number: validateField("kvk_number", form.kvk_number),
+    tax_number: validateField("tax_number", form.tax_number),
+  };
+  const hasErrors = Boolean(errors.iban || errors.kvk_number || errors.tax_number);
+
   async function saveOrg() {
     if (!orgId) return;
+    if (hasErrors) {
+      toast.error("Corrigeer de gemarkeerde velden voor je opslaat");
+      return;
+    }
     setSaving(true);
     // Empty string -> null so template hides the field.
     const nullify = (s: string) => (s.trim() === "" ? null : s.trim());
@@ -130,9 +177,9 @@ export function CompanySettingsCards() {
       phone: nullify(form.phone),
       email: nullify(form.email),
       website: nullify(form.website),
-      kvk_number: nullify(form.kvk_number),
-      tax_number: nullify(form.tax_number),
-      iban: nullify(form.iban),
+      kvk_number: form.kvk_number.trim() === "" ? null : form.kvk_number.replace(/\s+/g, ""),
+      tax_number: form.tax_number.trim() === "" ? null : form.tax_number.replace(/\s+/g, "").toUpperCase(),
+      iban: form.iban.trim() === "" ? null : normalizeIban(form.iban),
       bic: nullify(form.bic),
       account_holder: nullify(form.account_holder),
       invoice_prefix: form.invoice_prefix.trim() || "INV",
@@ -217,15 +264,15 @@ export function CompanySettingsCards() {
                 <Field label="Telefoonnummer" value={form.phone} onChange={(v) => patch("phone", v)} />
                 <Field label="E-mail" value={form.email} onChange={(v) => patch("email", v)} />
                 <Field label="Website" value={form.website} onChange={(v) => patch("website", v)} />
-                <Field label="KvK-nummer" value={form.kvk_number} onChange={(v) => patch("kvk_number", v)} />
-                <Field label="BTW-nummer" value={form.tax_number} onChange={(v) => patch("tax_number", v)} />
-                <Field label="IBAN" value={form.iban} onChange={(v) => patch("iban", v)} />
+                <Field label="KvK-nummer" value={form.kvk_number} onChange={(v) => patch("kvk_number", v)} error={errors.kvk_number} placeholder="12345678" />
+                <Field label="BTW-nummer" value={form.tax_number} onChange={(v) => patch("tax_number", v)} error={errors.tax_number} placeholder="NL123456789B01" />
+                <Field label="IBAN" value={form.iban} onChange={(v) => patch("iban", v)} error={errors.iban} placeholder="NL33 RABO 0176 0067 37" />
                 <Field label="BIC" value={form.bic} onChange={(v) => patch("bic", v)} />
                 <Field label="Tenaamstelling (t.n.v.)" value={form.account_holder} onChange={(v) => patch("account_holder", v)} />
                 <Field label="Factuurprefix" value={form.invoice_prefix} onChange={(v) => patch("invoice_prefix", v)} />
               </div>
               <div className="flex justify-end">
-                <Button onClick={saveOrg} disabled={saving} size="sm">
+                <Button onClick={saveOrg} disabled={saving || hasErrors} size="sm">
                   {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                   Opslaan
                 </Button>
@@ -320,15 +367,26 @@ function Field({
   label,
   value,
   onChange,
+  error,
+  placeholder,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  error?: string | null;
+  placeholder?: string;
 }) {
   return (
     <div className="space-y-1">
       <Label className="text-xs text-muted-foreground">{label}</Label>
-      <Input value={value} onChange={(e) => onChange(e.target.value)} />
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        aria-invalid={error ? true : undefined}
+        className={error ? "border-destructive focus-visible:ring-destructive" : undefined}
+      />
+      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }
