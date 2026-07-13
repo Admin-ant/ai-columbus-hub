@@ -24,7 +24,7 @@ import { extractLeadFromText } from "@/lib/leads-ai.functions";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { z } from "zod";
-import { winLead, loseLead } from "@/lib/pipeline.functions";
+import { winLead, loseLead, createCustomerFromLead } from "@/lib/pipeline.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { Button } from "@/components/ui/button";
