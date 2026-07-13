@@ -4,8 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
+  AlertCircle,
   ArrowLeft,
   Check,
+  CheckCircle2,
   Copy,
   Download,
   Eye,
@@ -13,9 +15,17 @@ import {
   Mail,
   Paperclip,
   Pencil,
+  Save,
   Trash2,
   Upload,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -1065,7 +1075,77 @@ function EmailForm({
   const [filename, setFilename] = useState(defaultFilename);
   const [extraChecked, setExtraChecked] = useState<Record<string, boolean>>({});
   const [sending, setSending] = useState(false);
+  const [sendStatus, setSendStatus] = useState<
+    | { type: "success"; to: string }
+    | { type: "error"; message: string }
+    | null
+  >(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  // Email templates (per organisatie, in localStorage)
+  type EmailTpl = { id: string; name: string; subject: string; body: string };
+  const tplStorageKey = `invoice-email-templates:${invoice.organization_id}`;
+  const [templates, setTemplates] = useState<EmailTpl[]>([]);
+  const [selectedTplId, setSelectedTplId] = useState<string>("");
+  const [saveTplOpen, setSaveTplOpen] = useState(false);
+  const [newTplName, setNewTplName] = useState("");
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(tplStorageKey);
+      if (raw) setTemplates(JSON.parse(raw) as EmailTpl[]);
+    } catch {
+      /* ignore */
+    }
+  }, [tplStorageKey]);
+
+  const persistTemplates = (next: EmailTpl[]) => {
+    setTemplates(next);
+    try {
+      localStorage.setItem(tplStorageKey, JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const applyTemplate = (id: string) => {
+    setSelectedTplId(id);
+    const tpl = templates.find((t) => t.id === id);
+    if (tpl) {
+      setSubject(tpl.subject);
+      setBody(tpl.body);
+    }
+  };
+
+  const saveTemplate = () => {
+    const name = newTplName.trim();
+    if (!name) {
+      toast.error("Geef de template een naam");
+      return;
+    }
+    const tpl: EmailTpl = {
+      id: (globalThis.crypto?.randomUUID?.() ?? String(Date.now())),
+      name,
+      subject,
+      body,
+    };
+    const next = [...templates.filter((t) => t.name !== name), tpl];
+    persistTemplates(next);
+    setSelectedTplId(tpl.id);
+    setNewTplName("");
+    setSaveTplOpen(false);
+    toast.success(`Template "${name}" opgeslagen`);
+  };
+
+  const deleteTemplate = () => {
+    if (!selectedTplId) return;
+    const tpl = templates.find((t) => t.id === selectedTplId);
+    if (!tpl) return;
+    if (!confirm(`Template "${tpl.name}" verwijderen?`)) return;
+    persistTemplates(templates.filter((t) => t.id !== selectedTplId));
+    setSelectedTplId("");
+    toast.success("Template verwijderd");
+  };
 
   const previewPayLink = includePayLink && canPay
     ? (currentPaymentLink ?? "https://www.mollie.com/checkout/… (wordt aangemaakt bij verzenden)")
@@ -1106,8 +1186,14 @@ function EmailForm({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    setSendStatus(null);
     const doc = buildPdf();
-    if (!doc) return toast.error("PDF kon niet worden gebouwd");
+    if (!doc) {
+      const msg = "PDF kon niet worden gebouwd";
+      toast.error(msg);
+      setSendStatus({ type: "error", message: msg });
+      return;
+    }
     setSending(true);
     try {
       // Zorg eerst voor een Mollie betaallink indien gewenst
@@ -1127,7 +1213,9 @@ function EmailForm({
             payLink = r.checkoutUrl;
           }
         } catch (err) {
-          toast.error("Kon geen betaallink aanmaken: " + (err instanceof Error ? err.message : String(err)));
+          const msg = "Kon geen betaallink aanmaken: " + (err instanceof Error ? err.message : String(err));
+          toast.error(msg);
+          setSendStatus({ type: "error", message: msg });
           setSending(false);
           return;
         }
@@ -1183,10 +1271,14 @@ function EmailForm({
           mark_as_sent: true,
         },
       });
-      toast.success(t("invoices.email_sent", { to: toList.join(", ") }));
-      onSent(toList.join(", "));
+      const toJoined = toList.join(", ");
+      toast.success(t("invoices.email_sent", { to: toJoined }));
+      setSendStatus({ type: "success", to: toJoined });
+      onSent(toJoined);
     } catch (e) {
-      toast.error(t("invoices.email_failed", { msg: e instanceof Error ? e.message : String(e) }));
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(t("invoices.email_failed", { msg }));
+      setSendStatus({ type: "error", message: msg });
     } finally {
       setSending(false);
     }
@@ -1194,6 +1286,82 @@ function EmailForm({
 
   return (
     <form onSubmit={submit} className="space-y-3">
+      <div className="space-y-1.5 rounded-md border bg-muted/30 p-3">
+        <Label className="text-xs uppercase tracking-wide text-muted-foreground">E-mailtemplate</Label>
+        {saveTplOpen ? (
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input
+              autoFocus
+              value={newTplName}
+              onChange={(e) => setNewTplName(e.target.value)}
+              placeholder="Templatenaam"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  saveTemplate();
+                }
+              }}
+            />
+            <div className="flex gap-2">
+              <Button type="button" size="sm" onClick={saveTemplate}>
+                <Save className="mr-1 h-3.5 w-3.5" /> Opslaan
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setSaveTplOpen(false);
+                  setNewTplName("");
+                }}
+              >
+                Annuleer
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Select
+              value={selectedTplId || undefined}
+              onValueChange={applyTemplate}
+              disabled={templates.length === 0}
+            >
+              <SelectTrigger className="flex-1">
+                <SelectValue
+                  placeholder={templates.length === 0 ? "Nog geen templates opgeslagen" : "Kies een template…"}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {templates.map((tpl) => (
+                  <SelectItem key={tpl.id} value={tpl.id}>
+                    {tpl.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setNewTplName(
+                    templates.find((t) => t.id === selectedTplId)?.name ?? "",
+                  );
+                  setSaveTplOpen(true);
+                }}
+              >
+                <Save className="mr-1 h-3.5 w-3.5" /> Opslaan als template
+              </Button>
+              {selectedTplId && (
+                <Button type="button" size="sm" variant="ghost" onClick={deleteTemplate}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
       <div className="space-y-1.5">
         <Label>{t("invoices.to")}</Label>
         <Input value={to} onChange={(e) => setTo(e.target.value)} required placeholder="klant@voorbeeld.nl" />
@@ -1322,6 +1490,41 @@ function EmailForm({
           )}
         </div>
       </div>
+      {sendStatus && (
+        <div
+          className={
+            sendStatus.type === "success"
+              ? "flex items-start gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300"
+              : "flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+          }
+          role={sendStatus.type === "error" ? "alert" : "status"}
+        >
+          {sendStatus.type === "success" ? (
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+          ) : (
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          )}
+          <div className="min-w-0 flex-1">
+            <div className="font-medium">
+              {sendStatus.type === "success" ? "E-mail verzonden" : "Verzenden mislukt"}
+            </div>
+            <div className="mt-0.5 break-words text-xs opacity-90">
+              {sendStatus.type === "success"
+                ? `Verzonden naar ${sendStatus.to}`
+                : sendStatus.message}
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-6 shrink-0 px-1.5 text-xs"
+            onClick={() => setSendStatus(null)}
+          >
+            Sluit
+          </Button>
+        </div>
+      )}
       <DialogFooter>
         <Button type="submit" disabled={sending}>
           {sending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
