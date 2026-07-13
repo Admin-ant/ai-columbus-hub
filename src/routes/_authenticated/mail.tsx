@@ -282,6 +282,9 @@ function MailPage() {
           </div>
           <div className="flex gap-2">
             <Button asChild variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
+              <Link to="/mail/templates"><Settings className="mr-2 h-4 w-4" /> Templates</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
               <Link to="/mail/settings"><Settings className="mr-2 h-4 w-4" /> Instellingen</Link>
             </Button>
             <Button variant="outline" size="sm" onClick={load} className="border-border text-foreground hover:bg-muted">
