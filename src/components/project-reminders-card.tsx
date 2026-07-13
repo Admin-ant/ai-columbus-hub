@@ -114,12 +114,13 @@ export function ProjectRemindersCard() {
             {upcoming.length > 0 && (
               <div>
                 <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase text-muted-foreground">
-                  <Clock className="h-3.5 w-3.5" /> Deadline binnen 30 dagen ({upcoming.length})
+                  <Clock className="h-3.5 w-3.5" /> Deadline binnen {windowDays} dagen ({upcoming.length})
                 </div>
                 <ul className="space-y-1.5">
                   {upcoming.map((p) => {
                     const d = p.target_month ? daysUntil(p.target_month) : null;
-                    const overdue = d !== null && d < 0;
+                    const overdue = d !== null && d < -overdueDays;
+
                     return (
                       <li key={p.id}>
                         <Link
