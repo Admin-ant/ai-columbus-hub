@@ -102,12 +102,24 @@ export function buildInvoicePdf(
   doc.setFont("helvetica", "bold");
   doc.setTextColor(60, 60, 60);
   doc.setFontSize(9);
+  const statusLabels: Record<string, { nl: string; en: string }> = {
+    draft: { nl: "Concept", en: "Draft" },
+    sent: { nl: "Verzonden", en: "Sent" },
+    paid: { nl: "Betaald", en: "Paid" },
+    overdue: { nl: "Vervallen", en: "Overdue" },
+    cancelled: { nl: "Geannuleerd", en: "Cancelled" },
+  };
+  const statusLabel =
+    statusLabels[inv.status]?.[lang === "en" ? "en" : "nl"] ?? inv.status;
   const meta: Array<[string, string]> = [
     [lang === "en" ? "Invoice #" : "Factuurnr.", inv.invoice_number],
     [lang === "en" ? "Issue date" : "Factuurdatum", fmtDate(inv.issue_date, lang)],
     [lang === "en" ? "Due date" : "Vervaldatum", fmtDate(inv.due_date, lang)],
-    ["Status", inv.status],
+    ["Status", statusLabel],
   ];
+  if (inv.paid_at) {
+    meta.push([lang === "en" ? "Paid on" : "Betaald op", fmtDate(inv.paid_at, lang)]);
+  }
   let my = y;
   meta.forEach(([k, v]) => {
     doc.setFont("helvetica", "bold");
