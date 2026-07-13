@@ -1082,31 +1082,42 @@ function EmailForm({
   >(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  // Email templates (per organisatie, in localStorage)
+  // Email templates (gedeeld per organisatie via outreach_message_templates, channel='email')
   type EmailTpl = { id: string; name: string; subject: string; body: string };
-  const tplStorageKey = `invoice-email-templates:${invoice.organization_id}`;
   const [templates, setTemplates] = useState<EmailTpl[]>([]);
   const [selectedTplId, setSelectedTplId] = useState<string>("");
   const [saveTplOpen, setSaveTplOpen] = useState(false);
   const [newTplName, setNewTplName] = useState("");
+  const [tplLoading, setTplLoading] = useState(false);
+
+  const reloadTemplates = useCallback(async () => {
+    if (!invoice.organization_id) return;
+    setTplLoading(true);
+    const { data, error } = await supabase
+      .from("outreach_message_templates")
+      .select("id, name, subject, body")
+      .eq("organization_id", invoice.organization_id)
+      .eq("channel", "email")
+      .order("is_default", { ascending: false })
+      .order("name", { ascending: true });
+    setTplLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setTemplates(
+      (data ?? []).map((r) => ({
+        id: r.id,
+        name: r.name,
+        subject: r.subject ?? "",
+        body: r.body ?? "",
+      })),
+    );
+  }, [invoice.organization_id]);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(tplStorageKey);
-      if (raw) setTemplates(JSON.parse(raw) as EmailTpl[]);
-    } catch {
-      /* ignore */
-    }
-  }, [tplStorageKey]);
-
-  const persistTemplates = (next: EmailTpl[]) => {
-    setTemplates(next);
-    try {
-      localStorage.setItem(tplStorageKey, JSON.stringify(next));
-    } catch {
-      /* ignore */
-    }
-  };
+    reloadTemplates();
+  }, [reloadTemplates]);
 
   const applyTemplate = (id: string) => {
     setSelectedTplId(id);
@@ -1117,33 +1128,64 @@ function EmailForm({
     }
   };
 
-  const saveTemplate = () => {
+  const saveTemplate = async () => {
     const name = newTplName.trim();
     if (!name) {
       toast.error("Geef de template een naam");
       return;
     }
-    const tpl: EmailTpl = {
-      id: (globalThis.crypto?.randomUUID?.() ?? String(Date.now())),
-      name,
-      subject,
-      body,
-    };
-    const next = [...templates.filter((t) => t.name !== name), tpl];
-    persistTemplates(next);
-    setSelectedTplId(tpl.id);
+    if (!invoice.organization_id) return;
+    const existing = templates.find((t) => t.name.toLowerCase() === name.toLowerCase());
+    if (existing) {
+      const { error } = await supabase
+        .from("outreach_message_templates")
+        .update({ subject, body, name })
+        .eq("id", existing.id);
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      setSelectedTplId(existing.id);
+    } else {
+      const { data, error } = await supabase
+        .from("outreach_message_templates")
+        .insert({
+          organization_id: invoice.organization_id,
+          name,
+          channel: "email",
+          subject,
+          body,
+          is_default: false,
+        })
+        .select("id")
+        .single();
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      setSelectedTplId(data.id);
+    }
+    await reloadTemplates();
     setNewTplName("");
     setSaveTplOpen(false);
-    toast.success(`Template "${name}" opgeslagen`);
+    toast.success(`Template "${name}" opgeslagen — beschikbaar voor het hele team`);
   };
 
-  const deleteTemplate = () => {
+  const deleteTemplate = async () => {
     if (!selectedTplId) return;
     const tpl = templates.find((t) => t.id === selectedTplId);
     if (!tpl) return;
-    if (!confirm(`Template "${tpl.name}" verwijderen?`)) return;
-    persistTemplates(templates.filter((t) => t.id !== selectedTplId));
+    if (!confirm(`Template "${tpl.name}" verwijderen? Deze verdwijnt voor het hele team.`)) return;
+    const { error } = await supabase
+      .from("outreach_message_templates")
+      .delete()
+      .eq("id", selectedTplId);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     setSelectedTplId("");
+    await reloadTemplates();
     toast.success("Template verwijderd");
   };
 
