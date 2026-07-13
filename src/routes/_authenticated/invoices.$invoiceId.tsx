@@ -333,6 +333,54 @@ function InvoiceDetailPage() {
     doc.save(filename);
   }
 
+  function downloadReceipt() {
+    if (!invoice) return;
+    const tpl = loadTemplate(invoice.organization_id, user?.id ?? null);
+    const data: InvoicePdfData = {
+      invoice_number: invoice.invoice_number,
+      issue_date: invoice.issue_date,
+      due_date: invoice.due_date,
+      currency: invoice.currency,
+      client_name: invoice.client_name,
+      client_email: client?.email ?? null,
+      client_address: client
+        ? [client.address_line1, [client.postal_code, client.city].filter(Boolean).join(" ")]
+            .filter(Boolean)
+            .join(", ")
+        : null,
+      organization_name: org?.name ?? null,
+      organization_vat: org?.tax_number ?? null,
+      organization_address: org
+        ? [org.address_line1, org.address_line2, [org.postal_code, org.city].filter(Boolean).join(" "), org.country]
+            .filter(Boolean)
+            .join(", ")
+        : null,
+      organization_email: org?.email ?? null,
+      organization_kvk: org?.kvk_number ?? null,
+      organization_iban: org?.iban ?? null,
+      subtotal_cents: invoice.subtotal_cents,
+      vat_cents: invoice.vat_cents,
+      total_cents: invoice.total_cents,
+      status: invoice.status,
+      paid_at: invoice.paid_at ?? null,
+      lines: [],
+    };
+    const doc = buildPaymentReceiptPdf(data, tpl, i18n.resolvedLanguage ?? "nl");
+    doc.save(suggestReceiptFilename(invoice.invoice_number, invoice.client_name));
+  }
+
+  async function markUnpaid() {
+    if (!invoice) return;
+    if (!window.confirm("Deze factuur terugzetten op onbetaald? De betaal-datum en stempel worden verwijderd.")) return;
+    const { error } = await supabase
+      .from("invoices")
+      .update({ status: "sent", paid_at: null })
+      .eq("id", invoice.id);
+    if (error) return toast.error(error.message);
+    toast.success("Factuur teruggezet op onbetaald");
+    void load();
+  }
+
   const emailFn = useServerFn(emailInvoice);
   const deleteFn = useServerFn(deleteInvoice);
   const removeAttFn = useServerFn(removeInvoiceAttachment);
