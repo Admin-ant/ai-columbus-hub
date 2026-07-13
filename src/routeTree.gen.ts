@@ -16,6 +16,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as QTokenRouteImport } from './routes/q.$token'
+import { Route as AfspraakTokenRouteImport } from './routes/afspraak.$token'
 import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated/teams'
 import { Route as AuthenticatedSalesWorkflowRouteImport } from './routes/_authenticated/sales-workflow'
 import { Route as AuthenticatedQuotesRouteImport } from './routes/_authenticated/quotes'
@@ -109,6 +110,11 @@ const TTokenRoute = TTokenRouteImport.update({
 const QTokenRoute = QTokenRouteImport.update({
   id: '/q/$token',
   path: '/q/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AfspraakTokenRoute = AfspraakTokenRouteImport.update({
+  id: '/afspraak/$token',
+  path: '/afspraak/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedTeamsRoute = AuthenticatedTeamsRouteImport.update({
@@ -477,6 +483,7 @@ export interface FileRoutesByFullPath {
   '/quotes': typeof AuthenticatedQuotesRoute
   '/sales-workflow': typeof AuthenticatedSalesWorkflowRoute
   '/teams': typeof AuthenticatedTeamsRoute
+  '/afspraak/$token': typeof AfspraakTokenRoute
   '/q/$token': typeof QTokenRoute
   '/t/$token': typeof TTokenRoute
   '/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
@@ -542,6 +549,7 @@ export interface FileRoutesByTo {
   '/quotes': typeof AuthenticatedQuotesRoute
   '/sales-workflow': typeof AuthenticatedSalesWorkflowRoute
   '/teams': typeof AuthenticatedTeamsRoute
+  '/afspraak/$token': typeof AfspraakTokenRoute
   '/q/$token': typeof QTokenRoute
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
@@ -612,6 +620,7 @@ export interface FileRoutesById {
   '/_authenticated/quotes': typeof AuthenticatedQuotesRoute
   '/_authenticated/sales-workflow': typeof AuthenticatedSalesWorkflowRoute
   '/_authenticated/teams': typeof AuthenticatedTeamsRoute
+  '/afspraak/$token': typeof AfspraakTokenRoute
   '/q/$token': typeof QTokenRoute
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -683,6 +692,7 @@ export interface FileRouteTypes {
     | '/quotes'
     | '/sales-workflow'
     | '/teams'
+    | '/afspraak/$token'
     | '/q/$token'
     | '/t/$token'
     | '/ai-columbus/instellingen'
@@ -748,6 +758,7 @@ export interface FileRouteTypes {
     | '/quotes'
     | '/sales-workflow'
     | '/teams'
+    | '/afspraak/$token'
     | '/q/$token'
     | '/t/$token'
     | '/'
@@ -817,6 +828,7 @@ export interface FileRouteTypes {
     | '/_authenticated/quotes'
     | '/_authenticated/sales-workflow'
     | '/_authenticated/teams'
+    | '/afspraak/$token'
     | '/q/$token'
     | '/t/$token'
     | '/_authenticated/'
@@ -871,6 +883,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   VisualCheckRoute: typeof VisualCheckRoute
+  AfspraakTokenRoute: typeof AfspraakTokenRoute
   QTokenRoute: typeof QTokenRoute
   TTokenRoute: typeof TTokenRoute
   AcceptQuoteTokenRoute: typeof AcceptQuoteTokenRoute
@@ -937,6 +950,13 @@ declare module '@tanstack/react-router' {
       path: '/q/$token'
       fullPath: '/q/$token'
       preLoaderRoute: typeof QTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/afspraak/$token': {
+      id: '/afspraak/$token'
+      path: '/afspraak/$token'
+      fullPath: '/afspraak/$token'
+      preLoaderRoute: typeof AfspraakTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/teams': {
@@ -1585,6 +1605,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   VisualCheckRoute: VisualCheckRoute,
+  AfspraakTokenRoute: AfspraakTokenRoute,
   QTokenRoute: QTokenRoute,
   TTokenRoute: TTokenRoute,
   AcceptQuoteTokenRoute: AcceptQuoteTokenRoute,

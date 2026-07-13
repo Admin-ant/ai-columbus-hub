@@ -14,9 +14,9 @@ import {
 } from "@/lib/public-appointment.functions";
 
 export const Route = createFileRoute("/afspraak/$token")({
-  head: ({ loaderData }) => ({
+  head: () => ({
     meta: [
-      { title: loaderData ? `${loaderData.title} — Afspraakbevestiging` : "Afspraak" },
+      { title: "Afspraakbevestiging — AI van Columbus" },
       { name: "description", content: "Bevestig of verzet je geplande afspraak." },
       { name: "robots", content: "noindex, nofollow" },
     ],
