@@ -400,14 +400,27 @@ function InvoiceDetailPage() {
   }
   if (!invoice) {
     return (
-      <div className="py-20 text-center text-sm text-muted-foreground">
-        {t("invoices.not_found")}
-        <div className="mt-4">
-          <Button asChild variant="outline" size="sm">
-            <Link to={backTo}>
-              <ArrowLeft className="mr-1 h-4 w-4" /> {backLabel}
-            </Link>
-          </Button>
+      <div className="flex min-h-[60vh] items-center justify-center p-6">
+        <div className="mx-auto max-w-md text-center">
+          <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+            <AlertCircle className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h2 className="mb-2 text-xl font-semibold tracking-tight">
+            {t("invoices.not_found")}
+          </h2>
+          <p className="mb-6 text-sm text-muted-foreground">
+            {t("invoices.not_found_description")}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Button asChild variant="outline" size="sm">
+              <Link to={backTo}>
+                <ArrowLeft className="mr-1 h-4 w-4" /> {backLabel}
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/invoices">{t("invoices.title")}</Link>
+            </Button>
+          </div>
         </div>
       </div>
     );
