@@ -1,0 +1,1 @@
+UPDATE public.organizations SET invoice_prefix = 'AIC', next_invoice_seq = 3470 WHERE id = 'd30d790a-7167-4ede-94b4-ad6b7d408a8a';
