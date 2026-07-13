@@ -1,4 +1,13 @@
+import { QRCodeSVG } from "qrcode.react";
 import { Card, CardContent } from "@/components/ui/card";
+
+function PaymentQrCode({ url }: { url: string }) {
+  return (
+    <div className="hidden shrink-0 rounded-md bg-white p-2 sm:block print:block" title={url}>
+      <QRCodeSVG value={url} size={96} level="M" includeMargin={false} />
+    </div>
+  );
+}
 import {
   Table,
   TableBody,
