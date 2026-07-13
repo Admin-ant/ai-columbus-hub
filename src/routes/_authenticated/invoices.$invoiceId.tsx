@@ -115,6 +115,7 @@ function InvoiceDetailPage() {
   const [emailOpen, setEmailOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState<null | { to: string }>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
