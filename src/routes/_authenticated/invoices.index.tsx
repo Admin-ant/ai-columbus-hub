@@ -114,10 +114,23 @@ function InvoicesPage() {
 
   async function updateStatus(id: string, status: InvoiceStatus) {
     const prev = invoices;
-    setInvoices((is) => is.map((i) => (i.id === id ? { ...i, status } : i)));
-    const patch: { status: InvoiceStatus; sent_at?: string; paid_at?: string } = { status };
+    setInvoices((is) =>
+      is.map((i) =>
+        i.id === id
+          ? {
+              ...i,
+              status,
+              paid_at: status === "paid" ? (i.paid_at ?? new Date().toISOString()) : null,
+            }
+          : i,
+      ),
+    );
+    const patch: { status: InvoiceStatus; sent_at?: string; paid_at?: string | null } = { status };
     if (status === "sent") patch.sent_at = new Date().toISOString();
     if (status === "paid") patch.paid_at = new Date().toISOString();
+    // Als de factuur van 'paid' terug gaat naar een andere status, wissen we
+    // de betaal-datum zodat lijst, KPI's en PDF-stempel consistent blijven.
+    if (status !== "paid") patch.paid_at = null;
     const { error } = await supabase.from("invoices").update(patch).eq("id", id);
     if (error) {
       toast.error(error.message);
