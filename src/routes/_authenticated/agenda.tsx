@@ -285,6 +285,12 @@ function AgendaPage() {
               Exporteer {selectedDay ? "dag" : "maand"} (.ics)
             </Button>
           )}
+          <Button variant="outline" asChild>
+            <Link to="/mail/appointment-preview">
+              <Eye className="mr-2 h-4 w-4" />
+              Preview mail
+            </Link>
+          </Button>
           {currentOrganizationId && (
             <Button
               onClick={() => {
