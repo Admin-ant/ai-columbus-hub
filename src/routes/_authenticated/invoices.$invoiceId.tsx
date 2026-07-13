@@ -313,6 +313,7 @@ function InvoiceDetailPage() {
       vat_cents: invoice.vat_cents,
       total_cents: invoice.total_cents,
       status: invoice.status,
+      paid_at: invoice.paid_at ?? null,
       lines: lines.map((l) => ({
         description: l.description,
         quantity: Number(l.quantity),
