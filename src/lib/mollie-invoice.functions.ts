@@ -3,6 +3,8 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { centsToEuros } from "@/lib/currency";
 
+type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
+
 /**
  * Genereert een Mollie-betaallink voor een bestaande factuur.
  * Slaat de checkout-URL op in `invoices.mollie_checkout_url` en
