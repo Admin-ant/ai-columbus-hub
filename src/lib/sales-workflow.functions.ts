@@ -391,3 +391,59 @@ export const generateQuoteFromRequirements = createServerFn({ method: "POST" })
 
     return { quoteId: q.id, publicToken: q.public_token };
   });
+
+const CreateProjectSchema = z.object({
+  leadId: z.string().uuid(),
+  name: z.string().min(1).max(200).optional(),
+  targetMonth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+});
+
+export const createDeliveryProjectFromLead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => CreateProjectSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: lead, error: leadErr } = await context.supabase
+      .from("leads")
+      .select("id,organization_id,company,name,converted_client_id,potential_monthly_value")
+      .eq("id", data.leadId)
+      .maybeSingle();
+    if (leadErr) throw new Error(leadErr.message);
+    if (!lead) throw new Error("Lead niet gevonden of geen toegang");
+    if (!lead.converted_client_id) throw new Error("Lead heeft nog geen klant. Zet de lead eerst om naar klant.");
+
+    const { data: contract } = await context.supabase
+      .from("contracts")
+      .select("id,project_id,monthly_amount_cents")
+      .eq("client_id", lead.converted_client_id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const projectName = data.name?.trim() || `Project — ${lead.company ?? lead.name}`;
+    const valueCents = Number(contract?.monthly_amount_cents ?? 0) || Math.round(Number(lead.potential_monthly_value ?? 0) * 100);
+
+    const { data: project, error: projErr } = await context.supabase
+      .from("projects")
+      .insert({
+        organization_id: lead.organization_id,
+        client_id: lead.converted_client_id,
+        name: projectName,
+        status: "contract_getekend",
+        delivery_status: "nieuw",
+        value_cents: valueCents,
+        target_month: data.targetMonth ?? null,
+        created_by: context.userId,
+      } as never)
+      .select("id")
+      .single();
+    if (projErr) throw new Error(projErr.message);
+
+    if (contract && !contract.project_id) {
+      await context.supabase
+        .from("contracts")
+        .update({ project_id: project.id } as never)
+        .eq("id", contract.id);
+    }
+
+    return { projectId: project.id as string };
+  });
