@@ -19,6 +19,7 @@ import {
   LayoutGrid,
   Table as TableIcon,
   Sparkles,
+  Briefcase,
 } from "lucide-react";
 import { extractLeadFromText } from "@/lib/leads-ai.functions";
 import { Textarea } from "@/components/ui/textarea";
@@ -188,10 +189,12 @@ function LeadsPage() {
   const [view, setView] = useState<"kanban" | "table">("kanban");
   const [openLead, setOpenLead] = useState<Lead | null>(null);
   const [winLeadRow, setWinLeadRow] = useState<Lead | null>(null);
+  const [preCustomerLeadRow, setPreCustomerLeadRow] = useState<Lead | null>(null);
   const [loseLeadRow, setLoseLeadRow] = useState<Lead | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [editLead, setEditLead] = useState<Lead | null>(null);
   const fnWin = useServerFn(winLead);
+  const fnCreateCustomer = useServerFn(createCustomerFromLead);
   const fnLose = useServerFn(loseLead);
 
   const load = useCallback(async () => {
@@ -726,6 +729,14 @@ function LeadsPage() {
                           <Button
                             size="sm"
                             variant="ghost"
+                            title="Maak alvast klant, project en contract aan"
+                            onClick={() => setPreCustomerLeadRow(l)}
+                          >
+                            <Briefcase className="h-3.5 w-3.5 text-sky-600" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             title="Zet op verloren"
                             onClick={() => setLoseLeadRow(l)}
                             disabled={l.stage === "verloren"}
@@ -761,6 +772,7 @@ function LeadsPage() {
             leads={baseFiltered}
             loading={loading}
             onWin={setWinLeadRow}
+            onCreateCustomer={setPreCustomerLeadRow}
             onLose={setLoseLeadRow}
             onEdit={setEditLead}
             onDetail={setOpenLead}
@@ -791,7 +803,16 @@ function LeadsPage() {
           lead={winLeadRow}
           onClose={() => setWinLeadRow(null)}
           onSaved={() => load()}
-          fnWin={fnWin}
+          fn={fnWin}
+          mode="win"
+        />
+
+        <WinLeadDialog
+          lead={preCustomerLeadRow}
+          onClose={() => setPreCustomerLeadRow(null)}
+          onSaved={() => load()}
+          fn={fnCreateCustomer}
+          mode="customer"
         />
 
         <LoseLeadDialog
