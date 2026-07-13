@@ -517,42 +517,57 @@ function InvoiceDetailPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="rounded-lg border bg-card p-4">
-          <div className="text-xs uppercase text-muted-foreground">Klant</div>
-          <div className="mt-1 font-medium">{invoice.client_name ?? "—"}</div>
-          {client?.email && <div className="text-sm text-muted-foreground">{client.email}</div>}
-          {client?.address_line1 && (
-            <div className="text-sm text-muted-foreground">
-              {client.address_line1}
-              {(client.postal_code || client.city) && (
-                <>
-                  <br />
-                  {[client.postal_code, client.city].filter(Boolean).join(" ")}
-                </>
-              )}
-            </div>
-          )}
-        </div>
-        <div className="rounded-lg border bg-card p-4">
-          <div className="text-xs uppercase text-muted-foreground">{t("invoices.due_date")}</div>
-          <div className="mt-1 font-medium">
-            {new Date(invoice.due_date).toLocaleDateString(i18n.resolvedLanguage ?? "nl")}
+      <section className="rounded-lg border bg-card p-6">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Factuur</h2>
+            <dl className="mt-4 space-y-1 text-sm">
+              <div className="flex gap-2">
+                <dt className="text-muted-foreground">Factuurnummer:</dt>
+                <dd className="font-medium">{invoice.invoice_number}</dd>
+              </div>
+              <div className="flex gap-2">
+                <dt className="text-muted-foreground">Factuurdatum:</dt>
+                <dd>{new Date(invoice.issue_date).toLocaleDateString(i18n.resolvedLanguage ?? "nl")}</dd>
+              </div>
+              <div className="flex gap-2">
+                <dt className="text-muted-foreground">Vervaldatum:</dt>
+                <dd>{new Date(invoice.due_date).toLocaleDateString(i18n.resolvedLanguage ?? "nl")}</dd>
+              </div>
+            </dl>
           </div>
-          {invoice.last_emailed_at && (
-            <div className="mt-3 text-xs text-muted-foreground">
-              Laatst gemaild: {new Date(invoice.last_emailed_at).toLocaleString(i18n.resolvedLanguage ?? "nl")}
-            </div>
-          )}
+          <address className="not-italic text-right text-sm leading-relaxed">
+            {invoice.client_name && (
+              <div className="font-semibold">{invoice.client_name}</div>
+            )}
+            {client?.address_line1 && (
+              <div className="text-foreground/90">{client.address_line1}</div>
+            )}
+            {(client?.postal_code || client?.city) && (
+              <div className="text-foreground/90">
+                {[client?.postal_code, client?.city].filter(Boolean).join(" ")}
+              </div>
+            )}
+            {client?.email && (
+              <div className="mt-2 text-muted-foreground">{client.email}</div>
+            )}
+          </address>
         </div>
-        <div className="rounded-lg border bg-card p-4">
-          <div className="text-xs uppercase text-muted-foreground">{t("invoices.total")}</div>
-          <div className="mt-1 text-xl font-semibold tabular-nums">{eur.format(invoice.total_cents / 100)}</div>
-          <div className="mt-1 text-xs text-muted-foreground">
-            {t("acc.inv.subtotal")}: {eur.format(invoice.subtotal_cents / 100)} · BTW: {eur.format(invoice.vat_cents / 100)}
+        <div className="mt-6 flex flex-wrap items-end justify-between gap-4 border-t pt-4">
+          <div className="text-xs text-muted-foreground">
+            {invoice.last_emailed_at && (
+              <>Laatst gemaild: {new Date(invoice.last_emailed_at).toLocaleString(i18n.resolvedLanguage ?? "nl")}</>
+            )}
+          </div>
+          <div className="text-right">
+            <div className="text-xs uppercase text-muted-foreground">{t("invoices.total")}</div>
+            <div className="text-xl font-semibold tabular-nums">{eur.format(invoice.total_cents / 100)}</div>
+            <div className="text-xs text-muted-foreground">
+              {t("acc.inv.subtotal")}: {eur.format(invoice.subtotal_cents / 100)} · BTW: {eur.format(invoice.vat_cents / 100)}
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
       <section className="rounded-lg border">
         <div className="border-b px-4 py-2 text-sm font-semibold">{t("invoices.lines")}</div>
