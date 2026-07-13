@@ -459,6 +459,19 @@ function ApptCard({
             <Button
               size="sm"
               variant="outline"
+              className="text-blue-700 hover:text-blue-800"
+              onClick={() => setRescheduleOpen(true)}
+              disabled={sending}
+              title="Nieuwe datum/tijd + stuur bijgewerkte uitnodiging"
+            >
+              <CalendarClock className="mr-1.5 h-3.5 w-3.5" />
+              Verplaatsen
+            </Button>
+          )}
+          {a.status !== "cancelled" && (
+            <Button
+              size="sm"
+              variant="outline"
               className="text-amber-700 hover:text-amber-800"
               onClick={async () => {
                 if (!confirm("Afspraak annuleren en klant een annulering mailen?")) return;
@@ -479,7 +492,148 @@ function ApptCard({
           </Button>
         </div>
       </div>
+      <RescheduleDialog
+        open={rescheduleOpen}
+        onOpenChange={setRescheduleOpen}
+        appointment={a}
+        onDone={async () => {
+          setRescheduleOpen(false);
+          await onChanged();
+        }}
+        reschedule={reschedule}
+        invite={invite}
+      />
     </div>
+  );
+}
+
+function toLocalInput(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function RescheduleDialog({
+  open,
+  onOpenChange,
+  appointment,
+  onDone,
+  reschedule,
+  invite,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  appointment: Appointment;
+  onDone: () => void | Promise<void>;
+  reschedule: ReturnType<typeof useServerFn<typeof rescheduleAppointment>>;
+  invite: ReturnType<typeof useServerFn<typeof sendAppointmentInvite>>;
+}) {
+  const [starts, setStarts] = useState(() => toLocalInput(appointment.starts_at));
+  const [ends, setEnds] = useState(() => toLocalInput(appointment.ends_at));
+  const [message, setMessage] = useState("");
+  const [sendEmail, setSendEmail] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setStarts(toLocalInput(appointment.starts_at));
+      setEnds(toLocalInput(appointment.ends_at));
+      setMessage("");
+      setSendEmail(true);
+    }
+  }, [open, appointment.starts_at, appointment.ends_at]);
+
+  async function submit() {
+    if (!starts || !ends) {
+      toast.error("Vul begin- en eindtijd in");
+      return;
+    }
+    const s = new Date(starts).toISOString();
+    const e = new Date(ends).toISOString();
+    if (new Date(e) <= new Date(s)) {
+      toast.error("Eindtijd moet ná begintijd liggen");
+      return;
+    }
+    setBusy(true);
+    try {
+      await reschedule({ data: { id: appointment.id, starts_at: s, ends_at: e } });
+      if (sendEmail && appointment.attendee_email) {
+        const intro =
+          "Let op: de datum/tijd van deze afspraak is aangepast. Deze uitnodiging vervangt de vorige.";
+        await invite({
+          data: {
+            id: appointment.id,
+            message: message.trim() ? `${message.trim()}\n\n${intro}` : intro,
+            cancel: false,
+          },
+        });
+        toast.success("Verplaatst — bijgewerkte uitnodiging verstuurd");
+      } else {
+        toast.success("Afspraak verplaatst");
+      }
+      await onDone();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Fout bij verplaatsen");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Afspraak verplaatsen</DialogTitle>
+          <DialogDescription>
+            Kies een nieuwe datum en tijd. De klant ontvangt een bijgewerkte .ics
+            uitnodiging die de vorige automatisch vervangt in hun agenda.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3">
+          <div className="grid gap-1.5">
+            <Label htmlFor="r-start">Nieuwe begintijd</Label>
+            <Input id="r-start" type="datetime-local" value={starts} onChange={(e) => setStarts(e.target.value)} />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="r-end">Nieuwe eindtijd</Label>
+            <Input id="r-end" type="datetime-local" value={ends} onChange={(e) => setEnds(e.target.value)} />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="r-msg">Bericht aan klant (optioneel)</Label>
+            <Textarea
+              id="r-msg"
+              rows={3}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Bijv. reden voor het verplaatsen…"
+            />
+          </div>
+          {appointment.attendee_email ? (
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={sendEmail}
+                onChange={(e) => setSendEmail(e.target.checked)}
+              />
+              Stuur bijgewerkte uitnodiging naar {appointment.attendee_email}
+            </label>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Geen e-mailadres bekend — er wordt geen mail verstuurd.
+            </p>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={busy}>
+            Annuleren
+          </Button>
+          <Button onClick={submit} disabled={busy}>
+            {busy && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+            Verplaatsen
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
