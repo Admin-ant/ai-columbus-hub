@@ -84,7 +84,7 @@ function ProjectDetailPage() {
     // Gerelateerd
     if (row) {
       const [{ data: contract }, { data: client }, { data: invoices }] = await Promise.all([
-        supabase.from("contracts").select("id,title,monthly_amount_cents,status").eq("project_id", row.id).maybeSingle(),
+        supabase.from("contracts").select("id,title,monthly_amount_cents,setup_fee_cents,status").eq("project_id", row.id).maybeSingle(),
         row.client_id ? supabase.from("clients").select("id,name").eq("id", row.client_id).maybeSingle() : Promise.resolve({ data: null }),
         supabase.from("invoices").select("id,invoice_number,total_cents,status").eq("project_id", row.id).order("issue_date", { ascending: false }),
       ]);
