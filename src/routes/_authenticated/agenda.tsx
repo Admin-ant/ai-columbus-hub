@@ -179,7 +179,7 @@ function AgendaPage() {
         .order("starts_at", { ascending: true }),
       supabase
         .from("clients")
-        .select("id,name,email")
+        .select("id,name,email,preferred_locale")
         .eq("organization_id", currentOrganizationId)
         .order("name"),
     ]);
