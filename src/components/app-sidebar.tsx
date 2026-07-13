@@ -23,6 +23,7 @@ import {
   Inbox,
   Mic,
   Workflow,
+  CalendarDays,
 } from "lucide-react";
 
 import {
