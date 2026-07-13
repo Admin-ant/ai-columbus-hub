@@ -820,6 +820,7 @@ function RescheduleDialog({
 function AppointmentDialog({
   orgId,
   clients,
+  orgAddress,
   initial,
   open,
   onOpenChange,
@@ -827,6 +828,7 @@ function AppointmentDialog({
 }: {
   orgId: string;
   clients: ClientRow[];
+  orgAddress: OrgAddress;
   initial: Appointment | null;
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -840,7 +842,15 @@ function AppointmentDialog({
   const [clientId, setClientId] = useState(initial?.client_id ?? "");
   const [attendeeName, setAttendeeName] = useState(initial?.attendee_name ?? "");
   const [attendeeEmail, setAttendeeEmail] = useState(initial?.attendee_email ?? "");
-  const [location, setLocation] = useState(initial?.location ?? "");
+  const initialLoc = initial?.location ?? "";
+  const guessMode: "online" | "onsite" = /^(https?:\/\/|meet\.|zoom\.|teams\.|Google Meet|Zoom|Teams)/i.test(initialLoc)
+    ? "online"
+    : initialLoc
+      ? "onsite"
+      : "online";
+  const [locationMode, setLocationMode] = useState<"online" | "onsite">(guessMode);
+  const [onsitePick, setOnsitePick] = useState<"client" | "office" | "custom">("custom");
+  const [location, setLocation] = useState(initialLoc);
   const [description, setDescription] = useState(initial?.description ?? "");
   const [startsAt, setStartsAt] = useState(
     initial ? toLocalInput(initial.starts_at) : toLocalInput(new Date(Date.now() + 3600_000).toISOString()),
@@ -852,13 +862,42 @@ function AppointmentDialog({
   const [locale, setLocale] = useState<"nl" | "en" | "de">(normalizeLocale(initial?.locale));
   const [saving, setSaving] = useState(false);
 
+  const selectedClient = clients.find((c) => c.id === clientId) ?? null;
+  const clientAddress = selectedClient ? formatAddress(selectedClient) : "";
+  const officeAddress = orgAddress ? formatAddress(orgAddress) : "";
+
+  function applyOnsitePick(pick: "client" | "office" | "custom", client = selectedClient) {
+    setOnsitePick(pick);
+    if (pick === "client") {
+      const addr = client ? formatAddress(client) : "";
+      setLocation(addr);
+    } else if (pick === "office") {
+      setLocation(officeAddress);
+    }
+    // 'custom' laat huidige tekst staan
+  }
+
+  function chooseMode(m: "online" | "onsite") {
+    setLocationMode(m);
+    if (m === "online") {
+      if (!/^(https?:\/\/|meet\.|zoom\.|teams\.)/i.test(location)) {
+        setLocation("Google Meet (link volgt in uitnodiging)");
+      }
+    } else if (!location.trim()) {
+      applyOnsitePick(selectedClient ? "client" : "office");
+    }
+  }
+
   function pickClient(id: string) {
     setClientId(id);
-    const c = clients.find((cc) => cc.id === id);
+    const c = clients.find((cc) => cc.id === id) ?? null;
     if (c) {
       if (!attendeeName) setAttendeeName(c.name);
       if (!attendeeEmail && c.email) setAttendeeEmail(c.email);
       if (!initial && c.preferred_locale) setLocale(normalizeLocale(c.preferred_locale));
+      if (locationMode === "onsite" && onsitePick === "client") {
+        setLocation(formatAddress(c));
+      }
     }
   }
 
