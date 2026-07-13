@@ -82,6 +82,7 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
   const [versions, setVersions] = useState<TemplateVersion[]>([]);
   const [previewVersion, setPreviewVersion] = useState<TemplateVersion | null>(null);
   const [search, setSearch] = useState("");
+  const [sample, setSample] = useState<Record<SampleKey, string>>(DEFAULT_SAMPLE);
 
   async function load() {
     if (!organizationId) {
