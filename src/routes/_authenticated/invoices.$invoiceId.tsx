@@ -201,8 +201,16 @@ function InvoiceDetailPage() {
         city: string | null;
       } | null,
     );
+
+    // Betalings-events (Mollie) apart laden — RLS via org membership
+    try {
+      const ev = await listEventsFn({ data: { invoice_id: invoiceId } });
+      setPaymentEvents(ev.events as PaymentEventRow[]);
+    } catch {
+      setPaymentEvents([]);
+    }
     setLoading(false);
-  }, [invoiceId]);
+  }, [invoiceId, listEventsFn]);
 
   useEffect(() => {
     void load();
