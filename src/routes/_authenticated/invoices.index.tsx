@@ -145,6 +145,36 @@ function InvoicesPage() {
     return t;
   }, [invoices]);
 
+  const filteredInvoices = useMemo(() => {
+    const now = Date.now();
+    return invoices.filter((i) => {
+      if (filter === "all") return true;
+      if (filter === "paid") return i.status === "paid";
+      if (filter === "draft") return i.status === "draft";
+      if (filter === "open") return i.status === "sent" || i.status === "overdue";
+      if (filter === "reminder") {
+        if (i.status !== "sent" && i.status !== "overdue") return false;
+        if (!i.due_date) return false;
+        return new Date(i.due_date).getTime() < now;
+      }
+      return true;
+    });
+  }, [invoices, filter]);
+
+  const counts = useMemo(() => {
+    const now = Date.now();
+    const c = { all: invoices.length, paid: 0, open: 0, reminder: 0, draft: 0 };
+    invoices.forEach((i) => {
+      if (i.status === "paid") c.paid++;
+      else if (i.status === "draft") c.draft++;
+      else if (i.status === "sent" || i.status === "overdue") {
+        c.open++;
+        if (i.due_date && new Date(i.due_date).getTime() < now) c.reminder++;
+      }
+    });
+    return c;
+  }, [invoices]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
