@@ -2414,6 +2414,57 @@ export type Database = {
         }
         Relationships: []
       }
+      project_delivery_status_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_status: Database["public"]["Enums"]["project_delivery_status"]
+          old_status:
+            | Database["public"]["Enums"]["project_delivery_status"]
+            | null
+          organization_id: string
+          project_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_status: Database["public"]["Enums"]["project_delivery_status"]
+          old_status?:
+            | Database["public"]["Enums"]["project_delivery_status"]
+            | null
+          organization_id: string
+          project_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_status?: Database["public"]["Enums"]["project_delivery_status"]
+          old_status?:
+            | Database["public"]["Enums"]["project_delivery_status"]
+            | null
+          organization_id?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_delivery_status_history_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_delivery_status_history_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_status_history: {
         Row: {
           changed_at: string
@@ -2467,6 +2518,7 @@ export type Database = {
           contact_phone: string | null
           created_at: string
           created_by: string | null
+          delivery_status: Database["public"]["Enums"]["project_delivery_status"]
           id: string
           last_modified_at: string
           last_modified_by: string | null
@@ -2487,6 +2539,7 @@ export type Database = {
           contact_phone?: string | null
           created_at?: string
           created_by?: string | null
+          delivery_status?: Database["public"]["Enums"]["project_delivery_status"]
           id?: string
           last_modified_at?: string
           last_modified_by?: string | null
@@ -2507,6 +2560,7 @@ export type Database = {
           contact_phone?: string | null
           created_at?: string
           created_by?: string | null
+          delivery_status?: Database["public"]["Enums"]["project_delivery_status"]
           id?: string
           last_modified_at?: string
           last_modified_by?: string | null
@@ -3188,6 +3242,13 @@ export type Database = {
         | "gewonnen"
       org_role: "holding_admin" | "company_staff"
       pricing_type: "one_time" | "monthly_recurring" | "per_credit"
+      project_delivery_status:
+        | "nieuw"
+        | "in_uitvoering"
+        | "wacht_op_klant"
+        | "on_hold"
+        | "opgeleverd"
+        | "geannuleerd"
       project_status:
         | "contact_gezocht"
         | "afspraak_geboekt"
@@ -3365,6 +3426,14 @@ export const Constants = {
       ],
       org_role: ["holding_admin", "company_staff"],
       pricing_type: ["one_time", "monthly_recurring", "per_credit"],
+      project_delivery_status: [
+        "nieuw",
+        "in_uitvoering",
+        "wacht_op_klant",
+        "on_hold",
+        "opgeleverd",
+        "geannuleerd",
+      ],
       project_status: [
         "contact_gezocht",
         "afspraak_geboekt",
