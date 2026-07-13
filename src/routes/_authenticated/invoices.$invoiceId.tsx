@@ -600,6 +600,60 @@ function InvoiceDetailPage() {
           />
         </DialogContent>
       </Dialog>
+
+      <InvoicePreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        invoiceId={invoice.id}
+        invoiceStatus={invoice.status}
+        onPaymentLinkChanged={() => void load()}
+        data={{
+          organization: {
+            name: org?.name ?? null,
+            street: [org?.address_line1, org?.address_line2].filter(Boolean).join(" "),
+            postal_city: [org?.postal_code, org?.city].filter(Boolean).join(" "),
+            country: org?.country ?? null,
+            phone: org?.phone ?? null,
+            website: null,
+            kvk: org?.kvk_number ?? null,
+            vat: org?.tax_number ?? null,
+            iban: org?.iban ?? null,
+            account_holder: org?.name ?? null,
+            logo_url: null,
+          },
+          client: {
+            customer_number: null,
+            company_name: invoice.client_name,
+            street: client?.address_line1 ?? null,
+            postal_city: [client?.postal_code, client?.city].filter(Boolean).join(" "),
+          },
+          invoice_number: invoice.invoice_number,
+          issue_date: invoice.issue_date,
+          due_date: invoice.due_date,
+          currency: invoice.currency ?? "EUR",
+          language: i18n.resolvedLanguage ?? "nl",
+          precomputed_subtotal_cents: invoice.subtotal_cents,
+          precomputed_vat_cents: invoice.vat_cents,
+          precomputed_total_cents: invoice.total_cents,
+          payment_link_url:
+            (invoice as unknown as { payment_link_url?: string | null; mollie_checkout_url?: string | null })
+              .payment_link_url ??
+            (invoice as unknown as { mollie_checkout_url?: string | null }).mollie_checkout_url ??
+            null,
+          lines: lines.map((l) => ({
+            line_type:
+              ((l as unknown as { line_type?: InvoiceTemplateLineKind }).line_type ??
+                "item") as InvoiceTemplateLineKind,
+            description: l.description,
+            quantity: Number(l.quantity),
+            unit_price_cents: l.unit_price_cents,
+            vat_rate: Number(l.vat_rate),
+            subtotal_cents: l.subtotal_cents,
+            vat_cents: l.vat_cents,
+            total_cents: l.total_cents,
+          })),
+        } satisfies InvoiceTemplateProps}
+      />
     </div>
   );
 }
