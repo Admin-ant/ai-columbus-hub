@@ -18,15 +18,26 @@ function appBase() {
   ).replace(/\/$/, "");
 }
 
+const METHODS = [
+  "ideal",
+  "creditcard",
+  "bancontact",
+  "paypal",
+  "banktransfer",
+  "applepay",
+  "sofort",
+] as const;
+export type MolliePaymentMethod = (typeof METHODS)[number];
+
 export const createMollieInvoicePayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z
       .object({
         invoice_id: z.string().uuid(),
-        method: z
-          .enum(["ideal", "creditcard", "bancontact", "paypal", "banktransfer"])
-          .optional(),
+        // Voorkeur: klant kan in checkout nog wisselen tenzij restrict=true
+        preferred_method: z.enum(METHODS).nullable().optional(),
+        restrict: z.boolean().optional(),
       })
       .parse(d),
   )
