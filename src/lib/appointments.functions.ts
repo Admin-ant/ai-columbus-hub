@@ -138,6 +138,43 @@ export const deleteAppointment = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const RescheduleSchema = z.object({
+  id: z.string().uuid(),
+  starts_at: z.string(),
+  ends_at: z.string(),
+  message: z.string().max(4000).optional(),
+  send_email: z.boolean().optional().default(true),
+});
+
+export const rescheduleAppointment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => RescheduleSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: existing, error: fetchErr } = await context.supabase
+      .from("appointments")
+      .select("ics_sequence, attendee_email")
+      .eq("id", data.id)
+      .single();
+    if (fetchErr || !existing) throw new Error(fetchErr?.message ?? "Afspraak niet gevonden");
+    const row = existing as { ics_sequence: number | null; attendee_email: string | null };
+    const seq = (row.ics_sequence ?? 0) + 1;
+    const { error } = await context.supabase
+      .from("appointments")
+      .update({
+        starts_at: data.starts_at,
+        ends_at: data.ends_at,
+        ics_sequence: seq,
+        status: "scheduled",
+        confirmed_at: null,
+        reschedule_requested_at: null,
+        reschedule_note: null,
+      } as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+
+    return { ok: true, attendee_email: row.attendee_email };
+  });
+
 const InviteSchema = z.object({
   id: z.string().uuid(),
   message: z.string().max(4000).optional(),
