@@ -900,12 +900,14 @@ function WinLeadDialog({
   lead,
   onClose,
   onSaved,
-  fnWin,
+  fn,
+  mode,
 }: {
   lead: Lead | null;
   onClose: () => void;
   onSaved: () => void;
-  fnWin: ReturnType<typeof useServerFn<typeof winLead>>;
+  fn: ReturnType<typeof useServerFn<typeof winLead>>;
+  mode: "win" | "customer";
 }) {
   const [title, setTitle] = useState("");
   const [monthly, setMonthly] = useState("0");
@@ -932,7 +934,7 @@ function WinLeadDialog({
     if (!lead) return;
     setSaving(true);
     try {
-      const r = await fnWin({
+      const r = await fn({
         data: {
           leadId: lead.id,
           monthlyCents: Math.round(parseFloat(monthly || "0") * 100),
@@ -966,11 +968,21 @@ function WinLeadDialog({
     <Dialog open={!!lead} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{created ? "Lead gewonnen 🎉" : "Zet lead op gewonnen"}</DialogTitle>
+          <DialogTitle>
+            {created
+              ? mode === "win"
+                ? "Lead gewonnen 🎉"
+                : "Klant aangemaakt ✅"
+              : mode === "win"
+                ? "Zet lead op gewonnen"
+                : "Maak alvast klant, project en contract aan"}
+          </DialogTitle>
           <DialogDescription>
             {created
               ? "Klant, project en contract zijn aangemaakt. Ga direct verder:"
-              : "Maakt automatisch klant, project en contract aan."}
+              : mode === "win"
+                ? "Maakt automatisch klant, project en contract aan en zet de lead op gewonnen."
+                : "Maakt klant, project en contract aan. De lead blijft in zijn huidige fase staan."}
           </DialogDescription>
         </DialogHeader>
 
