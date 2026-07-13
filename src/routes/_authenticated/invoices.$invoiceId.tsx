@@ -50,6 +50,13 @@ import {
 } from "@/lib/invoice-actions.functions";
 import { InvoicePreviewDialog } from "@/components/invoice-preview-dialog";
 import type { InvoiceTemplateProps, InvoiceTemplateLineKind } from "@/components/invoice-template";
+import {
+  listInvoicePaymentEvents,
+  refreshMollieInvoiceStatus,
+  type MolliePaymentMethod,
+} from "@/lib/mollie-invoice.functions";
+import { QRCodeSVG } from "qrcode.react";
+import { RefreshCw } from "lucide-react";
 
 type Invoice = Database["public"]["Tables"]["invoices"]["Row"];
 type InvoiceLine = Database["public"]["Tables"]["invoice_lines"]["Row"];
@@ -71,6 +78,16 @@ type AttachmentRow = {
   size_bytes: number | null;
   created_at: string;
 };
+type PaymentEventRow = {
+  id: string;
+  event_type: string;
+  mollie_payment_id: string | null;
+  status: string | null;
+  amount_cents: number | null;
+  method: string | null;
+  metadata: unknown;
+  created_at: string;
+};
 type OrgRow = {
   id: string;
   name: string;
@@ -85,6 +102,27 @@ type OrgRow = {
   kvk_number: string | null;
   iban: string | null;
   bic: string | null;
+};
+
+const MOLLIE_BADGE_COLOR: Record<string, string> = {
+  created: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+  open: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  pending: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  paid: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  failed: "bg-red-500/15 text-red-700 dark:text-red-300",
+  expired: "bg-red-500/15 text-red-700 dark:text-red-300",
+  canceled: "bg-muted text-muted-foreground",
+  revoked: "bg-muted text-muted-foreground",
+};
+const MOLLIE_BADGE_LABEL: Record<string, string> = {
+  created: "Aangemaakt",
+  open: "Open",
+  pending: "In behandeling",
+  paid: "Betaald",
+  failed: "Mislukt",
+  expired: "Verlopen",
+  canceled: "Geannuleerd",
+  revoked: "Ingetrokken",
 };
 
 const STATUS_COLOR: Record<InvoiceStatus, string> = {
@@ -111,6 +149,10 @@ function InvoiceDetailPage() {
   const [client, setClient] = useState<{ email: string | null; address_line1: string | null; postal_code: string | null; city: string | null } | null>(null);
   const [emailLog, setEmailLog] = useState<EmailLogRow[]>([]);
   const [attachments, setAttachments] = useState<AttachmentRow[]>([]);
+  const [paymentEvents, setPaymentEvents] = useState<PaymentEventRow[]>([]);
+  const [refreshingMollie, setRefreshingMollie] = useState(false);
+  const listEventsFn = useServerFn(listInvoicePaymentEvents);
+  const refreshMollieFn = useServerFn(refreshMollieInvoiceStatus);
   const [loading, setLoading] = useState(true);
   const [emailOpen, setEmailOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
@@ -180,8 +222,16 @@ function InvoiceDetailPage() {
         city: string | null;
       } | null,
     );
+
+    // Betalings-events (Mollie) apart laden — RLS via org membership
+    try {
+      const ev = await listEventsFn({ data: { invoice_id: invoiceId } });
+      setPaymentEvents(ev.events as PaymentEventRow[]);
+    } catch {
+      setPaymentEvents([]);
+    }
     setLoading(false);
-  }, [invoiceId]);
+  }, [invoiceId, listEventsFn]);
 
   useEffect(() => {
     void load();
@@ -329,6 +379,39 @@ function InvoiceDetailPage() {
 
   const isDraft = invoice.status === "draft";
   const suggestedFilename = invoice.pdf_filename || suggestInvoiceFilename(invoice.invoice_number, invoice.client_name);
+  const invExt = invoice as unknown as {
+    mollie_checkout_url?: string | null;
+    payment_link_url?: string | null;
+    mollie_payment_id?: string | null;
+    preferred_payment_method?: MolliePaymentMethod | null;
+  };
+  const currentPaymentLink = invExt.payment_link_url ?? invExt.mollie_checkout_url ?? null;
+  const preferredMethod = invExt.preferred_payment_method ?? null;
+  // Laatste webhook-status uit events
+  const latestWebhookStatus = paymentEvents.find(
+    (e) => e.event_type === "webhook" || e.event_type === "polled",
+  )?.status ?? null;
+  const mollieBadgeStatus: string | null = invoice.status === "paid"
+    ? "paid"
+    : currentPaymentLink
+      ? latestWebhookStatus ?? "open"
+      : latestWebhookStatus === "revoked" || paymentEvents.some((e) => e.event_type === "revoked")
+        ? null
+        : null;
+
+  async function handleRefreshMollie() {
+    if (!invExt.mollie_payment_id || !invoice) return;
+    setRefreshingMollie(true);
+    try {
+      const r = await refreshMollieFn({ data: { invoice_id: invoice.id } });
+      toast.success(`Mollie status: ${r.status ?? "onbekend"}`);
+      void load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Kon status niet ophalen");
+    } finally {
+      setRefreshingMollie(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -344,6 +427,16 @@ function InvoiceDetailPage() {
             <Badge variant="outline" className={`ml-3 ${STATUS_COLOR[invoice.status]}`}>
               {t(`invoices.status.${invoice.status}`)}
             </Badge>
+            {mollieBadgeStatus && (
+              <Badge variant="outline" className={`ml-2 ${MOLLIE_BADGE_COLOR[mollieBadgeStatus] ?? "bg-muted"}`}>
+                Mollie: {MOLLIE_BADGE_LABEL[mollieBadgeStatus] ?? mollieBadgeStatus}
+              </Badge>
+            )}
+            {preferredMethod && (
+              <Badge variant="secondary" className="ml-2 capitalize">
+                {preferredMethod}
+              </Badge>
+            )}
           </h1>
           <p className="text-sm text-muted-foreground">
             {invoice.client_name ?? "—"} · {new Date(invoice.issue_date).toLocaleDateString(i18n.resolvedLanguage ?? "nl")}
@@ -481,6 +574,78 @@ function InvoiceDetailPage() {
       </section>
 
       <section className="rounded-lg border">
+        <div className="flex items-center justify-between border-b px-4 py-2">
+          <div className="text-sm font-semibold">Mollie betaling</div>
+          <div className="flex items-center gap-2">
+            {currentPaymentLink && (
+              <div className="rounded bg-white p-1" title="Scan om te betalen">
+                <QRCodeSVG value={currentPaymentLink} size={56} level="M" />
+              </div>
+            )}
+            {invExt.mollie_payment_id && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefreshMollie}
+                disabled={refreshingMollie}
+              >
+                {refreshingMollie ? (
+                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-1 h-4 w-4" />
+                )}
+                Status verversen
+              </Button>
+            )}
+          </div>
+        </div>
+        {paymentEvents.length === 0 ? (
+          <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+            Nog geen betalings-events. Maak een betaallink aan via het factuurvoorbeeld.
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Datum</TableHead>
+                <TableHead>Event</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Methode</TableHead>
+                <TableHead className="text-right">Bedrag</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paymentEvents.map((e) => (
+                <TableRow key={e.id}>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {new Date(e.created_at).toLocaleString(i18n.resolvedLanguage ?? "nl")}
+                  </TableCell>
+                  <TableCell className="text-sm capitalize">{e.event_type}</TableCell>
+                  <TableCell>
+                    {e.status && (
+                      <Badge
+                        variant="outline"
+                        className={MOLLIE_BADGE_COLOR[e.status] ?? "bg-muted"}
+                      >
+                        {MOLLIE_BADGE_LABEL[e.status] ?? e.status}
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-xs capitalize text-muted-foreground">
+                    {e.method ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-sm">
+                    {e.amount_cents != null ? eur.format(e.amount_cents / 100) : "—"}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </section>
+
+
+      <section className="rounded-lg border">
         <div className="border-b px-4 py-2 text-sm font-semibold">{t("invoices.email_log")}</div>
         {emailLog.length === 0 ? (
           <div className="px-4 py-6 text-center text-sm text-muted-foreground">
@@ -606,6 +771,7 @@ function InvoiceDetailPage() {
         onOpenChange={setPreviewOpen}
         invoiceId={invoice.id}
         invoiceStatus={invoice.status}
+        defaultPreferredMethod={preferredMethod}
         onPaymentLinkChanged={() => void load()}
         data={{
           organization: {

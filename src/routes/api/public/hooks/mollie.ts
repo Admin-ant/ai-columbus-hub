@@ -38,11 +38,14 @@ export const Route = createFileRoute("/api/public/hooks/mollie")({
           id: string;
           status: string;
           paidAt?: string | null;
+          method?: string | null;
+          amount?: { value?: string; currency?: string } | null;
           metadata?: {
             quote_id?: string;
             token?: string;
             invoice_id?: string;
             invoice_number?: string;
+            preferred_method?: string | null;
           } | null;
         };
 
@@ -51,14 +54,30 @@ export const Route = createFileRoute("/api/public/hooks/mollie")({
         // --- Path A: betaling gekoppeld aan een bestaande factuur ---
         const invoiceId = payment.metadata?.invoice_id;
         if (invoiceId) {
-          if (payment.status === "paid") {
-            const paidAtIso = payment.paidAt ?? new Date().toISOString();
-            const { data: existing } = await supabaseAdmin
-              .from("invoices")
-              .select("id, status, paid_at")
-              .eq("id", invoiceId)
-              .maybeSingle();
-            if (existing && (existing as { paid_at: string | null }).paid_at == null) {
+          const { data: existing } = await supabaseAdmin
+            .from("invoices")
+            .select("id, organization_id, status, paid_at, total_cents")
+            .eq("id", invoiceId)
+            .maybeSingle();
+          const inv = existing as
+            | { id: string; organization_id: string; status: string; paid_at: string | null; total_cents: number }
+            | null;
+
+          if (inv) {
+            // Log elk webhook-signaal in de payment events
+            await supabaseAdmin.from("invoice_payment_events").insert({
+              invoice_id: inv.id,
+              organization_id: inv.organization_id,
+              event_type: "webhook",
+              mollie_payment_id: payment.id,
+              status: payment.status,
+              amount_cents: inv.total_cents,
+              method: payment.method ?? null,
+              metadata: { paidAt: payment.paidAt ?? null },
+            } as never);
+
+            if (payment.status === "paid" && inv.paid_at == null) {
+              const paidAtIso = payment.paidAt ?? new Date().toISOString();
               await supabaseAdmin
                 .from("invoices")
                 .update({
@@ -78,6 +97,7 @@ export const Route = createFileRoute("/api/public/hooks/mollie")({
           }
           return new Response("ok", { status: 200 });
         }
+
 
         // --- Path B: betaling gekoppeld aan een offerte (legacy quote flow) ---
         const token = payment.metadata?.token;
