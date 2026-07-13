@@ -16,6 +16,7 @@ import {
   Paperclip,
   Pencil,
   Save,
+  Send,
   Trash2,
   Upload,
 } from "lucide-react";
