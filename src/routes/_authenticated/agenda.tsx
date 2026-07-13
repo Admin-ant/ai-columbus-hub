@@ -809,6 +809,7 @@ function AppointmentDialog({
     initial ? toLocalInput(initial.ends_at) : toLocalInput(new Date(Date.now() + 5400_000).toISOString()),
   );
   const [sendNow, setSendNow] = useState(!initial);
+  const [locale, setLocale] = useState<"nl" | "en" | "de">(normalizeLocale(initial?.locale));
   const [saving, setSaving] = useState(false);
 
   function pickClient(id: string) {
@@ -817,6 +818,7 @@ function AppointmentDialog({
     if (c) {
       if (!attendeeName) setAttendeeName(c.name);
       if (!attendeeEmail && c.email) setAttendeeEmail(c.email);
+      if (!initial && c.preferred_locale) setLocale(normalizeLocale(c.preferred_locale));
     }
   }
 
