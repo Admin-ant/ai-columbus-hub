@@ -119,6 +119,17 @@ function ProjectDetailPage() {
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [projectId]);
 
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("projects").select("id,name").order("created_at", { ascending: false });
+      setSiblings((data ?? []) as { id: string; name: string }[]);
+    })();
+  }, []);
+
+  const currentIndex = siblings.findIndex((s) => s.id === projectId);
+  const prevProject = currentIndex > 0 ? siblings[currentIndex - 1] : null;
+  const nextProject = currentIndex >= 0 && currentIndex < siblings.length - 1 ? siblings[currentIndex + 1] : null;
+
   async function save() {
     if (!project) return;
     setSaving(true);
