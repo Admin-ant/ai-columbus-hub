@@ -98,6 +98,7 @@ export const createAppointment = createServerFn({ method: "POST" })
       ends_at: data.ends_at,
       attendee_name: data.attendee_name || null,
       attendee_email: data.attendee_email || null,
+      locale: data.locale ?? "nl",
       created_by: context.userId,
     };
     const { data: created, error } = await context.supabase
