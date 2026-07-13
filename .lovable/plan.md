@@ -1,58 +1,78 @@
-# Sales Workflow — implementatieplan
+## Doel
 
-Veel bouwstenen bestaan al (leads, quotes met publieke signeer-link, contracts, invoices, `generate_recurring_invoices` cron, Mollie iDEAL webhook, `convert_lead_to_customer` RPC). Ik voeg de ontbrekende schakels toe zonder bestaande logica te breken.
+Netqloud en AI van Columbus volledig scheiden in de sidebar. Wanneer je in Columbus werkt zie je alleen Columbus-onderdelen; wanneer je in Netqloud werkt zie je alleen Netqloud-onderdelen. Schakelen tussen bedrijven doe je via de bedrijfs-switcher bovenin (of via de knop in de sidebar).
 
-## Wat je krijgt
+Voor nu bouwen we in Netqloud nog geen nieuwe functionaliteit — puur de scheiding.
 
-### 1. Nieuwe pagina `/sales-workflow`
-Één overzicht met de 5-stappen pipeline per lead:
+## Wat er nu mis gaat
 
-```text
-[ Nieuwe leads ] → [ Klantwensen ] → [ Offerte/Contract ] → [ Ondertekend ] → [ Facturen & Abo ]
-```
+In `src/components/app-sidebar.tsx` staan drie dingen tegelijk zichtbaar:
+1. Een grote "Algemeen"-lijst (Sales Workflow, Offerte Studio, Cold Outreach, Leads, Contracten, Mail, CRM, Enterprise, Teams) — die hoort feitelijk bij Columbus.
+2. Een sectie "AI van Columbus" met eigen submenu.
+3. Een sectie "Netqloud" met eigen submenu.
 
-- Kolommen als kanban of tabel met filter (bron, status, periode).
-- Per lead-rij: knop naar bijbehorende Klantwensen / Offerte / Contract / Facturen.
-- KPI-strip bovenaan: aantal per fase, MRR uit lopende contracten, openstaand op eenmalige facturen.
+Daardoor lijken alle Columbus-schermen ook bij Netqloud te horen, en zie je in Columbus alsnog Netqloud in het menu staan. Dat is verwarrend.
 
-### 2. Klantwensen-stap (nieuw)
-Nieuwe tabel `client_requirements` (1-op-1 met lead) met:
-- `scope` (tekst, editable),
-- `one_time_cents`, `recurring_cents`, `currency`, `notes`.
+## Nieuwe structuur van de sidebar
 
-UI: knop op leaddetail "Klantwensen opstellen" → editable form (velden voorinvullen met AI-samenvatting uit `lead.transcript`/`description` via bestaande Lovable AI helper). Vanuit dit scherm knop **"Genereer offerte & contract"** → maakt quote + contract-concept met de bedragen uit deze requirements.
+De sidebar wordt afhankelijk van de **actieve omgeving** (`currentOrganization` uit `useWorkspace`):
 
-### 3. Auto-conversie bij ondertekening (nu pas bij paid)
-Nieuwe SECURITY DEFINER-functie `finalize_signed_quote(_quote_id)`:
-- Roept `convert_lead_to_customer` aan (client + project + contract).
-- Maakt direct één **eenmalige factuur** voor `one_time_cents` (status `sent`, Mollie iDEAL link via bestaande flow).
-- Activeert contract met `next_invoice_date = start_date` zodat bestaande `generate_recurring_invoices` cron de maandfacturen genereert (interne recurring, iDEAL per factuur — géén SEPA, per jouw keuze).
-- Trigger op `quotes` na UPDATE waarbij `signed_at` van NULL → gevuld, roept deze functie aan.
+- **Als actieve omgeving = AI van Columbus**  
+  Toon alleen Columbus-gerelateerde items:
+  - Overzicht (dashboard)
+  - Sales Workflow
+  - Leads funnel
+  - Offerte Studio
+  - Cold Outreach
+  - Contracten
+  - Mail (+ instellingen + templates)
+  - CRM Activiteiten
+  - Klanten
+  - Projecten dashboard
+  - Offertes
+  - Facturen
+  - Inkoopfacturen
+  - Modellen & gebruik
+  - Rapportages
+  - Logs
+  - Instellingen (Columbus)
 
-### 4. Behoud huidige Mollie iDEAL flow
-- Mollie subscriptions/SEPA blijven **uit**.
-- Elke maandfactuur uit de cron krijgt zoals nu een iDEAL-betaallink; klant betaalt handmatig per factuur.
-- Bestaande webhook `/api/public/hooks/mollie` blijft ongewijzigd.
+- **Als actieve omgeving = Netqloud**  
+  Toon alleen Netqloud-items (voorlopig alleen de bestaande stubs):
+  - Dashboard
+  - Klanten
+  - Servers
+  - Offertes
+  - Facturen
+  - Inkoopfacturen
+  - Instellingen
+  - (Enterprise / Teams verplaatsen we hier niet naartoe — die blijven Columbus, tenzij je anders wilt)
 
-## Technisch
+- **Beheer-sectie** (Opname, Administratie, Gebruikers) blijft altijd zichtbaar voor admins — dat is holding-breed.
 
-**Nieuwe migratie:**
-- `client_requirements` tabel + GRANT + RLS (org-scoped via `has_org_access`).
-- `finalize_signed_quote(uuid)` RPC (SECURITY DEFINER).
-- Trigger `trg_quote_signed_finalize` op `quotes` AFTER UPDATE OF `signed_at`.
+De bovenste header van de sidebar laat duidelijk zien in welk bedrijf je zit (naam + brand color, dat blok bestaat al). De "AI van Columbus" / "Netqloud" secties met "Open omgeving" verdwijnen — schakelen gaat via de **WorkspaceSwitcher** in de topbar (die staat al klaar in `src/components/workspace-switcher.tsx`).
 
-**Nieuwe server functions (`src/lib/sales-workflow.functions.ts`):**
-- `listSalesPipeline` — leads + requirements + quote + contract joined.
-- `upsertRequirements` — save Klantwensen.
-- `aiDraftRequirements` — Lovable AI genereert scope/bedragen uit lead-tekst.
-- `generateQuoteFromRequirements` — maakt quote + contract-concept.
+## Wisselen van bedrijf
 
-**Nieuwe route:** `/_authenticated/sales-workflow.tsx` + sidebar-link.
-**Uitbreiding leaddetail:** knop "Klantwensen" op bestaande leads-pagina.
+- Bovenin blijft de bestaande WorkspaceSwitcher; als je daar Netqloud kiest, verandert de sidebar meteen naar het Netqloud-menu en navigeert de app naar `/netqloud`.
+- Kies je Columbus, dan verandert de sidebar naar het Columbus-menu en gaat de app naar `/ai-columbus` (of `/` overzicht — zie vraag hieronder).
 
-## Wat NIET verandert
-- Bestaande quote-, contract-, factuur- en Mollie-code blijft intact.
-- Geen wijzigingen aan `client.ts`, `types.ts` handmatig — types worden na migratie hergegenereerd.
-- Geen edge functions; alles via TanStack `createServerFn`.
+## Wat we NIET aanraken
 
-Akkoord? Dan ga ik bouwen.
+- Geen database-wijzigingen.
+- Geen nieuwe Netqloud-schermen; de bestaande stub-pagina's (`netqloud.index`, `netqloud.klanten`, `netqloud.servers`, `netqloud.instellingen`) blijven zoals ze zijn.
+- Routes verplaatsen we niet — Columbus-routes blijven op hun huidige URL's. Alleen de zichtbaarheid in het menu verandert per actieve omgeving.
+
+## Technische wijzigingen
+
+Alleen `src/components/app-sidebar.tsx`:
+- `topItems`, `sections`, `adminItems` vervangen door twee menu-definities: `columbusMenu` en `netqloudMenu`.
+- Op basis van `currentOrganization?.slug` (`"ai-columbus"` of `"netqloud"`) render je het juiste menu.
+- Sectie "Open omgeving" met submenu verwijderen.
+- Beheer-blok blijft, ongewijzigd.
+
+## Vraag voordat ik het bouw
+
+Wanneer je van Columbus naar Netqloud switcht, wil je dan:
+- **(a)** automatisch naar het Netqloud-dashboard (`/netqloud`) gestuurd worden, of
+- **(b)** blijven waar je bent en alleen het menu zien veranderen?
