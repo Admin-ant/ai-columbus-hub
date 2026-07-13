@@ -52,7 +52,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { buildInvoicePdf, suggestInvoiceFilename, type InvoicePdfData } from "@/lib/invoice-pdf";
+import { buildInvoicePdf, buildPaymentReceiptPdf, suggestInvoiceFilename, suggestReceiptFilename, type InvoicePdfData } from "@/lib/invoice-pdf";
 import { loadTemplate } from "@/lib/pdf-template";
 import {
   deleteInvoice,
