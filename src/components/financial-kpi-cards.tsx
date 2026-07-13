@@ -129,26 +129,3 @@ function KpiCard({
     </Link>
   );
 }
-
-function KpiCard({
-  label, value, sub, icon: Icon, tone, loading,
-}: {
-  label: string; value: string; sub?: string; icon: typeof TrendingUp; tone: string; loading: boolean;
-}) {
-  return (
-    <div className="rounded-lg border bg-card p-4">
-      <div className="flex items-center justify-between">
-        <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
-        <div className={`flex h-8 w-8 items-center justify-center rounded-md ${tone}`}>
-          <Icon className="h-4 w-4" />
-        </div>
-      </div>
-      <div className="mt-2 text-2xl font-bold tabular-nums">
-        {loading ? "…" : value}
-      </div>
-      {sub && !loading && (
-        <div className="mt-1 text-xs text-muted-foreground">{sub}</div>
-      )}
-    </div>
-  );
-}
