@@ -70,6 +70,8 @@ export type Database = {
           attendee_email: string | null
           attendee_name: string | null
           client_id: string | null
+          confirm_token: string
+          confirmed_at: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -81,6 +83,8 @@ export type Database = {
           lead_id: string | null
           location: string | null
           organization_id: string
+          reschedule_note: string | null
+          reschedule_requested_at: string | null
           starts_at: string
           status: string
           title: string
@@ -90,6 +94,8 @@ export type Database = {
           attendee_email?: string | null
           attendee_name?: string | null
           client_id?: string | null
+          confirm_token?: string
+          confirmed_at?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -101,6 +107,8 @@ export type Database = {
           lead_id?: string | null
           location?: string | null
           organization_id: string
+          reschedule_note?: string | null
+          reschedule_requested_at?: string | null
           starts_at: string
           status?: string
           title: string
@@ -110,6 +118,8 @@ export type Database = {
           attendee_email?: string | null
           attendee_name?: string | null
           client_id?: string | null
+          confirm_token?: string
+          confirmed_at?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -121,6 +131,8 @@ export type Database = {
           lead_id?: string | null
           location?: string | null
           organization_id?: string
+          reschedule_note?: string | null
+          reschedule_requested_at?: string | null
           starts_at?: string
           status?: string
           title?: string
