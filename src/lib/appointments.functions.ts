@@ -172,18 +172,7 @@ export const rescheduleAppointment = createServerFn({ method: "POST" })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
 
-    if (data.send_email && row.attendee_email) {
-      await sendAppointmentInvite({
-        data: {
-          id: data.id,
-          message:
-            (data.message?.trim() ? data.message.trim() + "\n\n" : "") +
-            "Let op: de datum/tijd van deze afspraak is aangepast. Deze uitnodiging vervangt de vorige.",
-          cancel: false,
-        },
-      });
-    }
-    return { ok: true, emailed: data.send_email && !!row.attendee_email };
+    return { ok: true, attendee_email: row.attendee_email };
   });
 
 const InviteSchema = z.object({
