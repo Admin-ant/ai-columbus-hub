@@ -525,7 +525,7 @@ function renderAppointmentHtml(opts: {
           ${opts.description ? `<div style="background:#faf7f2;border-radius:10px;padding:16px 18px;font-size:14px;line-height:1.6;color:#3a3a3a;white-space:pre-wrap;margin-bottom:8px">${escapeHtml(opts.description)}</div>` : ""}
           ${opts.customMessage ? `<div style="border-left:3px solid ${accent};padding:6px 0 6px 14px;font-size:14px;line-height:1.6;color:#3a3a3a;white-space:pre-wrap;margin-top:16px">${escapeHtml(opts.customMessage)}</div>` : ""}
           ${buttons}
-          ${opts.cancelled ? `<p style="margin:8px 0 0;font-size:13px;color:#8a8a8a">${escapeHtml(t.cancelledFootnote)}</p>` : `<p style="margin:8px 0 0;font-size:13px;color:#8a8a8a">${escapeHtml(t.linkFallback)} <a href="${escapeAttr(opts.actionUrl)}" style="color:${accent}">${escapeHtml(opts.actionUrl)}</a></p>`}
+          ${opts.cancelled ? `<p style="margin:8px 0 0;font-size:13px;color:#8a8a8a">${escapeHtml(t.cancelledFootnote)}</p>` : ""}
         </div>
         <div style="background:#faf7f2;padding:16px 32px;text-align:center;font-size:12px;color:#8a8a8a;border-top:1px solid #efe9dd">
           ${escapeHtml(t.signature)} ${escapeHtml(opts.fromName)}
