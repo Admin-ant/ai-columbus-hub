@@ -1329,7 +1329,17 @@ function EmailForm({
   return (
     <form onSubmit={submit} className="space-y-3">
       <div className="space-y-1.5 rounded-md border bg-muted/30 p-3">
-        <Label className="text-xs uppercase tracking-wide text-muted-foreground">E-mailtemplate</Label>
+        <div className="flex items-center justify-between gap-2">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+            E-mailtemplate {tplLoading && <Loader2 className="ml-1 inline h-3 w-3 animate-spin" />}
+          </Label>
+          <Link
+            to="/mail/templates"
+            className="text-[11px] font-medium text-primary hover:underline"
+          >
+            Beheer templates →
+          </Link>
+        </div>
         {saveTplOpen ? (
           <div className="flex flex-col gap-2 sm:flex-row">
             <Input
