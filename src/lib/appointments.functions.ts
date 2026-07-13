@@ -272,30 +272,91 @@ export const sendAppointmentInvite = createServerFn({ method: "POST" })
       cancelled: data.cancel === true,
     });
 
+    const subject = `${data.cancel ? t.subjectPrefixCancel + " " : ""}${a.title} — ${dateStr}`;
+
+    // Pre-log in mail_messages so it shows up in the user's Sent folder
+    const { data: logRow } = await context.supabase
+      .from("mail_messages")
+      .insert({
+        organization_id: a.organization_id,
+        folder: "sent",
+        from_email: fromEmail,
+        from_name: fromName,
+        to_emails: [a.attendee_email],
+        cc_emails: [],
+        bcc_emails: [],
+        subject,
+        body_text: bodyText,
+        body_html: html,
+        status: "queued",
+        created_by: context.userId,
+        attachments: [{ filename: "afspraak.ics", path: "inline:afspraak.ics" }],
+      } as never)
+      .select("id")
+      .single();
+    const logId = (logRow as { id: string } | null)?.id ?? null;
+
     const key = process.env.RESEND_API_KEY;
-    if (!key) throw new Error("RESEND_API_KEY ontbreekt");
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        from,
-        to: [a.attendee_email],
-        subject: `${data.cancel ? t.subjectPrefixCancel + " " : ""}${a.title} — ${dateStr}`,
-        html,
-        text: bodyText,
-        reply_to: s?.reply_to || undefined,
-        headers: { "Content-Class": "urn:content-classes:calendarmessage" },
-        attachments: [
-          {
-            filename: "afspraak.ics",
-            content: Buffer.from(ics, "utf8").toString("base64"),
-            content_type: `text/calendar; method=${method}; charset=UTF-8`,
+    if (!key) throw new Error("RESEND_API_KEY ontbreekt — voeg toe in projectinstellingen");
+
+    let providerId: string | null = null;
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+        body: JSON.stringify({
+          from,
+          to: [a.attendee_email],
+          subject,
+          html,
+          text: bodyText,
+          reply_to: s?.reply_to || undefined,
+          headers: {
+            "Content-Class": "urn:content-classes:calendarmessage",
+            ...(logId ? { "X-Mail-Message-Id": logId } : {}),
           },
-        ],
-      }),
-    });
-    const respBody = await res.text();
-    if (!res.ok) throw new Error(`Resend ${res.status}: ${respBody.slice(0, 300)}`);
+          attachments: [
+            {
+              filename: "afspraak.ics",
+              content: Buffer.from(ics, "utf8").toString("base64"),
+              content_type: `text/calendar; method=${method}; charset=UTF-8`,
+            },
+          ],
+        }),
+      });
+      const respBody = await res.text();
+      if (!res.ok) {
+        throw new Error(
+          `Verzenden mislukt (${res.status}). Controleer of het afzenderadres (${fromEmail}) een geverifieerd domein in Resend gebruikt. Detail: ${respBody.slice(0, 300)}`,
+        );
+      }
+      try {
+        providerId = (JSON.parse(respBody) as { id?: string }).id ?? null;
+      } catch {
+        /* noop */
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (logId) {
+        await context.supabase
+          .from("mail_messages")
+          .update({ status: "failed", error: msg } as never)
+          .eq("id", logId);
+      }
+      throw new Error(msg);
+    }
+
+    if (logId) {
+      await context.supabase
+        .from("mail_messages")
+        .update({
+          status: "sent",
+          sent_at: new Date().toISOString(),
+          provider_message_id: providerId,
+          thread_id: logId,
+        } as never)
+        .eq("id", logId);
+    }
 
     const patch: Record<string, unknown> = { invite_sent_at: new Date().toISOString() };
     if (data.cancel) patch.status = "cancelled";
@@ -304,7 +365,7 @@ export const sendAppointmentInvite = createServerFn({ method: "POST" })
       .update(patch as never)
       .eq("id", a.id);
 
-    return { ok: true };
+    return { ok: true, mail_message_id: logId };
   });
 
 const PreviewSchema = z.object({
