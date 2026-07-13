@@ -55,7 +55,39 @@ type Appointment = {
   created_at: string;
 };
 
-type ClientRow = { id: string; name: string; email: string | null; preferred_locale: string | null };
+type ClientRow = {
+  id: string;
+  name: string;
+  email: string | null;
+  preferred_locale: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  postal_code: string | null;
+  city: string | null;
+};
+type OrgAddress = {
+  name: string;
+  address_line1: string | null;
+  address_line2: string | null;
+  postal_code: string | null;
+  city: string | null;
+} | null;
+
+function formatAddress(a: {
+  name?: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  postal_code: string | null;
+  city: string | null;
+}): string {
+  const parts = [
+    a.name ?? null,
+    a.address_line1,
+    a.address_line2,
+    [a.postal_code, a.city].filter(Boolean).join(" ").trim() || null,
+  ].filter((p): p is string => !!p && p.trim().length > 0);
+  return parts.join(", ");
+}
 
 function toLocalInput(iso: string): string {
   const d = new Date(iso);
@@ -154,6 +186,7 @@ function AgendaPage() {
   const { currentOrganizationId, currentOrganization, loading: wsLoading } = useWorkspace();
   const [items, setItems] = useState<Appointment[]>([]);
   const [clients, setClients] = useState<ClientRow[]>([]);
+  const [orgAddress, setOrgAddress] = useState<OrgAddress>(null);
   const [loading, setLoading] = useState(true);
   const [scope, setScope] = useState<"upcoming" | "past" | "all">("upcoming");
   const [statusFilter, setStatusFilter] = useState<"all" | "scheduled" | "sent" | "confirmed" | "reschedule" | "cancelled">("all");
@@ -172,7 +205,7 @@ function AgendaPage() {
       return;
     }
     setLoading(true);
-    const [{ data: appts, error }, { data: cl }] = await Promise.all([
+    const [{ data: appts, error }, { data: cl }, { data: org }] = await Promise.all([
       supabase
         .from("appointments")
         .select("*")
@@ -180,13 +213,19 @@ function AgendaPage() {
         .order("starts_at", { ascending: true }),
       supabase
         .from("clients")
-        .select("id,name,email,preferred_locale")
+        .select("id,name,email,preferred_locale,address_line1,address_line2,postal_code,city")
         .eq("organization_id", currentOrganizationId)
         .order("name"),
+      supabase
+        .from("organizations")
+        .select("name,address_line1,address_line2,postal_code,city")
+        .eq("id", currentOrganizationId)
+        .maybeSingle(),
     ]);
     if (error) toast.error(error.message);
     setItems((appts ?? []) as Appointment[]);
     setClients((cl ?? []) as ClientRow[]);
+    setOrgAddress((org ?? null) as OrgAddress);
     setLoading(false);
   }
 
@@ -473,6 +512,7 @@ function AgendaPage() {
           key={editing?.id ?? "new"}
           orgId={currentOrganizationId}
           clients={clients}
+          orgAddress={orgAddress}
           initial={editing}
           open={open}
           onOpenChange={setOpen}
@@ -780,6 +820,7 @@ function RescheduleDialog({
 function AppointmentDialog({
   orgId,
   clients,
+  orgAddress,
   initial,
   open,
   onOpenChange,
@@ -787,6 +828,7 @@ function AppointmentDialog({
 }: {
   orgId: string;
   clients: ClientRow[];
+  orgAddress: OrgAddress;
   initial: Appointment | null;
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -800,7 +842,15 @@ function AppointmentDialog({
   const [clientId, setClientId] = useState(initial?.client_id ?? "");
   const [attendeeName, setAttendeeName] = useState(initial?.attendee_name ?? "");
   const [attendeeEmail, setAttendeeEmail] = useState(initial?.attendee_email ?? "");
-  const [location, setLocation] = useState(initial?.location ?? "");
+  const initialLoc = initial?.location ?? "";
+  const guessMode: "online" | "onsite" = /^(https?:\/\/|meet\.|zoom\.|teams\.|Google Meet|Zoom|Teams)/i.test(initialLoc)
+    ? "online"
+    : initialLoc
+      ? "onsite"
+      : "online";
+  const [locationMode, setLocationMode] = useState<"online" | "onsite">(guessMode);
+  const [onsitePick, setOnsitePick] = useState<"client" | "office" | "custom">("custom");
+  const [location, setLocation] = useState(initialLoc);
   const [description, setDescription] = useState(initial?.description ?? "");
   const [startsAt, setStartsAt] = useState(
     initial ? toLocalInput(initial.starts_at) : toLocalInput(new Date(Date.now() + 3600_000).toISOString()),
@@ -812,13 +862,42 @@ function AppointmentDialog({
   const [locale, setLocale] = useState<"nl" | "en" | "de">(normalizeLocale(initial?.locale));
   const [saving, setSaving] = useState(false);
 
+  const selectedClient = clients.find((c) => c.id === clientId) ?? null;
+  const clientAddress = selectedClient ? formatAddress(selectedClient) : "";
+  const officeAddress = orgAddress ? formatAddress(orgAddress) : "";
+
+  function applyOnsitePick(pick: "client" | "office" | "custom", client = selectedClient) {
+    setOnsitePick(pick);
+    if (pick === "client") {
+      const addr = client ? formatAddress(client) : "";
+      setLocation(addr);
+    } else if (pick === "office") {
+      setLocation(officeAddress);
+    }
+    // 'custom' laat huidige tekst staan
+  }
+
+  function chooseMode(m: "online" | "onsite") {
+    setLocationMode(m);
+    if (m === "online") {
+      if (!/^(https?:\/\/|meet\.|zoom\.|teams\.)/i.test(location)) {
+        setLocation("Google Meet (link volgt in uitnodiging)");
+      }
+    } else if (!location.trim()) {
+      applyOnsitePick(selectedClient ? "client" : "office");
+    }
+  }
+
   function pickClient(id: string) {
     setClientId(id);
-    const c = clients.find((cc) => cc.id === id);
+    const c = clients.find((cc) => cc.id === id) ?? null;
     if (c) {
       if (!attendeeName) setAttendeeName(c.name);
       if (!attendeeEmail && c.email) setAttendeeEmail(c.email);
       if (!initial && c.preferred_locale) setLocale(normalizeLocale(c.preferred_locale));
+      if (locationMode === "onsite" && onsitePick === "client") {
+        setLocation(formatAddress(c));
+      }
     }
   }
 
@@ -900,13 +979,71 @@ function AppointmentDialog({
               />
             </div>
           </div>
-          <div className="space-y-1.5">
-            <Label>Locatie</Label>
+          <div className="space-y-2 rounded-md border p-3">
+            <Label>Waar vindt de afspraak plaats?</Label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => chooseMode("online")}
+                className={`flex-1 rounded-md border px-3 py-2 text-sm ${locationMode === "online" ? "border-primary bg-primary/10 font-medium" : "hover:bg-muted"}`}
+              >
+                💻 Online
+              </button>
+              <button
+                type="button"
+                onClick={() => chooseMode("onsite")}
+                className={`flex-1 rounded-md border px-3 py-2 text-sm ${locationMode === "onsite" ? "border-primary bg-primary/10 font-medium" : "hover:bg-muted"}`}
+              >
+                📍 Op locatie
+              </button>
+            </div>
+            {locationMode === "onsite" && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => applyOnsitePick("client")}
+                  disabled={!clientAddress}
+                  className={`rounded-md border px-2.5 py-1 text-xs ${onsitePick === "client" ? "border-primary bg-primary/10 font-medium" : "hover:bg-muted"} disabled:cursor-not-allowed disabled:opacity-40`}
+                  title={clientAddress || "Kies een klant met adres"}
+                >
+                  Bij klant
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyOnsitePick("office")}
+                  disabled={!officeAddress}
+                  className={`rounded-md border px-2.5 py-1 text-xs ${onsitePick === "office" ? "border-primary bg-primary/10 font-medium" : "hover:bg-muted"} disabled:cursor-not-allowed disabled:opacity-40`}
+                  title={officeAddress || "Vul eerst je kantooradres in bij Organisatie"}
+                >
+                  Op ons kantoor
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyOnsitePick("custom")}
+                  className={`rounded-md border px-2.5 py-1 text-xs ${onsitePick === "custom" ? "border-primary bg-primary/10 font-medium" : "hover:bg-muted"}`}
+                >
+                  Ander adres
+                </button>
+              </div>
+            )}
             <Input
               value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Bijv. Google Meet-link of adres"
+              onChange={(e) => {
+                setLocation(e.target.value);
+                if (locationMode === "onsite") setOnsitePick("custom");
+              }}
+              placeholder={locationMode === "online" ? "Bijv. Google Meet-link" : "Straat 1, 1234 AB Stad"}
             />
+            {locationMode === "onsite" && onsitePick === "client" && !clientAddress && (
+              <p className="text-xs text-muted-foreground">
+                Deze klant heeft nog geen adres. Vul het aan in Klanten of kies een ander adres.
+              </p>
+            )}
+            {locationMode === "onsite" && onsitePick === "office" && !officeAddress && (
+              <p className="text-xs text-muted-foreground">
+                Je organisatie heeft nog geen kantooradres. Vul deze aan in Organisatie-instellingen.
+              </p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label>Klant</Label>
