@@ -790,10 +790,7 @@ function LeadsPage() {
         <WinLeadDialog
           lead={winLeadRow}
           onClose={() => setWinLeadRow(null)}
-          onDone={() => {
-            setWinLeadRow(null);
-            load();
-          }}
+          onSaved={() => load()}
           fnWin={fnWin}
         />
 
