@@ -367,15 +367,26 @@ function Field({
   label,
   value,
   onChange,
+  error,
+  placeholder,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  error?: string | null;
+  placeholder?: string;
 }) {
   return (
     <div className="space-y-1">
       <Label className="text-xs text-muted-foreground">{label}</Label>
-      <Input value={value} onChange={(e) => onChange(e.target.value)} />
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        aria-invalid={error ? true : undefined}
+        className={error ? "border-destructive focus-visible:ring-destructive" : undefined}
+      />
+      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }
