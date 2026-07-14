@@ -493,14 +493,26 @@ function renderAppointmentHtml(opts: {
 }): string {
   const t = apptDict(opts.locale);
   const accent = "#ff6a3d";
-  const btnPrimary = `background:${accent};color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;display:inline-block;font-size:15px;`;
-  const btnSecondary = `background:#ffffff;color:#1a1a1a;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;display:inline-block;font-size:15px;border:1.5px solid #e5e0d5;margin-left:8px;`;
+  const accentDark = "#d94e24";
+  const btnBase = `text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;display:inline-block;font-size:15px;line-height:1.4;mso-line-height-rule:exactly;`;
+  const btnPrimary = `${btnBase}background:${accent};color:#ffffff;border:2px solid ${accent};`;
+  const btnPrimaryHover = `background:${accentDark};border-color:${accentDark};`;
+  const btnSecondary = `${btnBase}background:#ffffff;color:#1a1a1a;border:2px solid #e5e0d5;margin-left:8px;`;
+  const btnSecondaryHover = `background:#f5f5f5;border-color:#d4d4d4;`;
+  const focusRing = `outline:3px solid #2563eb;outline-offset:2px;`;
+  const actionUrlEscaped = escapeAttr(opts.actionUrl);
   const buttons = opts.cancelled
     ? ""
-    : `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:24px 0"><tr>
-         <td><a href="${escapeAttr(opts.actionUrl)}?a=confirm" style="${btnPrimary}">${escapeHtml(t.btnConfirm)}</a></td>
-         <td><a href="${escapeAttr(opts.actionUrl)}?a=reschedule" style="${btnSecondary}">${escapeHtml(t.btnReschedule)}</a></td>
-       </tr></table>`;
+    : `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0;border-collapse:separate"><tr>
+         <td style="padding-right:8px"><a href="${actionUrlEscaped}?a=confirm" role="button" aria-label="${escapeAttr(t.btnConfirmAriaLabel)}" style="${btnPrimary}">${escapeHtml(t.btnConfirm)}</a></td>
+         <td><a href="${actionUrlEscaped}?a=reschedule" role="button" aria-label="${escapeAttr(t.btnRescheduleAriaLabel)}" style="${btnSecondary}">${escapeHtml(t.btnReschedule)}</a></td>
+       </tr></table>
+       <style>
+         a[role="button"]:hover { text-decoration:none !important; }
+         a[href^="${actionUrlEscaped}?a=confirm"]:hover { ${btnPrimaryHover} }
+         a[href^="${actionUrlEscaped}?a=reschedule"]:hover { ${btnSecondaryHover} }
+         a[role="button"]:focus-visible { ${focusRing} }
+       </style>`;
 
   return `<!doctype html><html lang="${opts.locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(opts.title)}</title></head>
 <body style="margin:0;padding:0;background:#faf7f2;font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a1a">
