@@ -124,6 +124,8 @@ const en: Dict = {
   fallbackName: "there",
   btnConfirm: "✓ Confirm",
   btnReschedule: "↻ Reschedule",
+  btnConfirmAriaLabel: "Confirm this appointment",
+  btnRescheduleAriaLabel: "Reschedule this appointment to another time",
   cancelledFootnote: "This appointment is marked as cancelled in your calendar.",
   linkFallback: "Button not working? Open this link:",
   signature: "Kind regards,",
