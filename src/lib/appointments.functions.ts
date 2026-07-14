@@ -537,7 +537,7 @@ function renderAppointmentHtml(opts: {
           ${opts.description ? `<div style="background:#faf7f2;border-radius:10px;padding:16px 18px;font-size:14px;line-height:1.6;color:#3a3a3a;white-space:pre-wrap;margin-bottom:8px">${escapeHtml(opts.description)}</div>` : ""}
           ${opts.customMessage ? `<div style="border-left:3px solid ${accent};padding:6px 0 6px 14px;font-size:14px;line-height:1.6;color:#3a3a3a;white-space:pre-wrap;margin-top:16px">${escapeHtml(opts.customMessage)}</div>` : ""}
           ${buttons}
-          ${!opts.cancelled ? `<p style="margin:8px 0 0;font-size:13px;color:#8a8a8a">${escapeHtml(t.linkFallback)} <a href="${escapeAttr(opts.actionUrl)}" style="color:#8a8a8a;text-decoration:underline">${escapeHtml(opts.actionUrl)}</a></p>` : ""}
+          ${!opts.cancelled ? `<p style="margin:8px 0 0;font-size:13px;line-height:1.5;color:#595959">${escapeHtml(t.linkFallback)} <a href="${escapeAttr(opts.actionUrl)}" aria-label="${escapeAttr(t.linkFallbackLabel)}" style="color:#595959;text-decoration:underline;text-underline-offset:2px;font-weight:500;outline:none">${escapeHtml(t.linkFallbackLabel)}</a>.<br><code style="font-size:12px;color:#737373;word-break:break-all">${escapeHtml(opts.actionUrl)}</code></p>` : ""}
           ${opts.cancelled ? `<p style="margin:8px 0 0;font-size:13px;color:#8a8a8a">${escapeHtml(t.cancelledFootnote)}</p>` : ""}
         </div>
         <div style="background:#faf7f2;padding:16px 32px;text-align:center;font-size:12px;color:#8a8a8a;border-top:1px solid #efe9dd">
