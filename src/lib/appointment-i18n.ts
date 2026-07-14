@@ -73,6 +73,8 @@ const nl: Dict = {
   fallbackName: "relatie",
   btnConfirm: "✓ Bevestigen",
   btnReschedule: "↻ Verzetten",
+  btnConfirmAriaLabel: "Bevestig deze afspraak",
+  btnRescheduleAriaLabel: "Verzet deze afspraak naar een ander moment",
   cancelledFootnote: "Deze afspraak staat als geannuleerd in je agenda.",
   linkFallback: "Werkt de knop niet? Open dan deze link:",
   signature: "Met vriendelijke groet,",
