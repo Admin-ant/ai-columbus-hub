@@ -22,8 +22,11 @@ type Dict = {
   fallbackName: string;
   btnConfirm: string;
   btnReschedule: string;
+  btnConfirmAriaLabel: string;
+  btnRescheduleAriaLabel: string;
   cancelledFootnote: string;
   linkFallback: string;
+  linkFallbackLabel: string;
   signature: string;
   footerFrom: string;
   subjectPrefixCancel: string;
@@ -71,8 +74,11 @@ const nl: Dict = {
   fallbackName: "relatie",
   btnConfirm: "✓ Bevestigen",
   btnReschedule: "↻ Verzetten",
+  btnConfirmAriaLabel: "Bevestig deze afspraak",
+  btnRescheduleAriaLabel: "Verzet deze afspraak naar een ander moment",
   cancelledFootnote: "Deze afspraak staat als geannuleerd in je agenda.",
   linkFallback: "Werkt de knop niet? Open dan deze link:",
+  linkFallbackLabel: "Afspraak openen",
   signature: "Met vriendelijke groet,",
   footerFrom: "Deze mail is verzonden vanuit",
   subjectPrefixCancel: "[Geannuleerd]",
@@ -120,8 +126,11 @@ const en: Dict = {
   fallbackName: "there",
   btnConfirm: "✓ Confirm",
   btnReschedule: "↻ Reschedule",
+  btnConfirmAriaLabel: "Confirm this appointment",
+  btnRescheduleAriaLabel: "Reschedule this appointment to another time",
   cancelledFootnote: "This appointment is marked as cancelled in your calendar.",
   linkFallback: "Button not working? Open this link:",
+  linkFallbackLabel: "Open appointment",
   signature: "Kind regards,",
   footerFrom: "This email was sent by",
   subjectPrefixCancel: "[Cancelled]",
@@ -169,8 +178,11 @@ const de: Dict = {
   fallbackName: "zusammen",
   btnConfirm: "✓ Bestätigen",
   btnReschedule: "↻ Verschieben",
+  btnConfirmAriaLabel: "Diesen Termin bestätigen",
+  btnRescheduleAriaLabel: "Diesen Termin auf einen anderen Zeitpunkt verschieben",
   cancelledFootnote: "Dieser Termin ist in deinem Kalender als abgesagt markiert.",
   linkFallback: "Button funktioniert nicht? Öffne diesen Link:",
+  linkFallbackLabel: "Termin öffnen",
   signature: "Mit freundlichen Grüßen,",
   footerFrom: "Diese E-Mail wurde gesendet von",
   subjectPrefixCancel: "[Abgesagt]",
