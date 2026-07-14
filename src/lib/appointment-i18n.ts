@@ -175,6 +175,8 @@ const de: Dict = {
   fallbackName: "zusammen",
   btnConfirm: "✓ Bestätigen",
   btnReschedule: "↻ Verschieben",
+  btnConfirmAriaLabel: "Diesen Termin bestätigen",
+  btnRescheduleAriaLabel: "Diesen Termin auf einen anderen Zeitpunkt verschieben",
   cancelledFootnote: "Dieser Termin ist in deinem Kalender als abgesagt markiert.",
   linkFallback: "Button funktioniert nicht? Öffne diesen Link:",
   signature: "Mit freundlichen Grüßen,",
