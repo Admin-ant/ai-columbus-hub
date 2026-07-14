@@ -22,6 +22,8 @@ type Dict = {
   fallbackName: string;
   btnConfirm: string;
   btnReschedule: string;
+  btnConfirmAriaLabel: string;
+  btnRescheduleAriaLabel: string;
   cancelledFootnote: string;
   linkFallback: string;
   signature: string;
