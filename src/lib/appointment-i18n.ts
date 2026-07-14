@@ -26,6 +26,7 @@ type Dict = {
   btnRescheduleAriaLabel: string;
   cancelledFootnote: string;
   linkFallback: string;
+  linkFallbackLabel: string;
   signature: string;
   footerFrom: string;
   subjectPrefixCancel: string;
