@@ -181,20 +181,81 @@ export function CampaignFlowTab() {
       s = await runScan();
       if (!s) return;
     }
+  async function generateVariants() {
+    if (!name || !company || !email || !website) {
+      toast.error("Vul alle velden in");
+      return;
+    }
+    let s = scrape;
+    if (!s) {
+      s = await runScan();
+      if (!s) return;
+    }
     setGenerating(true);
+    setVariants([]);
+    setSelectedVariant(null);
+    setPreview("");
     try {
-      const { reply } = await ask({
-        data: {
-          task: "generic",
-          context: `Schrijf een korte, warme cold-outreach mail (max 130 woorden) in het Nederlands aan ${name} van ${company}. Verwerk subtiel dat ze actief zijn in ${s.industry} en gespecialiseerd zijn in ${s.specialisation}. Extra context over het bedrijf: ${s.summary}. Toon: ${s.tone}. Begin met een persoonlijke openingszin die refereert aan hun website (${website}). Sluit af met een concrete vraag voor een korte kennismaking. Geef ALLEEN de mailtekst terug, zonder onderwerpregel of markdown.`,
+      const angles: { label: string; angle: string; instruction: string }[] = [
+        {
+          label: "Warm & persoonlijk",
+          angle: "persoonlijke connectie",
+          instruction:
+            "Zet in op een warme, persoonlijke openingszin die refereert aan iets specifieks van hun website. Toon oprechte interesse in hun werk, geen sales-praat.",
         },
-      });
-      const previewText = reply.trim();
+        {
+          label: "Zakelijk & resultaatgericht",
+          angle: "concrete ROI en efficiëntie",
+          instruction:
+            "Focus op meetbare resultaten en tijdwinst. Noem 1 concreet cijfer of belofte (bijv. 'halveer je screeningstijd') dat aansluit bij hun specialisatie.",
+        },
+        {
+          label: "Nieuwsgierig & kort",
+          angle: "korte vraag-gedreven pitch",
+          instruction:
+            "Houd het ultra-kort (max 80 woorden). Open met een prikkelende vraag over een uitdaging in hun branche en sluit direct af met een concrete vraag voor 10 minuten sparren.",
+        },
+      ];
+
+      const results = await Promise.all(
+        angles.map(async (a) => {
+          const { reply } = await ask({
+            data: {
+              task: "generic",
+              context: `Schrijf een cold-outreach mail in het Nederlands aan ${name} van ${company}. Hoek: ${a.angle}. ${a.instruction} Verwerk subtiel dat ze actief zijn in ${s!.industry} en gespecialiseerd zijn in ${s!.specialisation}. Extra bedrijfscontext: ${s!.summary}. Toon: ${s!.tone}. Refereer natuurlijk aan hun website (${website}). Sluit af met een concrete vraag voor een korte kennismaking. Geef ALLEEN de mailtekst terug — geen onderwerpregel, geen markdown, geen labels.`,
+            },
+          });
+          return { label: a.label, angle: a.angle, body: reply.trim() };
+        }),
+      );
+      setVariants(results);
+      setSelectedVariant(0);
+      toast.success("3 concepten gegenereerd — kies er één");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "AI genereren mislukt");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function launchCampaign() {
+    if (selectedVariant === null || !variants[selectedVariant]) {
+      toast.error("Kies eerst een concept");
+      return;
+    }
+    const chosen = variants[selectedVariant];
+    const s = scrape;
+    if (!s) {
+      toast.error("Scan ontbreekt");
+      return;
+    }
+    setLaunching(true);
+    try {
+      const previewText = chosen.body;
       setPreview(previewText);
       const now = new Date().toISOString();
       const leadId = crypto.randomUUID();
 
-      // Genereer unieke tracking-link voor deze lead
       let trackingToken: string | null = null;
       let trackingUrl: string | null = null;
       let trackingLinkId: string | null = null;
@@ -214,7 +275,6 @@ export function CampaignFlowTab() {
         console.warn("Tracking link kon niet worden gemaakt", err);
       }
 
-      // Persisteer lead server-side zodat de achtergrondjob 'm kan opvolgen
       let serverLeadId: string | null = null;
       try {
         const saved = await createServerLead({
@@ -253,17 +313,18 @@ export function CampaignFlowTab() {
       };
       setLeads((cur) => [lead, ...cur]);
       toast.success(
-        trackingUrl && serverLeadId
-          ? "Campagne gestart · automation actief"
-          : "Campagne gestart",
+        `Campagne gestart met concept "${chosen.label}"${trackingUrl && serverLeadId ? " · automation actief" : ""}`,
       );
+      // Reset voor volgende lead
+      setVariants([]);
+      setSelectedVariant(null);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "AI genereren mislukt";
-      toast.error(msg);
+      toast.error(e instanceof Error ? e.message : "Campagne starten mislukt");
     } finally {
-      setGenerating(false);
+      setLaunching(false);
     }
   }
+
 
   async function refreshStats() {
     const refs = leads.map((l) => l.id).filter(Boolean);
