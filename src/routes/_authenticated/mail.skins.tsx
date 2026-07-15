@@ -209,7 +209,125 @@ function MailSkinsPage() {
     await reload();
   }
 
-  const previewBody = `<div style="padding:32px;font-family:system-ui,sans-serif;color:#111;font-size:14px;line-height:1.6">
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const SKIN_EXPORT_VERSION = 1;
+
+  type ExportedSkin = {
+    name: string;
+    background_color: string | null;
+    background_image_url: string | null;
+    header_html: string | null;
+    footer_html: string | null;
+  };
+
+  function skinToExport(s: Pick<Skin, "name" | "background_color" | "background_image_url" | "header_html" | "footer_html">): ExportedSkin {
+    return {
+      name: s.name,
+      background_color: s.background_color,
+      background_image_url: s.background_image_url,
+      header_html: s.header_html,
+      footer_html: s.footer_html,
+    };
+  }
+
+  function downloadJson(filename: string, payload: unknown) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function exportSelected() {
+    if (!selected) {
+      toast.error("Selecteer eerst een skin");
+      return;
+    }
+    downloadJson(`skin-${selected.name.replace(/[^a-z0-9-_]+/gi, "_")}.json`, {
+      type: "lovable.mail-skins",
+      version: SKIN_EXPORT_VERSION,
+      exported_at: new Date().toISOString(),
+      skins: [skinToExport(selected)],
+    });
+    toast.success("Skin geëxporteerd");
+  }
+
+  function exportAll() {
+    if (skins.length === 0) {
+      toast.error("Er zijn geen skins om te exporteren");
+      return;
+    }
+    downloadJson(`skins-export-${new Date().toISOString().slice(0, 10)}.json`, {
+      type: "lovable.mail-skins",
+      version: SKIN_EXPORT_VERSION,
+      exported_at: new Date().toISOString(),
+      skins: skins.map(skinToExport),
+    });
+    toast.success(`${skins.length} skin(s) geëxporteerd`);
+  }
+
+  async function handleImportFile(file: File) {
+    if (!currentOrganizationId) return;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(await file.text());
+    } catch {
+      toast.error("Ongeldig JSON-bestand");
+      return;
+    }
+    const container = parsed as { type?: string; skins?: unknown };
+    const rawSkins = Array.isArray(container?.skins)
+      ? (container.skins as unknown[])
+      : Array.isArray(parsed)
+        ? (parsed as unknown[])
+        : null;
+    if (!rawSkins || rawSkins.length === 0) {
+      toast.error("Geen skins gevonden in bestand");
+      return;
+    }
+    if (container?.type && container.type !== "lovable.mail-skins") {
+      toast.error("Onbekend exportformaat");
+      return;
+    }
+
+    const rows: Array<{
+      organization_id: string;
+      name: string;
+      background_color: string | null;
+      background_image_url: string | null;
+      header_html: string | null;
+      footer_html: string | null;
+    }> = [];
+    const errors: string[] = [];
+    for (const raw of rawSkins) {
+      const r = raw as Partial<ExportedSkin>;
+      try {
+        const clean = sanitizeSkinInput({
+          name: (r.name ?? "Geïmporteerde skin") + " (import)",
+          background_color: r.background_color ?? null,
+          background_image_url: r.background_image_url ?? null,
+          header_html: r.header_html ?? null,
+          footer_html: r.footer_html ?? null,
+        });
+        rows.push({ organization_id: currentOrganizationId, ...clean });
+      } catch (e) {
+        errors.push(e instanceof Error ? e.message : "Ongeldige skin overgeslagen");
+      }
+    }
+    if (rows.length === 0) {
+      toast.error(errors[0] ?? "Geen geldige skins in bestand");
+      return;
+    }
+    const { error } = await supabase.from("mail_backgrounds").insert(rows);
+    if (error) return toast.error(error.message);
+    toast.success(`${rows.length} skin(s) geïmporteerd${errors.length ? ` (${errors.length} overgeslagen)` : ""}`);
+    await reload();
+  }
+
     <p>Beste {{contact_name}},</p>
     <p>Dit is een voorbeeldbericht dat toont hoe je e-mail eruitziet met deze skin — header en footer worden automatisch toegevoegd.</p>
     <p>Met vriendelijke groet,<br/>{{sender_name}}</p>
