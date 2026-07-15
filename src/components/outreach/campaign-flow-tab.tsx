@@ -187,6 +187,8 @@ export function CampaignFlowTab() {
   );
   const [openDiffUrl, setOpenDiffUrl] = useState<string | null>(null);
   const [openDiffFields, setOpenDiffFields] = useState<Record<string, string[]>>({});
+  const [scanEditSearch, setScanEditSearch] = useState("");
+  const [scanEditSort, setScanEditSort] = useState<"dateDesc" | "dateAsc" | "urlAsc" | "urlDesc">("dateDesc");
 
   function toggleDiffField(url: string, fieldKey: string) {
     setOpenDiffFields((prev) => {
