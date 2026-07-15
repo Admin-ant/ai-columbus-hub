@@ -182,6 +182,13 @@ export function OfferteStudioEditor({ kind, id }: Props) {
         setLoading(false);
         return;
       }
+      const linked = data as unknown as {
+        mail_template_id?: string | null;
+        mail_background_id?: string | null;
+      };
+      setMailTemplateId(linked.mail_template_id ?? null);
+      setMailBackgroundId(linked.mail_background_id ?? null);
+
       if (kind === "quote") {
         const q = data as unknown as QuoteRow;
         setTitle(q.title);
@@ -217,6 +224,7 @@ export function OfferteStudioEditor({ kind, id }: Props) {
           /* ignore */
         }
       }
+
 
       setLoading(false);
     }
