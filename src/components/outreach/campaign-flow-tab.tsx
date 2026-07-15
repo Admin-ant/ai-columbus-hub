@@ -122,6 +122,11 @@ export function CampaignFlowTab() {
   const [scanError, setScanError] = useState<string | null>(null);
   const [preview, setPreview] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [variants, setVariants] = useState<
+    { label: string; angle: string; body: string }[]
+  >([]);
+  const [selectedVariant, setSelectedVariant] = useState<number | null>(null);
+  const [launching, setLaunching] = useState(false);
 
   const [leads, setLeads] = useState<FlowLead[]>(() => loadLS<FlowLead[]>(LS_LEADS, []));
   const [tasks, setTasks] = useState<FlowTask[]>(() => loadLS<FlowTask[]>(LS_TASKS, []));
