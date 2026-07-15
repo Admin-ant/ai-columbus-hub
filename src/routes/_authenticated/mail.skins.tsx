@@ -365,12 +365,43 @@ function MailSkinsPage() {
         <div className="grid gap-4 lg:grid-cols-[240px_1fr_1fr_240px]">
           {/* List */}
           <div className="rounded-lg border border-border bg-card p-3">
-            <div className="mb-2 flex items-center justify-between">
+            <div className="mb-2 flex items-center justify-between gap-1">
               <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Skins</div>
-              <Button size="sm" variant="ghost" onClick={newSkin} className="h-7 gap-1 text-xs">
-                <Plus className="h-3.5 w-3.5" /> Nieuw
-              </Button>
+              <div className="flex items-center gap-0.5">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Importeer skins uit JSON"
+                  className="inline-flex h-7 items-center gap-1 rounded px-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={exportAll}
+                  title="Exporteer alle skins"
+                  disabled={skins.length === 0}
+                  className="inline-flex h-7 items-center gap-1 rounded px-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                </button>
+                <Button size="sm" variant="ghost" onClick={newSkin} className="h-7 gap-1 text-xs">
+                  <Plus className="h-3.5 w-3.5" /> Nieuw
+                </Button>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void handleImportFile(f);
+                  e.target.value = "";
+                }}
+              />
             </div>
+
             {loading ? (
               <div className="p-3 text-xs text-muted-foreground">Laden…</div>
             ) : skins.length === 0 ? (
