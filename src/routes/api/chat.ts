@@ -27,6 +27,41 @@ async function verifyUser(request: Request): Promise<{ userId: string } | { erro
   }
 }
 
+async function writeAudit(entry: {
+  user_id: string;
+  agent: string | null;
+  prompt: string;
+  reply: string | null;
+  status: "success" | "failed";
+  error: string | null;
+  source: string | null;
+  model: string | null;
+  duration_ms: number;
+  message_count: number;
+}): Promise<void> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Beperk lengte om DB-bloat te voorkomen
+    const trim = (s: string | null, max: number) =>
+      s == null ? null : s.length > max ? s.slice(0, max) : s;
+    await supabaseAdmin.from("chat_audit_log").insert({
+      user_id: entry.user_id,
+      agent: entry.agent,
+      prompt: trim(entry.prompt, 8000) ?? "",
+      reply: trim(entry.reply, 8000),
+      status: entry.status,
+      error: trim(entry.error, 2000),
+      source: entry.source,
+      model: entry.model,
+      duration_ms: entry.duration_ms,
+      message_count: entry.message_count,
+    } as never);
+  } catch (e) {
+    console.error("[columbus-chat] audit log write failed", e);
+  }
+}
+
+
 export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
