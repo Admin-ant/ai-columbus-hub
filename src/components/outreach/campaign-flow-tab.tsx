@@ -360,6 +360,16 @@ export function CampaignFlowTab() {
     toast.success("Opgeslagen aanpassingen geladen");
   }
 
+  function commitSavedScanEdit(entry: SavedScanEdit) {
+    if (scrape?.source_url !== entry.sourceUrl) {
+      toast.error("Laad deze scan eerst voordat je toepast");
+      return;
+    }
+    setOriginalScrape(entry.edited);
+    setScrape(entry.edited);
+    toast.success("Opgeslagen waarden definitief toegepast");
+  }
+
   function deleteSavedScanEdit(sourceUrl: string) {
     setSavedScanEdits((prev) => {
       const next = { ...prev };
