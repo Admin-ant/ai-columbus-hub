@@ -447,12 +447,20 @@ function MailSkinsPage() {
 
           {/* Editor */}
           <div className="rounded-lg border border-border bg-card p-4">
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3 flex items-center justify-between gap-2">
               <div className="text-sm font-semibold">{selectedId ? "Skin bewerken" : "Nieuwe skin"}</div>
-              <Button size="sm" onClick={save} disabled={saving} className="gap-1">
-                <Save className="h-3.5 w-3.5" /> {saving ? "Opslaan…" : "Opslaan"}
-              </Button>
+              <div className="flex items-center gap-1.5">
+                {selected && (
+                  <Button size="sm" variant="outline" onClick={exportSelected} className="h-8 gap-1">
+                    <Download className="h-3.5 w-3.5" /> Exporteer
+                  </Button>
+                )}
+                <Button size="sm" onClick={save} disabled={saving} className="gap-1">
+                  <Save className="h-3.5 w-3.5" /> {saving ? "Opslaan…" : "Opslaan"}
+                </Button>
+              </div>
             </div>
+
             <div className="space-y-3">
               <div>
                 <Label className="text-xs">Naam</Label>
