@@ -270,6 +270,55 @@ export function CampaignFlowTab() {
     toast.info("Teruggezet naar originele scan-waarden");
   }
 
+  // Autosave manual edits per scan (keyed by source_url)
+  useEffect(() => {
+    if (!scrape || !originalScrape) return;
+    const key = scrape.source_url;
+    if (!key) return;
+    const hasChanges =
+      (scrape.industry ?? "") !== (originalScrape.industry ?? "") ||
+      (scrape.specialisation ?? "") !== (originalScrape.specialisation ?? "") ||
+      (scrape.tone ?? "") !== (originalScrape.tone ?? "") ||
+      (scrape.summary ?? "") !== (originalScrape.summary ?? "");
+    if (!hasChanges) return;
+    const t = setTimeout(() => {
+      setSavedScanEdits((prev) => ({
+        ...prev,
+        [key]: {
+          sourceUrl: key,
+          website: website.trim(),
+          company: company.trim() || undefined,
+          edited: scrape,
+          original: originalScrape,
+          savedAt: new Date().toISOString(),
+        },
+      }));
+    }, 600);
+    return () => clearTimeout(t);
+  }, [scrape, originalScrape, website, company]);
+
+  function applySavedScanEdit(entry: SavedScanEdit) {
+    setWebsite(entry.website);
+    // Defer scrape/original set so the website-change effect (which clears them) runs first.
+    setTimeout(() => {
+      setOriginalScrape(entry.original);
+      setScrape(entry.edited);
+      setLastScanAt(entry.savedAt);
+      setScanError(null);
+    }, 0);
+    toast.success("Opgeslagen aanpassingen geladen");
+  }
+
+  function deleteSavedScanEdit(sourceUrl: string) {
+    setSavedScanEdits((prev) => {
+      const next = { ...prev };
+      delete next[sourceUrl];
+      return next;
+    });
+    toast.info("Opgeslagen aanpassingen verwijderd");
+  }
+
+
 
   async function rescanWebsite() {
     resetScanArtifacts();
