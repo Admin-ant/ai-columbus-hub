@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { sanitizeSkinHtml, sanitizeColor, sanitizeImageUrl } from "@/lib/skin-sanitize";
 
 async function sendViaResend(opts: {
   from: string;
