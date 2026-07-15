@@ -248,6 +248,12 @@ export function CampaignFlowTab() {
     setPreview("");
   }
 
+  function resetToOriginalScan() {
+    if (!originalScrape) return;
+    setScrape(originalScrape);
+    toast.info("Teruggezet naar originele scan-waarden");
+  }
+
 
   async function rescanWebsite() {
     resetScanArtifacts();
