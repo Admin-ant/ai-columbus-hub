@@ -1071,6 +1071,67 @@ export function CampaignFlowTab() {
           </p>
         )}
 
+        {Object.keys(savedScanEdits).length > 0 && (
+          <div className="mt-4 rounded-md border border-border bg-muted/30 p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <div className="text-xs font-medium text-foreground">
+                Opgeslagen scan-aanpassingen ({Object.keys(savedScanEdits).length})
+              </div>
+              <span className="text-[10px] text-muted-foreground">
+                automatisch opgeslagen per bron-URL
+              </span>
+            </div>
+            <ul className="space-y-1.5">
+              {Object.values(savedScanEdits)
+                .sort((a, b) => (a.savedAt < b.savedAt ? 1 : -1))
+                .map((entry) => {
+                  const isCurrent = scrape?.source_url === entry.sourceUrl;
+                  return (
+                    <li
+                      key={entry.sourceUrl}
+                      className="flex items-center gap-2 rounded border border-border/60 bg-background p-2 text-xs"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-medium text-foreground" title={entry.sourceUrl}>
+                          {entry.company || entry.sourceUrl}
+                        </div>
+                        <div className="truncate text-[10px] text-muted-foreground">
+                          {entry.sourceUrl} · opgeslagen{" "}
+                          {new Date(entry.savedAt).toLocaleString("nl-NL", {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          })}
+                          {isCurrent ? " · huidige" : ""}
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-[11px]"
+                        onClick={() => applySavedScanEdit(entry)}
+                        disabled={isCurrent}
+                      >
+                        Laden
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-[11px] text-muted-foreground hover:text-destructive"
+                        onClick={() => deleteSavedScanEdit(entry.sourceUrl)}
+                      >
+                        Verwijder
+                      </Button>
+                    </li>
+                  );
+                })}
+            </ul>
+          </div>
+        )}
+
+
+
         <div className="mt-4 flex flex-wrap gap-2">
           <Button
             variant="outline"
