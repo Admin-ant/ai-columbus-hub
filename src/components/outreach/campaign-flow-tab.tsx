@@ -157,8 +157,28 @@ export function CampaignFlowTab() {
       const previewText = reply.trim();
       setPreview(previewText);
       const now = new Date().toISOString();
+      const leadId = crypto.randomUUID();
+
+      // Genereer unieke tracking-link voor deze lead
+      let trackingToken: string | null = null;
+      let trackingUrl: string | null = null;
+      try {
+        const link = await createLink({
+          data: {
+            leadRef: leadId,
+            leadName: name,
+            company,
+            destinationUrl: normalizeUrl(website),
+          },
+        });
+        trackingToken = link.token;
+        trackingUrl = `${window.location.origin}/api/public/l/${link.token}`;
+      } catch (err) {
+        console.warn("Tracking link kon niet worden gemaakt", err);
+      }
+
       const lead: FlowLead = {
-        id: crypto.randomUUID(),
+        id: leadId,
         name,
         company,
         email,
@@ -169,9 +189,17 @@ export function CampaignFlowTab() {
         clicked: false,
         stage: 2,
         createdAt: now,
+        trackingToken,
+        trackingUrl,
+        clickCount: 0,
+        lastVisitedAt: null,
       };
       setLeads((cur) => [lead, ...cur]);
-      toast.success("Campagne gestart & mail verstuurd (mock)");
+      toast.success(
+        trackingUrl
+          ? "Campagne gestart · unieke landingslink aangemaakt"
+          : "Campagne gestart (zonder tracking-link)",
+      );
     } catch (e) {
       const msg = e instanceof Error ? e.message : "AI genereren mislukt";
       toast.error(msg);
@@ -179,6 +207,65 @@ export function CampaignFlowTab() {
       setGenerating(false);
     }
   }
+
+  async function refreshStats() {
+    const refs = leads.map((l) => l.id).filter(Boolean);
+    if (refs.length === 0) {
+      toast.info("Geen leads om te verversen");
+      return;
+    }
+    setRefreshingStats(true);
+    try {
+      const links = await listLinks({ data: { leadRefs: refs } });
+      const byRef = new Map<string, TrackingLink>();
+      for (const l of links) if (l.lead_ref) byRef.set(l.lead_ref, l);
+      let newClicks = 0;
+      setLeads((cur) =>
+        cur.map((l) => {
+          const match = byRef.get(l.id);
+          if (!match) return l;
+          const clicked = match.click_count > 0;
+          if (clicked && !l.clicked) newClicks++;
+          return {
+            ...l,
+            clickCount: match.click_count,
+            lastVisitedAt: match.last_visited_at,
+            clicked: l.clicked || clicked,
+            stage: clicked ? 4 : l.stage,
+          };
+        }),
+      );
+      if (newClicks > 0) {
+        // Maak automatisch bel-taken aan voor nieuwe klikkers
+        setTasks((cur) => {
+          const extra: FlowTask[] = [];
+          for (const l of leads) {
+            const match = byRef.get(l.id);
+            if (match && match.click_count > 0 && !l.clicked) {
+              extra.push({
+                id: crypto.randomUUID(),
+                leadName: l.name,
+                company: l.company,
+                action: "call",
+                reason: "Heeft landingspagina bezocht",
+                createdAt: new Date().toISOString(),
+                done: false,
+              });
+            }
+          }
+          return [...extra, ...cur];
+        });
+        toast.success(`${newClicks} nieuwe kliks gedetecteerd`);
+      } else {
+        toast.info("Stats bijgewerkt · geen nieuwe kliks");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Verversen mislukt");
+    } finally {
+      setRefreshingStats(false);
+    }
+  }
+
 
 
   function simulateClick(lead: FlowLead) {
