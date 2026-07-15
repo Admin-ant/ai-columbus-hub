@@ -61,21 +61,10 @@ function loadLS<T>(key: string, fallback: T): T {
   }
 }
 
-/** Lichte mock om branche/tone uit een URL af te leiden zonder externe API. */
-function mockScrape(url: string, company: string): ScrapeResult {
-  const host = url.replace(/https?:\/\//, "").replace(/\/.*/, "").toLowerCase();
-  const hint = `${host} ${company}`.toLowerCase();
-  let industry = "uitzendbureau";
-  if (/tech|it|software|dev/.test(hint)) industry = "tech & IT staffing";
-  else if (/zorg|care|medisch|health/.test(hint)) industry = "zorg";
-  else if (/bouw|construct/.test(hint)) industry = "bouw & techniek";
-  else if (/logistiek|transport|warehouse/.test(hint)) industry = "logistiek";
-  else if (/horeca|hospitality/.test(hint)) industry = "horeca";
-  return {
-    industry,
-    specialisation: `${industry} met focus op flexibele plaatsingen`,
-    tone: "professioneel, warm en oplossingsgericht",
-  };
+function normalizeUrl(u: string): string {
+  const t = u.trim();
+  if (!t) return "";
+  return /^https?:\/\//i.test(t) ? t : `https://${t}`;
 }
 
 export function CampaignFlowTab() {
