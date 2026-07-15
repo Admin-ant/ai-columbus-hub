@@ -324,6 +324,86 @@ export type Database = {
           },
         ]
       }
+      campaign_link_visits: {
+        Row: {
+          id: string
+          ip_hash: string | null
+          link_id: string
+          referer: string | null
+          user_agent: string | null
+          visited_at: string
+        }
+        Insert: {
+          id?: string
+          ip_hash?: string | null
+          link_id: string
+          referer?: string | null
+          user_agent?: string | null
+          visited_at?: string
+        }
+        Update: {
+          id?: string
+          ip_hash?: string | null
+          link_id?: string
+          referer?: string | null
+          user_agent?: string | null
+          visited_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_link_visits_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_tracking_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_tracking_links: {
+        Row: {
+          click_count: number
+          company: string | null
+          created_at: string
+          destination_url: string
+          first_visited_at: string | null
+          id: string
+          last_visited_at: string | null
+          lead_name: string | null
+          lead_ref: string | null
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          click_count?: number
+          company?: string | null
+          created_at?: string
+          destination_url: string
+          first_visited_at?: string | null
+          id?: string
+          last_visited_at?: string | null
+          lead_name?: string | null
+          lead_ref?: string | null
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          click_count?: number
+          company?: string | null
+          created_at?: string
+          destination_url?: string
+          first_visited_at?: string | null
+          id?: string
+          last_visited_at?: string | null
+          lead_name?: string | null
+          lead_ref?: string | null
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chart_of_accounts: {
         Row: {
           active: boolean
