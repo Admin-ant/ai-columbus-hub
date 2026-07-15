@@ -90,6 +90,16 @@ type FlowLead = {
 
 const LS_LEADS = "campaign-flow-leads";
 const LS_TASKS = "campaign-flow-tasks";
+const LS_SCAN_EDITS = "campaign-flow-scan-edits";
+
+type SavedScanEdit = {
+  sourceUrl: string;
+  website: string;
+  company?: string;
+  edited: ScrapeResult;
+  original: ScrapeResult;
+  savedAt: string;
+};
 
 function loadLS<T>(key: string, fallback: T): T {
   try {
@@ -169,6 +179,9 @@ export function CampaignFlowTab() {
 
   const [leads, setLeads] = useState<FlowLead[]>(() => loadLS<FlowLead[]>(LS_LEADS, []));
   const [tasks, setTasks] = useState<FlowTask[]>(() => loadLS<FlowTask[]>(LS_TASKS, []));
+  const [savedScanEdits, setSavedScanEdits] = useState<Record<string, SavedScanEdit>>(
+    () => loadLS<Record<string, SavedScanEdit>>(LS_SCAN_EDITS, {}),
+  );
 
   useEffect(() => {
     localStorage.setItem(LS_LEADS, JSON.stringify(leads));
@@ -176,6 +189,9 @@ export function CampaignFlowTab() {
   useEffect(() => {
     localStorage.setItem(LS_TASKS, JSON.stringify(tasks));
   }, [tasks]);
+  useEffect(() => {
+    localStorage.setItem(LS_SCAN_EDITS, JSON.stringify(savedScanEdits));
+  }, [savedScanEdits]);
 
   const scanChanges = useMemo(() => {
     if (!scrape || !originalScrape) return [];
@@ -254,6 +270,55 @@ export function CampaignFlowTab() {
     toast.info("Teruggezet naar originele scan-waarden");
   }
 
+  // Autosave manual edits per scan (keyed by source_url)
+  useEffect(() => {
+    if (!scrape || !originalScrape) return;
+    const key = scrape.source_url;
+    if (!key) return;
+    const hasChanges =
+      (scrape.industry ?? "") !== (originalScrape.industry ?? "") ||
+      (scrape.specialisation ?? "") !== (originalScrape.specialisation ?? "") ||
+      (scrape.tone ?? "") !== (originalScrape.tone ?? "") ||
+      (scrape.summary ?? "") !== (originalScrape.summary ?? "");
+    if (!hasChanges) return;
+    const t = setTimeout(() => {
+      setSavedScanEdits((prev) => ({
+        ...prev,
+        [key]: {
+          sourceUrl: key,
+          website: website.trim(),
+          company: company.trim() || undefined,
+          edited: scrape,
+          original: originalScrape,
+          savedAt: new Date().toISOString(),
+        },
+      }));
+    }, 600);
+    return () => clearTimeout(t);
+  }, [scrape, originalScrape, website, company]);
+
+  function applySavedScanEdit(entry: SavedScanEdit) {
+    setWebsite(entry.website);
+    // Defer scrape/original set so the website-change effect (which clears them) runs first.
+    setTimeout(() => {
+      setOriginalScrape(entry.original);
+      setScrape(entry.edited);
+      setLastScanAt(entry.savedAt);
+      setScanError(null);
+    }, 0);
+    toast.success("Opgeslagen aanpassingen geladen");
+  }
+
+  function deleteSavedScanEdit(sourceUrl: string) {
+    setSavedScanEdits((prev) => {
+      const next = { ...prev };
+      delete next[sourceUrl];
+      return next;
+    });
+    toast.info("Opgeslagen aanpassingen verwijderd");
+  }
+
+
 
   async function rescanWebsite() {
     resetScanArtifacts();
@@ -273,11 +338,16 @@ export function CampaignFlowTab() {
     setScanAttempts((n) => n + 1);
     try {
       const result = await scan({ data: { url, company: company || undefined } });
-      setScrape(result);
       setOriginalScrape(result);
+      const saved = savedScanEdits[result.source_url];
+      if (saved) {
+        setScrape(saved.edited);
+        toast.success("Website gescand — opgeslagen aanpassingen toegepast");
+      } else {
+        setScrape(result);
+        toast.success("Website gescand");
+      }
       setLastScanAt(new Date().toISOString());
-
-      toast.success("Website gescand");
       return result;
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Scan mislukt";
@@ -1000,6 +1070,67 @@ export function CampaignFlowTab() {
             {scanAttempts > 1 ? ` (na ${scanAttempts} pogingen)` : ""}.
           </p>
         )}
+
+        {Object.keys(savedScanEdits).length > 0 && (
+          <div className="mt-4 rounded-md border border-border bg-muted/30 p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <div className="text-xs font-medium text-foreground">
+                Opgeslagen scan-aanpassingen ({Object.keys(savedScanEdits).length})
+              </div>
+              <span className="text-[10px] text-muted-foreground">
+                automatisch opgeslagen per bron-URL
+              </span>
+            </div>
+            <ul className="space-y-1.5">
+              {Object.values(savedScanEdits)
+                .sort((a, b) => (a.savedAt < b.savedAt ? 1 : -1))
+                .map((entry) => {
+                  const isCurrent = scrape?.source_url === entry.sourceUrl;
+                  return (
+                    <li
+                      key={entry.sourceUrl}
+                      className="flex items-center gap-2 rounded border border-border/60 bg-background p-2 text-xs"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-medium text-foreground" title={entry.sourceUrl}>
+                          {entry.company || entry.sourceUrl}
+                        </div>
+                        <div className="truncate text-[10px] text-muted-foreground">
+                          {entry.sourceUrl} · opgeslagen{" "}
+                          {new Date(entry.savedAt).toLocaleString("nl-NL", {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          })}
+                          {isCurrent ? " · huidige" : ""}
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-[11px]"
+                        onClick={() => applySavedScanEdit(entry)}
+                        disabled={isCurrent}
+                      >
+                        Laden
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-[11px] text-muted-foreground hover:text-destructive"
+                        onClick={() => deleteSavedScanEdit(entry.sourceUrl)}
+                      >
+                        Verwijder
+                      </Button>
+                    </li>
+                  );
+                })}
+            </ul>
+          </div>
+        )}
+
+
 
         <div className="mt-4 flex flex-wrap gap-2">
           <Button
