@@ -62,6 +62,7 @@ function MailSkinsPage() {
   };
   const [versions, setVersions] = useState<SkinVersion[]>([]);
   const [previewVersion, setPreviewVersion] = useState<SkinVersion | null>(null);
+  const [diffVersion, setDiffVersion] = useState<SkinVersion | null>(null);
 
   const selected = useMemo(() => skins.find((s) => s.id === selectedId) ?? null, [skins, selectedId]);
 
