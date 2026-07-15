@@ -564,7 +564,7 @@ function OutreachDashboard() {
             ) : (
               <div className="space-y-4">
                 <SequenceFlowDiagram />
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Label className="text-xs text-muted-foreground">Campagne:</Label>
                   <Select
                     value={builderCampaignId ?? campaigns[0]?.id ?? ""}
@@ -581,6 +581,18 @@ function OutreachDashboard() {
                       ))}
                     </SelectContent>
                   </Select>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="ml-auto"
+                    onClick={() => {
+                      setSequenceDialogTarget(null);
+                      setSequenceDialogOpen(true);
+                    }}
+                  >
+                    <Workflow className="mr-2 h-4 w-4" />
+                    Open workflow editor
+                  </Button>
                 </div>
                 {(() => {
                   const active = campaigns.find(
