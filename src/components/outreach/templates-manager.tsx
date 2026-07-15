@@ -333,6 +333,11 @@ export function TemplatesManager({
     | (OutreachTemplate & { version?: number })
     | (TemplateVersion & Partial<OutreachTemplate>)
     | null;
+  const previewSkin = previewSkinId ? backgrounds.find((b) => b.id === previewSkinId) ?? null : null;
+  const previewBgColor = previewSkin ? previewSkin.background_color : preview?.background_color ?? null;
+  const previewBgImage = previewSkin ? previewSkin.background_image_url : preview?.background_image_url ?? null;
+  const previewHeaderHtml = previewSkin ? previewSkin.header_html : preview?.header_html ?? null;
+  const previewFooterHtml = previewSkin ? previewSkin.footer_html : preview?.footer_html ?? null;
 
   return (
     <div className="grid gap-4 xl:grid-cols-[240px_1fr_280px_240px] lg:grid-cols-[240px_1fr_280px]">
