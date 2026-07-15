@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, LogIn, MessageCircle, Send, Sparkles, X } from "lucide-react";
+import { Bot, LogIn, MessageCircle, Send, Sparkles, Square, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
