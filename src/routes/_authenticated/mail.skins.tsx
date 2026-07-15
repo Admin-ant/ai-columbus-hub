@@ -84,22 +84,56 @@ function MailSkinsPage() {
      
   }, [currentOrganizationId]);
 
+  const loadVersions = useCallback(async (bgId: string | null) => {
+    if (!bgId) {
+      setVersions([]);
+      return;
+    }
+    const { data, error } = await supabase
+      .from("mail_background_versions" as never)
+      .select("id,background_id,version,name,background_color,background_image_url,header_html,footer_html,created_at")
+      .eq("background_id", bgId)
+      .order("version", { ascending: false });
+    if (error) {
+      setVersions([]);
+      return;
+    }
+    setVersions(((data ?? []) as unknown) as SkinVersion[]);
+  }, []);
+
   useEffect(() => {
-    if (!selected) return;
+    setPreviewVersion(null);
+    if (!selected) {
+      setVersions([]);
+      return;
+    }
     setName(selected.name);
     setBgColor(selected.background_color ?? "#f5f5f5");
     setBgImage(selected.background_image_url ?? "");
     setHeader(selected.header_html ?? DEFAULT_HEADER);
     setFooter(selected.footer_html ?? DEFAULT_FOOTER);
-  }, [selected]);
+    void loadVersions(selected.id);
+  }, [selected, loadVersions]);
 
   function newSkin() {
     setSelectedId(null);
+    setPreviewVersion(null);
+    setVersions([]);
     setName("Nieuwe skin");
     setBgColor("#f5f5f5");
     setBgImage("");
     setHeader(DEFAULT_HEADER);
     setFooter(DEFAULT_FOOTER);
+  }
+
+  function restoreVersion(v: SkinVersion) {
+    setName(v.name);
+    setBgColor(v.background_color ?? "#f5f5f5");
+    setBgImage(v.background_image_url ?? "");
+    setHeader(v.header_html ?? DEFAULT_HEADER);
+    setFooter(v.footer_html ?? DEFAULT_FOOTER);
+    setPreviewVersion(null);
+    toast.message(`Versie ${v.version} geladen — klik op Opslaan om te bevestigen`);
   }
 
   async function save() {
@@ -117,19 +151,22 @@ function MailSkinsPage() {
       header_html: header || null,
       footer_html: footer || null,
     };
+    let targetId = selectedId;
     if (selectedId) {
       const { error } = await supabase.from("mail_backgrounds").update(payload).eq("id", selectedId);
       setSaving(false);
       if (error) return toast.error(error.message);
-      toast.success("Skin opgeslagen");
+      toast.success("Skin opgeslagen — nieuwe versie aangemaakt");
     } else {
       const { data, error } = await supabase.from("mail_backgrounds").insert(payload).select("id").single();
       setSaving(false);
       if (error) return toast.error(error.message);
       toast.success("Skin aangemaakt");
       setSelectedId(data.id);
+      targetId = data.id;
     }
     await reload();
+    if (targetId) await loadVersions(targetId);
   }
 
   async function duplicate(s: Skin) {
