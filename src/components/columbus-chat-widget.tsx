@@ -89,13 +89,12 @@ export function ColumbusChatWidget() {
   }, [open, messages, sending]);
 
   const usingExternalScript = Boolean(config.scriptSrc);
+  // Default naar onze eigen server-route; extern config kan dit overschrijven.
+  const effectiveApiUrl = config.apiUrl ?? "/api/chat";
 
   const placeholder = useMemo(
-    () =>
-      config.apiUrl
-        ? "Stel je vraag aan Columbus…"
-        : "Widget nog niet gekoppeld — vraag wordt lokaal getoond",
-    [config.apiUrl],
+    () => "Stel je vraag aan Columbus…",
+    [],
   );
 
   async function send(text: string) {
