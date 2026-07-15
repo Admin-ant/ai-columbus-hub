@@ -3,7 +3,27 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const InputSchema = z.object({
-  url: z.string().url(),
+  url: z
+    .string()
+    .trim()
+    .min(4, "URL is te kort")
+    .max(2048, "URL is te lang")
+    .refine((v) => {
+      try {
+        const u = new URL(v);
+        if (!/^https?:$/.test(u.protocol)) return false;
+        const host = u.hostname.toLowerCase();
+        if (!host.includes(".")) return false;
+        if (host === "localhost" || host.endsWith(".local")) return false;
+        // block raw IPs
+        if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return false;
+        // private ranges / metadata
+        if (/^(127\.|10\.|192\.168\.|169\.254\.|0\.)/.test(host)) return false;
+        return true;
+      } catch {
+        return false;
+      }
+    }, "Ongeldige of niet-publieke URL"),
   company: z.string().max(200).optional(),
 });
 
@@ -34,6 +54,7 @@ export const scanWebsite = createServerFn({ method: "POST" })
 
     // 1. Fetch de website (met timeout & UA)
     let html = "";
+    let contentType = "";
     try {
       const ctrl = new AbortController();
       const to = setTimeout(() => ctrl.abort(), 8000);
@@ -44,19 +65,62 @@ export const scanWebsite = createServerFn({ method: "POST" })
           accept: "text/html,application/xhtml+xml",
         },
         signal: ctrl.signal,
+        redirect: "follow",
       });
       clearTimeout(to);
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      if (!resp.ok) {
+        if (resp.status === 401 || resp.status === 403) {
+          throw new Error(
+            "Deze website blokkeert geautomatiseerde bezoekers en kan niet worden gescand.",
+          );
+        }
+        if (resp.status === 404) {
+          throw new Error("Pagina niet gevonden (404). Controleer de URL.");
+        }
+        if (resp.status >= 500) {
+          throw new Error(
+            `De website is tijdelijk niet beschikbaar (${resp.status}). Probeer het later opnieuw.`,
+          );
+        }
+        throw new Error(`De website gaf een fout terug (HTTP ${resp.status}).`);
+      }
+      contentType = resp.headers.get("content-type") ?? "";
+      if (contentType && !/text\/html|xhtml|application\/xml/i.test(contentType)) {
+        throw new Error(
+          "Deze URL wijst niet naar een gewone webpagina en kan niet worden gescand.",
+        );
+      }
       html = await resp.text();
     } catch (e) {
-      throw new Error(
-        `Website niet bereikbaar: ${e instanceof Error ? e.message : "onbekend"}`,
-      );
+      const raw = e instanceof Error ? e.message : "onbekend";
+      // If we already produced a friendly message above, re-throw as-is
+      if (/gescand|beschikbaar|niet gevonden|fout terug|blokkeert|webpagina/i.test(raw)) {
+        throw e;
+      }
+      const name = e instanceof Error ? e.name : "";
+      if (name === "AbortError" || /timeout|timed out/i.test(raw)) {
+        throw new Error(
+          "De website reageerde niet binnen 8 seconden. Controleer of de site online is.",
+        );
+      }
+      if (/ENOTFOUND|getaddrinfo|dns/i.test(raw)) {
+        throw new Error(
+          "Deze website bestaat niet of het domein kan niet worden gevonden.",
+        );
+      }
+      if (/ECONNREFUSED|ECONNRESET|network|fetch failed/i.test(raw)) {
+        throw new Error(
+          "Kon geen verbinding maken met de website. Controleer de URL en probeer opnieuw.",
+        );
+      }
+      throw new Error(`Website niet bereikbaar: ${raw}`);
     }
 
     const text = stripHtml(html).slice(0, 6000);
     if (text.length < 40) {
-      throw new Error("Geen leesbare tekst gevonden op deze pagina.");
+      throw new Error(
+        "Op deze pagina staat te weinig leesbare tekst om te analyseren.",
+      );
     }
 
     // 2. Laat AI branche/specialisatie/tone extraheren als JSON

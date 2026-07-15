@@ -103,6 +103,38 @@ function normalizeUrl(u: string): string {
   return /^https?:\/\//i.test(t) ? t : `https://${t}`;
 }
 
+function validateWebsiteUrl(raw: string): { url: string; error: string | null } {
+  const trimmed = raw.trim();
+  if (!trimmed) return { url: "", error: "Vul een website URL in." };
+  if (trimmed.length > 2048) return { url: "", error: "URL is te lang." };
+  if (/\s/.test(trimmed)) return { url: "", error: "URL mag geen spaties bevatten." };
+  const withProto = normalizeUrl(trimmed);
+  let parsed: URL;
+  try {
+    parsed = new URL(withProto);
+  } catch {
+    return { url: "", error: "Dit is geen geldige URL. Voorbeeld: https://voorbeeld.nl" };
+  }
+  if (!/^https?:$/.test(parsed.protocol)) {
+    return { url: "", error: "Alleen http:// of https:// URLs worden ondersteund." };
+  }
+  const host = parsed.hostname.toLowerCase();
+  if (!host.includes(".")) {
+    return { url: "", error: "Vul een volledig domein in, bijv. voorbeeld.nl" };
+  }
+  if (host === "localhost" || host.endsWith(".local")) {
+    return { url: "", error: "Lokale adressen kunnen niet worden gescand." };
+  }
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
+    return { url: "", error: "IP-adressen worden niet ondersteund; gebruik een domeinnaam." };
+  }
+  const tld = host.split(".").pop() ?? "";
+  if (tld.length < 2 || !/^[a-z]{2,}$/i.test(tld)) {
+    return { url: "", error: "De domeinextensie lijkt ongeldig." };
+  }
+  return { url: parsed.toString().replace(/\/$/, ""), error: null };
+}
+
 export function CampaignFlowTab() {
   const ask = useServerFn(askAssistant);
   const scan = useServerFn(scanWebsite);
@@ -147,10 +179,16 @@ export function CampaignFlowTab() {
     setPreview("");
   }, [website]);
 
+  const websiteValidation = validateWebsiteUrl(website);
+  const websiteTouched = website.trim().length > 0;
+  const inlineUrlError = websiteTouched ? websiteValidation.error : null;
+
   async function runScan(): Promise<ScrapeResult | null> {
-    const url = normalizeUrl(website);
-    if (!url) {
-      toast.error("Vul eerst een website URL in");
+    const { url, error } = validateWebsiteUrl(website);
+    if (error || !url) {
+      const msg = error ?? "Ongeldige URL";
+      setScanError(msg);
+      toast.error(msg);
       return null;
     }
     setScanning(true);
@@ -569,7 +607,18 @@ export function CampaignFlowTab() {
           </div>
           <div>
             <Label className="text-xs text-muted-foreground">Website URL</Label>
-            <Input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://flexpro.nl" />
+            <Input
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              placeholder="https://flexpro.nl"
+              aria-invalid={inlineUrlError ? true : undefined}
+              className={inlineUrlError ? "border-destructive focus-visible:ring-destructive" : undefined}
+            />
+            {inlineUrlError ? (
+              <p className="mt-1 text-xs text-destructive">{inlineUrlError}</p>
+            ) : websiteTouched ? (
+              <p className="mt-1 text-xs text-muted-foreground">Ziet er goed uit — klik op "Scan website".</p>
+            ) : null}
           </div>
         </div>
 
@@ -604,7 +653,7 @@ export function CampaignFlowTab() {
           <Button
             variant="outline"
             onClick={runScan}
-            disabled={scanning || !website.trim()}
+            disabled={scanning || !website.trim() || !!inlineUrlError}
           >
             {scanning ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
