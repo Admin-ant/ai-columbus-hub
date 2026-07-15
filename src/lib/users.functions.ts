@@ -79,6 +79,10 @@ async function getCallerOrgId(context: { supabase: any; userId: string }): Promi
   return (data as { organization_id: string } | null)?.organization_id ?? null;
 }
 
+type EmailResult =
+  | { ok: true }
+  | { ok: false; reason: string; status?: number };
+
 async function sendWelcomeEmail(opts: {
   to: string;
   displayName: string;
@@ -86,11 +90,11 @@ async function sendWelcomeEmail(opts: {
   resetLink: string;
   subject: string;
   body: string;
-}) {
+}): Promise<EmailResult> {
   const key = process.env.RESEND_API_KEY;
   if (!key) {
     console.warn("[inviteUser] RESEND_API_KEY ontbreekt — welkomstmail overgeslagen");
-    return;
+    return { ok: false, reason: "RESEND_API_KEY ontbreekt op de server." };
   }
   const fromEmail = process.env.OUTREACH_FROM_EMAIL || "onboarding@resend.dev";
   const from = `AI van Columbus <${fromEmail}>`;
@@ -137,15 +141,29 @@ async function sendWelcomeEmail(opts: {
     </td></tr>
   </table></body></html>`;
   const text = `${bodyRendered}\n\nE-mail: ${opts.to}\nTijdelijk wachtwoord: ${opts.tempPassword}\n\nStel direct een nieuw wachtwoord in via:\n${opts.resetLink}`;
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
-    body: JSON.stringify({ from, to: [opts.to], subject, html, text }),
-  });
+  let res: Response;
+  try {
+    res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+      body: JSON.stringify({ from, to: [opts.to], subject, html, text }),
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn(`[inviteUser] welkomstmail netwerkfout: ${msg}`);
+    return { ok: false, reason: `Netwerkfout bij versturen: ${msg}` };
+  }
   if (!res.ok) {
     const b = await res.text();
-    console.warn(`[inviteUser] welkomstmail mislukt: ${res.status} ${b.slice(0, 200)}`);
+    const snippet = b.slice(0, 300);
+    console.warn(`[inviteUser] welkomstmail mislukt: ${res.status} ${snippet}`);
+    let reason = `Resend gaf ${res.status}: ${snippet}`;
+    if (res.status === 403 && /domain is not verified/i.test(b)) {
+      reason = `Het afzenderdomein (${fromEmail}) is niet geverifieerd bij Resend. Verifieer het domein op resend.com/domains of stel OUTREACH_FROM_EMAIL in op een geverifieerd domein.`;
+    }
+    return { ok: false, reason, status: res.status };
   }
+  return { ok: true };
 }
 
 export const getInviteTemplate = createServerFn({ method: "GET" })
