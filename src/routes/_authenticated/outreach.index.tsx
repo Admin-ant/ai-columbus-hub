@@ -70,7 +70,6 @@ import { researchLead, generatePitchVariants, type PitchVariant } from "@/lib/ai
 import {
   bulkImportTargets,
   sendOutreachEmail,
-  scheduleSequence,
   personalizeForTarget,
   bulkPersonalize,
 } from "@/lib/outreach.functions";
