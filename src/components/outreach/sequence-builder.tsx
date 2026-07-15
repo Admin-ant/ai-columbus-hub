@@ -84,7 +84,7 @@ export function SequenceBuilder({ campaignId, initialSteps, onSaved }: Props) {
   const [templates, setTemplates] = useState<SequenceTemplate[]>([]);
 
   useEffect(() => {
-    setTemplates(loadTemplates());
+    void loadTemplates().then(setTemplates).catch(() => setTemplates([]));
   }, []);
 
   const issues = useMemo(() => validateSequence(steps), [steps]);
