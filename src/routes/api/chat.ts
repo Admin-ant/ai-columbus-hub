@@ -1,14 +1,41 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { createClient } from "@supabase/supabase-js";
 
 type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
 const SYSTEM_PROMPT =
   "Je bent de Columbus AI Recruiter Agent voor aiVanColumbus. Beantwoord vragen over dit CRM, AI-recruitment en demo-aanvragen. Wees kort, vriendelijk en concreet. Antwoord in het Nederlands tenzij de gebruiker anders schrijft.";
 
+async function verifyUser(request: Request): Promise<{ userId: string } | { error: string; status: number }> {
+  const auth = request.headers.get("authorization") ?? request.headers.get("Authorization");
+  const token = auth?.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
+  if (!token) return { error: "Log in om de Columbus AI chat te gebruiken.", status: 401 };
+
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) return { error: "Auth backend niet geconfigureerd.", status: 503 };
+
+  try {
+    const client = createClient(url, key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data, error } = await client.auth.getUser(token);
+    if (error || !data.user) return { error: "Ongeldige of verlopen sessie. Log opnieuw in.", status: 401 };
+    return { userId: data.user.id };
+  } catch {
+    return { error: "Kon sessie niet valideren.", status: 401 };
+  }
+}
+
 export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const verified = await verifyUser(request);
+        if ("error" in verified) {
+          return Response.json({ error: verified.error }, { status: verified.status });
+        }
+
         let body: { messages?: ChatMessage[]; agent?: string };
         try {
           body = (await request.json()) as typeof body;
@@ -20,6 +47,7 @@ export const Route = createFileRoute("/api/chat")({
         if (messages.length === 0) {
           return Response.json({ error: "messages is required" }, { status: 400 });
         }
+
 
         // Resolve AI backend at request-time (Cloudflare Workers bind env per request).
         // Priority:

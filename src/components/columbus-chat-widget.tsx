@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, MessageCircle, Send, Sparkles, X } from "lucide-react";
+import { Bot, LogIn, MessageCircle, Send, Sparkles, X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+
 
 /**
  * Floating "Columbus AI Recruiter Agent" chat widget.
@@ -61,13 +64,20 @@ export function ColumbusChatWidget() {
   const [messages, setMessages] = useState<Msg[]>([INTRO]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [authed, setAuthed] = useState<boolean | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const injectedRef = useRef(false);
 
   useEffect(() => {
     setMounted(true);
     setConfig(readConfig());
+    supabase.auth.getSession().then(({ data }) => setAuthed(Boolean(data.session)));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setAuthed(Boolean(session));
+    });
+    return () => sub.subscription.unsubscribe();
   }, []);
+
 
   // Laad extern widget-script indien opgegeven.
   useEffect(() => {
@@ -100,22 +110,35 @@ export function ColumbusChatWidget() {
   async function send(text: string) {
     const value = text.trim();
     if (!value || sending) return;
+    if (!authed) {
+      setMessages((cur) => [
+        ...cur,
+        {
+          role: "assistant",
+          content: "Je moet ingelogd zijn om de Columbus AI chat te gebruiken. Log in en probeer opnieuw.",
+        },
+      ]);
+      return;
+    }
     const next: Msg[] = [...messages, { role: "user", content: value }];
     setMessages(next);
     setInput("");
     setSending(true);
     try {
+      const { data: sess } = await supabase.auth.getSession();
+      const bearer = config.apiKey ?? sess.session?.access_token;
       const res = await fetch(effectiveApiUrl, {
         method: "POST",
         headers: {
           "content-type": "application/json",
-          ...(config.apiKey ? { authorization: `Bearer ${config.apiKey}` } : {}),
+          ...(bearer ? { authorization: `Bearer ${bearer}` } : {}),
         },
         body: JSON.stringify({
           agent: "columbus-recruiter",
           messages: next.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
+
       const data = (await res.json().catch(() => ({}))) as {
         reply?: string;
         message?: string;
@@ -203,12 +226,25 @@ export function ColumbusChatWidget() {
           </div>
 
           <div className="border-t border-border px-3 py-2">
+            {authed === false && (
+              <div className="mb-2 flex items-center justify-between gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-[11px] text-amber-100">
+                <span>Log in om berichten te sturen naar de Columbus AI.</span>
+                <Link
+                  to="/auth"
+                  className="inline-flex items-center gap-1 rounded bg-amber-500/20 px-2 py-0.5 font-medium text-amber-50 hover:bg-amber-500/30"
+                >
+                  <LogIn className="h-3 w-3" />
+                  Log in
+                </Link>
+              </div>
+            )}
+
             <div className="mb-2 flex flex-wrap gap-1.5">
               {SUGGESTIONS.map((s) => (
                 <button
                   key={s}
                   type="button"
-                  disabled={sending}
+                  disabled={sending || !authed}
                   onClick={() => send(s)}
                   className="rounded-full border border-border bg-muted/50 px-2.5 py-1 text-[10px] font-medium text-muted-foreground transition hover:bg-muted disabled:opacity-50"
                 >
@@ -239,7 +275,7 @@ export function ColumbusChatWidget() {
               <Button
                 type="submit"
                 size="sm"
-                disabled={sending || !input.trim()}
+                disabled={sending || !input.trim() || !authed}
                 className="h-9 bg-brand text-brand-foreground hover:bg-brand/90"
               >
                 <Send className="h-3.5 w-3.5" />
