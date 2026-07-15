@@ -16,6 +16,13 @@ import {
   Link2,
   Copy,
   RefreshCw,
+  History,
+  Play,
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  XCircle,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,19 +40,30 @@ import {
 import {
   createCampaignLead,
   listCampaignTasks,
+  updateCampaignTask,
+  listCampaignTaskEvents,
   type CampaignFlowTask,
+  type CampaignTaskEvent,
 } from "@/lib/campaign-flow.functions";
 
 type ScrapeResult = WebsiteScanResult;
 
+type TaskStatus = "pending" | "in_progress" | "done" | "failed" | "cancelled";
+
 type FlowTask = {
   id: string;
+  serverId?: string | null;
   leadName: string;
   company: string;
   action: "call" | "followup";
   reason: string;
   createdAt: string;
   done: boolean;
+  status: TaskStatus;
+  result?: string | null;
+  error?: string | null;
+  startedAt?: string | null;
+  doneAt?: string | null;
 };
 
 type FlowLead = {
@@ -281,6 +299,7 @@ export function CampaignFlowTab() {
                 reason: "Heeft landingspagina bezocht",
                 createdAt: new Date().toISOString(),
                 done: false,
+                status: "pending",
               });
             }
           }
@@ -322,12 +341,18 @@ export function CampaignFlowTab() {
           if (existingKeys.has(key)) continue;
           extra.push({
             id: st.id,
+            serverId: st.id,
             leadName: st.lead_name ?? "Onbekend",
             company: st.company ?? "",
             action: st.action,
             reason: st.reason,
             createdAt: st.created_at,
             done: st.done,
+            status: st.status,
+            result: st.result,
+            error: st.error,
+            startedAt: st.started_at,
+            doneAt: st.done_at,
           });
         }
         return [...extra, ...cur];
@@ -363,6 +388,7 @@ export function CampaignFlowTab() {
       reason: "Heeft landingspagina bezocht",
       createdAt: new Date().toISOString(),
       done: false,
+      status: "pending",
     };
     setTasks((cur) => [task, ...cur]);
     toast.success(`Taak aangemaakt: Bel ${lead.name}`);
@@ -378,12 +404,84 @@ export function CampaignFlowTab() {
       reason: "Geen reactie na 3 dagen",
       createdAt: new Date().toISOString(),
       done: false,
+      status: "pending",
     };
     setTasks((cur) => [task, ...cur]);
     toast.info(`Opvolgtaak aangemaakt voor ${lead.company}`);
   }
 
-  const openTasks = useMemo(() => tasks.filter((t) => !t.done), [tasks]);
+  const openTasks = useMemo(
+    () => tasks.filter((t) => t.status !== "done" && t.status !== "cancelled"),
+    [tasks],
+  );
+  const updateTask = useServerFn(updateCampaignTask);
+  const fetchEvents = useServerFn(listCampaignTaskEvents);
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const [eventsByTask, setEventsByTask] = useState<Record<string, CampaignTaskEvent[]>>({});
+  const [loadingEventsFor, setLoadingEventsFor] = useState<string | null>(null);
+
+  async function changeTaskStatus(
+    task: FlowTask,
+    status: TaskStatus,
+    opts?: { result?: string; error?: string },
+  ) {
+    const now = new Date().toISOString();
+    // Optimistic local update
+    setTasks((cur) =>
+      cur.map((t) =>
+        t.id === task.id
+          ? {
+              ...t,
+              status,
+              done: status === "done",
+              doneAt: status === "done" ? now : null,
+              startedAt: status === "in_progress" ? now : t.startedAt,
+              result: status === "done" ? opts?.result ?? t.result ?? null : t.result,
+              error: status === "failed" ? opts?.error ?? t.error ?? null : status === "done" ? null : t.error,
+            }
+          : t,
+      ),
+    );
+    if (task.serverId) {
+      try {
+        await updateTask({
+          data: {
+            id: task.serverId,
+            status,
+            result: opts?.result,
+            error: opts?.error,
+          },
+        });
+        // Refresh events if open
+        if (expandedTaskId === task.id) loadEvents(task);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Bijwerken mislukt");
+      }
+    }
+  }
+
+  async function loadEvents(task: FlowTask) {
+    if (!task.serverId) return;
+    setLoadingEventsFor(task.id);
+    try {
+      const rows = await fetchEvents({ data: { taskId: task.serverId } });
+      setEventsByTask((cur) => ({ ...cur, [task.id]: rows }));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Log ophalen mislukt");
+    } finally {
+      setLoadingEventsFor(null);
+    }
+  }
+
+  function toggleEvents(task: FlowTask) {
+    if (expandedTaskId === task.id) {
+      setExpandedTaskId(null);
+      return;
+    }
+    setExpandedTaskId(task.id);
+    if (!eventsByTask[task.id]) loadEvents(task);
+  }
+
 
   return (
     <div className="space-y-6">
@@ -647,57 +745,287 @@ export function CampaignFlowTab() {
         ) : (
           <div className="space-y-2">
             {tasks.map((t) => (
-              <div
+              <TaskCard
                 key={t.id}
-                className={`flex items-center justify-between gap-3 rounded-md border p-3 transition-all ${
-                  t.done
-                    ? "border-border/50 bg-background/30 opacity-60"
-                    : t.action === "call"
-                      ? "border-emerald-500/40 bg-emerald-500/5"
-                      : "border-amber-500/40 bg-amber-500/5"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  {t.action === "call" ? (
-                    <PhoneCall className="h-4 w-4 text-emerald-400" />
-                  ) : (
-                    <Mail className="h-4 w-4 text-amber-400" />
-                  )}
-                  <div>
-                    <div className="text-sm font-medium">
-                      {t.action === "call"
-                        ? `Bel ${t.leadName} van ${t.company}`
-                        : `Stuur opvolgmail naar ${t.leadName} van ${t.company}`}
-                    </div>
-                    <div className="text-xs text-muted-foreground">{t.reason}</div>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      setTasks((cur) =>
-                        cur.map((x) => (x.id === t.id ? { ...x, done: !x.done } : x)),
-                      )
-                    }
-                  >
-                    <CheckCircle2 className="mr-1 h-3 w-3" />
-                    {t.done ? "Heropen" : "Klaar"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setTasks((cur) => cur.filter((x) => x.id !== t.id))}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
+                task={t}
+                expanded={expandedTaskId === t.id}
+                events={eventsByTask[t.id] ?? null}
+                loadingEvents={loadingEventsFor === t.id}
+                onToggleEvents={() => toggleEvents(t)}
+                onStart={() => changeTaskStatus(t, "in_progress")}
+                onComplete={(result) => changeTaskStatus(t, "done", { result })}
+                onFail={(error) => changeTaskStatus(t, "failed", { error })}
+                onCancel={() => changeTaskStatus(t, "cancelled")}
+                onReopen={() => changeTaskStatus(t, "pending")}
+                onDelete={() => setTasks((cur) => cur.filter((x) => x.id !== t.id))}
+              />
             ))}
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+const STATUS_META: Record<TaskStatus, { label: string; className: string }> = {
+  pending: {
+    label: "Openstaand",
+    className: "border-slate-500/40 bg-slate-500/10 text-slate-300",
+  },
+  in_progress: {
+    label: "In behandeling",
+    className: "border-blue-500/40 bg-blue-500/10 text-blue-300",
+  },
+  done: {
+    label: "Uitgevoerd",
+    className: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300",
+  },
+  failed: {
+    label: "Mislukt",
+    className: "border-destructive/50 bg-destructive/10 text-destructive",
+  },
+  cancelled: {
+    label: "Geannuleerd",
+    className: "border-border/60 bg-background/40 text-muted-foreground",
+  },
+};
+
+function formatDT(v?: string | null) {
+  if (!v) return "—";
+  try {
+    return new Date(v).toLocaleString("nl-NL", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return v;
+  }
+}
+
+function TaskCard(props: {
+  task: FlowTask;
+  expanded: boolean;
+  events: CampaignTaskEvent[] | null;
+  loadingEvents: boolean;
+  onToggleEvents: () => void;
+  onStart: () => void;
+  onComplete: (result: string) => void;
+  onFail: (error: string) => void;
+  onCancel: () => void;
+  onReopen: () => void;
+  onDelete: () => void;
+}) {
+  const { task: t } = props;
+  const [resultDraft, setResultDraft] = useState("");
+  const [errorDraft, setErrorDraft] = useState("");
+  const [mode, setMode] = useState<"idle" | "complete" | "fail">("idle");
+  const meta = STATUS_META[t.status];
+  const isClosed = t.status === "done" || t.status === "cancelled";
+
+  return (
+    <div
+      className={`rounded-md border p-3 transition-all ${
+        isClosed
+          ? "border-border/50 bg-background/30"
+          : t.status === "failed"
+            ? "border-destructive/40 bg-destructive/5"
+            : t.action === "call"
+              ? "border-emerald-500/40 bg-emerald-500/5"
+              : "border-amber-500/40 bg-amber-500/5"
+      }`}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-start gap-3 min-w-0 flex-1">
+          {t.action === "call" ? (
+            <PhoneCall className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+          ) : (
+            <Mail className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+          )}
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium">
+                {t.action === "call"
+                  ? `Bel ${t.leadName} van ${t.company}`
+                  : `Stuur opvolgmail naar ${t.leadName} van ${t.company}`}
+              </span>
+              <Badge variant="outline" className={`text-[10px] ${meta.className}`}>
+                {meta.label}
+              </Badge>
+            </div>
+            <div className="text-xs text-muted-foreground">{t.reason}</div>
+            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-muted-foreground/80">
+              <span>Aangemaakt: {formatDT(t.createdAt)}</span>
+              {t.startedAt && <span>Gestart: {formatDT(t.startedAt)}</span>}
+              {t.doneAt && <span>Afgerond: {formatDT(t.doneAt)}</span>}
+            </div>
+            {t.result && (
+              <div className="mt-2 rounded border border-emerald-500/30 bg-emerald-500/5 p-2 text-xs">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
+                  Resultaat
+                </div>
+                <div className="whitespace-pre-wrap text-emerald-100/90">{t.result}</div>
+              </div>
+            )}
+            {t.error && (
+              <div className="mt-2 flex gap-2 rounded border border-destructive/40 bg-destructive/10 p-2 text-xs">
+                <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0 text-destructive" />
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-destructive">
+                    Foutmelding
+                  </div>
+                  <div className="whitespace-pre-wrap text-destructive/90">{t.error}</div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {t.status === "pending" && (
+            <Button size="sm" variant="outline" onClick={props.onStart}>
+              <Play className="mr-1 h-3 w-3" /> Start
+            </Button>
+          )}
+          {(t.status === "pending" || t.status === "in_progress") && (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setMode(mode === "complete" ? "idle" : "complete")}
+              >
+                <CheckCircle2 className="mr-1 h-3 w-3" /> Klaar
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setMode(mode === "fail" ? "idle" : "fail")}
+              >
+                <AlertTriangle className="mr-1 h-3 w-3" /> Mislukt
+              </Button>
+              <Button size="sm" variant="ghost" onClick={props.onCancel}>
+                <XCircle className="h-3 w-3" />
+              </Button>
+            </>
+          )}
+          {isClosed && (
+            <Button size="sm" variant="outline" onClick={props.onReopen}>
+              <RotateCcw className="mr-1 h-3 w-3" /> Heropen
+            </Button>
+          )}
+          {t.serverId && (
+            <Button size="sm" variant="ghost" onClick={props.onToggleEvents}>
+              {props.expanded ? (
+                <ChevronDown className="mr-1 h-3 w-3" />
+              ) : (
+                <ChevronRight className="mr-1 h-3 w-3" />
+              )}
+              <History className="mr-1 h-3 w-3" /> Log
+            </Button>
+          )}
+          <Button size="sm" variant="ghost" onClick={props.onDelete}>
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
+      </div>
+
+      {mode === "complete" && (
+        <div className="mt-3 rounded border border-emerald-500/30 bg-emerald-500/5 p-3">
+          <Label className="text-[10px] uppercase text-muted-foreground">
+            Resultaat (bijv. "Gesprek gepland op 22 juli")
+          </Label>
+          <Textarea
+            value={resultDraft}
+            onChange={(e) => setResultDraft(e.target.value)}
+            rows={2}
+            className="mt-1 text-xs"
+            placeholder="Beschrijf de uitkomst…"
+          />
+          <div className="mt-2 flex justify-end gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setMode("idle")}>
+              Annuleer
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                props.onComplete(resultDraft.trim() || "Uitgevoerd");
+                setResultDraft("");
+                setMode("idle");
+              }}
+            >
+              Markeer als klaar
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {mode === "fail" && (
+        <div className="mt-3 rounded border border-destructive/40 bg-destructive/5 p-3">
+          <Label className="text-[10px] uppercase text-destructive">Foutmelding</Label>
+          <Textarea
+            value={errorDraft}
+            onChange={(e) => setErrorDraft(e.target.value)}
+            rows={2}
+            className="mt-1 text-xs"
+            placeholder="Waarom is de taak mislukt?"
+          />
+          <div className="mt-2 flex justify-end gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setMode("idle")}>
+              Annuleer
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => {
+                props.onFail(errorDraft.trim() || "Onbekende fout");
+                setErrorDraft("");
+                setMode("idle");
+              }}
+            >
+              Registreer fout
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {props.expanded && (
+        <div className="mt-3 rounded border border-border bg-background/40 p-3">
+          <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <History className="h-3 w-3" /> Geschiedenis
+          </div>
+          {props.loadingEvents ? (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" /> Log laden…
+            </div>
+          ) : !props.events || props.events.length === 0 ? (
+            <div className="text-xs text-muted-foreground">Nog geen loginvoer.</div>
+          ) : (
+            <ol className="relative ml-3 space-y-2 border-l border-border pl-3">
+              {props.events.map((ev) => (
+                <li key={ev.id} className="text-xs">
+                  <div className="absolute -left-[5px] mt-1 h-2 w-2 rounded-full bg-brand" />
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="font-medium">
+                      {ev.event_type === "created"
+                        ? "Taak aangemaakt"
+                        : ev.event_type === "status_changed"
+                          ? `Status → ${STATUS_META[(ev.to_status as TaskStatus) ?? "pending"]?.label ?? ev.to_status}`
+                          : ev.event_type}
+                    </span>
+                    <span className="text-muted-foreground">· {formatDT(ev.created_at)}</span>
+                  </div>
+                  {ev.message && (
+                    <div className="mt-0.5 whitespace-pre-wrap text-muted-foreground/90">
+                      {ev.message}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+      )}
     </div>
   );
 }
