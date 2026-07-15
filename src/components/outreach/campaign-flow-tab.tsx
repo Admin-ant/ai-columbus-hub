@@ -1342,10 +1342,10 @@ export function CampaignFlowTab() {
               ) : (
                 <ul className="space-y-1.5">
                   {filteredScanEdits.map((entry) => {
-                  const isCurrent = scrape?.source_url === entry.sourceUrl;
-                  const isDiffOpen = openDiffUrl === entry.sourceUrl;
-                  const { changes, total } = computeScanDiff(entry.original, entry.edited);
-                  return (
+                    const isCurrent = scrape?.source_url === entry.sourceUrl;
+                    const isDiffOpen = openDiffUrl === entry.sourceUrl;
+                    const { changes, total } = computeScanDiff(entry.original, entry.edited);
+                    return (
                     <li
                       key={entry.sourceUrl}
                       className="rounded border border-border/60 bg-background p-2 text-xs"
