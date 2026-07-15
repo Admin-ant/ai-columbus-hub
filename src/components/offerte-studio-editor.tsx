@@ -234,6 +234,32 @@ export function OfferteStudioEditor({ kind, id }: Props) {
     };
   }, [id, kind, table]);
 
+  useEffect(() => {
+    if (!currentOrganizationId) return;
+    let active = true;
+    (async () => {
+      const [t, b] = await Promise.all([
+        supabase
+          .from("outreach_message_templates")
+          .select("id, name, channel")
+          .eq("organization_id", currentOrganizationId)
+          .eq("channel", "email")
+          .order("name"),
+        supabase
+          .from("mail_backgrounds")
+          .select("id, name")
+          .eq("organization_id", currentOrganizationId)
+          .order("name"),
+      ]);
+      if (!active) return;
+      setMailTemplates((t.data as Array<{ id: string; name: string; channel: string }>) ?? []);
+      setMailBackgrounds((b.data as Array<{ id: string; name: string }>) ?? []);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [currentOrganizationId]);
+
   function mark() {
     dirty.current = true;
   }
