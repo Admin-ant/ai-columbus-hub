@@ -81,6 +81,14 @@ export function SequenceBuilder({ campaignId, initialSteps, onSaved }: Props) {
   );
   const [activeStep, setActiveStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [templates, setTemplates] = useState<SequenceTemplate[]>([]);
+
+  useEffect(() => {
+    setTemplates(loadTemplates());
+  }, []);
+
+  const issues = useMemo(() => validateSequence(steps), [steps]);
+  const hasIssues = issues.length > 0;
 
   const updateStep = (i: number, patch: Partial<SequenceStep>) =>
     setSteps((cur) => cur.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
@@ -125,6 +133,10 @@ export function SequenceBuilder({ campaignId, initialSteps, onSaved }: Props) {
   };
 
   const save = async () => {
+    if (hasIssues) {
+      toast.error(issues[0].message);
+      return;
+    }
     setSaving(true);
     const { error } = await supabase
       .from("outreach_campaigns")
@@ -138,6 +150,28 @@ export function SequenceBuilder({ campaignId, initialSteps, onSaved }: Props) {
     toast.success("Sequence opgeslagen");
     onSaved(steps);
   };
+
+  const saveAsTemplate = () => {
+    const name = window.prompt("Naam voor deze workflow-template?");
+    if (!name?.trim()) return;
+    const tpl = saveTemplate(name.trim(), steps);
+    setTemplates(loadTemplates());
+    toast.success(`Opgeslagen als template: ${tpl.name}`);
+  };
+
+  const loadFromTemplate = (id: string) => {
+    const tpl = templates.find((t) => t.id === id);
+    if (!tpl) return;
+    setSteps(tpl.steps);
+    setActiveStep(0);
+    toast.success(`Geladen: ${tpl.name}`);
+  };
+
+  const removeTemplate = (id: string) => {
+    setTemplates(deleteTemplate(id));
+    toast.success("Template verwijderd");
+  };
+
 
   const current = steps[activeStep];
   const sampleVars = { contact_name: "Sanne", company: "Voorbeeld BV" };
