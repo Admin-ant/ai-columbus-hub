@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, LogIn, MessageCircle, Send, Sparkles, X } from "lucide-react";
+import { Bot, LogIn, MessageCircle, Send, Sparkles, Square, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,6 +67,11 @@ export function ColumbusChatWidget() {
   const [authed, setAuthed] = useState<boolean | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const injectedRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
+
+  function stop() {
+    abortRef.current?.abort();
+  }
 
   useEffect(() => {
     setMounted(true);
@@ -124,6 +129,8 @@ export function ColumbusChatWidget() {
     setMessages(next);
     setInput("");
     setSending(true);
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
       const { data: sess } = await supabase.auth.getSession();
       const bearer = config.apiKey ?? sess.session?.access_token;
@@ -138,6 +145,7 @@ export function ColumbusChatWidget() {
           agent: "columbus-recruiter",
           messages: next.map((m) => ({ role: m.role, content: m.content })),
         }),
+        signal: controller.signal,
       });
 
       const contentType = res.headers.get("content-type") ?? "";
@@ -215,14 +223,37 @@ export function ColumbusChatWidget() {
         }
       }
     } catch (e) {
-      setMessages((cur) => [
-        ...cur,
-        {
-          role: "assistant",
-          content: `Er ging iets mis: ${e instanceof Error ? e.message : "onbekende fout"}.`,
-        },
-      ]);
+      const aborted =
+        (e instanceof DOMException && e.name === "AbortError") ||
+        controller.signal.aborted;
+      if (aborted) {
+        // Behoud reeds gestreamde tekst en markeer als gestopt.
+        setMessages((cur) => {
+          const copy = cur.slice();
+          const last = copy[copy.length - 1];
+          if (last && last.role === "assistant") {
+            copy[copy.length - 1] = {
+              ...last,
+              content: last.content
+                ? `${last.content}\n\n_Gestopt._`
+                : "_Gestopt._",
+            };
+          } else {
+            copy.push({ role: "assistant", content: "_Gestopt._" });
+          }
+          return copy;
+        });
+      } else {
+        setMessages((cur) => [
+          ...cur,
+          {
+            role: "assistant",
+            content: `Er ging iets mis: ${e instanceof Error ? e.message : "onbekende fout"}.`,
+          },
+        ]);
+      }
     } finally {
+      abortRef.current = null;
       setSending(false);
     }
   }
@@ -338,14 +369,26 @@ export function ColumbusChatWidget() {
                 placeholder={placeholder}
                 className="max-h-28 min-h-[36px] flex-1 resize-none rounded-md border border-border bg-muted/50 px-2.5 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-brand"
               />
-              <Button
-                type="submit"
-                size="sm"
-                disabled={sending || !input.trim() || !authed}
-                className="h-9 bg-brand text-brand-foreground hover:bg-brand/90"
-              >
-                <Send className="h-3.5 w-3.5" />
-              </Button>
+              {sending ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={stop}
+                  aria-label="Stop met genereren"
+                  className="h-9 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  <Square className="h-3.5 w-3.5 fill-current" />
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={!input.trim() || !authed}
+                  className="h-9 bg-brand text-brand-foreground hover:bg-brand/90"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                </Button>
+              )}
             </form>
           </div>
         </div>
