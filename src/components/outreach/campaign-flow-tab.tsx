@@ -152,6 +152,8 @@ export function CampaignFlowTab() {
   const [scrape, setScrape] = useState<ScrapeResult | null>(null);
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
+  const [scanAttempts, setScanAttempts] = useState(0);
+  const [lastScanAt, setLastScanAt] = useState<string | null>(null);
   const [preview, setPreview] = useState("");
   const [generating, setGenerating] = useState(false);
   const [variants, setVariants] = useState<
