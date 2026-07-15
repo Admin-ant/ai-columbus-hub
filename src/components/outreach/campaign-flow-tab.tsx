@@ -187,6 +187,21 @@ export function CampaignFlowTab() {
   const websiteTouched = website.trim().length > 0;
   const inlineUrlError = websiteTouched ? websiteValidation.error : null;
 
+  function resetScanArtifacts() {
+    setScrape(null);
+    setScanError(null);
+    setScanAttempts(0);
+    setLastScanAt(null);
+    setVariants([]);
+    setSelectedVariant(null);
+    setPreview("");
+  }
+
+  async function rescanWebsite() {
+    resetScanArtifacts();
+    return runScan();
+  }
+
   async function runScan(): Promise<ScrapeResult | null> {
     const { url, error } = validateWebsiteUrl(website);
     if (error || !url) {
