@@ -96,6 +96,43 @@ export function TemplatesManager({
   const [sample, setSample] = useState<Record<SampleKey, string>>(DEFAULT_SAMPLE);
   const [backgrounds, setBackgrounds] = useState<MailBackground[]>([]);
   const [savingBg, setSavingBg] = useState(false);
+  const { user } = useAuth();
+  const [testTo, setTestTo] = useState<string>("");
+  const [sendingTest, setSendingTest] = useState(false);
+  const sendTest = useServerFn(sendTemplateTestEmail);
+
+  useEffect(() => {
+    if (user?.email && !testTo) setTestTo(user.email);
+  }, [user?.email, testTo]);
+
+  async function sendTestMail() {
+    if (!editing || !organizationId) return;
+    if (!testTo || !/^\S+@\S+\.\S+$/.test(testTo)) {
+      toast.error("Vul een geldig e-mailadres in");
+      return;
+    }
+    setSendingTest(true);
+    try {
+      await sendTest({
+        data: {
+          organization_id: organizationId,
+          to: testTo,
+          subject: editing.subject || editing.name,
+          body: editing.body,
+          background_color: editing.background_color ?? null,
+          background_image_url: editing.background_image_url ?? null,
+          header_html: editing.header_html ?? null,
+          footer_html: editing.footer_html ?? null,
+          sample: sample as Record<string, string>,
+        },
+      });
+      toast.success(`Testmail verstuurd naar ${testTo}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Verzenden mislukt");
+    } finally {
+      setSendingTest(false);
+    }
+  }
 
   async function load() {
     if (!organizationId) {
