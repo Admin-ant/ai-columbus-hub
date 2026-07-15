@@ -386,15 +386,63 @@ export type Database = {
           },
         ]
       }
+      campaign_flow_task_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          from_status: string | null
+          id: string
+          message: string | null
+          metadata: Json | null
+          task_id: string
+          to_status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          from_status?: string | null
+          id?: string
+          message?: string | null
+          metadata?: Json | null
+          task_id: string
+          to_status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          from_status?: string | null
+          id?: string
+          message?: string | null
+          metadata?: Json | null
+          task_id?: string
+          to_status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_flow_task_events_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_flow_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_flow_tasks: {
         Row: {
           action: string
           created_at: string
           done: boolean
           done_at: string | null
+          error: string | null
           id: string
           lead_id: string | null
           reason: string
+          result: string | null
+          started_at: string | null
+          status: string
           updated_at: string
           user_id: string
         }
@@ -403,9 +451,13 @@ export type Database = {
           created_at?: string
           done?: boolean
           done_at?: string | null
+          error?: string | null
           id?: string
           lead_id?: string | null
           reason: string
+          result?: string | null
+          started_at?: string | null
+          status?: string
           updated_at?: string
           user_id: string
         }
@@ -414,9 +466,13 @@ export type Database = {
           created_at?: string
           done?: boolean
           done_at?: string | null
+          error?: string | null
           id?: string
           lead_id?: string | null
           reason?: string
+          result?: string | null
+          started_at?: string | null
+          status?: string
           updated_at?: string
           user_id?: string
         }
