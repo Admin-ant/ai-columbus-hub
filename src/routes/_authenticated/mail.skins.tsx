@@ -610,7 +610,7 @@ function MailSkinsPage() {
         }}
         onClose={() => setDiffVersion(null)}
         onRestore={(v) => {
-          restoreVersion(v);
+          restoreVersion(v as SkinVersion);
           setDiffVersion(null);
         }}
       />
