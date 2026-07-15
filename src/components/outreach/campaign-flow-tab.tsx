@@ -607,7 +607,18 @@ export function CampaignFlowTab() {
           </div>
           <div>
             <Label className="text-xs text-muted-foreground">Website URL</Label>
-            <Input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://flexpro.nl" />
+            <Input
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              placeholder="https://flexpro.nl"
+              aria-invalid={inlineUrlError ? true : undefined}
+              className={inlineUrlError ? "border-destructive focus-visible:ring-destructive" : undefined}
+            />
+            {inlineUrlError ? (
+              <p className="mt-1 text-xs text-destructive">{inlineUrlError}</p>
+            ) : websiteTouched ? (
+              <p className="mt-1 text-xs text-muted-foreground">Ziet er goed uit — klik op "Scan website".</p>
+            ) : null}
           </div>
         </div>
 
