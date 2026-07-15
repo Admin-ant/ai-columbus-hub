@@ -76,6 +76,7 @@ const columbusGroups: NavGroup[] = [
       { title: "Cold Outreach", url: "/outreach", icon: Megaphone },
       { title: "Leads", url: "/leads", icon: Inbox },
       { title: "Mail templates", url: "/outreach/templates", icon: FileText },
+      { title: "Mail-flow overzicht", url: "/mail/flow", icon: Workflow },
       { title: "CRM Activiteiten", url: "/crm/activities", icon: ClipboardList },
     ],
   },

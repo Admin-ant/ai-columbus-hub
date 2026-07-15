@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   type OutreachTemplate,
   type TemplateChannel,
+  type MailBackground,
   TEMPLATE_TOKENS,
   renderTokens,
 } from "@/lib/outreach-templates";
@@ -83,6 +84,8 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
   const [previewVersion, setPreviewVersion] = useState<TemplateVersion | null>(null);
   const [search, setSearch] = useState("");
   const [sample, setSample] = useState<Record<SampleKey, string>>(DEFAULT_SAMPLE);
+  const [backgrounds, setBackgrounds] = useState<MailBackground[]>([]);
+  const [savingBg, setSavingBg] = useState(false);
 
   async function load() {
     if (!organizationId) {
@@ -102,8 +105,23 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
     setLoading(false);
   }
 
+  async function loadBackgrounds() {
+    if (!organizationId) {
+      setBackgrounds([]);
+      return;
+    }
+    const { data, error } = await supabase
+      .from("mail_backgrounds" as never)
+      .select("*")
+      .eq("organization_id", organizationId)
+      .order("created_at", { ascending: true });
+    if (error) return; // silently ignore — tabel is optioneel
+    setBackgrounds(((data ?? []) as unknown) as MailBackground[]);
+  }
+
   useEffect(() => {
     load();
+    loadBackgrounds();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organizationId]);
 
@@ -157,12 +175,48 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
         description: editing.description,
         subject: editing.subject,
         body: editing.body,
-      })
+        background_color: editing.background_color ?? null,
+        background_image_url: editing.background_image_url ?? null,
+        header_html: editing.header_html ?? null,
+        footer_html: editing.footer_html ?? null,
+        mail_background_id: editing.mail_background_id ?? null,
+      } as never)
       .eq("id", editing.id);
     if (error) return toast.error(error.message);
     toast.success("Opgeslagen — nieuwe versie aangemaakt");
     await load();
     await loadVersions(editing.id);
+  }
+
+  async function applyBackground(bg: MailBackground | null) {
+    if (!editing) return;
+    setEditing({
+      ...editing,
+      mail_background_id: bg?.id ?? null,
+      background_color: bg?.background_color ?? editing.background_color ?? null,
+      background_image_url: bg?.background_image_url ?? editing.background_image_url ?? null,
+      header_html: bg?.header_html ?? editing.header_html ?? null,
+      footer_html: bg?.footer_html ?? editing.footer_html ?? null,
+    });
+  }
+
+  async function saveAsBackground() {
+    if (!editing || !organizationId) return;
+    const name = window.prompt("Naam voor deze achtergrond-skin?", editing.name);
+    if (!name) return;
+    setSavingBg(true);
+    const { error } = await supabase.from("mail_backgrounds" as never).insert({
+      organization_id: organizationId,
+      name,
+      background_color: editing.background_color ?? null,
+      background_image_url: editing.background_image_url ?? null,
+      header_html: editing.header_html ?? null,
+      footer_html: editing.footer_html ?? null,
+    } as never);
+    setSavingBg(false);
+    if (error) return toast.error(error.message);
+    toast.success("Achtergrond opgeslagen als skin");
+    await loadBackgrounds();
   }
 
   async function remove(id: string) {
@@ -217,7 +271,10 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
         (t.description ?? "").toLowerCase().includes(q) ||
         (t.body ?? "").toLowerCase().includes(q)),
   );
-  const preview = previewVersion ?? editing;
+  const preview = (previewVersion ?? editing) as
+    | (OutreachTemplate & { version?: number })
+    | (TemplateVersion & Partial<OutreachTemplate>)
+    | null;
 
   return (
     <div className="grid gap-4 xl:grid-cols-[240px_1fr_280px_240px] lg:grid-cols-[240px_1fr_280px]">
@@ -370,6 +427,109 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                 className="border-input bg-background font-mono text-sm leading-relaxed text-foreground placeholder:text-muted-foreground shadow-sm"
               />
             </div>
+
+            {editing.channel === "email" && (
+              <div className="rounded-md border border-border bg-card/50 p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[11px] font-semibold uppercase tracking-wider text-foreground">
+                    Achtergrond, header &amp; footer
+                  </Label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={savingBg}
+                    onClick={saveAsBackground}
+                    className="h-6 border-border text-[10px] text-foreground hover:bg-accent"
+                  >
+                    Bewaar als skin
+                  </Button>
+                </div>
+
+                {backgrounds.length > 0 && (
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Skin kiezen</Label>
+                    <div className="mt-1 flex flex-wrap gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => applyBackground(null)}
+                        className={`rounded border px-2 py-1 text-[10px] ${
+                          !editing.mail_background_id
+                            ? "border-primary/50 bg-primary/10 text-primary"
+                            : "border-border bg-background text-foreground hover:bg-accent"
+                        }`}
+                      >
+                        Geen
+                      </button>
+                      {backgrounds.map((b) => (
+                        <button
+                          key={b.id}
+                          type="button"
+                          onClick={() => applyBackground(b)}
+                          className={`rounded border px-2 py-1 text-[10px] ${
+                            editing.mail_background_id === b.id
+                              ? "border-primary/50 bg-primary/10 text-primary"
+                              : "border-border bg-background text-foreground hover:bg-accent"
+                          }`}
+                        >
+                          {b.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Achtergrondkleur</Label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={editing.background_color ?? "#ffffff"}
+                        onChange={(e) => setEditing({ ...editing, background_color: e.target.value })}
+                        className="h-7 w-10 rounded border border-input bg-background"
+                      />
+                      <Input
+                        value={editing.background_color ?? ""}
+                        placeholder="#ffffff"
+                        onChange={(e) => setEditing({ ...editing, background_color: e.target.value })}
+                        className="h-7 border-input bg-background text-[11px] text-foreground shadow-sm"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Achtergrond-afbeelding URL</Label>
+                    <Input
+                      value={editing.background_image_url ?? ""}
+                      placeholder="https://…"
+                      onChange={(e) => setEditing({ ...editing, background_image_url: e.target.value })}
+                      className="h-7 border-input bg-background text-[11px] text-foreground shadow-sm"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Header HTML</Label>
+                  <Textarea
+                    rows={3}
+                    value={editing.header_html ?? ""}
+                    placeholder='<div style="text-align:center;padding:20px;background:#0f172a;color:#fff">Mijn Bedrijf</div>'
+                    onChange={(e) => setEditing({ ...editing, header_html: e.target.value })}
+                    className="border-input bg-background font-mono text-[11px] text-foreground shadow-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Footer HTML</Label>
+                  <Textarea
+                    rows={3}
+                    value={editing.footer_html ?? ""}
+                    placeholder='<div style="text-align:center;padding:16px;font-size:12px;color:#6b7280">Mijn Bedrijf · Straat 1 · Amsterdam</div>'
+                    onChange={(e) => setEditing({ ...editing, footer_html: e.target.value })}
+                    className="border-input bg-background font-mono text-[11px] text-foreground shadow-sm"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end">
               <Button onClick={save} className="bg-primary text-primary-foreground hover:bg-primary/90">
                 <Save className="mr-2 h-4 w-4" /> Opslaan
@@ -403,8 +563,28 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
               </>
             )}
             <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Inhoud</div>
-            <div className="whitespace-pre-wrap leading-relaxed text-foreground">
-              {renderTokens(preview.body, sample)}
+            <div
+              className="rounded overflow-hidden border border-border"
+              style={{
+                backgroundColor: preview.background_color ?? undefined,
+                backgroundImage: preview.background_image_url
+                  ? `url(${preview.background_image_url})`
+                  : undefined,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            >
+              {preview.header_html && (
+                // eslint-disable-next-line react/no-danger
+                <div dangerouslySetInnerHTML={{ __html: preview.header_html }} />
+              )}
+              <div className="whitespace-pre-wrap p-3 leading-relaxed text-foreground">
+                {renderTokens(preview.body, sample)}
+              </div>
+              {preview.footer_html && (
+                // eslint-disable-next-line react/no-danger
+                <div dangerouslySetInnerHTML={{ __html: preview.footer_html }} />
+              )}
             </div>
           </div>
         ) : (

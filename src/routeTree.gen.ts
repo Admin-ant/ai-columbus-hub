@@ -49,6 +49,7 @@ import { Route as AuthenticatedNetqloudKlantenRouteImport } from './routes/_auth
 import { Route as AuthenticatedNetqloudInstellingenRouteImport } from './routes/_authenticated/netqloud.instellingen'
 import { Route as AuthenticatedMailTemplatesRouteImport } from './routes/_authenticated/mail.templates'
 import { Route as AuthenticatedMailSettingsRouteImport } from './routes/_authenticated/mail.settings'
+import { Route as AuthenticatedMailFlowRouteImport } from './routes/_authenticated/mail.flow'
 import { Route as AuthenticatedMailAppointmentPreviewRouteImport } from './routes/_authenticated/mail.appointment-preview'
 import { Route as AuthenticatedKpiMetricRouteImport } from './routes/_authenticated/kpi.$metric'
 import { Route as AuthenticatedInvoicesInvoiceIdRouteImport } from './routes/_authenticated/invoices.$invoiceId'
@@ -298,6 +299,11 @@ const AuthenticatedMailSettingsRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedMailRoute,
   } as any)
+const AuthenticatedMailFlowRoute = AuthenticatedMailFlowRouteImport.update({
+  id: '/flow',
+  path: '/flow',
+  getParentRoute: () => AuthenticatedMailRoute,
+} as any)
 const AuthenticatedMailAppointmentPreviewRoute =
   AuthenticatedMailAppointmentPreviewRouteImport.update({
     id: '/appointment-preview',
@@ -527,6 +533,7 @@ export interface FileRoutesByFullPath {
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/kpi/$metric': typeof AuthenticatedKpiMetricRoute
   '/mail/appointment-preview': typeof AuthenticatedMailAppointmentPreviewRoute
+  '/mail/flow': typeof AuthenticatedMailFlowRoute
   '/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/mail/templates': typeof AuthenticatedMailTemplatesRoute
   '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
@@ -598,6 +605,7 @@ export interface FileRoutesByTo {
   '/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/kpi/$metric': typeof AuthenticatedKpiMetricRoute
   '/mail/appointment-preview': typeof AuthenticatedMailAppointmentPreviewRoute
+  '/mail/flow': typeof AuthenticatedMailFlowRoute
   '/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/mail/templates': typeof AuthenticatedMailTemplatesRoute
   '/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
@@ -673,6 +681,7 @@ export interface FileRoutesById {
   '/_authenticated/invoices/$invoiceId': typeof AuthenticatedInvoicesInvoiceIdRoute
   '/_authenticated/kpi/$metric': typeof AuthenticatedKpiMetricRoute
   '/_authenticated/mail/appointment-preview': typeof AuthenticatedMailAppointmentPreviewRoute
+  '/_authenticated/mail/flow': typeof AuthenticatedMailFlowRoute
   '/_authenticated/mail/settings': typeof AuthenticatedMailSettingsRoute
   '/_authenticated/mail/templates': typeof AuthenticatedMailTemplatesRoute
   '/_authenticated/netqloud/instellingen': typeof AuthenticatedNetqloudInstellingenRoute
@@ -748,6 +757,7 @@ export interface FileRouteTypes {
     | '/invoices/$invoiceId'
     | '/kpi/$metric'
     | '/mail/appointment-preview'
+    | '/mail/flow'
     | '/mail/settings'
     | '/mail/templates'
     | '/netqloud/instellingen'
@@ -819,6 +829,7 @@ export interface FileRouteTypes {
     | '/invoices/$invoiceId'
     | '/kpi/$metric'
     | '/mail/appointment-preview'
+    | '/mail/flow'
     | '/mail/settings'
     | '/mail/templates'
     | '/netqloud/instellingen'
@@ -893,6 +904,7 @@ export interface FileRouteTypes {
     | '/_authenticated/invoices/$invoiceId'
     | '/_authenticated/kpi/$metric'
     | '/_authenticated/mail/appointment-preview'
+    | '/_authenticated/mail/flow'
     | '/_authenticated/mail/settings'
     | '/_authenticated/mail/templates'
     | '/_authenticated/netqloud/instellingen'
@@ -1236,6 +1248,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMailSettingsRouteImport
       parentRoute: typeof AuthenticatedMailRoute
     }
+    '/_authenticated/mail/flow': {
+      id: '/_authenticated/mail/flow'
+      path: '/flow'
+      fullPath: '/mail/flow'
+      preLoaderRoute: typeof AuthenticatedMailFlowRouteImport
+      parentRoute: typeof AuthenticatedMailRoute
+    }
     '/_authenticated/mail/appointment-preview': {
       id: '/_authenticated/mail/appointment-preview'
       path: '/appointment-preview'
@@ -1575,6 +1594,7 @@ const AuthenticatedInkoopfacturenRouteWithChildren =
 
 interface AuthenticatedMailRouteChildren {
   AuthenticatedMailAppointmentPreviewRoute: typeof AuthenticatedMailAppointmentPreviewRoute
+  AuthenticatedMailFlowRoute: typeof AuthenticatedMailFlowRoute
   AuthenticatedMailSettingsRoute: typeof AuthenticatedMailSettingsRoute
   AuthenticatedMailTemplatesRoute: typeof AuthenticatedMailTemplatesRoute
 }
@@ -1582,6 +1602,7 @@ interface AuthenticatedMailRouteChildren {
 const AuthenticatedMailRouteChildren: AuthenticatedMailRouteChildren = {
   AuthenticatedMailAppointmentPreviewRoute:
     AuthenticatedMailAppointmentPreviewRoute,
+  AuthenticatedMailFlowRoute: AuthenticatedMailFlowRoute,
   AuthenticatedMailSettingsRoute: AuthenticatedMailSettingsRoute,
   AuthenticatedMailTemplatesRoute: AuthenticatedMailTemplatesRoute,
 }
