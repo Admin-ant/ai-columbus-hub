@@ -170,17 +170,6 @@ export function CampaignFlowTab() {
     }
   }
 
-  async function generateCampaign() {
-    if (!name || !company || !email || !website) {
-      toast.error("Vul alle velden in");
-      return;
-    }
-    // Zorg dat we een verse scan hebben (of gebruik bestaande).
-    let s = scrape;
-    if (!s) {
-      s = await runScan();
-      if (!s) return;
-    }
   async function generateVariants() {
     if (!name || !company || !email || !website) {
       toast.error("Vul alle velden in");
