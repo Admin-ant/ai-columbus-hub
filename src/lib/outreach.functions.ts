@@ -240,6 +240,94 @@ export const scheduleSequence = createServerFn({ method: "POST" })
   });
 
 /* -------------------------------------------------------------------------- */
+/* Retry a failed outreach message                                            */
+/* -------------------------------------------------------------------------- */
+
+const RETRY_SCHEMA = z.object({ message_id: z.string().uuid() });
+
+export const retryOutreachMessage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => RETRY_SCHEMA.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: msg, error } = await context.supabase
+      .from("outreach_messages")
+      .select("id, status, channel, subject, body, target_id, step_index")
+      .eq("id", data.message_id)
+      .single();
+    if (error || !msg) throw new Error(error?.message ?? "Bericht niet gevonden");
+    const m = msg as {
+      id: string;
+      status: string;
+      channel: string;
+      subject: string | null;
+      body: string | null;
+      target_id: string;
+      step_index: number | null;
+    };
+    if (m.status !== "failed") throw new Error("Alleen mislukte stappen kunnen opnieuw geprobeerd worden");
+    if (m.channel !== "email") throw new Error("Alleen e-mailstappen kunnen nu opnieuw verstuurd worden");
+
+    // Markeer als 'retrying' zodat de UI de statuswijziging meteen ziet
+    await context.supabase
+      .from("outreach_messages")
+      .update({ status: "retrying", error: null } as never)
+      .eq("id", m.id);
+
+    const { data: target, error: tErr } = await context.supabase
+      .from("outreach_targets")
+      .select("id, organization_id, company, contact_name, email")
+      .eq("id", m.target_id)
+      .single();
+    if (tErr || !target) {
+      await context.supabase
+        .from("outreach_messages")
+        .update({ status: "failed", error: "Prospect niet gevonden" } as never)
+        .eq("id", m.id);
+      throw new Error("Prospect niet gevonden");
+    }
+    const t = target as { id: string; company: string; contact_name: string | null; email: string | null };
+    if (!t.email) {
+      await context.supabase
+        .from("outreach_messages")
+        .update({ status: "failed", error: "Prospect heeft geen e-mailadres" } as never)
+        .eq("id", m.id);
+      throw new Error("Prospect heeft geen e-mailadres");
+    }
+
+    const subject = m.subject ?? `Even kort, ${t.company}`;
+    const body = m.body ?? `Hi ${t.contact_name ?? t.company},\n\n`;
+    const html = `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111;white-space:pre-wrap">${body.replace(/</g, "&lt;")}</div>`;
+
+    try {
+      const r = await sendViaResend({
+        from: "outreach@resend.dev",
+        to: t.email,
+        subject,
+        html,
+        headers: { "X-Outreach-Message-Id": m.id, "X-Retry": "1" },
+      });
+      await context.supabase
+        .from("outreach_messages")
+        .update({
+          status: "sent",
+          sent_at: new Date().toISOString(),
+          provider_message_id: r.id,
+          error: null,
+        } as never)
+        .eq("id", m.id);
+      return { ok: true, message_id: r.id };
+    } catch (e) {
+      const errMsg = e instanceof Error ? e.message : String(e);
+      await context.supabase
+        .from("outreach_messages")
+        .update({ status: "failed", error: errMsg } as never)
+        .eq("id", m.id);
+      throw new Error(errMsg);
+    }
+  });
+
+
+/* -------------------------------------------------------------------------- */
 /* Classify reply (AI)                                                        */
 /* -------------------------------------------------------------------------- */
 
