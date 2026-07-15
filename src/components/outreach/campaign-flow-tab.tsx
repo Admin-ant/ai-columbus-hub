@@ -1250,43 +1250,115 @@ export function CampaignFlowTab() {
                 .sort((a, b) => (a.savedAt < b.savedAt ? 1 : -1))
                 .map((entry) => {
                   const isCurrent = scrape?.source_url === entry.sourceUrl;
+                  const isDiffOpen = openDiffUrl === entry.sourceUrl;
+                  const { changes, total } = computeScanDiff(entry.original, entry.edited);
                   return (
                     <li
                       key={entry.sourceUrl}
-                      className="flex items-center gap-2 rounded border border-border/60 bg-background p-2 text-xs"
+                      className="rounded border border-border/60 bg-background p-2 text-xs"
                     >
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate font-medium text-foreground" title={entry.sourceUrl}>
-                          {entry.company || entry.sourceUrl}
+                      <div className="flex items-center gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate font-medium text-foreground" title={entry.sourceUrl}>
+                            {entry.company || entry.sourceUrl}
+                          </div>
+                          <div className="truncate text-[10px] text-muted-foreground">
+                            {entry.sourceUrl} · opgeslagen{" "}
+                            {new Date(entry.savedAt).toLocaleString("nl-NL", {
+                              dateStyle: "short",
+                              timeStyle: "short",
+                            })}
+                            {isCurrent ? " · huidige" : ""}
+                          </div>
                         </div>
-                        <div className="truncate text-[10px] text-muted-foreground">
-                          {entry.sourceUrl} · opgeslagen{" "}
-                          {new Date(entry.savedAt).toLocaleString("nl-NL", {
-                            dateStyle: "short",
-                            timeStyle: "short",
-                          })}
-                          {isCurrent ? " · huidige" : ""}
-                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-[11px]"
+                          onClick={() =>
+                            setOpenDiffUrl(isDiffOpen ? null : entry.sourceUrl)
+                          }
+                          aria-expanded={isDiffOpen}
+                        >
+                          {isDiffOpen ? (
+                            <ChevronDown className="mr-1 h-3 w-3" />
+                          ) : (
+                            <ChevronRight className="mr-1 h-3 w-3" />
+                          )}
+                          Verschil
+                          {changes.length > 0 ? ` (${changes.length})` : ""}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-[11px]"
+                          onClick={() => applySavedScanEdit(entry)}
+                          disabled={isCurrent}
+                        >
+                          Laden
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-[11px] text-muted-foreground hover:text-destructive"
+                          onClick={() => deleteSavedScanEdit(entry.sourceUrl)}
+                        >
+                          Verwijder
+                        </Button>
                       </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-[11px]"
-                        onClick={() => applySavedScanEdit(entry)}
-                        disabled={isCurrent}
-                      >
-                        Laden
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-[11px] text-muted-foreground hover:text-destructive"
-                        onClick={() => deleteSavedScanEdit(entry.sourceUrl)}
-                      >
-                        Verwijder
-                      </Button>
+                      {isDiffOpen && (
+                        <div className="mt-2 rounded-md border border-border bg-muted/40 p-2">
+                          {changes.length === 0 ? (
+                            <p className="text-[11px] italic text-muted-foreground">
+                              Geen verschillen — opgeslagen waarden zijn identiek aan de scan.
+                            </p>
+                          ) : (
+                            <>
+                              <ul className="space-y-2">
+                                {changes.map((change) => (
+                                  <li key={change.key}>
+                                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                                      {change.label}
+                                    </span>
+                                    <div className="mt-0.5 flex items-center gap-2">
+                                      <span
+                                        className="truncate text-destructive line-through"
+                                        title={change.from}
+                                      >
+                                        {change.from || "—"}
+                                      </span>
+                                      <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground" />
+                                      <span
+                                        className="truncate font-medium text-emerald-600 dark:text-emerald-400"
+                                        title={change.to}
+                                      >
+                                        {change.to || "—"}
+                                      </span>
+                                    </div>
+                                  </li>
+                                ))}
+                              </ul>
+                              <div className="mt-2 flex items-center justify-between gap-2 border-t border-border/60 pt-2">
+                                <span className="text-[10px] text-muted-foreground">
+                                  {changes.length} van {total} velden aangepast
+                                </span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 text-[11px]"
+                                  onClick={() => void copyDiffAsText(entry)}
+                                >
+                                  Kopieer als tekst
+                                </Button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </li>
                   );
                 })}
