@@ -285,8 +285,9 @@ export const inviteUser = createServerFn({ method: "POST" })
       bodySource: tplBody === DEFAULT_INVITE_BODY ? "default" : "custom",
     });
 
+    let emailResult: EmailResult = { ok: false, reason: "Niet verstuurd" };
     try {
-      await sendWelcomeEmail({
+      emailResult = await sendWelcomeEmail({
         to: data.email,
         displayName: data.displayName,
         tempPassword: data.password,
@@ -295,10 +296,12 @@ export const inviteUser = createServerFn({ method: "POST" })
         body: tplBody,
       });
     } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
       console.warn("[inviteUser] welkomstmail fout", e);
+      emailResult = { ok: false, reason: msg };
     }
 
-    return { ok: true, id: newId };
+    return { ok: true, id: newId, email: emailResult };
   });
 
 const resendSchema = z.object({
