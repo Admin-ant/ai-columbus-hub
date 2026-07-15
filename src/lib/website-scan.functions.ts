@@ -3,7 +3,27 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const InputSchema = z.object({
-  url: z.string().url(),
+  url: z
+    .string()
+    .trim()
+    .min(4, "URL is te kort")
+    .max(2048, "URL is te lang")
+    .refine((v) => {
+      try {
+        const u = new URL(v);
+        if (!/^https?:$/.test(u.protocol)) return false;
+        const host = u.hostname.toLowerCase();
+        if (!host.includes(".")) return false;
+        if (host === "localhost" || host.endsWith(".local")) return false;
+        // block raw IPs
+        if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return false;
+        // private ranges / metadata
+        if (/^(127\.|10\.|192\.168\.|169\.254\.|0\.)/.test(host)) return false;
+        return true;
+      } catch {
+        return false;
+      }
+    }, "Ongeldige of niet-publieke URL"),
   company: z.string().max(200).optional(),
 });
 
