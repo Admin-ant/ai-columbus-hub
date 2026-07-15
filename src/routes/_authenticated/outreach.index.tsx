@@ -80,6 +80,8 @@ import { IncomingLeadsTab } from "@/components/outreach/incoming-leads-tab";
 import { SequenceBuilder } from "@/components/outreach/sequence-builder";
 import { SendOutreachDialog } from "@/components/outreach/send-outreach-dialog";
 import { DemoPromptDialog } from "@/components/outreach/demo-prompt-dialog";
+import { SequenceWorkflowDialog } from "@/components/outreach/sequence-workflow-dialog";
+import { SequenceFlowDiagram } from "@/components/outreach/sequence-flow-diagram";
 import { NL_PROVINCES } from "@/lib/outreach-templates";
 
 
