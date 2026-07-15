@@ -231,7 +231,7 @@ function MailSkinsPage() {
           </p>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[260px_1fr_1fr]">
+        <div className="grid gap-4 lg:grid-cols-[240px_1fr_1fr_240px]">
           {/* List */}
           <div className="rounded-lg border border-border bg-card p-3">
             <div className="mb-2 flex items-center justify-between">
