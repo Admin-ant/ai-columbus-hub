@@ -75,7 +75,13 @@ type TemplateVersion = {
   created_by: string | null;
 };
 
-export function TemplatesManager({ organizationId }: { organizationId: string | null }) {
+export function TemplatesManager({
+  organizationId,
+  autoSelectId,
+}: {
+  organizationId: string | null;
+  autoSelectId?: string | null;
+}) {
   const [templates, setTemplates] = useState<OutreachTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<OutreachTemplate | null>(null);
@@ -124,6 +130,15 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
     loadBackgrounds();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organizationId]);
+
+  useEffect(() => {
+    if (!autoSelectId || templates.length === 0) return;
+    const t = templates.find((x) => x.id === autoSelectId);
+    if (t) {
+      setChannel(t.channel);
+      setEditing(t);
+    }
+  }, [autoSelectId, templates]);
 
   async function loadVersions(templateId: string) {
     const { data, error } = await supabase

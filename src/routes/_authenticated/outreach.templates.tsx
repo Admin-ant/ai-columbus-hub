@@ -1,15 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { z } from "zod";
 import { ArrowLeft, FileText } from "lucide-react";
 import { TemplatesManager } from "@/components/outreach/templates-manager";
 import { useWorkspace } from "@/hooks/use-workspace";
 
+const SearchSchema = z.object({ template: z.string().uuid().optional() });
+
 export const Route = createFileRoute("/_authenticated/outreach/templates")({
   head: () => ({ meta: [{ title: "Mail templates" }] }),
+  validateSearch: (s) => SearchSchema.parse(s),
   component: OutreachTemplatesPage,
 });
 
 function OutreachTemplatesPage() {
   const { currentOrganizationId, currentOrganization } = useWorkspace();
+  const { template } = Route.useSearch();
   return (
     <div className="min-h-full bg-background text-foreground">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -30,7 +35,10 @@ function OutreachTemplatesPage() {
             </p>
           </div>
         </div>
-        <TemplatesManager organizationId={currentOrganizationId} />
+        <TemplatesManager
+          organizationId={currentOrganizationId}
+          autoSelectId={template ?? null}
+        />
       </div>
     </div>
   );
