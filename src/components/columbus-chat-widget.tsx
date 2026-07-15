@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, MessageCircle, Send, Sparkles, X } from "lucide-react";
+import { Bot, LogIn, MessageCircle, Send, Sparkles, X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+
 
 /**
  * Floating "Columbus AI Recruiter Agent" chat widget.
