@@ -118,7 +118,7 @@ export const listCampaignTasks = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("campaign_flow_tasks")
       .select(
-        "id, lead_id, action, reason, done, done_at, created_at, lead:lead_id(name, company)",
+        "id, lead_id, action, reason, done, done_at, created_at, status, result, error, started_at, lead:lead_id(name, company)",
       )
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -130,21 +130,84 @@ export const listCampaignTasks = createServerFn({ method: "GET" })
       done: r.done,
       done_at: r.done_at,
       created_at: r.created_at,
+      status: (r.status ?? "pending") as CampaignTaskStatus,
+      result: r.result ?? null,
+      error: r.error ?? null,
+      started_at: r.started_at ?? null,
       lead_name: r.lead?.name ?? null,
       company: r.lead?.company ?? null,
     }));
+  });
+
+export const updateCampaignTask = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      id: string;
+      status: CampaignTaskStatus;
+      result?: string | null;
+      error?: string | null;
+    }) => input,
+  )
+  .handler(async ({ data, context }) => {
+    const patch: Record<string, unknown> = { status: data.status };
+    if (data.status === "in_progress") patch.started_at = new Date().toISOString();
+    if (data.status === "done") {
+      patch.done = true;
+      patch.done_at = new Date().toISOString();
+      patch.result = data.result ?? null;
+      patch.error = null;
+    } else if (data.status === "failed") {
+      patch.done = false;
+      patch.done_at = null;
+      patch.error = data.error ?? "Onbekende fout";
+    } else if (data.status === "cancelled") {
+      patch.done = false;
+      patch.done_at = null;
+    } else if (data.status === "pending") {
+      patch.done = false;
+      patch.done_at = null;
+      patch.started_at = null;
+    }
+    if (data.result !== undefined && data.status !== "done") patch.result = data.result;
+    if (data.error !== undefined && data.status !== "failed") patch.error = data.error;
+
+    const { error } = await context.supabase
+      .from("campaign_flow_tasks")
+      .update(patch)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 export const toggleCampaignTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { id: string; done: boolean }) => input)
   .handler(async ({ data, context }) => {
+    const now = new Date().toISOString();
     const { error } = await context.supabase
       .from("campaign_flow_tasks")
-      .update({ done: data.done, done_at: data.done ? new Date().toISOString() : null })
+      .update({
+        done: data.done,
+        done_at: data.done ? now : null,
+        status: data.done ? "done" : "pending",
+      })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export const listCampaignTaskEvents = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { taskId: string }) => input)
+  .handler(async ({ data, context }): Promise<CampaignTaskEvent[]> => {
+    const { data: rows, error } = await context.supabase
+      .from("campaign_flow_task_events")
+      .select("id, task_id, event_type, from_status, to_status, message, created_at")
+      .eq("task_id", data.taskId)
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as CampaignTaskEvent[];
   });
 
 export const deleteCampaignTask = createServerFn({ method: "POST" })
@@ -158,3 +221,4 @@ export const deleteCampaignTask = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
