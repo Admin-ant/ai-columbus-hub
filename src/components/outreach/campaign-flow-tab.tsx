@@ -394,6 +394,7 @@ export function CampaignFlowTab() {
       reason: "Geen reactie na 3 dagen",
       createdAt: new Date().toISOString(),
       done: false,
+      status: "pending",
     };
     setTasks((cur) => [task, ...cur]);
     toast.info(`Opvolgtaak aangemaakt voor ${lead.company}`);
