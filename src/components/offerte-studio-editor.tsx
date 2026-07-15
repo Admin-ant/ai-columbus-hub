@@ -102,6 +102,10 @@ export function OfferteStudioEditor({ kind, id }: Props) {
   const getTplInfo = useServerFn(getTemplatePreviewInfo);
   const [tplPreviewToken, setTplPreviewToken] = useState<string | null>(null);
   const [tplPreviewExpires, setTplPreviewExpires] = useState<string | null>(null);
+  const [mailTemplateId, setMailTemplateId] = useState<string | null>(null);
+  const [mailBackgroundId, setMailBackgroundId] = useState<string | null>(null);
+  const [mailTemplates, setMailTemplates] = useState<Array<{ id: string; name: string; channel: string }>>([]);
+  const [mailBackgrounds, setMailBackgrounds] = useState<Array<{ id: string; name: string }>>([]);
 
   const table = kind === "quote" ? "studio_quotes" : "quote_templates";
 
