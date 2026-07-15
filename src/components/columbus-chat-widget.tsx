@@ -275,7 +275,7 @@ export function ColumbusChatWidget() {
               <Button
                 type="submit"
                 size="sm"
-                disabled={sending || !input.trim()}
+                disabled={sending || !input.trim() || !authed}
                 className="h-9 bg-brand text-brand-foreground hover:bg-brand/90"
               >
                 <Send className="h-3.5 w-3.5" />
