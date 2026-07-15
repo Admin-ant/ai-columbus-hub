@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Palette, Plus, Trash2, Copy, Save, History, RotateCcw, Eye, Download, Upload } from "lucide-react";
+import { ArrowLeft, Palette, Plus, Trash2, Copy, Save, History, RotateCcw, Eye, Download, Upload, GitCompare } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { sanitizeSkinHtml, sanitizeSkinInput } from "@/lib/skin-sanitize";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/mail/skins")({
   head: () => ({ meta: [{ title: "Mail skins — Beheer" }] }),
@@ -61,6 +62,7 @@ function MailSkinsPage() {
   };
   const [versions, setVersions] = useState<SkinVersion[]>([]);
   const [previewVersion, setPreviewVersion] = useState<SkinVersion | null>(null);
+  const [diffVersion, setDiffVersion] = useState<SkinVersion | null>(null);
 
   const selected = useMemo(() => skins.find((s) => s.id === selectedId) ?? null, [skins, selectedId]);
 
@@ -569,6 +571,14 @@ function MailSkinsPage() {
                           <Eye className="h-2.5 w-2.5" />
                           {isPreviewing ? "Sluit" : "Preview"}
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => setDiffVersion(v)}
+                          className="inline-flex items-center gap-1 rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-foreground hover:bg-accent"
+                          title="Vergelijk met huidige"
+                        >
+                          <GitCompare className="h-2.5 w-2.5" /> Diff
+                        </button>
                         {!isCurrent && (
                           <button
                             type="button"
@@ -587,6 +597,164 @@ function MailSkinsPage() {
           </div>
         </div>
       </div>
+
+      <SkinDiffDialog
+        version={diffVersion}
+        current={selected}
+        editor={{
+          name,
+          background_color: bgColor || null,
+          background_image_url: bgImage || null,
+          header_html: header || null,
+          footer_html: footer || null,
+        }}
+        onClose={() => setDiffVersion(null)}
+        onRestore={(v) => {
+          restoreVersion(v as SkinVersion);
+          setDiffVersion(null);
+        }}
+      />
     </div>
   );
 }
+
+// ---- Diff helpers ----
+type DiffOp = { kind: "eq" | "add" | "del"; text: string };
+
+function diffLines(a: string, b: string): DiffOp[] {
+  const A = a.split("\n");
+  const B = b.split("\n");
+  const n = A.length;
+  const m = B.length;
+  // LCS DP
+  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      dp[i][j] = A[i] === B[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+    }
+  }
+  const out: DiffOp[] = [];
+  let i = 0;
+  let j = 0;
+  while (i < n && j < m) {
+    if (A[i] === B[j]) {
+      out.push({ kind: "eq", text: A[i] });
+      i++;
+      j++;
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+      out.push({ kind: "del", text: A[i++] });
+    } else {
+      out.push({ kind: "add", text: B[j++] });
+    }
+  }
+  while (i < n) out.push({ kind: "del", text: A[i++] });
+  while (j < m) out.push({ kind: "add", text: B[j++] });
+  return out;
+}
+
+type SkinFields = {
+  name: string;
+  background_color: string | null;
+  background_image_url: string | null;
+  header_html: string | null;
+  footer_html: string | null;
+};
+
+function SkinDiffDialog({
+  version,
+  current,
+  editor,
+  onClose,
+  onRestore,
+}: {
+  version: SkinVersionLike | null;
+  current: { name: string } | null;
+  editor: SkinFields;
+  onClose: () => void;
+  onRestore: (v: SkinVersionLike) => void;
+}) {
+  const open = !!version;
+  const fields: Array<{ key: keyof SkinFields; label: string; mono?: boolean }> = [
+    { key: "name", label: "Naam" },
+    { key: "background_color", label: "Achtergrondkleur" },
+    { key: "background_image_url", label: "Achtergrondafbeelding" },
+    { key: "header_html", label: "Header HTML", mono: true },
+    { key: "footer_html", label: "Footer HTML", mono: true },
+  ];
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <GitCompare className="h-4 w-4" />
+            Verschillen — v{version?.version} vs. huidige
+          </DialogTitle>
+          <DialogDescription>
+            Rood = staat in v{version?.version}, groen = staat in de huidige versie {current ? `("${current.name}")` : ""}.
+          </DialogDescription>
+        </DialogHeader>
+        {version && (
+          <div className="space-y-4">
+            {fields.map((f) => {
+              const oldVal = String(version[f.key] ?? "");
+              const newVal = String(editor[f.key] ?? "");
+              const unchanged = oldVal === newVal;
+              return (
+                <div key={f.key} className="rounded-md border border-border">
+                  <div className="flex items-center justify-between border-b border-border bg-muted/40 px-3 py-1.5">
+                    <div className="text-xs font-semibold">{f.label}</div>
+                    {unchanged ? (
+                      <Badge variant="outline" className="text-[10px] text-muted-foreground">Ongewijzigd</Badge>
+                    ) : (
+                      <Badge variant="outline" className="border-amber-500/40 bg-amber-500/10 text-[10px] text-amber-600 dark:text-amber-400">
+                        Gewijzigd
+                      </Badge>
+                    )}
+                  </div>
+                  {!unchanged && (
+                    <pre className={`m-0 max-h-64 overflow-auto p-0 text-[11px] ${f.mono ? "font-mono" : ""}`}>
+                      {diffLines(oldVal, newVal).map((op, i) => (
+                        <div
+                          key={i}
+                          className={`whitespace-pre-wrap break-words px-3 py-0.5 ${
+                            op.kind === "add"
+                              ? "bg-green-500/10 text-green-700 dark:text-green-300"
+                              : op.kind === "del"
+                                ? "bg-red-500/10 text-red-700 dark:text-red-300"
+                                : "text-muted-foreground"
+                          }`}
+                        >
+                          <span className="mr-2 select-none opacity-60">
+                            {op.kind === "add" ? "+" : op.kind === "del" ? "−" : " "}
+                          </span>
+                          {op.text || " "}
+                        </div>
+                      ))}
+                    </pre>
+                  )}
+                </div>
+              );
+            })}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={onClose}>Sluiten</Button>
+              <Button size="sm" onClick={() => onRestore(version)} className="gap-1">
+                <RotateCcw className="h-3.5 w-3.5" /> Herstel v{version.version}
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+type SkinVersionLike = {
+  id: string;
+  version: number;
+  name: string;
+  background_color: string | null;
+  background_image_url: string | null;
+  header_html: string | null;
+  footer_html: string | null;
+};
+
