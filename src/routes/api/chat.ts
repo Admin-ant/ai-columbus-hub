@@ -153,11 +153,12 @@ export const Route = createFileRoute("/api/chat")({
             headers,
             body: JSON.stringify({
               model,
+              stream: true,
               messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
             }),
           });
 
-          if (!upstream.ok) {
+          if (!upstream.ok || !upstream.body) {
             const text = await upstream.text().catch(() => "");
             const errMsg =
               upstream.status === 429
@@ -187,18 +188,85 @@ export const Route = createFileRoute("/api/chat")({
             );
           }
 
-          const data = (await upstream.json()) as {
-            choices?: Array<{ message?: { content?: string } }>;
-          };
-          const reply = data.choices?.[0]?.message?.content?.trim() ?? "";
-          await writeAudit({
-            ...auditBase,
-            reply,
-            status: "success",
-            error: null,
-            duration_ms: Date.now() - startedAt,
+          // Transform OpenAI-compatible SSE into our own compact SSE stream.
+          // We also accumulate the full reply for the audit log.
+          const encoder = new TextEncoder();
+          const decoder = new TextDecoder();
+          let accumulated = "";
+          let buffered = "";
+
+          const stream = new ReadableStream<Uint8Array>({
+            async start(controller) {
+              const send = (obj: unknown) =>
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
+
+              // Meta event zodat de client 'source' en 'model' meteen kent
+              send({ type: "meta", source, model });
+
+              const reader = upstream.body!.getReader();
+              try {
+                while (true) {
+                  const { value, done } = await reader.read();
+                  if (done) break;
+                  buffered += decoder.decode(value, { stream: true });
+
+                  // Verwerk complete SSE-events (gescheiden door lege regel)
+                  let sep: number;
+                  while ((sep = buffered.indexOf("\n\n")) !== -1) {
+                    const raw = buffered.slice(0, sep);
+                    buffered = buffered.slice(sep + 2);
+                    for (const line of raw.split("\n")) {
+                      const trimmed = line.trim();
+                      if (!trimmed.startsWith("data:")) continue;
+                      const payload = trimmed.slice(5).trim();
+                      if (!payload || payload === "[DONE]") continue;
+                      try {
+                        const j = JSON.parse(payload) as {
+                          choices?: Array<{ delta?: { content?: string } }>;
+                        };
+                        const delta = j.choices?.[0]?.delta?.content;
+                        if (delta) {
+                          accumulated += delta;
+                          send({ type: "delta", text: delta });
+                        }
+                      } catch {
+                        // sla onparseerbare fragmenten over
+                      }
+                    }
+                  }
+                }
+                send({ type: "done", source });
+                controller.close();
+                await writeAudit({
+                  ...auditBase,
+                  reply: accumulated,
+                  status: "success",
+                  error: null,
+                  duration_ms: Date.now() - startedAt,
+                });
+              } catch (e) {
+                const errMsg = e instanceof Error ? e.message : "Streamfout";
+                send({ type: "error", error: errMsg });
+                controller.close();
+                await writeAudit({
+                  ...auditBase,
+                  reply: accumulated || null,
+                  status: "failed",
+                  error: errMsg,
+                  duration_ms: Date.now() - startedAt,
+                });
+              }
+            },
           });
-          return Response.json({ reply, source });
+
+          return new Response(stream, {
+            headers: {
+              "content-type": "text/event-stream; charset=utf-8",
+              "cache-control": "no-cache, no-transform",
+              "x-accel-buffering": "no",
+              connection: "keep-alive",
+            },
+          });
         } catch (e) {
           const errMsg = e instanceof Error ? e.message : "Onbekende fout";
           await writeAudit({
@@ -210,6 +278,7 @@ export const Route = createFileRoute("/api/chat")({
           });
           return Response.json({ error: errMsg }, { status: 500 });
         }
+
       },
 
     },
