@@ -586,11 +586,33 @@ export function TemplatesManager({
               </div>
             )}
 
-            <div className="flex justify-end">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {editing.channel === "email" && (
+                <>
+                  <Input
+                    type="email"
+                    value={testTo}
+                    onChange={(e) => setTestTo(e.target.value)}
+                    placeholder="jij@voorbeeld.nl"
+                    className="h-9 w-[220px] border-input bg-background text-xs text-foreground shadow-sm"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={sendTestMail}
+                    disabled={sendingTest}
+                    className="border-border text-foreground hover:bg-accent"
+                    title="Verstuur een testmail met de huidige inhoud en voorbeeldvariabelen"
+                  >
+                    <Send className="mr-2 h-4 w-4" />
+                    {sendingTest ? "Versturen…" : "Testmail sturen"}
+                  </Button>
+                </>
+              )}
               <Button onClick={save} className="bg-primary text-primary-foreground hover:bg-primary/90">
                 <Save className="mr-2 h-4 w-4" /> Opslaan
               </Button>
             </div>
+
           </>
         )}
       </div>
