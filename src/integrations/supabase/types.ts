@@ -2103,6 +2103,56 @@ export type Database = {
           },
         ]
       }
+      mail_background_versions: {
+        Row: {
+          background_color: string | null
+          background_id: string
+          background_image_url: string | null
+          created_at: string
+          created_by: string | null
+          footer_html: string | null
+          header_html: string | null
+          id: string
+          name: string
+          organization_id: string
+          version: number
+        }
+        Insert: {
+          background_color?: string | null
+          background_id: string
+          background_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          footer_html?: string | null
+          header_html?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          version: number
+        }
+        Update: {
+          background_color?: string | null
+          background_id?: string
+          background_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          footer_html?: string | null
+          header_html?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mail_background_versions_background_id_fkey"
+            columns: ["background_id"]
+            isOneToOne: false
+            referencedRelation: "mail_backgrounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mail_backgrounds: {
         Row: {
           background_color: string | null
