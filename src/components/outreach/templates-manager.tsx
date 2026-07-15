@@ -11,7 +11,9 @@ import {
   Eye,
   History,
   RotateCcw,
+  Send,
 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +21,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
+import { sendTemplateTestEmail } from "@/lib/mail.functions";
 import {
   type OutreachTemplate,
   type TemplateChannel,
@@ -92,6 +96,43 @@ export function TemplatesManager({
   const [sample, setSample] = useState<Record<SampleKey, string>>(DEFAULT_SAMPLE);
   const [backgrounds, setBackgrounds] = useState<MailBackground[]>([]);
   const [savingBg, setSavingBg] = useState(false);
+  const { user } = useAuth();
+  const [testTo, setTestTo] = useState<string>("");
+  const [sendingTest, setSendingTest] = useState(false);
+  const sendTest = useServerFn(sendTemplateTestEmail);
+
+  useEffect(() => {
+    if (user?.email && !testTo) setTestTo(user.email);
+  }, [user?.email, testTo]);
+
+  async function sendTestMail() {
+    if (!editing || !organizationId) return;
+    if (!testTo || !/^\S+@\S+\.\S+$/.test(testTo)) {
+      toast.error("Vul een geldig e-mailadres in");
+      return;
+    }
+    setSendingTest(true);
+    try {
+      await sendTest({
+        data: {
+          organization_id: organizationId,
+          to: testTo,
+          subject: editing.subject || editing.name,
+          body: editing.body,
+          background_color: editing.background_color ?? null,
+          background_image_url: editing.background_image_url ?? null,
+          header_html: editing.header_html ?? null,
+          footer_html: editing.footer_html ?? null,
+          sample: sample as Record<string, string>,
+        },
+      });
+      toast.success(`Testmail verstuurd naar ${testTo}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Verzenden mislukt");
+    } finally {
+      setSendingTest(false);
+    }
+  }
 
   async function load() {
     if (!organizationId) {
@@ -545,11 +586,33 @@ export function TemplatesManager({
               </div>
             )}
 
-            <div className="flex justify-end">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {editing.channel === "email" && (
+                <>
+                  <Input
+                    type="email"
+                    value={testTo}
+                    onChange={(e) => setTestTo(e.target.value)}
+                    placeholder="jij@voorbeeld.nl"
+                    className="h-9 w-[220px] border-input bg-background text-xs text-foreground shadow-sm"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={sendTestMail}
+                    disabled={sendingTest}
+                    className="border-border text-foreground hover:bg-accent"
+                    title="Verstuur een testmail met de huidige inhoud en voorbeeldvariabelen"
+                  >
+                    <Send className="mr-2 h-4 w-4" />
+                    {sendingTest ? "Versturen…" : "Testmail sturen"}
+                  </Button>
+                </>
+              )}
               <Button onClick={save} className="bg-primary text-primary-foreground hover:bg-primary/90">
                 <Save className="mr-2 h-4 w-4" /> Opslaan
               </Button>
             </div>
+
           </>
         )}
       </div>
