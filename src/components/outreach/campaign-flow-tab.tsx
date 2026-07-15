@@ -69,12 +69,15 @@ function normalizeUrl(u: string): string {
 
 export function CampaignFlowTab() {
   const ask = useServerFn(askAssistant);
+  const scan = useServerFn(scanWebsite);
 
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
   const [email, setEmail] = useState("");
   const [website, setWebsite] = useState("");
   const [scrape, setScrape] = useState<ScrapeResult | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
   const [preview, setPreview] = useState("");
   const [generating, setGenerating] = useState(false);
 
@@ -88,28 +91,52 @@ export function CampaignFlowTab() {
     localStorage.setItem(LS_TASKS, JSON.stringify(tasks));
   }, [tasks]);
 
+  // Reset scan wanneer de URL verandert.
   useEffect(() => {
-    if (!website.trim()) {
-      setScrape(null);
-      return;
+    setScrape(null);
+    setScanError(null);
+  }, [website]);
+
+  async function runScan(): Promise<ScrapeResult | null> {
+    const url = normalizeUrl(website);
+    if (!url) {
+      toast.error("Vul eerst een website URL in");
+      return null;
     }
-    const t = setTimeout(() => setScrape(mockScrape(website, company)), 400);
-    return () => clearTimeout(t);
-  }, [website, company]);
+    setScanning(true);
+    setScanError(null);
+    try {
+      const result = await scan({ data: { url, company: company || undefined } });
+      setScrape(result);
+      toast.success("Website gescand");
+      return result;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Scan mislukt";
+      setScanError(msg);
+      toast.error(msg);
+      return null;
+    } finally {
+      setScanning(false);
+    }
+  }
 
   async function generateCampaign() {
     if (!name || !company || !email || !website) {
       toast.error("Vul alle velden in");
       return;
     }
-    const s = scrape ?? mockScrape(website, company);
-    setScrape(s);
+    // Zorg dat we een verse scan hebben (of gebruik bestaande).
+    let s = scrape;
+    if (!s) {
+      s = await runScan();
+      if (!s) return;
+    }
     setGenerating(true);
     try {
       const { reply } = await ask({
         data: {
           task: "generic",
-          context: `Schrijf een korte, warme cold-outreach mail (max 130 woorden) in het Nederlands aan ${name} van ${company}. Verwerk subtiel dat ze actief zijn in ${s.industry} en gespecialiseerd zijn in ${s.specialisation}. Toon: ${s.tone}. Begin met een persoonlijke openingszin die refereert aan hun website (${website}). Sluit af met een concrete vraag voor een korte kennismaking. Geef ALLEEN de mailtekst terug, zonder onderwerpregel of markdown.`,
+          context: `Schrijf een korte, warme cold-outreach mail (max 130 woorden) in het Nederlands aan ${name} van ${company}. Verwerk subtiel dat ze actief zijn in ${s.industry} en gespecialiseerd zijn in ${s.specialisation}. Extra context over het bedrijf: ${s.summary}. Toon: ${s.tone}. Begin met een persoonlijke openingszin die refereert aan hun website (${website}). Sluit af met een concrete vraag voor een korte kennismaking. Geef ALLEEN de mailtekst terug, zonder onderwerpregel of markdown.`,
         },
       });
       const previewText = reply.trim();
@@ -120,7 +147,7 @@ export function CampaignFlowTab() {
         name,
         company,
         email,
-        website,
+        website: normalizeUrl(website),
         scrape: s,
         emailPreview: previewText,
         sentAt: now,
@@ -131,29 +158,13 @@ export function CampaignFlowTab() {
       setLeads((cur) => [lead, ...cur]);
       toast.success("Campagne gestart & mail verstuurd (mock)");
     } catch (e) {
-      // Fallback zonder AI
-      const fallback = `Hi ${name},\n\nIk zag op ${website} dat jullie bij ${company} gespecialiseerd zijn in ${s.specialisation}. Mooi hoe jullie ${s.industry} aanpakken.\n\nWij helpen uitzendbureaus zoals jullie om intakes en plaatsingen te versnellen met AI. Kan ik komende week 15 minuten inplannen om te laten zien wat dat concreet oplevert?\n\nGroet,`;
-      setPreview(fallback);
-      const now = new Date().toISOString();
-      const lead: FlowLead = {
-        id: crypto.randomUUID(),
-        name,
-        company,
-        email,
-        website,
-        scrape: s,
-        emailPreview: fallback,
-        sentAt: now,
-        clicked: false,
-        stage: 2,
-        createdAt: now,
-      };
-      setLeads((cur) => [lead, ...cur]);
-      toast.warning("AI niet beschikbaar — fallback template gebruikt");
+      const msg = e instanceof Error ? e.message : "AI genereren mislukt";
+      toast.error(msg);
     } finally {
       setGenerating(false);
     }
   }
+
 
   function simulateClick(lead: FlowLead) {
     setLeads((cur) =>
