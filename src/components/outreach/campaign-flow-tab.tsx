@@ -103,6 +103,38 @@ function normalizeUrl(u: string): string {
   return /^https?:\/\//i.test(t) ? t : `https://${t}`;
 }
 
+function validateWebsiteUrl(raw: string): { url: string; error: string | null } {
+  const trimmed = raw.trim();
+  if (!trimmed) return { url: "", error: "Vul een website URL in." };
+  if (trimmed.length > 2048) return { url: "", error: "URL is te lang." };
+  if (/\s/.test(trimmed)) return { url: "", error: "URL mag geen spaties bevatten." };
+  const withProto = normalizeUrl(trimmed);
+  let parsed: URL;
+  try {
+    parsed = new URL(withProto);
+  } catch {
+    return { url: "", error: "Dit is geen geldige URL. Voorbeeld: https://voorbeeld.nl" };
+  }
+  if (!/^https?:$/.test(parsed.protocol)) {
+    return { url: "", error: "Alleen http:// of https:// URLs worden ondersteund." };
+  }
+  const host = parsed.hostname.toLowerCase();
+  if (!host.includes(".")) {
+    return { url: "", error: "Vul een volledig domein in, bijv. voorbeeld.nl" };
+  }
+  if (host === "localhost" || host.endsWith(".local")) {
+    return { url: "", error: "Lokale adressen kunnen niet worden gescand." };
+  }
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
+    return { url: "", error: "IP-adressen worden niet ondersteund; gebruik een domeinnaam." };
+  }
+  const tld = host.split(".").pop() ?? "";
+  if (tld.length < 2 || !/^[a-z]{2,}$/i.test(tld)) {
+    return { url: "", error: "De domeinextensie lijkt ongeldig." };
+  }
+  return { url: parsed.toString().replace(/\/$/, ""), error: null };
+}
+
 export function CampaignFlowTab() {
   const ask = useServerFn(askAssistant);
   const scan = useServerFn(scanWebsite);
