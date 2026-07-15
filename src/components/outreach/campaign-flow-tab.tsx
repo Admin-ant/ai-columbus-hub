@@ -489,25 +489,45 @@ export function CampaignFlowTab() {
 
       {/* Actieve leads in flow */}
       <div className="rounded-lg border border-border bg-muted/30 p-5">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Leads in flow ({leads.length})
-          </h3>
-          {leads.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Leads in flow ({leads.length})
+            </h3>
+            <p className="text-[10px] text-muted-foreground/80">
+              Achtergrondjob draait automatisch elke 15 min · bel-taak bij klik, opvolg-taak na 3 dagen stilte
+            </p>
+          </div>
+          <div className="flex gap-2">
+            {leads.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={refreshStats}
+                disabled={refreshingStats}
+              >
+                {refreshingStats ? (
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-1 h-3 w-3" />
+                )}
+                Ververs klikstats
+              </Button>
+            )}
             <Button
               size="sm"
               variant="outline"
-              onClick={refreshStats}
-              disabled={refreshingStats}
+              onClick={runAutomation}
+              disabled={runningAutomation}
             >
-              {refreshingStats ? (
+              {runningAutomation ? (
                 <Loader2 className="mr-1 h-3 w-3 animate-spin" />
               ) : (
-                <RefreshCw className="mr-1 h-3 w-3" />
+                <Zap className="mr-1 h-3 w-3" />
               )}
-              Ververs klikstats
+              Run automation nu
             </Button>
-          )}
+          </div>
         </div>
         {leads.length === 0 ? (
           <p className="text-xs text-muted-foreground">
