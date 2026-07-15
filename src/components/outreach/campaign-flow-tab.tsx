@@ -297,6 +297,58 @@ export function CampaignFlowTab() {
     }
   }
 
+  async function runAutomation() {
+    setRunningAutomation(true);
+    try {
+      const res = await fetch("/api/public/hooks/campaign-flow-tick", {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error(`Tick faalde (${res.status})`);
+      const result = (await res.json()) as {
+        scanned: number;
+        callTasksCreated: number;
+        followupTasksCreated: number;
+      };
+
+      // Haal server-side taken op en merge in de lokale takenlijst
+      const serverTasks: CampaignFlowTask[] = await fetchServerTasks();
+      setTasks((cur) => {
+        const existingKeys = new Set(
+          cur.map((t) => `${t.leadName}|${t.company}|${t.action}`),
+        );
+        const extra: FlowTask[] = [];
+        for (const st of serverTasks) {
+          const key = `${st.lead_name}|${st.company}|${st.action}`;
+          if (existingKeys.has(key)) continue;
+          extra.push({
+            id: st.id,
+            leadName: st.lead_name ?? "Onbekend",
+            company: st.company ?? "",
+            action: st.action,
+            reason: st.reason,
+            createdAt: st.created_at,
+            done: st.done,
+          });
+        }
+        return [...extra, ...cur];
+      });
+
+      const total = result.callTasksCreated + result.followupTasksCreated;
+      if (total > 0) {
+        toast.success(
+          `Automation actief · ${result.callTasksCreated} bel-taken, ${result.followupTasksCreated} opvolg-taken`,
+        );
+      } else {
+        toast.info(
+          `Automation liep · ${result.scanned} leads gecontroleerd, geen nieuwe taken`,
+        );
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Automation faalde");
+    } finally {
+      setRunningAutomation(false);
+    }
+  }
 
 
   function simulateClick(lead: FlowLead) {
