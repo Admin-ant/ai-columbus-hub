@@ -179,10 +179,16 @@ export function CampaignFlowTab() {
     setPreview("");
   }, [website]);
 
+  const websiteValidation = validateWebsiteUrl(website);
+  const websiteTouched = website.trim().length > 0;
+  const inlineUrlError = websiteTouched ? websiteValidation.error : null;
+
   async function runScan(): Promise<ScrapeResult | null> {
-    const url = normalizeUrl(website);
-    if (!url) {
-      toast.error("Vul eerst een website URL in");
+    const { url, error } = validateWebsiteUrl(website);
+    if (error || !url) {
+      const msg = error ?? "Ongeldige URL";
+      setScanError(msg);
+      toast.error(msg);
       return null;
     }
     setScanning(true);
