@@ -21,12 +21,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useServerFn } from "@tanstack/react-start";
 import { askAssistant } from "@/lib/ai-assistant.functions";
+import { scanWebsite, type WebsiteScanResult } from "@/lib/website-scan.functions";
 
-type ScrapeResult = {
-  industry: string;
-  specialisation: string;
-  tone: string;
-};
+type ScrapeResult = WebsiteScanResult;
 
 type FlowTask = {
   id: string;
@@ -64,31 +61,23 @@ function loadLS<T>(key: string, fallback: T): T {
   }
 }
 
-/** Lichte mock om branche/tone uit een URL af te leiden zonder externe API. */
-function mockScrape(url: string, company: string): ScrapeResult {
-  const host = url.replace(/https?:\/\//, "").replace(/\/.*/, "").toLowerCase();
-  const hint = `${host} ${company}`.toLowerCase();
-  let industry = "uitzendbureau";
-  if (/tech|it|software|dev/.test(hint)) industry = "tech & IT staffing";
-  else if (/zorg|care|medisch|health/.test(hint)) industry = "zorg";
-  else if (/bouw|construct/.test(hint)) industry = "bouw & techniek";
-  else if (/logistiek|transport|warehouse/.test(hint)) industry = "logistiek";
-  else if (/horeca|hospitality/.test(hint)) industry = "horeca";
-  return {
-    industry,
-    specialisation: `${industry} met focus op flexibele plaatsingen`,
-    tone: "professioneel, warm en oplossingsgericht",
-  };
+function normalizeUrl(u: string): string {
+  const t = u.trim();
+  if (!t) return "";
+  return /^https?:\/\//i.test(t) ? t : `https://${t}`;
 }
 
 export function CampaignFlowTab() {
   const ask = useServerFn(askAssistant);
+  const scan = useServerFn(scanWebsite);
 
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
   const [email, setEmail] = useState("");
   const [website, setWebsite] = useState("");
   const [scrape, setScrape] = useState<ScrapeResult | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
   const [preview, setPreview] = useState("");
   const [generating, setGenerating] = useState(false);
 
@@ -102,28 +91,52 @@ export function CampaignFlowTab() {
     localStorage.setItem(LS_TASKS, JSON.stringify(tasks));
   }, [tasks]);
 
+  // Reset scan wanneer de URL verandert.
   useEffect(() => {
-    if (!website.trim()) {
-      setScrape(null);
-      return;
+    setScrape(null);
+    setScanError(null);
+  }, [website]);
+
+  async function runScan(): Promise<ScrapeResult | null> {
+    const url = normalizeUrl(website);
+    if (!url) {
+      toast.error("Vul eerst een website URL in");
+      return null;
     }
-    const t = setTimeout(() => setScrape(mockScrape(website, company)), 400);
-    return () => clearTimeout(t);
-  }, [website, company]);
+    setScanning(true);
+    setScanError(null);
+    try {
+      const result = await scan({ data: { url, company: company || undefined } });
+      setScrape(result);
+      toast.success("Website gescand");
+      return result;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Scan mislukt";
+      setScanError(msg);
+      toast.error(msg);
+      return null;
+    } finally {
+      setScanning(false);
+    }
+  }
 
   async function generateCampaign() {
     if (!name || !company || !email || !website) {
       toast.error("Vul alle velden in");
       return;
     }
-    const s = scrape ?? mockScrape(website, company);
-    setScrape(s);
+    // Zorg dat we een verse scan hebben (of gebruik bestaande).
+    let s = scrape;
+    if (!s) {
+      s = await runScan();
+      if (!s) return;
+    }
     setGenerating(true);
     try {
       const { reply } = await ask({
         data: {
           task: "generic",
-          context: `Schrijf een korte, warme cold-outreach mail (max 130 woorden) in het Nederlands aan ${name} van ${company}. Verwerk subtiel dat ze actief zijn in ${s.industry} en gespecialiseerd zijn in ${s.specialisation}. Toon: ${s.tone}. Begin met een persoonlijke openingszin die refereert aan hun website (${website}). Sluit af met een concrete vraag voor een korte kennismaking. Geef ALLEEN de mailtekst terug, zonder onderwerpregel of markdown.`,
+          context: `Schrijf een korte, warme cold-outreach mail (max 130 woorden) in het Nederlands aan ${name} van ${company}. Verwerk subtiel dat ze actief zijn in ${s.industry} en gespecialiseerd zijn in ${s.specialisation}. Extra context over het bedrijf: ${s.summary}. Toon: ${s.tone}. Begin met een persoonlijke openingszin die refereert aan hun website (${website}). Sluit af met een concrete vraag voor een korte kennismaking. Geef ALLEEN de mailtekst terug, zonder onderwerpregel of markdown.`,
         },
       });
       const previewText = reply.trim();
@@ -134,7 +147,7 @@ export function CampaignFlowTab() {
         name,
         company,
         email,
-        website,
+        website: normalizeUrl(website),
         scrape: s,
         emailPreview: previewText,
         sentAt: now,
@@ -145,29 +158,13 @@ export function CampaignFlowTab() {
       setLeads((cur) => [lead, ...cur]);
       toast.success("Campagne gestart & mail verstuurd (mock)");
     } catch (e) {
-      // Fallback zonder AI
-      const fallback = `Hi ${name},\n\nIk zag op ${website} dat jullie bij ${company} gespecialiseerd zijn in ${s.specialisation}. Mooi hoe jullie ${s.industry} aanpakken.\n\nWij helpen uitzendbureaus zoals jullie om intakes en plaatsingen te versnellen met AI. Kan ik komende week 15 minuten inplannen om te laten zien wat dat concreet oplevert?\n\nGroet,`;
-      setPreview(fallback);
-      const now = new Date().toISOString();
-      const lead: FlowLead = {
-        id: crypto.randomUUID(),
-        name,
-        company,
-        email,
-        website,
-        scrape: s,
-        emailPreview: fallback,
-        sentAt: now,
-        clicked: false,
-        stage: 2,
-        createdAt: now,
-      };
-      setLeads((cur) => [lead, ...cur]);
-      toast.warning("AI niet beschikbaar — fallback template gebruikt");
+      const msg = e instanceof Error ? e.message : "AI genereren mislukt";
+      toast.error(msg);
     } finally {
       setGenerating(false);
     }
   }
+
 
   function simulateClick(lead: FlowLead) {
     setLeads((cur) =>
@@ -236,25 +233,48 @@ export function CampaignFlowTab() {
         </div>
 
         {scrape && (
-          <div className="mt-4 flex flex-wrap items-center gap-2 rounded-md border border-brand/30 bg-brand/5 p-3 text-xs">
-            <Globe className="h-4 w-4 text-brand" />
-            <span className="text-muted-foreground">Website scan:</span>
-            <Badge variant="outline" className="border-brand/40 text-brand">
-              {scrape.industry}
-            </Badge>
-            <Badge variant="outline" className="border-border">
-              {scrape.specialisation}
-            </Badge>
-            <Badge variant="outline" className="border-border">
-              tone: {scrape.tone}
-            </Badge>
+          <div className="mt-4 rounded-md border border-brand/30 bg-brand/5 p-3 text-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              <Globe className="h-4 w-4 text-brand" />
+              <span className="text-muted-foreground">Website scan:</span>
+              <Badge variant="outline" className="border-brand/40 text-brand">
+                {scrape.industry}
+              </Badge>
+              <Badge variant="outline" className="border-border">
+                {scrape.specialisation}
+              </Badge>
+              <Badge variant="outline" className="border-border">
+                tone: {scrape.tone}
+              </Badge>
+            </div>
+            {scrape.summary && (
+              <p className="mt-2 text-muted-foreground italic">{scrape.summary}</p>
+            )}
+          </div>
+        )}
+
+        {scanError && (
+          <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+            {scanError}
           </div>
         )}
 
         <div className="mt-4 flex flex-wrap gap-2">
           <Button
+            variant="outline"
+            onClick={runScan}
+            disabled={scanning || !website.trim()}
+          >
+            {scanning ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Globe className="mr-2 h-4 w-4" />
+            )}
+            {scanning ? "Scannen…" : scrape ? "Opnieuw scannen" : "Scan website"}
+          </Button>
+          <Button
             onClick={generateCampaign}
-            disabled={generating}
+            disabled={generating || scanning}
             className="bg-brand text-white hover:bg-brand/90"
           >
             {generating ? (
@@ -265,6 +285,7 @@ export function CampaignFlowTab() {
             {generating ? "Genereren…" : "Genereer Gepersonaliseerde Campagne"}
           </Button>
         </div>
+
 
         {preview && (
           <div className="mt-5">
