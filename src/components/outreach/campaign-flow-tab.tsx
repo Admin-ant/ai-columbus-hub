@@ -16,6 +16,13 @@ import {
   Link2,
   Copy,
   RefreshCw,
+  History,
+  Play,
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  XCircle,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +40,10 @@ import {
 import {
   createCampaignLead,
   listCampaignTasks,
+  updateCampaignTask,
+  listCampaignTaskEvents,
   type CampaignFlowTask,
+  type CampaignTaskEvent,
 } from "@/lib/campaign-flow.functions";
 
 type ScrapeResult = WebsiteScanResult;
