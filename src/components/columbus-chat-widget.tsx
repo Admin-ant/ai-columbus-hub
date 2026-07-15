@@ -398,7 +398,7 @@ export function ColumbusChatWidget() {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        aria-label={open ? "Chat sluiten" : "Chat openen met Columbus AI Recruiter Agent"}
+        aria-label={open ? "Chat sluiten" : "Chat openen met Columbus Portal Help"}
         className="pointer-events-auto absolute bottom-4 right-4 flex h-14 w-14 items-center justify-center rounded-full bg-brand text-brand-foreground shadow-2xl transition hover:scale-105 hover:bg-brand/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
       >
         {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
