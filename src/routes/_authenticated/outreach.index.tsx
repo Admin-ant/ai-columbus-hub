@@ -206,16 +206,9 @@ function OutreachDashboard() {
     }
   }
 
-  async function startSequence(t: TargetRow) {
-    if (!t.campaign_id) return toast.error("Koppel eerst aan een campagne met sequentie");
-    toast.loading("Inplannen…", { id: "sch" });
-    try {
-      await scheduleSeqFn({ data: { target_id: t.id, start_in_minutes: 1 } });
-      toast.success("Sequentie ingepland (start binnen 15 min)", { id: "sch" });
-      load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Mislukt", { id: "sch" });
-    }
+  function openSequenceWorkflow(t: TargetRow) {
+    setSequenceDialogTarget(t);
+    setSequenceDialogOpen(true);
   }
 
   async function runResearch(t: TargetRow) {
