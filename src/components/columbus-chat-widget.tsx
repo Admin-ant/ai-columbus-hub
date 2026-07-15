@@ -67,6 +67,11 @@ export function ColumbusChatWidget() {
   const [authed, setAuthed] = useState<boolean | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const injectedRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
+
+  function stop() {
+    abortRef.current?.abort();
+  }
 
   useEffect(() => {
     setMounted(true);
