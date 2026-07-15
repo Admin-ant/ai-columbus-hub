@@ -275,10 +275,10 @@ export function ColumbusChatWidget() {
               </div>
               <div className="leading-tight">
                 <div className="text-sm font-semibold text-foreground">
-                  Columbus AI Recruiter Agent
+                  Columbus Portal Help
                 </div>
                 <div className="text-[10px] text-muted-foreground">
-                  Live · antwoordt meestal binnen enkele seconden
+                  Vraag hoe iets werkt in het portal
                 </div>
               </div>
             </div>
