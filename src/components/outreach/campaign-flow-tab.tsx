@@ -16,6 +16,8 @@ import {
   Link2,
   Copy,
   Download,
+  Pencil,
+
   RefreshCw,
   History,
   Play,
@@ -151,6 +153,8 @@ export function CampaignFlowTab() {
   const [email, setEmail] = useState("");
   const [website, setWebsite] = useState("");
   const [scrape, setScrape] = useState<ScrapeResult | null>(null);
+  const [originalScrape, setOriginalScrape] = useState<ScrapeResult | null>(null);
+
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [scanAttempts, setScanAttempts] = useState(0);
@@ -173,9 +177,29 @@ export function CampaignFlowTab() {
     localStorage.setItem(LS_TASKS, JSON.stringify(tasks));
   }, [tasks]);
 
+  const scanChanges = useMemo(() => {
+    if (!scrape || !originalScrape) return [];
+    const fields = [
+      { key: "industry", label: "Branche" },
+      { key: "specialisation", label: "Specialisatie" },
+      { key: "tone", label: "Toon" },
+      { key: "summary", label: "Samenvatting" },
+    ] as const;
+    const out: { label: string; from: string; to: string; key: string }[] = [];
+    for (const { key, label } of fields) {
+      const from = (originalScrape[key] ?? "") || "";
+      const to = (scrape[key] ?? "") || "";
+      if (from !== to) out.push({ label, from, to, key });
+    }
+    return out;
+  }, [scrape, originalScrape]);
+
+
   // Reset scan wanneer de URL verandert.
+
   useEffect(() => {
     setScrape(null);
+    setOriginalScrape(null);
     setScanError(null);
     setScanAttempts(0);
     setLastScanAt(null);
@@ -184,12 +208,14 @@ export function CampaignFlowTab() {
     setPreview("");
   }, [website]);
 
+
   const websiteValidation = validateWebsiteUrl(website);
   const websiteTouched = website.trim().length > 0;
   const inlineUrlError = websiteTouched ? websiteValidation.error : null;
 
   function resetScanArtifacts() {
     setScrape(null);
+    setOriginalScrape(null);
     setScanError(null);
     setScanAttempts(0);
     setLastScanAt(null);
@@ -197,6 +223,7 @@ export function CampaignFlowTab() {
     setSelectedVariant(null);
     setPreview("");
   }
+
 
   async function rescanWebsite() {
     resetScanArtifacts();
@@ -217,7 +244,9 @@ export function CampaignFlowTab() {
     try {
       const result = await scan({ data: { url, company: company || undefined } });
       setScrape(result);
+      setOriginalScrape(result);
       setLastScanAt(new Date().toISOString());
+
       toast.success("Website gescand");
       return result;
     } catch (e) {
@@ -803,8 +832,36 @@ export function CampaignFlowTab() {
               />
             </div>
 
+            {scanChanges.length > 0 && (
+              <div className="rounded-md border border-border bg-muted/50 p-3 text-xs">
+                <div className="mb-2 flex items-center gap-1.5 text-muted-foreground">
+                  <Pencil className="h-3.5 w-3.5" />
+                  <span className="font-medium">Handmatig aangepast ten opzichte van scan</span>
+                </div>
+                <ul className="space-y-2">
+                  {scanChanges.map((change) => (
+                    <li key={change.key}>
+                      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        {change.label}
+                      </span>
+                      <div className="mt-0.5 flex items-center gap-2">
+                        <span className="truncate text-muted-foreground line-through" title={change.from}>
+                          {change.from || "—"}
+                        </span>
+                        <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground" />
+                        <span className="truncate font-medium text-foreground" title={change.to}>
+                          {change.to || "—"}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div>
               <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Bron URL</dt>
+
               <dd className="mt-0.5 truncate">
                 <a
                   href={scrape.source_url}
