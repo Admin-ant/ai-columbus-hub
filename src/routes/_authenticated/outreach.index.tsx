@@ -564,6 +564,7 @@ function OutreachDashboard() {
               <Empty text="Maak eerst een campagne aan." />
             ) : (
               <div className="space-y-4">
+                <SequenceFlowDiagram />
                 <div className="flex items-center gap-2">
                   <Label className="text-xs text-muted-foreground">Campagne:</Label>
                   <Select
