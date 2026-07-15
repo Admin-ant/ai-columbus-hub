@@ -183,6 +183,41 @@ export function CampaignFlowTab() {
   const [savedScanEdits, setSavedScanEdits] = useState<Record<string, SavedScanEdit>>(
     () => loadLS<Record<string, SavedScanEdit>>(LS_SCAN_EDITS, {}),
   );
+  const [openDiffUrl, setOpenDiffUrl] = useState<string | null>(null);
+
+  function computeScanDiff(original: ScrapeResult, edited: ScrapeResult) {
+    const fields = [
+      { key: "industry", label: "Branche" },
+      { key: "specialisation", label: "Specialisatie" },
+      { key: "tone", label: "Toon" },
+      { key: "summary", label: "Samenvatting" },
+    ] as const;
+    const out: { key: string; label: string; from: string; to: string }[] = [];
+    for (const { key, label } of fields) {
+      const from = (original[key] ?? "") || "";
+      const to = (edited[key] ?? "") || "";
+      if (from !== to) out.push({ key, label, from, to });
+    }
+    return { changes: out, total: fields.length };
+  }
+
+  async function copyDiffAsText(entry: SavedScanEdit) {
+    const { changes } = computeScanDiff(entry.original, entry.edited);
+    if (changes.length === 0) {
+      toast.info("Geen verschillen om te kopiëren");
+      return;
+    }
+    const header = `Verschiloverzicht — ${entry.company || entry.sourceUrl}\n${entry.sourceUrl}\n`;
+    const body = changes
+      .map((c) => `• ${c.label}\n  scan: ${c.from || "—"}\n  opgeslagen: ${c.to || "—"}`)
+      .join("\n\n");
+    try {
+      await navigator.clipboard.writeText(`${header}\n${body}\n`);
+      toast.success("Verschil gekopieerd naar klembord");
+    } catch {
+      toast.error("Kopiëren mislukt");
+    }
+  }
 
   useEffect(() => {
     localStorage.setItem(LS_LEADS, JSON.stringify(leads));
@@ -1215,43 +1250,115 @@ export function CampaignFlowTab() {
                 .sort((a, b) => (a.savedAt < b.savedAt ? 1 : -1))
                 .map((entry) => {
                   const isCurrent = scrape?.source_url === entry.sourceUrl;
+                  const isDiffOpen = openDiffUrl === entry.sourceUrl;
+                  const { changes, total } = computeScanDiff(entry.original, entry.edited);
                   return (
                     <li
                       key={entry.sourceUrl}
-                      className="flex items-center gap-2 rounded border border-border/60 bg-background p-2 text-xs"
+                      className="rounded border border-border/60 bg-background p-2 text-xs"
                     >
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate font-medium text-foreground" title={entry.sourceUrl}>
-                          {entry.company || entry.sourceUrl}
+                      <div className="flex items-center gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate font-medium text-foreground" title={entry.sourceUrl}>
+                            {entry.company || entry.sourceUrl}
+                          </div>
+                          <div className="truncate text-[10px] text-muted-foreground">
+                            {entry.sourceUrl} · opgeslagen{" "}
+                            {new Date(entry.savedAt).toLocaleString("nl-NL", {
+                              dateStyle: "short",
+                              timeStyle: "short",
+                            })}
+                            {isCurrent ? " · huidige" : ""}
+                          </div>
                         </div>
-                        <div className="truncate text-[10px] text-muted-foreground">
-                          {entry.sourceUrl} · opgeslagen{" "}
-                          {new Date(entry.savedAt).toLocaleString("nl-NL", {
-                            dateStyle: "short",
-                            timeStyle: "short",
-                          })}
-                          {isCurrent ? " · huidige" : ""}
-                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-[11px]"
+                          onClick={() =>
+                            setOpenDiffUrl(isDiffOpen ? null : entry.sourceUrl)
+                          }
+                          aria-expanded={isDiffOpen}
+                        >
+                          {isDiffOpen ? (
+                            <ChevronDown className="mr-1 h-3 w-3" />
+                          ) : (
+                            <ChevronRight className="mr-1 h-3 w-3" />
+                          )}
+                          Verschil
+                          {changes.length > 0 ? ` (${changes.length})` : ""}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-[11px]"
+                          onClick={() => applySavedScanEdit(entry)}
+                          disabled={isCurrent}
+                        >
+                          Laden
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-[11px] text-muted-foreground hover:text-destructive"
+                          onClick={() => deleteSavedScanEdit(entry.sourceUrl)}
+                        >
+                          Verwijder
+                        </Button>
                       </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-[11px]"
-                        onClick={() => applySavedScanEdit(entry)}
-                        disabled={isCurrent}
-                      >
-                        Laden
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-[11px] text-muted-foreground hover:text-destructive"
-                        onClick={() => deleteSavedScanEdit(entry.sourceUrl)}
-                      >
-                        Verwijder
-                      </Button>
+                      {isDiffOpen && (
+                        <div className="mt-2 rounded-md border border-border bg-muted/40 p-2">
+                          {changes.length === 0 ? (
+                            <p className="text-[11px] italic text-muted-foreground">
+                              Geen verschillen — opgeslagen waarden zijn identiek aan de scan.
+                            </p>
+                          ) : (
+                            <>
+                              <ul className="space-y-2">
+                                {changes.map((change) => (
+                                  <li key={change.key}>
+                                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                                      {change.label}
+                                    </span>
+                                    <div className="mt-0.5 flex items-center gap-2">
+                                      <span
+                                        className="truncate text-destructive line-through"
+                                        title={change.from}
+                                      >
+                                        {change.from || "—"}
+                                      </span>
+                                      <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground" />
+                                      <span
+                                        className="truncate font-medium text-emerald-600 dark:text-emerald-400"
+                                        title={change.to}
+                                      >
+                                        {change.to || "—"}
+                                      </span>
+                                    </div>
+                                  </li>
+                                ))}
+                              </ul>
+                              <div className="mt-2 flex items-center justify-between gap-2 border-t border-border/60 pt-2">
+                                <span className="text-[10px] text-muted-foreground">
+                                  {changes.length} van {total} velden aangepast
+                                </span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 text-[11px]"
+                                  onClick={() => void copyDiffAsText(entry)}
+                                >
+                                  Kopieer als tekst
+                                </Button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </li>
                   );
                 })}
