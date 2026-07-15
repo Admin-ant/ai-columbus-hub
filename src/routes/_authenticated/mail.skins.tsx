@@ -328,10 +328,12 @@ function MailSkinsPage() {
     await reload();
   }
 
+  const previewBody = `<div style="padding:32px;font-family:system-ui,sans-serif;color:#111;font-size:14px;line-height:1.6">
     <p>Beste {{contact_name}},</p>
     <p>Dit is een voorbeeldbericht dat toont hoe je e-mail eruitziet met deze skin — header en footer worden automatisch toegevoegd.</p>
     <p>Met vriendelijke groet,<br/>{{sender_name}}</p>
   </div>`;
+
 
   const previewBg = previewVersion?.background_color ?? bgColor;
   const previewImg = previewVersion?.background_image_url ?? bgImage;
