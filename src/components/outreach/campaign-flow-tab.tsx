@@ -653,6 +653,98 @@ export function CampaignFlowTab() {
               <Badge variant="outline" className="ml-auto border-brand/40 text-brand">
                 Geverifieerd
               </Badge>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 px-2 text-[11px]"
+                onClick={async () => {
+                  try {
+                    const { jsPDF } = await import("jspdf");
+                    const doc = new jsPDF({ unit: "pt", format: "a4" });
+                    const marginX = 48;
+                    const maxWidth = 595 - marginX * 2;
+                    let y = 56;
+
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(18);
+                    doc.text("Website scan rapport", marginX, y);
+                    y += 24;
+
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(10);
+                    doc.setTextColor(120);
+                    doc.text(
+                      `Gegenereerd op ${new Date().toLocaleString("nl-NL")}`,
+                      marginX,
+                      y,
+                    );
+                    y += 24;
+                    doc.setTextColor(0);
+
+                    const rows: Array<[string, string]> = [
+                      ["Bedrijf", company || "—"],
+                      ["Contact", name || "—"],
+                      ["E-mail", email || "—"],
+                      ["Bron URL", scrape.source_url || "—"],
+                      [
+                        "Gescand op",
+                        scrape.scanned_at
+                          ? new Date(scrape.scanned_at).toLocaleString("nl-NL")
+                          : "—",
+                      ],
+                      ["Branche", scrape.industry || "—"],
+                      ["Specialisatie", scrape.specialisation || "—"],
+                      ["Toon", scrape.tone || "—"],
+                    ];
+
+                    for (const [label, value] of rows) {
+                      doc.setFont("helvetica", "bold");
+                      doc.setFontSize(10);
+                      doc.text(label, marginX, y);
+                      doc.setFont("helvetica", "normal");
+                      const lines = doc.splitTextToSize(String(value), maxWidth - 110);
+                      doc.text(lines, marginX + 110, y);
+                      y += Math.max(16, lines.length * 14) + 4;
+                      if (y > 780) {
+                        doc.addPage();
+                        y = 56;
+                      }
+                    }
+
+                    y += 8;
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(11);
+                    doc.text("Samenvatting", marginX, y);
+                    y += 16;
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(10);
+                    const summaryLines = doc.splitTextToSize(
+                      scrape.summary || "Geen samenvatting beschikbaar.",
+                      maxWidth,
+                    );
+                    doc.text(summaryLines, marginX, y);
+
+                    const safeHost = (() => {
+                      try {
+                        return new URL(scrape.source_url).hostname.replace(/[^a-z0-9.-]/gi, "_");
+                      } catch {
+                        return "scan";
+                      }
+                    })();
+                    const stamp = new Date().toISOString().slice(0, 10);
+                    doc.save(`website-scan_${safeHost}_${stamp}.pdf`);
+                    toast.success("PDF-rapport gedownload");
+                  } catch (err) {
+                    toast.error("PDF genereren mislukt", {
+                      description: err instanceof Error ? err.message : String(err),
+                    });
+                  }
+                }}
+              >
+                <Download className="mr-1 h-3 w-3" />
+                PDF
+              </Button>
             </div>
 
             <dl className="grid grid-cols-1 gap-2 sm:grid-cols-2">
