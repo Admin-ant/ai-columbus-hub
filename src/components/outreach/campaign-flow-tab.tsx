@@ -171,6 +171,7 @@ export function CampaignFlowTab() {
       // Genereer unieke tracking-link voor deze lead
       let trackingToken: string | null = null;
       let trackingUrl: string | null = null;
+      let trackingLinkId: string | null = null;
       try {
         const link = await createLink({
           data: {
@@ -181,9 +182,29 @@ export function CampaignFlowTab() {
           },
         });
         trackingToken = link.token;
+        trackingLinkId = link.id;
         trackingUrl = `${window.location.origin}/api/public/l/${link.token}`;
       } catch (err) {
         console.warn("Tracking link kon niet worden gemaakt", err);
+      }
+
+      // Persisteer lead server-side zodat de achtergrondjob 'm kan opvolgen
+      let serverLeadId: string | null = null;
+      try {
+        const saved = await createServerLead({
+          data: {
+            name,
+            company,
+            email,
+            website: normalizeUrl(website),
+            emailPreview: previewText,
+            trackingLinkId: trackingLinkId ?? undefined,
+            trackingToken: trackingToken ?? undefined,
+          },
+        });
+        serverLeadId = saved.id;
+      } catch (err) {
+        console.warn("Server-side lead opslaan mislukt", err);
       }
 
       const lead: FlowLead = {
@@ -202,12 +223,13 @@ export function CampaignFlowTab() {
         trackingUrl,
         clickCount: 0,
         lastVisitedAt: null,
+        serverLeadId,
       };
       setLeads((cur) => [lead, ...cur]);
       toast.success(
-        trackingUrl
-          ? "Campagne gestart · unieke landingslink aangemaakt"
-          : "Campagne gestart (zonder tracking-link)",
+        trackingUrl && serverLeadId
+          ? "Campagne gestart · automation actief"
+          : "Campagne gestart",
       );
     } catch (e) {
       const msg = e instanceof Error ? e.message : "AI genereren mislukt";
