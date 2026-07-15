@@ -327,14 +327,93 @@ function MailSkinsPage() {
 
           {/* Live preview */}
           <div className="rounded-lg border border-border bg-card p-4">
-            <div className="mb-3 text-sm font-semibold">Live preview</div>
+            <div className="mb-3 flex items-center justify-between">
+              <div className="text-sm font-semibold">Live preview</div>
+              {previewVersion && (
+                <Badge variant="outline" className="border-primary/40 bg-primary/10 text-[10px] text-primary">
+                  Voorbeeld v{previewVersion.version}
+                </Badge>
+              )}
+            </div>
             <div className="rounded border border-border p-3" style={previewStyle}>
               <div className="mx-auto max-w-[600px] rounded bg-white shadow-sm">
-                <div dangerouslySetInnerHTML={{ __html: header }} />
+                <div dangerouslySetInnerHTML={{ __html: previewHeader }} />
                 <div dangerouslySetInnerHTML={{ __html: previewBody }} />
-                <div dangerouslySetInnerHTML={{ __html: footer }} />
+                <div dangerouslySetInnerHTML={{ __html: previewFooter }} />
               </div>
             </div>
+          </div>
+
+          {/* Version history */}
+          <div className="rounded-lg border border-border bg-card p-3">
+            <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <History className="h-3.5 w-3.5" /> Versies
+            </div>
+            {!selectedId ? (
+              <div className="rounded border border-dashed border-border p-3 text-center text-xs text-muted-foreground">
+                Selecteer een skin
+              </div>
+            ) : versions.length === 0 ? (
+              <div className="rounded border border-dashed border-border p-3 text-center text-xs text-muted-foreground">
+                Nog geen versies
+              </div>
+            ) : (
+              <div className="space-y-1 max-h-[70vh] overflow-y-auto pr-1">
+                {versions.map((v, idx) => {
+                  const isCurrent = idx === 0;
+                  const isPreviewing = previewVersion?.id === v.id;
+                  return (
+                    <div
+                      key={v.id}
+                      className={`rounded-md border p-2 transition ${
+                        isPreviewing
+                          ? "border-primary/50 bg-accent text-accent-foreground"
+                          : "border-border bg-card"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <Badge
+                          variant="outline"
+                          className={`text-[9px] px-1.5 ${
+                            isCurrent
+                              ? "border-primary/40 bg-primary/10 text-primary"
+                              : "border-border text-muted-foreground"
+                          }`}
+                        >
+                          v{v.version}
+                        </Badge>
+                        <span className="text-[10px] text-muted-foreground shrink-0">
+                          {new Date(v.created_at).toLocaleString("nl-NL", {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          })}
+                        </span>
+                      </div>
+                      <div className="mt-1 truncate text-[11px] text-muted-foreground">{v.name}</div>
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setPreviewVersion(isPreviewing ? null : v)}
+                          className="inline-flex items-center gap-1 rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-foreground hover:bg-accent"
+                        >
+                          <Eye className="h-2.5 w-2.5" />
+                          {isPreviewing ? "Sluit" : "Preview"}
+                        </button>
+                        {!isCurrent && (
+                          <button
+                            type="button"
+                            onClick={() => restoreVersion(v)}
+                            className="inline-flex items-center gap-1 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/15"
+                          >
+                            <RotateCcw className="h-2.5 w-2.5" /> Herstel
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>
