@@ -90,6 +90,16 @@ type FlowLead = {
 
 const LS_LEADS = "campaign-flow-leads";
 const LS_TASKS = "campaign-flow-tasks";
+const LS_SCAN_EDITS = "campaign-flow-scan-edits";
+
+type SavedScanEdit = {
+  sourceUrl: string;
+  website: string;
+  company?: string;
+  edited: ScrapeResult;
+  original: ScrapeResult;
+  savedAt: string;
+};
 
 function loadLS<T>(key: string, fallback: T): T {
   try {
