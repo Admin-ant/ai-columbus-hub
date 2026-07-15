@@ -424,6 +424,109 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
                 className="border-input bg-background font-mono text-sm leading-relaxed text-foreground placeholder:text-muted-foreground shadow-sm"
               />
             </div>
+
+            {editing.channel === "email" && (
+              <div className="rounded-md border border-border bg-card/50 p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[11px] font-semibold uppercase tracking-wider text-foreground">
+                    Achtergrond, header &amp; footer
+                  </Label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={savingBg}
+                    onClick={saveAsBackground}
+                    className="h-6 border-border text-[10px] text-foreground hover:bg-accent"
+                  >
+                    Bewaar als skin
+                  </Button>
+                </div>
+
+                {backgrounds.length > 0 && (
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Skin kiezen</Label>
+                    <div className="mt-1 flex flex-wrap gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => applyBackground(null)}
+                        className={`rounded border px-2 py-1 text-[10px] ${
+                          !editing.mail_background_id
+                            ? "border-primary/50 bg-primary/10 text-primary"
+                            : "border-border bg-background text-foreground hover:bg-accent"
+                        }`}
+                      >
+                        Geen
+                      </button>
+                      {backgrounds.map((b) => (
+                        <button
+                          key={b.id}
+                          type="button"
+                          onClick={() => applyBackground(b)}
+                          className={`rounded border px-2 py-1 text-[10px] ${
+                            editing.mail_background_id === b.id
+                              ? "border-primary/50 bg-primary/10 text-primary"
+                              : "border-border bg-background text-foreground hover:bg-accent"
+                          }`}
+                        >
+                          {b.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Achtergrondkleur</Label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={editing.background_color ?? "#ffffff"}
+                        onChange={(e) => setEditing({ ...editing, background_color: e.target.value })}
+                        className="h-7 w-10 rounded border border-input bg-background"
+                      />
+                      <Input
+                        value={editing.background_color ?? ""}
+                        placeholder="#ffffff"
+                        onChange={(e) => setEditing({ ...editing, background_color: e.target.value })}
+                        className="h-7 border-input bg-background text-[11px] text-foreground shadow-sm"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Achtergrond-afbeelding URL</Label>
+                    <Input
+                      value={editing.background_image_url ?? ""}
+                      placeholder="https://…"
+                      onChange={(e) => setEditing({ ...editing, background_image_url: e.target.value })}
+                      className="h-7 border-input bg-background text-[11px] text-foreground shadow-sm"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Header HTML</Label>
+                  <Textarea
+                    rows={3}
+                    value={editing.header_html ?? ""}
+                    placeholder='<div style="text-align:center;padding:20px;background:#0f172a;color:#fff">Mijn Bedrijf</div>'
+                    onChange={(e) => setEditing({ ...editing, header_html: e.target.value })}
+                    className="border-input bg-background font-mono text-[11px] text-foreground shadow-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Footer HTML</Label>
+                  <Textarea
+                    rows={3}
+                    value={editing.footer_html ?? ""}
+                    placeholder='<div style="text-align:center;padding:16px;font-size:12px;color:#6b7280">Mijn Bedrijf · Straat 1 · Amsterdam</div>'
+                    onChange={(e) => setEditing({ ...editing, footer_html: e.target.value })}
+                    className="border-input bg-background font-mono text-[11px] text-foreground shadow-sm"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end">
               <Button onClick={save} className="bg-primary text-primary-foreground hover:bg-primary/90">
                 <Save className="mr-2 h-4 w-4" /> Opslaan
