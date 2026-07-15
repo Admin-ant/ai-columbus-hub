@@ -64,6 +64,7 @@ type FlowLead = {
   trackingUrl?: string | null;
   clickCount?: number;
   lastVisitedAt?: string | null;
+  serverLeadId?: string | null;
 };
 
 const LS_LEADS = "campaign-flow-leads";
