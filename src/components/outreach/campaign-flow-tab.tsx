@@ -319,6 +319,98 @@ export function CampaignFlowTab() {
     toast.info("Opgeslagen aanpassingen verwijderd");
   }
 
+  function isScrapeShape(x: unknown): x is ScrapeResult {
+    if (!x || typeof x !== "object") return false;
+    const o = x as Record<string, unknown>;
+    return (
+      typeof o.industry === "string" &&
+      typeof o.specialisation === "string" &&
+      typeof o.tone === "string" &&
+      typeof o.summary === "string" &&
+      typeof o.source_url === "string"
+    );
+  }
+
+  function coerceSavedEdit(raw: unknown): SavedScanEdit | null {
+    if (!raw || typeof raw !== "object") return null;
+    const o = raw as Record<string, unknown>;
+    const edited = o.edited;
+    const original = o.original;
+    if (!isScrapeShape(edited) || !isScrapeShape(original)) return null;
+    const sourceUrl =
+      (typeof o.sourceUrl === "string" && o.sourceUrl) ||
+      edited.source_url ||
+      original.source_url;
+    if (!sourceUrl) return null;
+    return {
+      sourceUrl,
+      website: typeof o.website === "string" && o.website ? o.website : sourceUrl,
+      company: typeof o.company === "string" ? o.company : undefined,
+      edited: { ...edited, source_url: sourceUrl },
+      original: { ...original, source_url: sourceUrl },
+      savedAt: typeof o.savedAt === "string" ? o.savedAt : new Date().toISOString(),
+    };
+  }
+
+  function exportSavedScanEdits() {
+    const entries = Object.values(savedScanEdits);
+    if (entries.length === 0) {
+      toast.info("Geen opgeslagen aanpassingen om te exporteren");
+      return;
+    }
+    const blob = new Blob(
+      [JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), entries }, null, 2)],
+      { type: "application/json" },
+    );
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `scan-aanpassingen_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`${entries.length} aanpassing(en) geëxporteerd`);
+  }
+
+  async function importSavedScanEdits(file: File) {
+    try {
+      const text = await file.text();
+      const parsed: unknown = JSON.parse(text);
+      const rawList: unknown[] = Array.isArray(parsed)
+        ? parsed
+        : parsed && typeof parsed === "object" && Array.isArray((parsed as { entries?: unknown }).entries)
+          ? ((parsed as { entries: unknown[] }).entries)
+          : [parsed];
+      const valid: SavedScanEdit[] = [];
+      for (const r of rawList) {
+        const c = coerceSavedEdit(r);
+        if (c) valid.push(c);
+      }
+      if (valid.length === 0) {
+        toast.error("Geen geldige scan-aanpassingen gevonden in dit bestand");
+        return;
+      }
+      let added = 0;
+      let updated = 0;
+      setSavedScanEdits((prev) => {
+        const next = { ...prev };
+        for (const entry of valid) {
+          if (next[entry.sourceUrl]) updated++;
+          else added++;
+          next[entry.sourceUrl] = entry;
+        }
+        return next;
+      });
+      toast.success(
+        `Import gelukt: ${added} nieuw, ${updated} bijgewerkt (gekoppeld aan bron-URL)`,
+      );
+    } catch (err) {
+      toast.error("Kon bestand niet lezen", {
+        description: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+
 
 
   async function rescanWebsite() {
