@@ -614,8 +614,8 @@ export function CampaignFlowTab() {
             {scanning ? "Scannen…" : scrape ? "Opnieuw scannen" : "Scan website"}
           </Button>
           <Button
-            onClick={generateCampaign}
-            disabled={generating || scanning}
+            onClick={generateVariants}
+            disabled={generating || scanning || launching}
             className="bg-brand text-white hover:bg-brand/90"
           >
             {generating ? (
@@ -623,25 +623,104 @@ export function CampaignFlowTab() {
             ) : (
               <Sparkles className="mr-2 h-4 w-4" />
             )}
-            {generating ? "Genereren…" : "Genereer Gepersonaliseerde Campagne"}
+            {generating
+              ? "3 concepten genereren…"
+              : variants.length > 0
+                ? "Genereer opnieuw"
+                : "Genereer 3 concepten"}
           </Button>
         </div>
 
+        {variants.length > 0 && (
+          <div className="mt-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Kies één van de 3 concepten
+              </Label>
+              <span className="text-[10px] text-muted-foreground">
+                Alleen de gekozen versie wordt verstuurd
+              </span>
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              {variants.map((v, idx) => {
+                const active = selectedVariant === idx;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setSelectedVariant(idx)}
+                    className={`text-left rounded-md border p-3 transition-all ${
+                      active
+                        ? "border-brand bg-brand/10 ring-2 ring-brand/40"
+                        : "border-border bg-background/40 hover:border-brand/60"
+                    }`}
+                  >
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold">{v.label}</span>
+                      {active && (
+                        <Badge className="bg-brand text-white text-[9px]">Gekozen</Badge>
+                      )}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground mb-2">
+                      Hoek: {v.angle}
+                    </div>
+                    <pre className="whitespace-pre-wrap text-[11px] leading-snug text-foreground/90 max-h-56 overflow-auto font-sans">
+                      {v.body}
+                    </pre>
+                  </button>
+                );
+              })}
+            </div>
+            {selectedVariant !== null && (
+              <div>
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Bewerk indien nodig
+                </Label>
+                <Textarea
+                  value={variants[selectedVariant].body}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setVariants((cur) =>
+                      cur.map((x, i) => (i === selectedVariant ? { ...x, body: val } : x)),
+                    );
+                  }}
+                  rows={8}
+                  className="mt-1 font-mono text-xs"
+                />
+              </div>
+            )}
+            <div className="flex justify-end">
+              <Button
+                onClick={launchCampaign}
+                disabled={launching || selectedVariant === null}
+                className="bg-brand text-white hover:bg-brand/90"
+              >
+                {launching ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Rocket className="mr-2 h-4 w-4" />
+                )}
+                {launching ? "Campagne starten…" : "Start campagne met gekozen concept"}
+              </Button>
+            </div>
+          </div>
+        )}
 
-        {preview && (
+        {preview && variants.length === 0 && (
           <div className="mt-5">
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-              E-mail concept (preview)
+              Laatst verstuurde concept
             </Label>
             <Textarea
               value={preview}
-              onChange={(e) => setPreview(e.target.value)}
-              rows={10}
+              readOnly
+              rows={8}
               className="mt-1 font-mono text-xs"
             />
           </div>
         )}
       </div>
+
 
       {/* Actieve leads in flow */}
       <div className="rounded-lg border border-border bg-muted/30 p-5">
