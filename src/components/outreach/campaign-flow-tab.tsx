@@ -623,23 +623,61 @@ export function CampaignFlowTab() {
         </div>
 
         {scrape && (
-          <div className="mt-4 rounded-md border border-brand/30 bg-brand/5 p-3 text-xs">
-            <div className="flex flex-wrap items-center gap-2">
+          <div className="mt-4 rounded-md border border-brand/30 bg-brand/5 p-3 text-xs space-y-3">
+            <div className="flex items-center gap-2">
               <Globe className="h-4 w-4 text-brand" />
-              <span className="text-muted-foreground">Website scan:</span>
-              <Badge variant="outline" className="border-brand/40 text-brand">
-                {scrape.industry}
-              </Badge>
-              <Badge variant="outline" className="border-border">
-                {scrape.specialisation}
-              </Badge>
-              <Badge variant="outline" className="border-border">
-                tone: {scrape.tone}
+              <span className="font-medium text-foreground">Website scan resultaat</span>
+              <Badge variant="outline" className="ml-auto border-brand/40 text-brand">
+                Geverifieerd
               </Badge>
             </div>
-            {scrape.summary && (
-              <p className="mt-2 text-muted-foreground italic">{scrape.summary}</p>
-            )}
+
+            <dl className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <div>
+                <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Branche</dt>
+                <dd className="mt-0.5 text-foreground">{scrape.industry || "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Specialisatie</dt>
+                <dd className="mt-0.5 text-foreground">{scrape.specialisation || "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Toon</dt>
+                <dd className="mt-0.5 text-foreground">{scrape.tone || "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Gescand op</dt>
+                <dd className="mt-0.5 text-foreground">
+                  {scrape.scanned_at
+                    ? new Date(scrape.scanned_at).toLocaleString("nl-NL", {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })
+                    : "—"}
+                </dd>
+              </div>
+            </dl>
+
+            <div>
+              <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Samenvatting</dt>
+              <dd className="mt-0.5 italic text-muted-foreground">
+                {scrape.summary || "Geen samenvatting beschikbaar."}
+              </dd>
+            </div>
+
+            <div>
+              <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Bron URL</dt>
+              <dd className="mt-0.5 truncate">
+                <a
+                  href={scrape.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-brand underline underline-offset-2 hover:text-brand/80"
+                >
+                  {scrape.source_url}
+                </a>
+              </dd>
+            </div>
           </div>
         )}
 
