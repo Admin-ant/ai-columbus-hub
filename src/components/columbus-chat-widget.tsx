@@ -129,6 +129,8 @@ export function ColumbusChatWidget() {
     setMessages(next);
     setInput("");
     setSending(true);
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
       const { data: sess } = await supabase.auth.getSession();
       const bearer = config.apiKey ?? sess.session?.access_token;
@@ -143,6 +145,7 @@ export function ColumbusChatWidget() {
           agent: "columbus-recruiter",
           messages: next.map((m) => ({ role: m.role, content: m.content })),
         }),
+        signal: controller.signal,
       });
 
       const contentType = res.headers.get("content-type") ?? "";
