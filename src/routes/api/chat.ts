@@ -79,15 +79,15 @@ export const Route = createFileRoute("/api/chat")({
         }
 
         const messages = Array.isArray(body.messages) ? body.messages : [];
+        const agent = typeof body.agent === "string" ? body.agent : null;
         if (messages.length === 0) {
           return Response.json({ error: "messages is required" }, { status: 400 });
         }
-
+        const lastUser = [...messages].reverse().find((m) => m.role === "user");
+        const promptText = lastUser?.content ?? "";
+        const startedAt = Date.now();
 
         // Resolve AI backend at request-time (Cloudflare Workers bind env per request).
-        // Priority:
-        //   1) COLUMBUS_API_KEY (+ optional COLUMBUS_API_URL) — customer/aiVanColumbus key
-        //   2) LOVABLE_API_KEY  — built-in Lovable AI Gateway fallback
         const customKey = process.env.COLUMBUS_API_KEY?.trim() || undefined;
         const customUrl = process.env.COLUMBUS_API_URL?.trim() || undefined;
         const customModel = process.env.COLUMBUS_API_MODEL?.trim() || undefined;
@@ -106,10 +106,26 @@ export const Route = createFileRoute("/api/chat")({
             ? "lovable"
             : "none";
 
+        const auditBase = {
+          user_id: verified.userId,
+          agent,
+          prompt: promptText,
+          source,
+          model,
+          message_count: messages.length,
+        };
+
         if (!apiKey) {
           console.error(
             "[columbus-chat] No AI backend configured. Set COLUMBUS_API_KEY (custom) or ensure LOVABLE_API_KEY is provisioned.",
           );
+          await writeAudit({
+            ...auditBase,
+            reply: null,
+            status: "failed",
+            error: "AI-backend niet geconfigureerd",
+            duration_ms: Date.now() - startedAt,
+          });
           return Response.json(
             {
               error:
@@ -143,11 +159,21 @@ export const Route = createFileRoute("/api/chat")({
 
           if (!upstream.ok) {
             const text = await upstream.text().catch(() => "");
+            const errMsg =
+              upstream.status === 429
+                ? "Te veel verzoeken, probeer het later opnieuw."
+                : upstream.status === 402
+                  ? "AI-credits op."
+                  : `AI backend fout (${upstream.status}): ${text.slice(0, 300)}`;
+            await writeAudit({
+              ...auditBase,
+              reply: null,
+              status: "failed",
+              error: errMsg,
+              duration_ms: Date.now() - startedAt,
+            });
             if (upstream.status === 429) {
-              return Response.json(
-                { error: "Te veel verzoeken, probeer het later opnieuw." },
-                { status: 429 },
-              );
+              return Response.json({ error: errMsg }, { status: 429 });
             }
             if (upstream.status === 402) {
               return Response.json(
@@ -165,14 +191,27 @@ export const Route = createFileRoute("/api/chat")({
             choices?: Array<{ message?: { content?: string } }>;
           };
           const reply = data.choices?.[0]?.message?.content?.trim() ?? "";
+          await writeAudit({
+            ...auditBase,
+            reply,
+            status: "success",
+            error: null,
+            duration_ms: Date.now() - startedAt,
+          });
           return Response.json({ reply, source });
         } catch (e) {
-          return Response.json(
-            { error: e instanceof Error ? e.message : "Onbekende fout" },
-            { status: 500 },
-          );
+          const errMsg = e instanceof Error ? e.message : "Onbekende fout";
+          await writeAudit({
+            ...auditBase,
+            reply: null,
+            status: "failed",
+            error: errMsg,
+            duration_ms: Date.now() - startedAt,
+          });
+          return Response.json({ error: errMsg }, { status: 500 });
         }
       },
+
     },
   },
 });
