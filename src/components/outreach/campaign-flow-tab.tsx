@@ -1570,6 +1570,7 @@ export function CampaignFlowTab() {
                   );
                 })}
             </ul>
+            </>
           )}
         </div>
 
