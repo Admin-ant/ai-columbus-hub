@@ -248,6 +248,12 @@ export function CampaignFlowTab() {
     setPreview("");
   }
 
+  function resetToOriginalScan() {
+    if (!originalScrape) return;
+    setScrape(originalScrape);
+    toast.info("Teruggezet naar originele scan-waarden");
+  }
+
 
   async function rescanWebsite() {
     resetScanArtifacts();
@@ -800,9 +806,23 @@ export function CampaignFlowTab() {
               </Button>
             </div>
 
-            <p className="text-[11px] text-muted-foreground">
-              Controleer en pas de scan-output hieronder aan voordat je e-mails genereert.
-            </p>
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-[11px] text-muted-foreground">
+                Controleer en pas de scan-output hieronder aan voordat je e-mails genereert.
+              </p>
+              {originalScrape && scanChanges.length > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetToOriginalScan}
+                  className="h-7 text-[11px] text-muted-foreground hover:text-foreground"
+                >
+                  <RotateCcw className="mr-1 h-3 w-3" />
+                  Terugzetten naar scan
+                </Button>
+              )}
+            </div>
 
             <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
