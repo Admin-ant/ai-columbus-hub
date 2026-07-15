@@ -89,13 +89,12 @@ export function ColumbusChatWidget() {
   }, [open, messages, sending]);
 
   const usingExternalScript = Boolean(config.scriptSrc);
+  // Default naar onze eigen server-route; extern config kan dit overschrijven.
+  const effectiveApiUrl = config.apiUrl ?? "/api/chat";
 
   const placeholder = useMemo(
-    () =>
-      config.apiUrl
-        ? "Stel je vraag aan Columbus…"
-        : "Widget nog niet gekoppeld — vraag wordt lokaal getoond",
-    [config.apiUrl],
+    () => "Stel je vraag aan Columbus…",
+    [],
   );
 
   async function send(text: string) {
@@ -106,40 +105,27 @@ export function ColumbusChatWidget() {
     setInput("");
     setSending(true);
     try {
-      if (config.apiUrl) {
-        const res = await fetch(config.apiUrl, {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            ...(config.apiKey ? { authorization: `Bearer ${config.apiKey}` } : {}),
-          },
-          body: JSON.stringify({
-            agent: "columbus-recruiter",
-            messages: next.map((m) => ({ role: m.role, content: m.content })),
-          }),
-        });
-        const data = (await res.json().catch(() => ({}))) as {
-          reply?: string;
-          message?: string;
-          error?: string;
-        };
-        const reply =
-          data.reply ??
-          data.message ??
-          (data.error ? `Fout: ${data.error}` : "Geen antwoord ontvangen.");
-        setMessages((cur) => [...cur, { role: "assistant", content: reply }]);
-      } else {
-        // Fallback zonder backend — vriendelijke stub zodat de UI zichtbaar werkt
-        await new Promise((r) => setTimeout(r, 400));
-        setMessages((cur) => [
-          ...cur,
-          {
-            role: "assistant",
-            content:
-              "Bedankt! Ik ben nog aan het opstarten — koppel de Columbus API of het widget-script van www.aivancolumbus.com om live antwoorden te krijgen. Wil je een demo? Mail info@aivancolumbus.com.",
-          },
-        ]);
-      }
+      const res = await fetch(effectiveApiUrl, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          ...(config.apiKey ? { authorization: `Bearer ${config.apiKey}` } : {}),
+        },
+        body: JSON.stringify({
+          agent: "columbus-recruiter",
+          messages: next.map((m) => ({ role: m.role, content: m.content })),
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        reply?: string;
+        message?: string;
+        error?: string;
+      };
+      const reply =
+        data.reply ??
+        data.message ??
+        (data.error ? `Fout: ${data.error}` : "Geen antwoord ontvangen.");
+      setMessages((cur) => [...cur, { role: "assistant", content: reply }]);
     } catch (e) {
       setMessages((cur) => [
         ...cur,
@@ -172,7 +158,7 @@ export function ColumbusChatWidget() {
                   Columbus AI Recruiter Agent
                 </div>
                 <div className="text-[10px] text-muted-foreground">
-                  {config.apiUrl ? "Live" : "Demo-modus"} · antwoordt meestal binnen enkele seconden
+                  Live · antwoordt meestal binnen enkele seconden
                 </div>
               </div>
             </div>

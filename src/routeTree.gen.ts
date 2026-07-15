@@ -16,6 +16,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as QTokenRouteImport } from './routes/q.$token'
+import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AfspraakTokenRouteImport } from './routes/afspraak.$token'
 import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated/teams'
 import { Route as AuthenticatedSalesWorkflowRouteImport } from './routes/_authenticated/sales-workflow'
@@ -111,6 +112,11 @@ const TTokenRoute = TTokenRouteImport.update({
 const QTokenRoute = QTokenRouteImport.update({
   id: '/q/$token',
   path: '/q/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AfspraakTokenRoute = AfspraakTokenRouteImport.update({
@@ -491,6 +497,7 @@ export interface FileRoutesByFullPath {
   '/sales-workflow': typeof AuthenticatedSalesWorkflowRoute
   '/teams': typeof AuthenticatedTeamsRoute
   '/afspraak/$token': typeof AfspraakTokenRoute
+  '/api/chat': typeof ApiChatRoute
   '/q/$token': typeof QTokenRoute
   '/t/$token': typeof TTokenRoute
   '/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
@@ -558,6 +565,7 @@ export interface FileRoutesByTo {
   '/sales-workflow': typeof AuthenticatedSalesWorkflowRoute
   '/teams': typeof AuthenticatedTeamsRoute
   '/afspraak/$token': typeof AfspraakTokenRoute
+  '/api/chat': typeof ApiChatRoute
   '/q/$token': typeof QTokenRoute
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
@@ -630,6 +638,7 @@ export interface FileRoutesById {
   '/_authenticated/sales-workflow': typeof AuthenticatedSalesWorkflowRoute
   '/_authenticated/teams': typeof AuthenticatedTeamsRoute
   '/afspraak/$token': typeof AfspraakTokenRoute
+  '/api/chat': typeof ApiChatRoute
   '/q/$token': typeof QTokenRoute
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -703,6 +712,7 @@ export interface FileRouteTypes {
     | '/sales-workflow'
     | '/teams'
     | '/afspraak/$token'
+    | '/api/chat'
     | '/q/$token'
     | '/t/$token'
     | '/ai-columbus/instellingen'
@@ -770,6 +780,7 @@ export interface FileRouteTypes {
     | '/sales-workflow'
     | '/teams'
     | '/afspraak/$token'
+    | '/api/chat'
     | '/q/$token'
     | '/t/$token'
     | '/'
@@ -841,6 +852,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sales-workflow'
     | '/_authenticated/teams'
     | '/afspraak/$token'
+    | '/api/chat'
     | '/q/$token'
     | '/t/$token'
     | '/_authenticated/'
@@ -897,6 +909,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   VisualCheckRoute: typeof VisualCheckRoute
   AfspraakTokenRoute: typeof AfspraakTokenRoute
+  ApiChatRoute: typeof ApiChatRoute
   QTokenRoute: typeof QTokenRoute
   TTokenRoute: typeof TTokenRoute
   AcceptQuoteTokenRoute: typeof AcceptQuoteTokenRoute
@@ -963,6 +976,13 @@ declare module '@tanstack/react-router' {
       path: '/q/$token'
       fullPath: '/q/$token'
       preLoaderRoute: typeof QTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/afspraak/$token': {
@@ -1629,6 +1649,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   VisualCheckRoute: VisualCheckRoute,
   AfspraakTokenRoute: AfspraakTokenRoute,
+  ApiChatRoute: ApiChatRoute,
   QTokenRoute: QTokenRoute,
   TTokenRoute: TTokenRoute,
   AcceptQuoteTokenRoute: AcceptQuoteTokenRoute,
