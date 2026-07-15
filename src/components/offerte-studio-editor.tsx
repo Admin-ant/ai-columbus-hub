@@ -102,6 +102,10 @@ export function OfferteStudioEditor({ kind, id }: Props) {
   const getTplInfo = useServerFn(getTemplatePreviewInfo);
   const [tplPreviewToken, setTplPreviewToken] = useState<string | null>(null);
   const [tplPreviewExpires, setTplPreviewExpires] = useState<string | null>(null);
+  const [mailTemplateId, setMailTemplateId] = useState<string | null>(null);
+  const [mailBackgroundId, setMailBackgroundId] = useState<string | null>(null);
+  const [mailTemplates, setMailTemplates] = useState<Array<{ id: string; name: string; channel: string }>>([]);
+  const [mailBackgrounds, setMailBackgrounds] = useState<Array<{ id: string; name: string }>>([]);
 
   const table = kind === "quote" ? "studio_quotes" : "quote_templates";
 
@@ -178,6 +182,13 @@ export function OfferteStudioEditor({ kind, id }: Props) {
         setLoading(false);
         return;
       }
+      const linked = data as unknown as {
+        mail_template_id?: string | null;
+        mail_background_id?: string | null;
+      };
+      setMailTemplateId(linked.mail_template_id ?? null);
+      setMailBackgroundId(linked.mail_background_id ?? null);
+
       if (kind === "quote") {
         const q = data as unknown as QuoteRow;
         setTitle(q.title);
@@ -214,6 +225,7 @@ export function OfferteStudioEditor({ kind, id }: Props) {
         }
       }
 
+
       setLoading(false);
     }
     load();
@@ -221,6 +233,32 @@ export function OfferteStudioEditor({ kind, id }: Props) {
       active = false;
     };
   }, [id, kind, table]);
+
+  useEffect(() => {
+    if (!currentOrganizationId) return;
+    let active = true;
+    (async () => {
+      const [t, b] = await Promise.all([
+        supabase
+          .from("outreach_message_templates")
+          .select("id, name, channel")
+          .eq("organization_id", currentOrganizationId)
+          .eq("channel", "email")
+          .order("name"),
+        supabase
+          .from("mail_backgrounds")
+          .select("id, name")
+          .eq("organization_id", currentOrganizationId)
+          .order("name"),
+      ]);
+      if (!active) return;
+      setMailTemplates((t.data as Array<{ id: string; name: string; channel: string }>) ?? []);
+      setMailBackgrounds((b.data as Array<{ id: string; name: string }>) ?? []);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [currentOrganizationId]);
 
   function mark() {
     dirty.current = true;
@@ -249,6 +287,8 @@ export function OfferteStudioEditor({ kind, id }: Props) {
             approved_at: approved ? new Date().toISOString() : null,
             packages: packages as never,
             intro_video_url: videoUrl.trim() || null,
+            mail_template_id: mailTemplateId,
+            mail_background_id: mailBackgroundId,
           }
         : {
             name: title,
@@ -257,6 +297,8 @@ export function OfferteStudioEditor({ kind, id }: Props) {
             theme: theme as never,
             sections: sections as never,
             packages: packages as never,
+            mail_template_id: mailTemplateId,
+            mail_background_id: mailBackgroundId,
           };
 
     const { error } = await supabase.from(table).update(payload as never).eq("id", id);
@@ -604,6 +646,52 @@ export function OfferteStudioEditor({ kind, id }: Props) {
               </div>
             </>
           )}
+
+          <div className="mt-4 px-2 py-1.5 text-[10px] uppercase tracking-wider text-white/40">
+            E-mailtemplate
+          </div>
+          <div className="space-y-2 px-2">
+            <select
+              value={mailTemplateId ?? ""}
+              onChange={(e) => {
+                setMailTemplateId(e.target.value || null);
+                mark();
+              }}
+              className="h-8 w-full rounded border border-white/10 bg-black/30 px-2 text-xs text-white outline-none"
+            >
+              <option value="">— Geen (standaard) —</option>
+              {mailTemplates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={mailBackgroundId ?? ""}
+              onChange={(e) => {
+                setMailBackgroundId(e.target.value || null);
+                mark();
+              }}
+              className="h-8 w-full rounded border border-white/10 bg-black/30 px-2 text-xs text-white outline-none"
+              title="Mail-achtergrond / skin"
+            >
+              <option value="">— Geen skin —</option>
+              {mailBackgrounds.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+            <a
+              href="/mail/templates"
+              target="_blank"
+              rel="noreferrer"
+              className="block text-[10px] text-white/40 hover:text-white/70"
+            >
+              Beheer templates & skins →
+            </a>
+          </div>
+
 
           <>
 

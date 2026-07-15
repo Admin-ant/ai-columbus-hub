@@ -3253,6 +3253,8 @@ export type Database = {
           description: string | null
           id: string
           is_default: boolean
+          mail_background_id: string | null
+          mail_template_id: string | null
           name: string
           organization_id: string
           packages: Json
@@ -3269,6 +3271,8 @@ export type Database = {
           description?: string | null
           id?: string
           is_default?: boolean
+          mail_background_id?: string | null
+          mail_template_id?: string | null
           name: string
           organization_id: string
           packages?: Json
@@ -3285,6 +3289,8 @@ export type Database = {
           description?: string | null
           id?: string
           is_default?: boolean
+          mail_background_id?: string | null
+          mail_template_id?: string | null
           name?: string
           organization_id?: string
           packages?: Json
@@ -3295,6 +3301,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "quote_templates_mail_background_id_fkey"
+            columns: ["mail_background_id"]
+            isOneToOne: false
+            referencedRelation: "mail_backgrounds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_templates_mail_template_id_fkey"
+            columns: ["mail_template_id"]
+            isOneToOne: false
+            referencedRelation: "outreach_message_templates"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quote_templates_organization_id_fkey"
             columns: ["organization_id"]
@@ -3605,6 +3625,8 @@ export type Database = {
           id: string
           intro_video_url: string | null
           last_viewed_at: string | null
+          mail_background_id: string | null
+          mail_template_id: string | null
           organization_id: string
           outcome: string | null
           outcome_at: string | null
@@ -3638,6 +3660,8 @@ export type Database = {
           id?: string
           intro_video_url?: string | null
           last_viewed_at?: string | null
+          mail_background_id?: string | null
+          mail_template_id?: string | null
           organization_id: string
           outcome?: string | null
           outcome_at?: string | null
@@ -3671,6 +3695,8 @@ export type Database = {
           id?: string
           intro_video_url?: string | null
           last_viewed_at?: string | null
+          mail_background_id?: string | null
+          mail_template_id?: string | null
           organization_id?: string
           outcome?: string | null
           outcome_at?: string | null
@@ -3689,6 +3715,20 @@ export type Database = {
           win_probability?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "studio_quotes_mail_background_id_fkey"
+            columns: ["mail_background_id"]
+            isOneToOne: false
+            referencedRelation: "mail_backgrounds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_quotes_mail_template_id_fkey"
+            columns: ["mail_template_id"]
+            isOneToOne: false
+            referencedRelation: "outreach_message_templates"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "studio_quotes_organization_id_fkey"
             columns: ["organization_id"]
