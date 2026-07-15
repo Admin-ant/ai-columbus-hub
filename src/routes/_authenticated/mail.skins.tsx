@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { sanitizeSkinHtml, sanitizeSkinInput } from "@/lib/skin-sanitize";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/mail/skins")({
   head: () => ({ meta: [{ title: "Mail skins — Beheer" }] }),
