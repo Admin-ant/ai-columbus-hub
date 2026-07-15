@@ -122,6 +122,11 @@ export function CampaignFlowTab() {
   const [scanError, setScanError] = useState<string | null>(null);
   const [preview, setPreview] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [variants, setVariants] = useState<
+    { label: string; angle: string; body: string }[]
+  >([]);
+  const [selectedVariant, setSelectedVariant] = useState<number | null>(null);
+  const [launching, setLaunching] = useState(false);
 
   const [leads, setLeads] = useState<FlowLead[]>(() => loadLS<FlowLead[]>(LS_LEADS, []));
   const [tasks, setTasks] = useState<FlowTask[]>(() => loadLS<FlowTask[]>(LS_TASKS, []));
@@ -137,6 +142,9 @@ export function CampaignFlowTab() {
   useEffect(() => {
     setScrape(null);
     setScanError(null);
+    setVariants([]);
+    setSelectedVariant(null);
+    setPreview("");
   }, [website]);
 
   async function runScan(): Promise<ScrapeResult | null> {
@@ -162,31 +170,81 @@ export function CampaignFlowTab() {
     }
   }
 
-  async function generateCampaign() {
+  async function generateVariants() {
     if (!name || !company || !email || !website) {
       toast.error("Vul alle velden in");
       return;
     }
-    // Zorg dat we een verse scan hebben (of gebruik bestaande).
     let s = scrape;
     if (!s) {
       s = await runScan();
       if (!s) return;
     }
     setGenerating(true);
+    setVariants([]);
+    setSelectedVariant(null);
+    setPreview("");
     try {
-      const { reply } = await ask({
-        data: {
-          task: "generic",
-          context: `Schrijf een korte, warme cold-outreach mail (max 130 woorden) in het Nederlands aan ${name} van ${company}. Verwerk subtiel dat ze actief zijn in ${s.industry} en gespecialiseerd zijn in ${s.specialisation}. Extra context over het bedrijf: ${s.summary}. Toon: ${s.tone}. Begin met een persoonlijke openingszin die refereert aan hun website (${website}). Sluit af met een concrete vraag voor een korte kennismaking. Geef ALLEEN de mailtekst terug, zonder onderwerpregel of markdown.`,
+      const angles: { label: string; angle: string; instruction: string }[] = [
+        {
+          label: "Warm & persoonlijk",
+          angle: "persoonlijke connectie",
+          instruction:
+            "Zet in op een warme, persoonlijke openingszin die refereert aan iets specifieks van hun website. Toon oprechte interesse in hun werk, geen sales-praat.",
         },
-      });
-      const previewText = reply.trim();
+        {
+          label: "Zakelijk & resultaatgericht",
+          angle: "concrete ROI en efficiëntie",
+          instruction:
+            "Focus op meetbare resultaten en tijdwinst. Noem 1 concreet cijfer of belofte (bijv. 'halveer je screeningstijd') dat aansluit bij hun specialisatie.",
+        },
+        {
+          label: "Nieuwsgierig & kort",
+          angle: "korte vraag-gedreven pitch",
+          instruction:
+            "Houd het ultra-kort (max 80 woorden). Open met een prikkelende vraag over een uitdaging in hun branche en sluit direct af met een concrete vraag voor 10 minuten sparren.",
+        },
+      ];
+
+      const results = await Promise.all(
+        angles.map(async (a) => {
+          const { reply } = await ask({
+            data: {
+              task: "generic",
+              context: `Schrijf een cold-outreach mail in het Nederlands aan ${name} van ${company}. Hoek: ${a.angle}. ${a.instruction} Verwerk subtiel dat ze actief zijn in ${s!.industry} en gespecialiseerd zijn in ${s!.specialisation}. Extra bedrijfscontext: ${s!.summary}. Toon: ${s!.tone}. Refereer natuurlijk aan hun website (${website}). Sluit af met een concrete vraag voor een korte kennismaking. Geef ALLEEN de mailtekst terug — geen onderwerpregel, geen markdown, geen labels.`,
+            },
+          });
+          return { label: a.label, angle: a.angle, body: reply.trim() };
+        }),
+      );
+      setVariants(results);
+      setSelectedVariant(0);
+      toast.success("3 concepten gegenereerd — kies er één");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "AI genereren mislukt");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function launchCampaign() {
+    if (selectedVariant === null || !variants[selectedVariant]) {
+      toast.error("Kies eerst een concept");
+      return;
+    }
+    const chosen = variants[selectedVariant];
+    const s = scrape;
+    if (!s) {
+      toast.error("Scan ontbreekt");
+      return;
+    }
+    setLaunching(true);
+    try {
+      const previewText = chosen.body;
       setPreview(previewText);
       const now = new Date().toISOString();
       const leadId = crypto.randomUUID();
 
-      // Genereer unieke tracking-link voor deze lead
       let trackingToken: string | null = null;
       let trackingUrl: string | null = null;
       let trackingLinkId: string | null = null;
@@ -206,7 +264,6 @@ export function CampaignFlowTab() {
         console.warn("Tracking link kon niet worden gemaakt", err);
       }
 
-      // Persisteer lead server-side zodat de achtergrondjob 'm kan opvolgen
       let serverLeadId: string | null = null;
       try {
         const saved = await createServerLead({
@@ -245,17 +302,18 @@ export function CampaignFlowTab() {
       };
       setLeads((cur) => [lead, ...cur]);
       toast.success(
-        trackingUrl && serverLeadId
-          ? "Campagne gestart · automation actief"
-          : "Campagne gestart",
+        `Campagne gestart met concept "${chosen.label}"${trackingUrl && serverLeadId ? " · automation actief" : ""}`,
       );
+      // Reset voor volgende lead
+      setVariants([]);
+      setSelectedVariant(null);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "AI genereren mislukt";
-      toast.error(msg);
+      toast.error(e instanceof Error ? e.message : "Campagne starten mislukt");
     } finally {
-      setGenerating(false);
+      setLaunching(false);
     }
   }
+
 
   async function refreshStats() {
     const refs = leads.map((l) => l.id).filter(Boolean);
@@ -556,8 +614,8 @@ export function CampaignFlowTab() {
             {scanning ? "Scannen…" : scrape ? "Opnieuw scannen" : "Scan website"}
           </Button>
           <Button
-            onClick={generateCampaign}
-            disabled={generating || scanning}
+            onClick={generateVariants}
+            disabled={generating || scanning || launching}
             className="bg-brand text-white hover:bg-brand/90"
           >
             {generating ? (
@@ -565,25 +623,104 @@ export function CampaignFlowTab() {
             ) : (
               <Sparkles className="mr-2 h-4 w-4" />
             )}
-            {generating ? "Genereren…" : "Genereer Gepersonaliseerde Campagne"}
+            {generating
+              ? "3 concepten genereren…"
+              : variants.length > 0
+                ? "Genereer opnieuw"
+                : "Genereer 3 concepten"}
           </Button>
         </div>
 
+        {variants.length > 0 && (
+          <div className="mt-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Kies één van de 3 concepten
+              </Label>
+              <span className="text-[10px] text-muted-foreground">
+                Alleen de gekozen versie wordt verstuurd
+              </span>
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              {variants.map((v, idx) => {
+                const active = selectedVariant === idx;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setSelectedVariant(idx)}
+                    className={`text-left rounded-md border p-3 transition-all ${
+                      active
+                        ? "border-brand bg-brand/10 ring-2 ring-brand/40"
+                        : "border-border bg-background/40 hover:border-brand/60"
+                    }`}
+                  >
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold">{v.label}</span>
+                      {active && (
+                        <Badge className="bg-brand text-white text-[9px]">Gekozen</Badge>
+                      )}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground mb-2">
+                      Hoek: {v.angle}
+                    </div>
+                    <pre className="whitespace-pre-wrap text-[11px] leading-snug text-foreground/90 max-h-56 overflow-auto font-sans">
+                      {v.body}
+                    </pre>
+                  </button>
+                );
+              })}
+            </div>
+            {selectedVariant !== null && (
+              <div>
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Bewerk indien nodig
+                </Label>
+                <Textarea
+                  value={variants[selectedVariant].body}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setVariants((cur) =>
+                      cur.map((x, i) => (i === selectedVariant ? { ...x, body: val } : x)),
+                    );
+                  }}
+                  rows={8}
+                  className="mt-1 font-mono text-xs"
+                />
+              </div>
+            )}
+            <div className="flex justify-end">
+              <Button
+                onClick={launchCampaign}
+                disabled={launching || selectedVariant === null}
+                className="bg-brand text-white hover:bg-brand/90"
+              >
+                {launching ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Rocket className="mr-2 h-4 w-4" />
+                )}
+                {launching ? "Campagne starten…" : "Start campagne met gekozen concept"}
+              </Button>
+            </div>
+          </div>
+        )}
 
-        {preview && (
+        {preview && variants.length === 0 && (
           <div className="mt-5">
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-              E-mail concept (preview)
+              Laatst verstuurde concept
             </Label>
             <Textarea
               value={preview}
-              onChange={(e) => setPreview(e.target.value)}
-              rows={10}
+              readOnly
+              rows={8}
               className="mt-1 font-mono text-xs"
             />
           </div>
         )}
       </div>
+
 
       {/* Actieve leads in flow */}
       <div className="rounded-lg border border-border bg-muted/30 p-5">
