@@ -348,9 +348,9 @@ function MailSkinsPage() {
             </div>
             <div className="rounded border border-border p-3" style={previewStyle}>
               <div className="mx-auto max-w-[600px] rounded bg-white shadow-sm">
-                <div dangerouslySetInnerHTML={{ __html: previewHeader }} />
+                <div dangerouslySetInnerHTML={{ __html: sanitizeSkinHtml(previewHeader) }} />
                 <div dangerouslySetInnerHTML={{ __html: previewBody }} />
-                <div dangerouslySetInnerHTML={{ __html: previewFooter }} />
+                <div dangerouslySetInnerHTML={{ __html: sanitizeSkinHtml(previewFooter) }} />
               </div>
             </div>
           </div>
