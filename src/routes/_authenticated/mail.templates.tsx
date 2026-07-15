@@ -1,15 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { z } from "zod";
 import { ArrowLeft, LayoutTemplate } from "lucide-react";
 import { TemplatesManager } from "@/components/outreach/templates-manager";
 import { useWorkspace } from "@/hooks/use-workspace";
 
+const SearchSchema = z.object({ template: z.string().uuid().optional() });
+
 export const Route = createFileRoute("/_authenticated/mail/templates")({
   head: () => ({ meta: [{ title: "E-mail templates — Beheer" }] }),
+  validateSearch: (s) => SearchSchema.parse(s),
   component: MailTemplatesPage,
 });
 
 function MailTemplatesPage() {
   const { currentOrganizationId, currentOrganization } = useWorkspace();
+  const { template } = Route.useSearch();
 
   return (
     <div className="min-h-full bg-background text-foreground">
@@ -33,7 +38,10 @@ function MailTemplatesPage() {
         </div>
 
         <div className="rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm">
-          <TemplatesManager organizationId={currentOrganizationId ?? null} />
+          <TemplatesManager
+            organizationId={currentOrganizationId ?? null}
+            autoSelectId={template ?? null}
+          />
         </div>
       </div>
     </div>
