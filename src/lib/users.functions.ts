@@ -367,8 +367,9 @@ export const resendInvite = createServerFn({ method: "POST" })
       if (s?.invite_body && s.invite_body.trim()) tplBody = s.invite_body;
     }
 
+    let emailResult: EmailResult = { ok: false, reason: "Niet verstuurd" };
     try {
-      await sendWelcomeEmail({
+      emailResult = await sendWelcomeEmail({
         to: email,
         displayName,
         tempPassword,
@@ -377,10 +378,12 @@ export const resendInvite = createServerFn({ method: "POST" })
         body: tplBody,
       });
     } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
       console.warn("[resendInvite] welkomstmail fout", e);
+      emailResult = { ok: false, reason: msg };
     }
 
-    return { ok: true };
+    return { ok: true, email: emailResult };
   });
 
 const passwordSchema = z.object({
