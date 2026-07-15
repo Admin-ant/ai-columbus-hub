@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Palette, Plus, Trash2, Copy, Save, History, RotateCcw, Eye, Download, Upload, GitCompare } from "lucide-react";
+import { ArrowLeft, Palette, Plus, Trash2, Copy, Save, History, RotateCcw, Eye, Download, Upload, GitCompare, Search, CalendarIcon, X } from "lucide-react";
+import { format, isSameDay, parseISO } from "date-fns";
+import { nl } from "date-fns/locale/nl";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -9,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { sanitizeSkinHtml, sanitizeSkinInput } from "@/lib/skin-sanitize";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
@@ -40,6 +44,8 @@ function MailSkinsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
 
   // editor state
   const [name, setName] = useState("");
@@ -65,6 +71,15 @@ function MailSkinsPage() {
   const [diffVersion, setDiffVersion] = useState<SkinVersion | null>(null);
 
   const selected = useMemo(() => skins.find((s) => s.id === selectedId) ?? null, [skins, selectedId]);
+
+  const filteredSkins = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return skins.filter((s) => {
+      const matchesName = !q || s.name.toLowerCase().includes(q);
+      const matchesDate = !dateFilter || isSameDay(parseISO(s.updated_at), dateFilter);
+      return matchesName && matchesDate;
+    });
+  }, [skins, searchQuery, dateFilter]);
 
   async function reload() {
     if (!currentOrganizationId) return;
@@ -441,15 +456,67 @@ function MailSkinsPage() {
               />
             </div>
 
+            <div className="mb-2 space-y-2">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Zoek op naam…"
+                  className="h-8 pl-7 text-xs"
+                />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 flex-1 justify-start text-xs text-muted-foreground"
+                    >
+                      <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                      {dateFilter ? format(dateFilter, "d MMMM yyyy", { locale: nl }) : "Filter op datum"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={dateFilter}
+                      onSelect={setDateFilter}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+                {(searchQuery || dateFilter) && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setDateFilter(undefined);
+                    }}
+                    title="Wis filters"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                {filteredSkins.length} {filteredSkins.length === 1 ? "skin" : "skins"} gevonden
+              </div>
+            </div>
+
             {loading ? (
               <div className="p-3 text-xs text-muted-foreground">Laden…</div>
-            ) : skins.length === 0 ? (
+            ) : filteredSkins.length === 0 ? (
               <div className="rounded border border-dashed p-3 text-center text-xs text-muted-foreground">
-                Nog geen skins. Klik op <strong>Nieuw</strong>.
+                {searchQuery || dateFilter ? "Geen skins gevonden voor deze filters." : <>Nog geen skins. Klik op <strong>Nieuw</strong>.</>}
               </div>
             ) : (
               <ul className="space-y-1">
-                {skins.map((s) => (
+                {filteredSkins.map((s) => (
                   <li key={s.id}>
                     <div
                       className={`group flex items-center justify-between rounded px-2 py-1.5 text-sm ${
