@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   type OutreachTemplate,
   type TemplateChannel,
+  type MailBackground,
   TEMPLATE_TOKENS,
   renderTokens,
 } from "@/lib/outreach-templates";
