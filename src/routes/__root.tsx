@@ -132,6 +132,7 @@ function RootComponent() {
       <AuthProvider>
         <WorkspaceProvider>
           <Outlet />
+          <ColumbusChatWidget />
           <Toaster />
         </WorkspaceProvider>
       </AuthProvider>
