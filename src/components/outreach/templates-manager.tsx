@@ -75,7 +75,13 @@ type TemplateVersion = {
   created_by: string | null;
 };
 
-export function TemplatesManager({ organizationId }: { organizationId: string | null }) {
+export function TemplatesManager({
+  organizationId,
+  autoSelectId,
+}: {
+  organizationId: string | null;
+  autoSelectId?: string | null;
+}) {
   const [templates, setTemplates] = useState<OutreachTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<OutreachTemplate | null>(null);
