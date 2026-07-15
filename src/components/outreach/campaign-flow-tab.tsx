@@ -194,6 +194,30 @@ export function CampaignFlowTab() {
     return out;
   }, [scrape, originalScrape]);
 
+  const livePreviews = useMemo(() => {
+    if (!scrape) return [];
+    const displayName = name.trim() || "[naam]";
+    const displayCompany = company.trim() || "[bedrijf]";
+    const industry = (scrape.industry ?? "").trim() || "jullie branche";
+    const specialisation = (scrape.specialisation ?? "").trim() || "jullie specialisatie";
+    const tone = (scrape.tone ?? "").trim() || "neutraal";
+    const summary = (scrape.summary ?? "").trim() || "jullie werk";
+    return [
+      {
+        label: "Warm & persoonlijk",
+        body: `Hi ${displayName},\n\nIk kwam ${displayCompany} tegen en werd nieuwsgierig — vooral omdat jullie in ${industry} echt inzetten op ${specialisation}. ${summary.slice(0, 140)}${summary.length > 140 ? "…" : ""}\n\nZou je openstaan voor een korte kennismaking?`,
+      },
+      {
+        label: "Zakelijk & resultaatgericht",
+        body: `Hi ${displayName},\n\nBinnen ${industry} zien we dat organisaties zoals ${displayCompany} — met focus op ${specialisation} — hun screeningstijd flink kunnen terugbrengen. Op basis van ${summary.slice(0, 100)}${summary.length > 100 ? "…" : ""} denk ik dat er concreet ruimte zit.\n\nHeb je 15 minuten om te sparren?`,
+      },
+      {
+        label: "Nieuwsgierig & kort",
+        body: `Hi ${displayName},\n\nSnelle vraag: wat is momenteel jullie grootste uitdaging binnen ${specialisation}? Ik zag bij ${displayCompany} dat ${summary.slice(0, 90)}${summary.length > 90 ? "…" : ""}\n\n10 minuten sparren volgende week?`,
+      },
+    ].map((p) => ({ ...p, tone }));
+  }, [scrape, name, company]);
+
 
   // Reset scan wanneer de URL verandert.
 
@@ -858,6 +882,40 @@ export function CampaignFlowTab() {
                 </ul>
               </div>
             )}
+
+            {livePreviews.length > 0 && (
+              <div className="rounded-md border border-dashed border-border bg-background/60 p-3 text-xs">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="font-medium text-foreground">Live voorbeeld e-mailconcepten</span>
+                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    template · past aan tijdens typen
+                  </span>
+                </div>
+                <div className="grid gap-2 md:grid-cols-3">
+                  {livePreviews.map((p) => (
+                    <div
+                      key={p.label}
+                      className="rounded-md border border-border bg-muted/30 p-2"
+                    >
+                      <div className="mb-1 flex items-center justify-between gap-1">
+                        <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                          {p.label}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">toon: {p.tone}</span>
+                      </div>
+                      <pre className="whitespace-pre-wrap font-sans text-[11px] leading-relaxed text-foreground/90">
+                        {p.body}
+                      </pre>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-2 text-[10px] text-muted-foreground">
+                  Dit is een indicatief sjabloon. De definitieve concepten worden door AI gegenereerd op basis van deze velden.
+                </p>
+              </div>
+            )}
+
+
 
             <div>
               <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Bron URL</dt>
