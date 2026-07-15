@@ -410,7 +410,78 @@ export function CampaignFlowTab() {
     toast.info(`Opvolgtaak aangemaakt voor ${lead.company}`);
   }
 
-  const openTasks = useMemo(() => tasks.filter((t) => !t.done), [tasks]);
+  const openTasks = useMemo(
+    () => tasks.filter((t) => t.status !== "done" && t.status !== "cancelled"),
+    [tasks],
+  );
+  const updateTask = useServerFn(updateCampaignTask);
+  const fetchEvents = useServerFn(listCampaignTaskEvents);
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const [eventsByTask, setEventsByTask] = useState<Record<string, CampaignTaskEvent[]>>({});
+  const [loadingEventsFor, setLoadingEventsFor] = useState<string | null>(null);
+
+  async function changeTaskStatus(
+    task: FlowTask,
+    status: TaskStatus,
+    opts?: { result?: string; error?: string },
+  ) {
+    const now = new Date().toISOString();
+    // Optimistic local update
+    setTasks((cur) =>
+      cur.map((t) =>
+        t.id === task.id
+          ? {
+              ...t,
+              status,
+              done: status === "done",
+              doneAt: status === "done" ? now : null,
+              startedAt: status === "in_progress" ? now : t.startedAt,
+              result: status === "done" ? opts?.result ?? t.result ?? null : t.result,
+              error: status === "failed" ? opts?.error ?? t.error ?? null : status === "done" ? null : t.error,
+            }
+          : t,
+      ),
+    );
+    if (task.serverId) {
+      try {
+        await updateTask({
+          data: {
+            id: task.serverId,
+            status,
+            result: opts?.result,
+            error: opts?.error,
+          },
+        });
+        // Refresh events if open
+        if (expandedTaskId === task.id) loadEvents(task);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Bijwerken mislukt");
+      }
+    }
+  }
+
+  async function loadEvents(task: FlowTask) {
+    if (!task.serverId) return;
+    setLoadingEventsFor(task.id);
+    try {
+      const rows = await fetchEvents({ data: { taskId: task.serverId } });
+      setEventsByTask((cur) => ({ ...cur, [task.id]: rows }));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Log ophalen mislukt");
+    } finally {
+      setLoadingEventsFor(null);
+    }
+  }
+
+  function toggleEvents(task: FlowTask) {
+    if (expandedTaskId === task.id) {
+      setExpandedTaskId(null);
+      return;
+    }
+    setExpandedTaskId(task.id);
+    if (!eventsByTask[task.id]) loadEvents(task);
+  }
+
 
   return (
     <div className="space-y-6">
