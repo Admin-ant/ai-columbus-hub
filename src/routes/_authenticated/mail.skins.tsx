@@ -46,6 +46,21 @@ function MailSkinsPage() {
   const [header, setHeader] = useState(DEFAULT_HEADER);
   const [footer, setFooter] = useState(DEFAULT_FOOTER);
 
+  // versions
+  type SkinVersion = {
+    id: string;
+    background_id: string;
+    version: number;
+    name: string;
+    background_color: string | null;
+    background_image_url: string | null;
+    header_html: string | null;
+    footer_html: string | null;
+    created_at: string;
+  };
+  const [versions, setVersions] = useState<SkinVersion[]>([]);
+  const [previewVersion, setPreviewVersion] = useState<SkinVersion | null>(null);
+
   const selected = useMemo(() => skins.find((s) => s.id === selectedId) ?? null, [skins, selectedId]);
 
   async function reload() {
