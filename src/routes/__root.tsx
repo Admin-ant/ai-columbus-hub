@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/hooks/use-auth";
 import { WorkspaceProvider } from "@/hooks/use-workspace";
 import { Toaster } from "@/components/ui/sonner";
+import { ColumbusChatWidget } from "@/components/columbus-chat-widget";
 import { supabase } from "@/integrations/supabase/client";
 import "@/i18n";
 
