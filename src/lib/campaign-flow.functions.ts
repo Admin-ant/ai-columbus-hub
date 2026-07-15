@@ -17,6 +17,13 @@ export type CampaignFlowLead = {
   created_at: string;
 };
 
+export type CampaignTaskStatus =
+  | "pending"
+  | "in_progress"
+  | "done"
+  | "failed"
+  | "cancelled";
+
 export type CampaignFlowTask = {
   id: string;
   lead_id: string | null;
@@ -25,8 +32,22 @@ export type CampaignFlowTask = {
   done: boolean;
   done_at: string | null;
   created_at: string;
+  status: CampaignTaskStatus;
+  result: string | null;
+  error: string | null;
+  started_at: string | null;
   lead_name?: string | null;
   company?: string | null;
+};
+
+export type CampaignTaskEvent = {
+  id: string;
+  task_id: string;
+  event_type: string;
+  from_status: string | null;
+  to_status: string | null;
+  message: string | null;
+  created_at: string;
 };
 
 export const listCampaignLeads = createServerFn({ method: "GET" })
