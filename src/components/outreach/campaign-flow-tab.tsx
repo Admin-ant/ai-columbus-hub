@@ -38,14 +38,22 @@ import {
 
 type ScrapeResult = WebsiteScanResult;
 
+type TaskStatus = "pending" | "in_progress" | "done" | "failed" | "cancelled";
+
 type FlowTask = {
   id: string;
+  serverId?: string | null;
   leadName: string;
   company: string;
   action: "call" | "followup";
   reason: string;
   createdAt: string;
   done: boolean;
+  status: TaskStatus;
+  result?: string | null;
+  error?: string | null;
+  startedAt?: string | null;
+  doneAt?: string | null;
 };
 
 type FlowLead = {
