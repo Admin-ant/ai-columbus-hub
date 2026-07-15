@@ -128,8 +128,12 @@ function GebruikersPage() {
     e.preventDefault();
     setBusy(true);
     try {
-      await fnInvite({ data: { email: iEmail, password: iPwd, displayName: iName, role: iRole } });
-      toast.success("Gebruiker aangemaakt");
+      const res = await fnInvite({ data: { email: iEmail, password: iPwd, displayName: iName, role: iRole } });
+      if (res?.email?.ok === false) {
+        toast.warning(`Gebruiker aangemaakt, maar welkomstmail is niet verstuurd: ${res.email.reason}`, { duration: 10000 });
+      } else {
+        toast.success("Gebruiker aangemaakt en welkomstmail verstuurd");
+      }
       setInviteOpen(false);
       setIName(""); setIEmail(""); setIPwd(""); setIRole("medewerker");
       refresh();
@@ -180,8 +184,12 @@ function GebruikersPage() {
   async function handleResend(row: Row) {
     setResendingId(row.id);
     try {
-      await fnResend({ data: { userId: row.id } });
-      toast.success(`Uitnodiging opnieuw verstuurd naar ${row.email}`);
+      const res = await fnResend({ data: { userId: row.id } });
+      if (res?.email?.ok === false) {
+        toast.warning(`Wachtwoord gereset, maar welkomstmail is niet verstuurd: ${res.email.reason}`, { duration: 10000 });
+      } else {
+        toast.success(`Uitnodiging opnieuw verstuurd naar ${row.email}`);
+      }
     } catch (e: any) {
       toast.error("Verzenden mislukt: " + e.message);
     } finally {
