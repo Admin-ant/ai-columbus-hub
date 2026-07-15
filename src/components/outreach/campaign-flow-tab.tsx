@@ -724,7 +724,7 @@ export function CampaignFlowTab() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={runScan}
+                onClick={rescanWebsite}
                 disabled={scanning || !!inlineUrlError}
                 className="border-destructive/40 text-destructive hover:bg-destructive/10"
               >
