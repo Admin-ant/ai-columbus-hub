@@ -90,7 +90,10 @@ export function CampaignFlowTab() {
   const scan = useServerFn(scanWebsite);
   const createLink = useServerFn(createTrackingLink);
   const listLinks = useServerFn(listTrackingLinks);
+  const createServerLead = useServerFn(createCampaignLead);
+  const fetchServerTasks = useServerFn(listCampaignTasks);
   const [refreshingStats, setRefreshingStats] = useState(false);
+  const [runningAutomation, setRunningAutomation] = useState(false);
 
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
