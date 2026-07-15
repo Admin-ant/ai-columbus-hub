@@ -183,6 +183,41 @@ export function CampaignFlowTab() {
   const [savedScanEdits, setSavedScanEdits] = useState<Record<string, SavedScanEdit>>(
     () => loadLS<Record<string, SavedScanEdit>>(LS_SCAN_EDITS, {}),
   );
+  const [openDiffUrl, setOpenDiffUrl] = useState<string | null>(null);
+
+  function computeScanDiff(original: ScrapeResult, edited: ScrapeResult) {
+    const fields = [
+      { key: "industry", label: "Branche" },
+      { key: "specialisation", label: "Specialisatie" },
+      { key: "tone", label: "Toon" },
+      { key: "summary", label: "Samenvatting" },
+    ] as const;
+    const out: { key: string; label: string; from: string; to: string }[] = [];
+    for (const { key, label } of fields) {
+      const from = (original[key] ?? "") || "";
+      const to = (edited[key] ?? "") || "";
+      if (from !== to) out.push({ key, label, from, to });
+    }
+    return { changes: out, total: fields.length };
+  }
+
+  async function copyDiffAsText(entry: SavedScanEdit) {
+    const { changes } = computeScanDiff(entry.original, entry.edited);
+    if (changes.length === 0) {
+      toast.info("Geen verschillen om te kopiëren");
+      return;
+    }
+    const header = `Verschiloverzicht — ${entry.company || entry.sourceUrl}\n${entry.sourceUrl}\n`;
+    const body = changes
+      .map((c) => `• ${c.label}\n  scan: ${c.from || "—"}\n  opgeslagen: ${c.to || "—"}`)
+      .join("\n\n");
+    try {
+      await navigator.clipboard.writeText(`${header}\n${body}\n`);
+      toast.success("Verschil gekopieerd naar klembord");
+    } catch {
+      toast.error("Kopiëren mislukt");
+    }
+  }
 
   useEffect(() => {
     localStorage.setItem(LS_LEADS, JSON.stringify(leads));
