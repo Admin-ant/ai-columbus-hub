@@ -184,6 +184,21 @@ export function CampaignFlowTab() {
     () => loadLS<Record<string, SavedScanEdit>>(LS_SCAN_EDITS, {}),
   );
   const [openDiffUrl, setOpenDiffUrl] = useState<string | null>(null);
+  const [openDiffFields, setOpenDiffFields] = useState<Record<string, string[]>>({});
+
+  function toggleDiffField(url: string, fieldKey: string) {
+    setOpenDiffFields((prev) => {
+      const current = prev[url] ?? [];
+      const next = current.includes(fieldKey)
+        ? current.filter((k) => k !== fieldKey)
+        : [...current, fieldKey];
+      return { ...prev, [url]: next };
+    });
+  }
+
+  function setAllDiffFields(url: string, keys: string[]) {
+    setOpenDiffFields((prev) => ({ ...prev, [url]: keys }));
+  }
 
   function computeScanDiff(original: ScrapeResult, edited: ScrapeResult) {
     const fields = [
@@ -1317,29 +1332,126 @@ export function CampaignFlowTab() {
                             </p>
                           ) : (
                             <>
-                              <ul className="space-y-2">
-                                {changes.map((change) => (
-                                  <li key={change.key}>
-                                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                                      {change.label}
-                                    </span>
-                                    <div className="mt-0.5 flex items-center gap-2">
-                                      <span
-                                        className="truncate text-destructive line-through"
-                                        title={change.from}
+                              <div className="mb-2 flex items-center justify-between gap-2">
+                                <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                                  Origineel vs Opgeslagen
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 text-[10px]"
+                                    onClick={() =>
+                                      setAllDiffFields(
+                                        entry.sourceUrl,
+                                        changes.map((c) => c.key),
+                                      )
+                                    }
+                                  >
+                                    Alles uitklappen
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 text-[10px]"
+                                    onClick={() => setAllDiffFields(entry.sourceUrl, [])}
+                                  >
+                                    Inklappen
+                                  </Button>
+                                </div>
+                              </div>
+                              <ul className="space-y-1.5">
+                                {changes.map((change) => {
+                                  const openFields = openDiffFields[entry.sourceUrl] ?? [];
+                                  const fieldOpen = openFields.includes(change.key);
+                                  const delta =
+                                    (change.to?.length ?? 0) - (change.from?.length ?? 0);
+                                  return (
+                                    <li
+                                      key={change.key}
+                                      className="rounded border border-border/60 bg-background"
+                                    >
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          toggleDiffField(entry.sourceUrl, change.key)
+                                        }
+                                        aria-expanded={fieldOpen}
+                                        className="flex w-full items-center gap-2 px-2 py-1.5 text-left hover:bg-muted/40"
                                       >
-                                        {change.from || "—"}
-                                      </span>
-                                      <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground" />
-                                      <span
-                                        className="truncate font-medium text-emerald-600 dark:text-emerald-400"
-                                        title={change.to}
-                                      >
-                                        {change.to || "—"}
-                                      </span>
-                                    </div>
-                                  </li>
-                                ))}
+                                        {fieldOpen ? (
+                                          <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
+                                        ) : (
+                                          <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />
+                                        )}
+                                        <span className="text-[11px] font-medium text-foreground">
+                                          {change.label}
+                                        </span>
+                                        <span className="ml-auto flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                          <span
+                                            className={
+                                              delta > 0
+                                                ? "text-emerald-600 dark:text-emerald-400"
+                                                : delta < 0
+                                                  ? "text-destructive"
+                                                  : ""
+                                            }
+                                          >
+                                            {delta > 0 ? `+${delta}` : delta} tekens
+                                          </span>
+                                        </span>
+                                      </button>
+                                      {fieldOpen ? (
+                                        <div className="grid gap-2 border-t border-border/60 p-2 sm:grid-cols-2">
+                                          <div>
+                                            <div className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                                              <span className="inline-block h-1.5 w-1.5 rounded-full bg-destructive" />
+                                              Origineel
+                                            </div>
+                                            <div className="max-h-48 overflow-auto whitespace-pre-wrap break-words rounded border border-destructive/30 bg-destructive/5 p-1.5 text-[11px] leading-relaxed text-foreground">
+                                              {change.from || (
+                                                <span className="italic text-muted-foreground">
+                                                  (leeg)
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <div>
+                                            <div className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                                              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                              Opgeslagen
+                                            </div>
+                                            <div className="max-h-48 overflow-auto whitespace-pre-wrap break-words rounded border border-emerald-500/30 bg-emerald-500/5 p-1.5 text-[11px] leading-relaxed text-foreground">
+                                              {change.to || (
+                                                <span className="italic text-muted-foreground">
+                                                  (leeg)
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div className="flex items-center gap-2 border-t border-border/60 px-2 py-1">
+                                          <span
+                                            className="min-w-0 flex-1 truncate text-[11px] text-destructive line-through"
+                                            title={change.from}
+                                          >
+                                            {change.from || "—"}
+                                          </span>
+                                          <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground" />
+                                          <span
+                                            className="min-w-0 flex-1 truncate text-[11px] font-medium text-emerald-600 dark:text-emerald-400"
+                                            title={change.to}
+                                          >
+                                            {change.to || "—"}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </li>
+                                  );
+                                })}
                               </ul>
                               <div className="mt-2 flex items-center justify-between gap-2 border-t border-border/60 pt-2">
                                 <span className="text-[10px] text-muted-foreground">
