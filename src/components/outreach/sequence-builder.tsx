@@ -151,12 +151,16 @@ export function SequenceBuilder({ campaignId, initialSteps, onSaved }: Props) {
     onSaved(steps);
   };
 
-  const saveAsTemplate = () => {
+  const saveAsTemplate = async () => {
     const name = window.prompt("Naam voor deze workflow-template?");
     if (!name?.trim()) return;
-    const tpl = saveTemplate(name.trim(), steps);
-    setTemplates(loadTemplates());
-    toast.success(`Opgeslagen als template: ${tpl.name}`);
+    try {
+      const tpl = await saveTemplate(name.trim(), steps);
+      setTemplates(await loadTemplates());
+      toast.success(`Opgeslagen als template: ${tpl.name}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Opslaan mislukt");
+    }
   };
 
   const loadFromTemplate = (id: string) => {
@@ -167,9 +171,13 @@ export function SequenceBuilder({ campaignId, initialSteps, onSaved }: Props) {
     toast.success(`Geladen: ${tpl.name}`);
   };
 
-  const removeTemplate = (id: string) => {
-    setTemplates(deleteTemplate(id));
-    toast.success("Template verwijderd");
+  const removeTemplate = async (id: string) => {
+    try {
+      setTemplates(await deleteTemplate(id));
+      toast.success("Template verwijderd");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Verwijderen mislukt");
+    }
   };
 
 
