@@ -86,6 +86,27 @@ export function SequenceBuilder({ campaignId, initialSteps, onSaved }: Props) {
   const [activeStep, setActiveStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [templates, setTemplates] = useState<SequenceTemplate[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const exportTemplates = () => {
+    if (templates.length === 0) {
+      toast.error("Er zijn nog geen templates om te exporteren");
+      return;
+    }
+    downloadTemplatesJson(templates);
+    toast.success(`${templates.length} template(s) geëxporteerd als JSON`);
+  };
+
+  const onImportFile = async (file: File) => {
+    try {
+      const text = await file.text();
+      const imported = await importTemplatesFromJson(text);
+      setTemplates(await loadTemplates());
+      toast.success(`${imported.length} template(s) geïmporteerd`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Import mislukt");
+    }
+  };
 
   useEffect(() => {
     void loadTemplates().then(setTemplates).catch(() => setTemplates([]));
