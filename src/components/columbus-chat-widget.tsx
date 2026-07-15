@@ -64,13 +64,20 @@ export function ColumbusChatWidget() {
   const [messages, setMessages] = useState<Msg[]>([INTRO]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [authed, setAuthed] = useState<boolean | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const injectedRef = useRef(false);
 
   useEffect(() => {
     setMounted(true);
     setConfig(readConfig());
+    supabase.auth.getSession().then(({ data }) => setAuthed(Boolean(data.session)));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setAuthed(Boolean(session));
+    });
+    return () => sub.subscription.unsubscribe();
   }, []);
+
 
   // Laad extern widget-script indien opgegeven.
   useEffect(() => {
