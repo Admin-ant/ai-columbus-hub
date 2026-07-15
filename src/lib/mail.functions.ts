@@ -268,3 +268,80 @@ export const bulkUpdateMail = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true, count: data.ids.length };
   });
+
+const TEST_SCHEMA = z.object({
+  organization_id: z.string().uuid(),
+  to: z.string().email(),
+  subject: z.string().min(1).max(300),
+  body: z.string().min(1).max(50000),
+  background_color: z.string().max(32).nullable().optional(),
+  background_image_url: z.string().max(2000).nullable().optional(),
+  header_html: z.string().max(20000).nullable().optional(),
+  footer_html: z.string().max(20000).nullable().optional(),
+  sample: z.record(z.string(), z.string()).optional().default({}),
+});
+
+function renderTokensServer(text: string, vars: Record<string, string>): string {
+  return text.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k: string) => vars[k] ?? "");
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]!);
+}
+
+export const sendTemplateTestEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => TEST_SCHEMA.parse(d))
+  .handler(async ({ data, context }) => {
+    // Membership check — RLS-guarded
+    const { data: m } = await context.supabase
+      .from("organization_members")
+      .select("user_id")
+      .eq("organization_id", data.organization_id)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (!m) throw new Error("Geen toegang tot deze organisatie");
+
+    const { data: settings } = await context.supabase
+      .from("mail_settings")
+      .select("from_email, from_name")
+      .eq("organization_id", data.organization_id)
+      .maybeSingle();
+    const s = (settings ?? null) as { from_email: string | null; from_name: string | null } | null;
+    const from_email = s?.from_email || process.env.OUTREACH_FROM_EMAIL || "outreach@resend.dev";
+    const from = s?.from_name ? `${s.from_name} <${from_email}>` : from_email;
+
+    const sample = data.sample ?? {};
+    const subject = `[TEST] ${renderTokensServer(data.subject, sample)}`;
+    const bodyRendered = renderTokensServer(data.body, sample);
+
+    const bgColor = data.background_color?.trim() || "#ffffff";
+    const bgImg = data.background_image_url?.trim() || "";
+    const bgStyle = [
+      `background-color:${bgColor}`,
+      bgImg ? `background-image:url('${bgImg.replace(/'/g, "%27")}')` : "",
+      bgImg ? "background-size:cover;background-position:center" : "",
+    ]
+      .filter(Boolean)
+      .join(";");
+
+    const html = `<!doctype html><html><body style="margin:0;padding:0;${bgStyle}">
+<div style="max-width:640px;margin:0 auto;font-family:Inter,Arial,sans-serif;color:#111">
+${data.header_html ?? ""}
+<div style="padding:24px;font-size:15px;line-height:1.6;white-space:pre-wrap">${escapeHtml(bodyRendered)}</div>
+${data.footer_html ?? ""}
+</div></body></html>`;
+
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${process.env.RESEND_API_KEY ?? ""}`,
+      },
+      body: JSON.stringify({ from, to: [data.to], subject, html }),
+    });
+    const txt = await res.text();
+    if (!res.ok) throw new Error(`Resend ${res.status}: ${txt.slice(0, 300)}`);
+    return { ok: true };
+  });
+
