@@ -202,6 +202,43 @@ function MailSkinsPage() {
     setSelectedId(data.id);
   }
 
+  async function duplicateVersion(v: {
+    version: number;
+    name: string;
+    background_color: string | null;
+    background_image_url: string | null;
+    header_html: string | null;
+    footer_html: string | null;
+  }) {
+    if (!currentOrganizationId) return;
+    let clean;
+    try {
+      clean = sanitizeSkinInput({
+        name: `${v.name} (kopie v${v.version})`,
+        background_color: v.background_color,
+        background_image_url: v.background_image_url,
+        header_html: v.header_html,
+        footer_html: v.footer_html,
+      });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Ongeldige skinversie");
+      return;
+    }
+    const { data, error } = await supabase
+      .from("mail_backgrounds")
+      .insert({ organization_id: currentOrganizationId, ...clean })
+      .select("id")
+      .single();
+    if (error) return toast.error(error.message);
+    toast.success(`Versie ${v.version} gedupliceerd als nieuwe skin`);
+    setPreviewVersion(null);
+    setDiffVersion(null);
+    await reload();
+    setSelectedId(data.id);
+  }
+
+
+
   async function remove(s: Skin) {
     if (!confirm(`Skin "${s.name}" verwijderen?`)) return;
     const { error } = await supabase.from("mail_backgrounds").delete().eq("id", s.id);
@@ -579,6 +616,14 @@ function MailSkinsPage() {
                         >
                           <GitCompare className="h-2.5 w-2.5" /> Diff
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => duplicateVersion(v)}
+                          className="inline-flex items-center gap-1 rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-foreground hover:bg-accent"
+                          title="Dupliceer als nieuwe skin"
+                        >
+                          <Copy className="h-2.5 w-2.5" /> Dupliceer
+                        </button>
                         {!isCurrent && (
                           <button
                             type="button"
@@ -613,6 +658,7 @@ function MailSkinsPage() {
           restoreVersion(v as SkinVersion);
           setDiffVersion(null);
         }}
+        onDuplicate={duplicateVersion}
       />
     </div>
   );
@@ -666,12 +712,14 @@ function SkinDiffDialog({
   editor,
   onClose,
   onRestore,
+  onDuplicate,
 }: {
   version: SkinVersionLike | null;
   current: { name: string } | null;
   editor: SkinFields;
   onClose: () => void;
   onRestore: (v: SkinVersionLike) => void;
+  onDuplicate: (v: SkinVersionLike) => void;
 }) {
   const open = !!version;
   const fields: Array<{ key: keyof SkinFields; label: string; mono?: boolean }> = [
@@ -737,6 +785,9 @@ function SkinDiffDialog({
             })}
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" size="sm" onClick={onClose}>Sluiten</Button>
+              <Button size="sm" variant="outline" onClick={() => { onDuplicate(version); onClose(); }} className="gap-1">
+                <Copy className="h-3.5 w-3.5" /> Dupliceer als nieuwe skin
+              </Button>
               <Button size="sm" onClick={() => onRestore(version)} className="gap-1">
                 <RotateCcw className="h-3.5 w-3.5" /> Herstel v{version.version}
               </Button>
