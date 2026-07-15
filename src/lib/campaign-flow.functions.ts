@@ -150,7 +150,14 @@ export const updateCampaignTask = createServerFn({ method: "POST" })
     }) => input,
   )
   .handler(async ({ data, context }) => {
-    const patch: Record<string, unknown> = { status: data.status };
+    const patch: {
+      status: CampaignTaskStatus;
+      done?: boolean;
+      done_at?: string | null;
+      started_at?: string | null;
+      result?: string | null;
+      error?: string | null;
+    } = { status: data.status };
     if (data.status === "in_progress") patch.started_at = new Date().toISOString();
     if (data.status === "done") {
       patch.done = true;
