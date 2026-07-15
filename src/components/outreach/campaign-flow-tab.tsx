@@ -13,6 +13,9 @@ import {
   Loader2,
   Trash2,
   Rocket,
+  Link2,
+  Copy,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +25,11 @@ import { Badge } from "@/components/ui/badge";
 import { useServerFn } from "@tanstack/react-start";
 import { askAssistant } from "@/lib/ai-assistant.functions";
 import { scanWebsite, type WebsiteScanResult } from "@/lib/website-scan.functions";
+import {
+  createTrackingLink,
+  listTrackingLinks,
+  type TrackingLink,
+} from "@/lib/tracking-links.functions";
 
 type ScrapeResult = WebsiteScanResult;
 
@@ -47,6 +55,10 @@ type FlowLead = {
   clicked: boolean;
   stage: 1 | 2 | 3 | 4;
   createdAt: string;
+  trackingToken?: string | null;
+  trackingUrl?: string | null;
+  clickCount?: number;
+  lastVisitedAt?: string | null;
 };
 
 const LS_LEADS = "campaign-flow-leads";
@@ -70,6 +82,9 @@ function normalizeUrl(u: string): string {
 export function CampaignFlowTab() {
   const ask = useServerFn(askAssistant);
   const scan = useServerFn(scanWebsite);
+  const createLink = useServerFn(createTrackingLink);
+  const listLinks = useServerFn(listTrackingLinks);
+  const [refreshingStats, setRefreshingStats] = useState(false);
 
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
@@ -142,8 +157,28 @@ export function CampaignFlowTab() {
       const previewText = reply.trim();
       setPreview(previewText);
       const now = new Date().toISOString();
+      const leadId = crypto.randomUUID();
+
+      // Genereer unieke tracking-link voor deze lead
+      let trackingToken: string | null = null;
+      let trackingUrl: string | null = null;
+      try {
+        const link = await createLink({
+          data: {
+            leadRef: leadId,
+            leadName: name,
+            company,
+            destinationUrl: normalizeUrl(website),
+          },
+        });
+        trackingToken = link.token;
+        trackingUrl = `${window.location.origin}/api/public/l/${link.token}`;
+      } catch (err) {
+        console.warn("Tracking link kon niet worden gemaakt", err);
+      }
+
       const lead: FlowLead = {
-        id: crypto.randomUUID(),
+        id: leadId,
         name,
         company,
         email,
@@ -154,9 +189,17 @@ export function CampaignFlowTab() {
         clicked: false,
         stage: 2,
         createdAt: now,
+        trackingToken,
+        trackingUrl,
+        clickCount: 0,
+        lastVisitedAt: null,
       };
       setLeads((cur) => [lead, ...cur]);
-      toast.success("Campagne gestart & mail verstuurd (mock)");
+      toast.success(
+        trackingUrl
+          ? "Campagne gestart · unieke landingslink aangemaakt"
+          : "Campagne gestart (zonder tracking-link)",
+      );
     } catch (e) {
       const msg = e instanceof Error ? e.message : "AI genereren mislukt";
       toast.error(msg);
@@ -164,6 +207,65 @@ export function CampaignFlowTab() {
       setGenerating(false);
     }
   }
+
+  async function refreshStats() {
+    const refs = leads.map((l) => l.id).filter(Boolean);
+    if (refs.length === 0) {
+      toast.info("Geen leads om te verversen");
+      return;
+    }
+    setRefreshingStats(true);
+    try {
+      const links = await listLinks({ data: { leadRefs: refs } });
+      const byRef = new Map<string, TrackingLink>();
+      for (const l of links) if (l.lead_ref) byRef.set(l.lead_ref, l);
+      let newClicks = 0;
+      setLeads((cur) =>
+        cur.map((l) => {
+          const match = byRef.get(l.id);
+          if (!match) return l;
+          const clicked = match.click_count > 0;
+          if (clicked && !l.clicked) newClicks++;
+          return {
+            ...l,
+            clickCount: match.click_count,
+            lastVisitedAt: match.last_visited_at,
+            clicked: l.clicked || clicked,
+            stage: clicked ? 4 : l.stage,
+          };
+        }),
+      );
+      if (newClicks > 0) {
+        // Maak automatisch bel-taken aan voor nieuwe klikkers
+        setTasks((cur) => {
+          const extra: FlowTask[] = [];
+          for (const l of leads) {
+            const match = byRef.get(l.id);
+            if (match && match.click_count > 0 && !l.clicked) {
+              extra.push({
+                id: crypto.randomUUID(),
+                leadName: l.name,
+                company: l.company,
+                action: "call",
+                reason: "Heeft landingspagina bezocht",
+                createdAt: new Date().toISOString(),
+                done: false,
+              });
+            }
+          }
+          return [...extra, ...cur];
+        });
+        toast.success(`${newClicks} nieuwe kliks gedetecteerd`);
+      } else {
+        toast.info("Stats bijgewerkt · geen nieuwe kliks");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Verversen mislukt");
+    } finally {
+      setRefreshingStats(false);
+    }
+  }
+
 
 
   function simulateClick(lead: FlowLead) {
@@ -304,9 +406,26 @@ export function CampaignFlowTab() {
 
       {/* Actieve leads in flow */}
       <div className="rounded-lg border border-border bg-muted/30 p-5">
-        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Leads in flow ({leads.length})
-        </h3>
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Leads in flow ({leads.length})
+          </h3>
+          {leads.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={refreshStats}
+              disabled={refreshingStats}
+            >
+              {refreshingStats ? (
+                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-1 h-3 w-3" />
+              )}
+              Ververs klikstats
+            </Button>
+          )}
+        </div>
         {leads.length === 0 ? (
           <p className="text-xs text-muted-foreground">
             Nog geen leads. Start hierboven een campagne.
@@ -316,50 +435,89 @@ export function CampaignFlowTab() {
             {leads.map((l) => (
               <div
                 key={l.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-background/50 p-3"
+                className="flex flex-col gap-2 rounded-md border border-border bg-background/50 p-3"
               >
-                <div className="flex-1 min-w-[200px]">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{l.name}</span>
-                    <span className="text-xs text-muted-foreground">· {l.company}</span>
-                    {l.clicked && (
-                      <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40">
-                        Geklikt
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex-1 min-w-[200px]">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium">{l.name}</span>
+                      <span className="text-xs text-muted-foreground">· {l.company}</span>
+                      {l.clicked && (
+                        <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40">
+                          Geklikt
+                        </Badge>
+                      )}
+                      {(l.clickCount ?? 0) > 0 && (
+                        <Badge variant="outline" className="border-emerald-500/40 text-emerald-300 text-[10px]">
+                          {l.clickCount}× bezocht
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="border-border text-[10px]">
+                        Stap {l.stage}/4
                       </Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground">{l.email} · {l.website}</div>
+                    {l.lastVisitedAt && (
+                      <div className="text-[10px] text-muted-foreground/80">
+                        Laatst bezocht: {new Date(l.lastVisitedAt).toLocaleString("nl-NL")}
+                      </div>
                     )}
-                    <Badge variant="outline" className="border-border text-[10px]">
-                      Stap {l.stage}/4
-                    </Badge>
                   </div>
-                  <div className="text-xs text-muted-foreground">{l.email} · {l.website}</div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => simulateClick(l)}
+                      disabled={l.clicked}
+                    >
+                      <MousePointerClick className="mr-1 h-3 w-3" />
+                      Sim. klik
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => simulateNoResponse(l)}>
+                      <Clock className="mr-1 h-3 w-3" />
+                      Sim. geen reactie
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setLeads((cur) => cur.filter((x) => x.id !== l.id))}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => simulateClick(l)}
-                    disabled={l.clicked}
-                  >
-                    <MousePointerClick className="mr-1 h-3 w-3" />
-                    Sim. klik
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => simulateNoResponse(l)}>
-                    <Clock className="mr-1 h-3 w-3" />
-                    Sim. geen reactie
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setLeads((cur) => cur.filter((x) => x.id !== l.id))}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
+                {l.trackingUrl && (
+                  <div className="flex flex-wrap items-center gap-2 rounded-md border border-brand/30 bg-brand/5 p-2 text-xs">
+                    <Link2 className="h-3 w-3 text-brand" />
+                    <span className="text-muted-foreground">Unieke landingslink:</span>
+                    <code className="truncate max-w-[320px] text-brand">{l.trackingUrl}</code>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-2"
+                      onClick={() => {
+                        navigator.clipboard.writeText(l.trackingUrl!);
+                        toast.success("Link gekopieerd");
+                      }}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                    <a
+                      href={l.trackingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-brand underline text-[10px]"
+                    >
+                      Test klik ↗
+                    </a>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         )}
       </div>
+
 
       {/* Taken & Acties */}
       <div className="rounded-lg border border-border bg-muted/30 p-5">
