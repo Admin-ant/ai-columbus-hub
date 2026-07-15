@@ -371,6 +371,51 @@ export type Database = {
           },
         ]
       }
+      chat_audit_log: {
+        Row: {
+          agent: string | null
+          created_at: string
+          duration_ms: number | null
+          error: string | null
+          id: string
+          message_count: number | null
+          model: string | null
+          prompt: string
+          reply: string | null
+          source: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          agent?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          message_count?: number | null
+          model?: string | null
+          prompt: string
+          reply?: string | null
+          source?: string | null
+          status: string
+          user_id: string
+        }
+        Update: {
+          agent?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          message_count?: number | null
+          model?: string | null
+          prompt?: string
+          reply?: string | null
+          source?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       client_requirements: {
         Row: {
           created_at: string
