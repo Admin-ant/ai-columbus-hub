@@ -142,6 +142,9 @@ export function CampaignFlowTab() {
   useEffect(() => {
     setScrape(null);
     setScanError(null);
+    setVariants([]);
+    setSelectedVariant(null);
+    setPreview("");
   }, [website]);
 
   async function runScan(): Promise<ScrapeResult | null> {
