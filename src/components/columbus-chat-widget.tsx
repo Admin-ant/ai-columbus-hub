@@ -226,6 +226,19 @@ export function ColumbusChatWidget() {
           </div>
 
           <div className="border-t border-border px-3 py-2">
+            {authed === false && (
+              <div className="mb-2 flex items-center justify-between gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-[11px] text-amber-100">
+                <span>Log in om berichten te sturen naar de Columbus AI.</span>
+                <Link
+                  to="/auth"
+                  className="inline-flex items-center gap-1 rounded bg-amber-500/20 px-2 py-0.5 font-medium text-amber-50 hover:bg-amber-500/30"
+                >
+                  <LogIn className="h-3 w-3" />
+                  Log in
+                </Link>
+              </div>
+            )}
+
             <div className="mb-2 flex flex-wrap gap-1.5">
               {SUGGESTIONS.map((s) => (
                 <button
