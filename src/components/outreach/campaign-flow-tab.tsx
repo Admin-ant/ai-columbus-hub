@@ -185,20 +185,21 @@ export function CampaignFlowTab() {
       { key: "tone", label: "Toon" },
       { key: "summary", label: "Samenvatting" },
     ] as const;
-    return fields
-      .map(({ key, label }) => {
-        const from = (originalScrape[key] ?? "") || "";
-        const to = (scrape[key] ?? "") || "";
-        if (from === to) return null;
-        return { label, from, to, key };
-      })
-      .filter((c): c is { label: string; from: string; to: string; key: string } => c !== null);
+    const out: { label: string; from: string; to: string; key: string }[] = [];
+    for (const { key, label } of fields) {
+      const from = (originalScrape[key] ?? "") || "";
+      const to = (scrape[key] ?? "") || "";
+      if (from !== to) out.push({ label, from, to, key });
+    }
+    return out;
   }, [scrape, originalScrape]);
+
 
   // Reset scan wanneer de URL verandert.
 
   useEffect(() => {
     setScrape(null);
+    setOriginalScrape(null);
     setScanError(null);
     setScanAttempts(0);
     setLastScanAt(null);
@@ -206,6 +207,7 @@ export function CampaignFlowTab() {
     setSelectedVariant(null);
     setPreview("");
   }, [website]);
+
 
   const websiteValidation = validateWebsiteUrl(website);
   const websiteTouched = website.trim().length > 0;
