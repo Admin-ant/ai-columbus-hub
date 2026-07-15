@@ -883,6 +883,40 @@ export function CampaignFlowTab() {
               </div>
             )}
 
+            {livePreviews.length > 0 && (
+              <div className="rounded-md border border-dashed border-border bg-background/60 p-3 text-xs">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="font-medium text-foreground">Live voorbeeld e-mailconcepten</span>
+                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    template · past aan tijdens typen
+                  </span>
+                </div>
+                <div className="grid gap-2 md:grid-cols-3">
+                  {livePreviews.map((p) => (
+                    <div
+                      key={p.label}
+                      className="rounded-md border border-border bg-muted/30 p-2"
+                    >
+                      <div className="mb-1 flex items-center justify-between gap-1">
+                        <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                          {p.label}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">toon: {p.tone}</span>
+                      </div>
+                      <pre className="whitespace-pre-wrap font-sans text-[11px] leading-relaxed text-foreground/90">
+                        {p.body}
+                      </pre>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-2 text-[10px] text-muted-foreground">
+                  Dit is een indicatief sjabloon. De definitieve concepten worden door AI gegenereerd op basis van deze velden.
+                </p>
+              </div>
+            )}
+
+
+
             <div>
               <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Bron URL</dt>
 
