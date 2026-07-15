@@ -139,19 +139,29 @@ function MailSkinsPage() {
 
   async function save() {
     if (!currentOrganizationId) return;
-    if (!name.trim()) {
-      toast.error("Geef de skin een naam");
+    let clean;
+    try {
+      clean = sanitizeSkinInput({
+        name,
+        background_color: bgColor || null,
+        background_image_url: bgImage || null,
+        header_html: header || null,
+        footer_html: footer || null,
+      });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Ongeldige invoer");
+      return;
+    }
+    if (bgImage && !clean.background_image_url) {
+      toast.error("Achtergrondafbeelding moet een http(s)-URL zijn");
+      return;
+    }
+    if (bgColor && !clean.background_color) {
+      toast.error("Achtergrondkleur moet een geldige kleur zijn (bv. #f5f5f5)");
       return;
     }
     setSaving(true);
-    const payload = {
-      organization_id: currentOrganizationId,
-      name: name.trim(),
-      background_color: bgColor || null,
-      background_image_url: bgImage.trim() || null,
-      header_html: header || null,
-      footer_html: footer || null,
-    };
+    const payload = { organization_id: currentOrganizationId, ...clean };
     let targetId = selectedId;
     if (selectedId) {
       const { error } = await supabase.from("mail_backgrounds").update(payload).eq("id", selectedId);
