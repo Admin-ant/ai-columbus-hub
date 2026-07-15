@@ -571,6 +571,14 @@ function MailSkinsPage() {
                           <Eye className="h-2.5 w-2.5" />
                           {isPreviewing ? "Sluit" : "Preview"}
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => setDiffVersion(v)}
+                          className="inline-flex items-center gap-1 rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-foreground hover:bg-accent"
+                          title="Vergelijk met huidige"
+                        >
+                          <GitCompare className="h-2.5 w-2.5" /> Diff
+                        </button>
                         {!isCurrent && (
                           <button
                             type="button"
