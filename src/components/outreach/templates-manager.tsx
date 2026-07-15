@@ -131,6 +131,15 @@ export function TemplatesManager({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organizationId]);
 
+  useEffect(() => {
+    if (!autoSelectId || templates.length === 0) return;
+    const t = templates.find((x) => x.id === autoSelectId);
+    if (t) {
+      setChannel(t.channel);
+      setEditing(t);
+    }
+  }, [autoSelectId, templates]);
+
   async function loadVersions(templateId: string) {
     const { data, error } = await supabase
       .from("outreach_template_versions")
