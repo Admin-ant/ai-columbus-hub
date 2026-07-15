@@ -161,6 +161,8 @@ function OutreachDashboard() {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [sendDialogTarget, setSendDialogTarget] = useState<TargetRow | null>(null);
   const [demoDialogTarget, setDemoDialogTarget] = useState<TargetRow | null>(null);
+  const [sequenceDialogTarget, setSequenceDialogTarget] = useState<TargetRow | null>(null);
+  const [sequenceDialogOpen, setSequenceDialogOpen] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
   async function runPersonalize(t: TargetRow) {
