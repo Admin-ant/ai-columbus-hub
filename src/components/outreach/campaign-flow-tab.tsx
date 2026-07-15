@@ -184,6 +184,21 @@ export function CampaignFlowTab() {
     () => loadLS<Record<string, SavedScanEdit>>(LS_SCAN_EDITS, {}),
   );
   const [openDiffUrl, setOpenDiffUrl] = useState<string | null>(null);
+  const [openDiffFields, setOpenDiffFields] = useState<Record<string, string[]>>({});
+
+  function toggleDiffField(url: string, fieldKey: string) {
+    setOpenDiffFields((prev) => {
+      const current = prev[url] ?? [];
+      const next = current.includes(fieldKey)
+        ? current.filter((k) => k !== fieldKey)
+        : [...current, fieldKey];
+      return { ...prev, [url]: next };
+    });
+  }
+
+  function setAllDiffFields(url: string, keys: string[]) {
+    setOpenDiffFields((prev) => ({ ...prev, [url]: keys }));
+  }
 
   function computeScanDiff(original: ScrapeResult, edited: ScrapeResult) {
     const fields = [
