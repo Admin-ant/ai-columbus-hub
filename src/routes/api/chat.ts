@@ -102,7 +102,7 @@ export const Route = createFileRoute("/api/chat")({
             choices?: Array<{ message?: { content?: string } }>;
           };
           const reply = data.choices?.[0]?.message?.content?.trim() ?? "";
-          return Response.json({ reply });
+          return Response.json({ reply, source });
         } catch (e) {
           return Response.json(
             { error: e instanceof Error ? e.message : "Onbekende fout" },
