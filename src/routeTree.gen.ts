@@ -63,6 +63,7 @@ import { Route as AuthenticatedAiColumbusLeadsRouteImport } from './routes/_auth
 import { Route as AuthenticatedAiColumbusKoppelingenRouteImport } from './routes/_authenticated/ai-columbus.koppelingen'
 import { Route as AuthenticatedAiColumbusKlantenRouteImport } from './routes/_authenticated/ai-columbus.klanten'
 import { Route as AuthenticatedAiColumbusInstellingenRouteImport } from './routes/_authenticated/ai-columbus.instellingen'
+import { Route as ApiPublicLTokenRouteImport } from './routes/api/public/l.$token'
 import { Route as ApiPublicHooksStudioFollowupsRouteImport } from './routes/api/public/hooks/studio-followups'
 import { Route as ApiPublicHooksResendEventsRouteImport } from './routes/api/public/hooks/resend-events'
 import { Route as ApiPublicHooksRecurringInvoicesRouteImport } from './routes/api/public/hooks/recurring-invoices'
@@ -379,6 +380,11 @@ const AuthenticatedAiColumbusInstellingenRoute =
     path: '/instellingen',
     getParentRoute: () => AuthenticatedAiColumbusRoute,
   } as any)
+const ApiPublicLTokenRoute = ApiPublicLTokenRouteImport.update({
+  id: '/api/public/l/$token',
+  path: '/api/public/l/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksStudioFollowupsRoute =
   ApiPublicHooksStudioFollowupsRouteImport.update({
     id: '/api/public/hooks/studio-followups',
@@ -545,6 +551,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/recurring-invoices': typeof ApiPublicHooksRecurringInvoicesRoute
   '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
+  '/api/public/l/$token': typeof ApiPublicLTokenRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -614,6 +621,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/recurring-invoices': typeof ApiPublicHooksRecurringInvoicesRoute
   '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
+  '/api/public/l/$token': typeof ApiPublicLTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -687,6 +695,7 @@ export interface FileRoutesById {
   '/api/public/hooks/recurring-invoices': typeof ApiPublicHooksRecurringInvoicesRoute
   '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
+  '/api/public/l/$token': typeof ApiPublicLTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -760,6 +769,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/recurring-invoices'
     | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
+    | '/api/public/l/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -829,6 +839,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/recurring-invoices'
     | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
+    | '/api/public/l/$token'
   id:
     | '__root__'
     | '/_authenticated'
@@ -901,6 +912,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/recurring-invoices'
     | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
+    | '/api/public/l/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -925,6 +937,7 @@ export interface RootRouteChildren {
   ApiPublicHooksRecurringInvoicesRoute: typeof ApiPublicHooksRecurringInvoicesRoute
   ApiPublicHooksResendEventsRoute: typeof ApiPublicHooksResendEventsRoute
   ApiPublicHooksStudioFollowupsRoute: typeof ApiPublicHooksStudioFollowupsRoute
+  ApiPublicLTokenRoute: typeof ApiPublicLTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1307,6 +1320,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAiColumbusInstellingenRouteImport
       parentRoute: typeof AuthenticatedAiColumbusRoute
     }
+    '/api/public/l/$token': {
+      id: '/api/public/l/$token'
+      path: '/api/public/l/$token'
+      fullPath: '/api/public/l/$token'
+      preLoaderRoute: typeof ApiPublicLTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/studio-followups': {
       id: '/api/public/hooks/studio-followups'
       path: '/api/public/hooks/studio-followups'
@@ -1665,6 +1685,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksRecurringInvoicesRoute: ApiPublicHooksRecurringInvoicesRoute,
   ApiPublicHooksResendEventsRoute: ApiPublicHooksResendEventsRoute,
   ApiPublicHooksStudioFollowupsRoute: ApiPublicHooksStudioFollowupsRoute,
+  ApiPublicLTokenRoute: ApiPublicLTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

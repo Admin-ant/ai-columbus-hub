@@ -13,6 +13,9 @@ import {
   Loader2,
   Trash2,
   Rocket,
+  Link2,
+  Copy,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +25,11 @@ import { Badge } from "@/components/ui/badge";
 import { useServerFn } from "@tanstack/react-start";
 import { askAssistant } from "@/lib/ai-assistant.functions";
 import { scanWebsite, type WebsiteScanResult } from "@/lib/website-scan.functions";
+import {
+  createTrackingLink,
+  listTrackingLinks,
+  type TrackingLink,
+} from "@/lib/tracking-links.functions";
 
 type ScrapeResult = WebsiteScanResult;
 
@@ -47,6 +55,10 @@ type FlowLead = {
   clicked: boolean;
   stage: 1 | 2 | 3 | 4;
   createdAt: string;
+  trackingToken?: string | null;
+  trackingUrl?: string | null;
+  clickCount?: number;
+  lastVisitedAt?: string | null;
 };
 
 const LS_LEADS = "campaign-flow-leads";
