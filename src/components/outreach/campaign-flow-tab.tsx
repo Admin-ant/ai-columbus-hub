@@ -233,25 +233,48 @@ export function CampaignFlowTab() {
         </div>
 
         {scrape && (
-          <div className="mt-4 flex flex-wrap items-center gap-2 rounded-md border border-brand/30 bg-brand/5 p-3 text-xs">
-            <Globe className="h-4 w-4 text-brand" />
-            <span className="text-muted-foreground">Website scan:</span>
-            <Badge variant="outline" className="border-brand/40 text-brand">
-              {scrape.industry}
-            </Badge>
-            <Badge variant="outline" className="border-border">
-              {scrape.specialisation}
-            </Badge>
-            <Badge variant="outline" className="border-border">
-              tone: {scrape.tone}
-            </Badge>
+          <div className="mt-4 rounded-md border border-brand/30 bg-brand/5 p-3 text-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              <Globe className="h-4 w-4 text-brand" />
+              <span className="text-muted-foreground">Website scan:</span>
+              <Badge variant="outline" className="border-brand/40 text-brand">
+                {scrape.industry}
+              </Badge>
+              <Badge variant="outline" className="border-border">
+                {scrape.specialisation}
+              </Badge>
+              <Badge variant="outline" className="border-border">
+                tone: {scrape.tone}
+              </Badge>
+            </div>
+            {scrape.summary && (
+              <p className="mt-2 text-muted-foreground italic">{scrape.summary}</p>
+            )}
+          </div>
+        )}
+
+        {scanError && (
+          <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+            {scanError}
           </div>
         )}
 
         <div className="mt-4 flex flex-wrap gap-2">
           <Button
+            variant="outline"
+            onClick={runScan}
+            disabled={scanning || !website.trim()}
+          >
+            {scanning ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Globe className="mr-2 h-4 w-4" />
+            )}
+            {scanning ? "Scannen…" : scrape ? "Opnieuw scannen" : "Scan website"}
+          </Button>
+          <Button
             onClick={generateCampaign}
-            disabled={generating}
+            disabled={generating || scanning}
             className="bg-brand text-white hover:bg-brand/90"
           >
             {generating ? (
@@ -262,6 +285,7 @@ export function CampaignFlowTab() {
             {generating ? "Genereren…" : "Genereer Gepersonaliseerde Campagne"}
           </Button>
         </div>
+
 
         {preview && (
           <div className="mt-5">
