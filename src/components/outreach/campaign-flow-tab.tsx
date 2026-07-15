@@ -360,6 +360,16 @@ export function CampaignFlowTab() {
     toast.success("Opgeslagen aanpassingen geladen");
   }
 
+  function commitSavedScanEdit(entry: SavedScanEdit) {
+    if (scrape?.source_url !== entry.sourceUrl) {
+      toast.error("Laad deze scan eerst voordat je toepast");
+      return;
+    }
+    setOriginalScrape(entry.edited);
+    setScrape(entry.edited);
+    toast.success("Opgeslagen waarden definitief toegepast");
+  }
+
   function deleteSavedScanEdit(sourceUrl: string) {
     setSavedScanEdits((prev) => {
       const next = { ...prev };
@@ -1457,15 +1467,32 @@ export function CampaignFlowTab() {
                                 <span className="text-[10px] text-muted-foreground">
                                   {changes.length} van {total} velden aangepast
                                 </span>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 text-[11px]"
-                                  onClick={() => void copyDiffAsText(entry)}
-                                >
-                                  Kopieer als tekst
-                                </Button>
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 text-[11px]"
+                                    onClick={() => void copyDiffAsText(entry)}
+                                  >
+                                    Kopieer als tekst
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="default"
+                                    size="sm"
+                                    className="h-6 text-[11px]"
+                                    onClick={() => commitSavedScanEdit(entry)}
+                                    disabled={scrape?.source_url !== entry.sourceUrl}
+                                    title={
+                                      scrape?.source_url === entry.sourceUrl
+                                        ? "Vervang de originele scanwaarden door de opgeslagen versie"
+                                        : "Laad deze scan eerst om toe te passen"
+                                    }
+                                  >
+                                    Toepassen op scan
+                                  </Button>
+                                </div>
                               </div>
                             </>
                           )}
