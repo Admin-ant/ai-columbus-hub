@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { sendTemplateTestEmail } from "@/lib/mail.functions";
+import { sanitizeSkinHtml, sanitizeColor, sanitizeImageUrl } from "@/lib/skin-sanitize";
 import {
   type OutreachTemplate,
   type TemplateChannel,
@@ -225,17 +226,25 @@ export function TemplatesManager({
 
   async function save() {
     if (!editing) return;
+    const name = (editing.name ?? "").trim();
+    if (!name) return toast.error("Naam is verplicht");
+    const bgColorInput = editing.background_color ?? null;
+    const bgImgInput = editing.background_image_url ?? null;
+    const bgColor = sanitizeColor(bgColorInput);
+    const bgImg = sanitizeImageUrl(bgImgInput);
+    if (bgColorInput && !bgColor) return toast.error("Achtergrondkleur is ongeldig (bv. #ffffff)");
+    if (bgImgInput && !bgImg) return toast.error("Achtergrondafbeelding moet een http(s)-URL zijn");
     const { error } = await supabase
       .from("outreach_message_templates")
       .update({
-        name: editing.name,
+        name,
         description: editing.description,
         subject: editing.subject,
         body: editing.body,
-        background_color: editing.background_color ?? null,
-        background_image_url: editing.background_image_url ?? null,
-        header_html: editing.header_html ?? null,
-        footer_html: editing.footer_html ?? null,
+        background_color: bgColor,
+        background_image_url: bgImg,
+        header_html: editing.header_html ? sanitizeSkinHtml(editing.header_html) : null,
+        footer_html: editing.footer_html ? sanitizeSkinHtml(editing.footer_html) : null,
         mail_background_id: editing.mail_background_id ?? null,
       } as never)
       .eq("id", editing.id);
@@ -703,14 +712,14 @@ export function TemplatesManager({
             >
               {previewHeaderHtml && (
                 // eslint-disable-next-line react/no-danger
-                <div dangerouslySetInnerHTML={{ __html: previewHeaderHtml }} />
+                <div dangerouslySetInnerHTML={{ __html: sanitizeSkinHtml(previewHeaderHtml) }} />
               )}
               <div className="whitespace-pre-wrap p-3 leading-relaxed text-foreground">
                 {renderTokens(preview.body, sample)}
               </div>
               {previewFooterHtml && (
                 // eslint-disable-next-line react/no-danger
-                <div dangerouslySetInnerHTML={{ __html: previewFooterHtml }} />
+                <div dangerouslySetInnerHTML={{ __html: sanitizeSkinHtml(previewFooterHtml) }} />
               )}
             </div>
           </div>

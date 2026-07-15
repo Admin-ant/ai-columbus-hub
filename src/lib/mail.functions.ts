@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { sanitizeSkinHtml, sanitizeColor, sanitizeImageUrl } from "@/lib/skin-sanitize";
 
 async function sendViaResend(opts: {
   from: string;
@@ -315,8 +316,10 @@ export const sendTemplateTestEmail = createServerFn({ method: "POST" })
     const subject = `[TEST] ${renderTokensServer(data.subject, sample)}`;
     const bodyRendered = renderTokensServer(data.body, sample);
 
-    const bgColor = data.background_color?.trim() || "#ffffff";
-    const bgImg = data.background_image_url?.trim() || "";
+    const bgColor = sanitizeColor(data.background_color ?? null) ?? "#ffffff";
+    const bgImg = sanitizeImageUrl(data.background_image_url ?? null) ?? "";
+    const safeHeader = sanitizeSkinHtml(data.header_html ?? "");
+    const safeFooter = sanitizeSkinHtml(data.footer_html ?? "");
     const bgStyle = [
       `background-color:${bgColor}`,
       bgImg ? `background-image:url('${bgImg.replace(/'/g, "%27")}')` : "",
@@ -327,9 +330,9 @@ export const sendTemplateTestEmail = createServerFn({ method: "POST" })
 
     const html = `<!doctype html><html><body style="margin:0;padding:0;${bgStyle}">
 <div style="max-width:640px;margin:0 auto;font-family:Inter,Arial,sans-serif;color:#111">
-${data.header_html ?? ""}
+${safeHeader}
 <div style="padding:24px;font-size:15px;line-height:1.6;white-space:pre-wrap">${escapeHtml(bodyRendered)}</div>
-${data.footer_html ?? ""}
+${safeFooter}
 </div></body></html>`;
 
     const res = await fetch("https://api.resend.com/emails", {
