@@ -101,7 +101,38 @@ export function SequenceWorkflowDialog({
   const [starting, setStarting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [logs, setLogs] = useState<MessageLog[]>([]);
+  const [retryingId, setRetryingId] = useState<string | null>(null);
   const scheduleFn = useServerFn(scheduleSequence);
+  const retryFn = useServerFn(retryOutreachMessage);
+
+  const refreshLogs = async () => {
+    if (!target?.id) return;
+    const { data } = await supabase
+      .from("outreach_messages")
+      .select("id, step_index, channel, subject, status, error, sent_at, created_at")
+      .eq("target_id", target.id)
+      .order("created_at", { ascending: false })
+      .limit(8);
+    setLogs((data ?? []) as unknown as MessageLog[]);
+  };
+
+  async function onRetry(messageId: string) {
+    setRetryingId(messageId);
+    // optimistische UI-update naar 'retrying'
+    setLogs((prev) =>
+      prev.map((l) => (l.id === messageId ? { ...l, status: "retrying", error: null } : l)),
+    );
+    try {
+      await retryFn({ data: { message_id: messageId } });
+      toast.success("Stap succesvol opnieuw verstuurd");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Opnieuw proberen mislukt");
+    } finally {
+      setRetryingId(null);
+      await refreshLogs();
+    }
+  }
+
 
   useEffect(() => {
     if (!open || !organizationId) return;
