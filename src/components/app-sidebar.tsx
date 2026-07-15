@@ -24,6 +24,7 @@ import {
   Mic,
   Workflow,
   CalendarDays,
+  Palette,
 } from "lucide-react";
 
 import {
