@@ -110,22 +110,35 @@ export function ColumbusChatWidget() {
   async function send(text: string) {
     const value = text.trim();
     if (!value || sending) return;
+    if (!authed) {
+      setMessages((cur) => [
+        ...cur,
+        {
+          role: "assistant",
+          content: "Je moet ingelogd zijn om de Columbus AI chat te gebruiken. Log in en probeer opnieuw.",
+        },
+      ]);
+      return;
+    }
     const next: Msg[] = [...messages, { role: "user", content: value }];
     setMessages(next);
     setInput("");
     setSending(true);
     try {
+      const { data: sess } = await supabase.auth.getSession();
+      const bearer = config.apiKey ?? sess.session?.access_token;
       const res = await fetch(effectiveApiUrl, {
         method: "POST",
         headers: {
           "content-type": "application/json",
-          ...(config.apiKey ? { authorization: `Bearer ${config.apiKey}` } : {}),
+          ...(bearer ? { authorization: `Bearer ${bearer}` } : {}),
         },
         body: JSON.stringify({
           agent: "columbus-recruiter",
           messages: next.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
+
       const data = (await res.json().catch(() => ({}))) as {
         reply?: string;
         message?: string;
