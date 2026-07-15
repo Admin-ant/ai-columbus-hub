@@ -653,7 +653,7 @@ export function CampaignFlowTab() {
           <Button
             variant="outline"
             onClick={runScan}
-            disabled={scanning || !website.trim()}
+            disabled={scanning || !website.trim() || !!inlineUrlError}
           >
             {scanning ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
