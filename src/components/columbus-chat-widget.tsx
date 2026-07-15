@@ -40,15 +40,15 @@ type WidgetConfig = {
 type Msg = { role: "user" | "assistant"; content: string };
 
 const SUGGESTIONS = [
-  "Wat kan dit CRM?",
-  "Hoe helpt AI bij recruitment?",
-  "Demo aanvragen",
+  "Hoe voeg ik een lead toe?",
+  "Hoe start ik een campagne?",
+  "Waar vind ik mijn afspraken?",
 ];
 
 const INTRO: Msg = {
   role: "assistant",
   content:
-    "Hoi! Ik ben de Columbus AI Recruiter Agent. Vraag me alles over deze CRM, AI-recruitment of plan direct een demo in.",
+    "Hoi! Ik ben de Columbus Portal Help-assistent. Stel me een vraag over hoe iets werkt in dit portal — bijvoorbeeld hoe je een lead aanmaakt, een campagne start of je instellingen wijzigt.",
 };
 
 function readConfig(): WidgetConfig {
