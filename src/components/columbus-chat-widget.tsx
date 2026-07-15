@@ -158,7 +158,7 @@ export function ColumbusChatWidget() {
                   Columbus AI Recruiter Agent
                 </div>
                 <div className="text-[10px] text-muted-foreground">
-                  {config.apiUrl ? "Live" : "Demo-modus"} · antwoordt meestal binnen enkele seconden
+                  Live · antwoordt meestal binnen enkele seconden
                 </div>
               </div>
             </div>
