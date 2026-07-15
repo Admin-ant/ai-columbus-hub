@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowUp,
@@ -14,6 +14,8 @@ import {
   BookmarkPlus,
   FolderOpen,
   AlertTriangle,
+  Download,
+  Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +35,8 @@ import {
   saveTemplate,
   deleteTemplate,
   validateSequence,
+  downloadTemplatesJson,
+  importTemplatesFromJson,
   type SequenceTemplate,
 } from "@/lib/sequence-workflow";
 
@@ -82,6 +86,27 @@ export function SequenceBuilder({ campaignId, initialSteps, onSaved }: Props) {
   const [activeStep, setActiveStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [templates, setTemplates] = useState<SequenceTemplate[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const exportTemplates = () => {
+    if (templates.length === 0) {
+      toast.error("Er zijn nog geen templates om te exporteren");
+      return;
+    }
+    downloadTemplatesJson(templates);
+    toast.success(`${templates.length} template(s) geëxporteerd als JSON`);
+  };
+
+  const onImportFile = async (file: File) => {
+    try {
+      const text = await file.text();
+      const imported = await importTemplatesFromJson(text);
+      setTemplates(await loadTemplates());
+      toast.success(`${imported.length} template(s) geïmporteerd`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Import mislukt");
+    }
+  };
 
   useEffect(() => {
     void loadTemplates().then(setTemplates).catch(() => setTemplates([]));
@@ -405,6 +430,33 @@ export function SequenceBuilder({ campaignId, initialSteps, onSaved }: Props) {
               </SelectContent>
             </Select>
           )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void onImportFile(f);
+              e.target.value = "";
+            }}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportTemplates}
+            className="border-border text-foreground hover:bg-muted"
+          >
+            <Download className="mr-1.5 h-3.5 w-3.5" /> Exporteer JSON
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            className="border-border text-foreground hover:bg-muted"
+          >
+            <Upload className="mr-1.5 h-3.5 w-3.5" /> Importeer JSON
+          </Button>
           <Button
             variant="outline"
             size="sm"

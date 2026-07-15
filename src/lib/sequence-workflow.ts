@@ -153,3 +153,82 @@ export async function deleteTemplate(id: string): Promise<SequenceTemplate[]> {
   return loadTemplates();
 }
 
+/* ------------------ Export / Import (JSON) --------------------- */
+
+const EXPORT_KIND = "columbus.outreach.sequence-templates";
+const EXPORT_VERSION = 1;
+
+export type SequenceTemplateExport = {
+  kind: typeof EXPORT_KIND;
+  version: number;
+  exportedAt: string;
+  templates: Array<Pick<SequenceTemplate, "name" | "steps"> & { savedAt?: string }>;
+};
+
+export function serializeTemplates(templates: SequenceTemplate[]): string {
+  const payload: SequenceTemplateExport = {
+    kind: EXPORT_KIND,
+    version: EXPORT_VERSION,
+    exportedAt: new Date().toISOString(),
+    templates: templates.map((t) => ({ name: t.name, steps: t.steps, savedAt: t.savedAt })),
+  };
+  return JSON.stringify(payload, null, 2);
+}
+
+export function downloadTemplatesJson(templates: SequenceTemplate[], filename?: string) {
+  if (typeof window === "undefined") return;
+  const blob = new Blob([serializeTemplates(templates)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  const stamp = new Date().toISOString().slice(0, 10);
+  a.download = filename ?? `sequence-templates-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+export function parseTemplatesJson(
+  raw: string,
+): Array<Pick<SequenceTemplate, "name" | "steps">> {
+  let data: unknown;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    throw new Error("Bestand is geen geldige JSON");
+  }
+
+  // Accept either the export envelope, a bare array of templates, or a single template.
+  const list: unknown[] = Array.isArray(data)
+    ? data
+    : Array.isArray((data as { templates?: unknown[] })?.templates)
+      ? ((data as { templates: unknown[] }).templates)
+      : data && typeof data === "object" && "steps" in (data as object)
+        ? [data]
+        : [];
+
+  if (list.length === 0) throw new Error("Geen templates gevonden in bestand");
+
+  const out: Array<Pick<SequenceTemplate, "name" | "steps">> = [];
+  list.forEach((raw, i) => {
+    const t = raw as { name?: unknown; steps?: unknown };
+    if (!Array.isArray(t.steps)) {
+      throw new Error(`Template ${i + 1}: 'steps' ontbreekt of is geen array`);
+    }
+    const name = typeof t.name === "string" && t.name.trim() ? t.name.trim() : `Import ${i + 1}`;
+    out.push({ name, steps: t.steps as SequenceStep[] });
+  });
+  return out;
+}
+
+export async function importTemplatesFromJson(raw: string): Promise<SequenceTemplate[]> {
+  const parsed = parseTemplatesJson(raw);
+  const results: SequenceTemplate[] = [];
+  for (const t of parsed) {
+    results.push(await saveTemplate(t.name, t.steps));
+  }
+  return results;
+}
+
+
