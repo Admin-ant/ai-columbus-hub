@@ -287,6 +287,8 @@ export function OfferteStudioEditor({ kind, id }: Props) {
             approved_at: approved ? new Date().toISOString() : null,
             packages: packages as never,
             intro_video_url: videoUrl.trim() || null,
+            mail_template_id: mailTemplateId,
+            mail_background_id: mailBackgroundId,
           }
         : {
             name: title,
@@ -295,6 +297,8 @@ export function OfferteStudioEditor({ kind, id }: Props) {
             theme: theme as never,
             sections: sections as never,
             packages: packages as never,
+            mail_template_id: mailTemplateId,
+            mail_background_id: mailBackgroundId,
           };
 
     const { error } = await supabase.from(table).update(payload as never).eq("id", id);
