@@ -747,22 +747,41 @@ export function CampaignFlowTab() {
               </Button>
             </div>
 
-            <dl className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <p className="text-[11px] text-muted-foreground">
+              Controleer en pas de scan-output hieronder aan voordat je e-mails genereert.
+            </p>
+
+            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Branche</dt>
-                <dd className="mt-0.5 text-foreground">{scrape.industry || "—"}</dd>
+                <Input
+                  value={scrape.industry ?? ""}
+                  onChange={(e) => setScrape({ ...scrape, industry: e.target.value })}
+                  placeholder="Bijv. Uitzendbureau"
+                  className="mt-1 h-8 text-xs"
+                />
               </div>
               <div>
                 <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Specialisatie</dt>
-                <dd className="mt-0.5 text-foreground">{scrape.specialisation || "—"}</dd>
+                <Input
+                  value={scrape.specialisation ?? ""}
+                  onChange={(e) => setScrape({ ...scrape, specialisation: e.target.value })}
+                  placeholder="Bijv. Techniek & Logistiek"
+                  className="mt-1 h-8 text-xs"
+                />
               </div>
               <div>
                 <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Toon</dt>
-                <dd className="mt-0.5 text-foreground">{scrape.tone || "—"}</dd>
+                <Input
+                  value={scrape.tone ?? ""}
+                  onChange={(e) => setScrape({ ...scrape, tone: e.target.value })}
+                  placeholder="Bijv. Professioneel & vriendelijk"
+                  className="mt-1 h-8 text-xs"
+                />
               </div>
               <div>
                 <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Gescand op</dt>
-                <dd className="mt-0.5 text-foreground">
+                <dd className="mt-2 text-foreground">
                   {scrape.scanned_at
                     ? new Date(scrape.scanned_at).toLocaleString("nl-NL", {
                         dateStyle: "short",
@@ -775,9 +794,13 @@ export function CampaignFlowTab() {
 
             <div>
               <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Samenvatting</dt>
-              <dd className="mt-0.5 italic text-muted-foreground">
-                {scrape.summary || "Geen samenvatting beschikbaar."}
-              </dd>
+              <Textarea
+                value={scrape.summary ?? ""}
+                onChange={(e) => setScrape({ ...scrape, summary: e.target.value })}
+                placeholder="Korte samenvatting van het bedrijf"
+                rows={3}
+                className="mt-1 text-xs"
+              />
             </div>
 
             <div>
