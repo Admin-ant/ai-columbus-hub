@@ -289,6 +289,37 @@ export function CampaignFlowTab() {
     ].map((p) => ({ ...p, tone }));
   }, [scrape, name, company]);
 
+  const filteredScanEdits = useMemo(() => {
+    const q = scanEditSearch.trim().toLowerCase();
+    const entries = Object.values(savedScanEdits);
+    const filtered = q
+      ? entries.filter((e) => {
+          const saved = new Date(e.savedAt).toLocaleString("nl-NL", {
+            dateStyle: "short",
+            timeStyle: "short",
+          });
+          return (
+            e.sourceUrl.toLowerCase().includes(q) ||
+            (e.company?.toLowerCase() ?? "").includes(q) ||
+            saved.toLowerCase().includes(q)
+          );
+        })
+      : entries;
+    return filtered.sort((a, b) => {
+      switch (scanEditSort) {
+        case "dateAsc":
+          return a.savedAt.localeCompare(b.savedAt);
+        case "urlAsc":
+          return a.sourceUrl.localeCompare(b.sourceUrl);
+        case "urlDesc":
+          return b.sourceUrl.localeCompare(a.sourceUrl);
+        case "dateDesc":
+        default:
+          return b.savedAt.localeCompare(a.savedAt);
+      }
+    });
+  }, [savedScanEdits, scanEditSearch, scanEditSort]);
+
 
   // Reset scan wanneer de URL verandert.
 
