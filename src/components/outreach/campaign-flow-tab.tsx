@@ -331,12 +331,18 @@ export function CampaignFlowTab() {
           if (existingKeys.has(key)) continue;
           extra.push({
             id: st.id,
+            serverId: st.id,
             leadName: st.lead_name ?? "Onbekend",
             company: st.company ?? "",
             action: st.action,
             reason: st.reason,
             createdAt: st.created_at,
             done: st.done,
+            status: st.status,
+            result: st.result,
+            error: st.error,
+            startedAt: st.started_at,
+            doneAt: st.done_at,
           });
         }
         return [...extra, ...cur];
