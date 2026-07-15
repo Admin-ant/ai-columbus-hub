@@ -1262,7 +1262,10 @@ export function CampaignFlowTab() {
         <div className="mt-4 rounded-md border border-border bg-muted/30 p-3">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <div className="text-xs font-medium text-foreground">
-              Opgeslagen scan-aanpassingen ({Object.keys(savedScanEdits).length})
+              Opgeslagen scan-aanpassingen{" "}
+              {Object.keys(savedScanEdits).length > 0
+                ? `(${filteredScanEdits.length}/${Object.keys(savedScanEdits).length})`
+                : `(${Object.keys(savedScanEdits).length})`}
             </div>
             <div className="flex items-center gap-1.5">
               <Button
@@ -1305,10 +1308,40 @@ export function CampaignFlowTab() {
               Nog geen aanpassingen opgeslagen.
             </p>
           ) : (
-            <ul className="space-y-1.5">
-              {Object.values(savedScanEdits)
-                .sort((a, b) => (a.savedAt < b.savedAt ? 1 : -1))
-                .map((entry) => {
+            <>
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <div className="relative min-w-[12rem] flex-1">
+                  <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Zoek op URL, bedrijf of datum..."
+                    value={scanEditSearch}
+                    onChange={(e) => setScanEditSearch(e.target.value)}
+                    className="h-8 pl-8 text-[11px]"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  <select
+                    value={scanEditSort}
+                    onChange={(e) => setScanEditSort(e.target.value as typeof scanEditSort)}
+                    className="h-8 rounded-md border border-input bg-background px-2 text-[11px] text-foreground hover:bg-accent"
+                    aria-label="Sorteer op"
+                  >
+                    <option value="dateDesc">Nieuwste eerst</option>
+                    <option value="dateAsc">Oudste eerst</option>
+                    <option value="urlAsc">URL A-Z</option>
+                    <option value="urlDesc">URL Z-A</option>
+                  </select>
+                </div>
+              </div>
+              {filteredScanEdits.length === 0 ? (
+                <p className="text-[11px] italic text-muted-foreground">
+                  Geen resultaten voor je zoekopdracht.
+                </p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {filteredScanEdits.map((entry) => {
                   const isCurrent = scrape?.source_url === entry.sourceUrl;
                   const isDiffOpen = openDiffUrl === entry.sourceUrl;
                   const { changes, total } = computeScanDiff(entry.original, entry.edited);
