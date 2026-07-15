@@ -21,36 +21,59 @@ export const Route = createFileRoute("/api/chat")({
           return Response.json({ error: "messages is required" }, { status: 400 });
         }
 
-        // Prefer a customer-provided key (e.g. later: aiVanColumbus key), fall back to Lovable AI Gateway.
-        const customKey = process.env.COLUMBUS_API_KEY;
-        const customUrl = process.env.COLUMBUS_API_URL;
-        const lovableKey = process.env.LOVABLE_API_KEY;
+        // Resolve AI backend at request-time (Cloudflare Workers bind env per request).
+        // Priority:
+        //   1) COLUMBUS_API_KEY (+ optional COLUMBUS_API_URL) — customer/aiVanColumbus key
+        //   2) LOVABLE_API_KEY  — built-in Lovable AI Gateway fallback
+        const customKey = process.env.COLUMBUS_API_KEY?.trim() || undefined;
+        const customUrl = process.env.COLUMBUS_API_URL?.trim() || undefined;
+        const customModel = process.env.COLUMBUS_API_MODEL?.trim() || undefined;
+        const lovableKey = process.env.LOVABLE_API_KEY?.trim() || undefined;
 
-        const apiUrl = customUrl ?? "https://ai.gateway.lovable.dev/v1/chat/completions";
+        const useCustom = Boolean(customKey);
         const apiKey = customKey ?? lovableKey;
+        const apiUrl =
+          (useCustom ? customUrl : undefined) ??
+          "https://ai.gateway.lovable.dev/v1/chat/completions";
+        const model =
+          (useCustom ? customModel : undefined) ?? "google/gemini-2.5-flash";
+        const source: "columbus" | "lovable" | "none" = useCustom
+          ? "columbus"
+          : lovableKey
+            ? "lovable"
+            : "none";
 
         if (!apiKey) {
+          console.error(
+            "[columbus-chat] No AI backend configured. Set COLUMBUS_API_KEY (custom) or ensure LOVABLE_API_KEY is provisioned.",
+          );
           return Response.json(
-            { error: "AI backend not configured (missing LOVABLE_API_KEY)." },
-            { status: 500 },
+            {
+              error:
+                "AI-backend niet geconfigureerd. Stel COLUMBUS_API_KEY in of activeer Lovable AI.",
+              source,
+            },
+            { status: 503 },
+          );
+        }
+
+        if (useCustom && !customUrl) {
+          console.warn(
+            "[columbus-chat] COLUMBUS_API_KEY set without COLUMBUS_API_URL — routing custom key through Lovable AI Gateway URL.",
           );
         }
 
         const headers: Record<string, string> = {
           "content-type": "application/json",
+          authorization: `Bearer ${apiKey}`,
         };
-        if (customKey) {
-          headers["authorization"] = `Bearer ${customKey}`;
-        } else {
-          headers["authorization"] = `Bearer ${lovableKey}`;
-        }
 
         try {
           const upstream = await fetch(apiUrl, {
             method: "POST",
             headers,
             body: JSON.stringify({
-              model: "google/gemini-2.5-flash",
+              model,
               messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
             }),
           });
@@ -79,7 +102,7 @@ export const Route = createFileRoute("/api/chat")({
             choices?: Array<{ message?: { content?: string } }>;
           };
           const reply = data.choices?.[0]?.message?.content?.trim() ?? "";
-          return Response.json({ reply });
+          return Response.json({ reply, source });
         } catch (e) {
           return Response.json(
             { error: e instanceof Error ? e.message : "Onbekende fout" },
