@@ -560,8 +560,28 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
               </>
             )}
             <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Inhoud</div>
-            <div className="whitespace-pre-wrap leading-relaxed text-foreground">
-              {renderTokens(preview.body, sample)}
+            <div
+              className="rounded overflow-hidden border border-border"
+              style={{
+                backgroundColor: preview.background_color ?? undefined,
+                backgroundImage: preview.background_image_url
+                  ? `url(${preview.background_image_url})`
+                  : undefined,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            >
+              {preview.header_html && (
+                // eslint-disable-next-line react/no-danger
+                <div dangerouslySetInnerHTML={{ __html: preview.header_html }} />
+              )}
+              <div className="whitespace-pre-wrap p-3 leading-relaxed text-foreground">
+                {renderTokens(preview.body, sample)}
+              </div>
+              {preview.footer_html && (
+                // eslint-disable-next-line react/no-danger
+                <div dangerouslySetInnerHTML={{ __html: preview.footer_html }} />
+              )}
             </div>
           </div>
         ) : (
