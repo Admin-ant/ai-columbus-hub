@@ -128,8 +128,12 @@ function GebruikersPage() {
     e.preventDefault();
     setBusy(true);
     try {
-      await fnInvite({ data: { email: iEmail, password: iPwd, displayName: iName, role: iRole } });
-      toast.success("Gebruiker aangemaakt");
+      const res = await fnInvite({ data: { email: iEmail, password: iPwd, displayName: iName, role: iRole } });
+      if (res?.email?.ok === false) {
+        toast.warning(`Gebruiker aangemaakt, maar welkomstmail is niet verstuurd: ${res.email.reason}`, { duration: 10000 });
+      } else {
+        toast.success("Gebruiker aangemaakt en welkomstmail verstuurd");
+      }
       setInviteOpen(false);
       setIName(""); setIEmail(""); setIPwd(""); setIRole("medewerker");
       refresh();
