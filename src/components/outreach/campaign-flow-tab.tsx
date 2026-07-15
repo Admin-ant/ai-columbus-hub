@@ -26,6 +26,7 @@ import {
   ChevronRight,
   XCircle,
   RotateCcw,
+  Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -317,6 +318,98 @@ export function CampaignFlowTab() {
     });
     toast.info("Opgeslagen aanpassingen verwijderd");
   }
+
+  function isScrapeShape(x: unknown): x is ScrapeResult {
+    if (!x || typeof x !== "object") return false;
+    const o = x as Record<string, unknown>;
+    return (
+      typeof o.industry === "string" &&
+      typeof o.specialisation === "string" &&
+      typeof o.tone === "string" &&
+      typeof o.summary === "string" &&
+      typeof o.source_url === "string"
+    );
+  }
+
+  function coerceSavedEdit(raw: unknown): SavedScanEdit | null {
+    if (!raw || typeof raw !== "object") return null;
+    const o = raw as Record<string, unknown>;
+    const edited = o.edited;
+    const original = o.original;
+    if (!isScrapeShape(edited) || !isScrapeShape(original)) return null;
+    const sourceUrl =
+      (typeof o.sourceUrl === "string" && o.sourceUrl) ||
+      edited.source_url ||
+      original.source_url;
+    if (!sourceUrl) return null;
+    return {
+      sourceUrl,
+      website: typeof o.website === "string" && o.website ? o.website : sourceUrl,
+      company: typeof o.company === "string" ? o.company : undefined,
+      edited: { ...edited, source_url: sourceUrl },
+      original: { ...original, source_url: sourceUrl },
+      savedAt: typeof o.savedAt === "string" ? o.savedAt : new Date().toISOString(),
+    };
+  }
+
+  function exportSavedScanEdits() {
+    const entries = Object.values(savedScanEdits);
+    if (entries.length === 0) {
+      toast.info("Geen opgeslagen aanpassingen om te exporteren");
+      return;
+    }
+    const blob = new Blob(
+      [JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), entries }, null, 2)],
+      { type: "application/json" },
+    );
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `scan-aanpassingen_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`${entries.length} aanpassing(en) geëxporteerd`);
+  }
+
+  async function importSavedScanEdits(file: File) {
+    try {
+      const text = await file.text();
+      const parsed: unknown = JSON.parse(text);
+      const rawList: unknown[] = Array.isArray(parsed)
+        ? parsed
+        : parsed && typeof parsed === "object" && Array.isArray((parsed as { entries?: unknown }).entries)
+          ? ((parsed as { entries: unknown[] }).entries)
+          : [parsed];
+      const valid: SavedScanEdit[] = [];
+      for (const r of rawList) {
+        const c = coerceSavedEdit(r);
+        if (c) valid.push(c);
+      }
+      if (valid.length === 0) {
+        toast.error("Geen geldige scan-aanpassingen gevonden in dit bestand");
+        return;
+      }
+      let added = 0;
+      let updated = 0;
+      setSavedScanEdits((prev) => {
+        const next = { ...prev };
+        for (const entry of valid) {
+          if (next[entry.sourceUrl]) updated++;
+          else added++;
+          next[entry.sourceUrl] = entry;
+        }
+        return next;
+      });
+      toast.success(
+        `Import gelukt: ${added} nieuw, ${updated} bijgewerkt (gekoppeld aan bron-URL)`,
+      );
+    } catch (err) {
+      toast.error("Kon bestand niet lezen", {
+        description: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
 
 
 
@@ -1071,16 +1164,52 @@ export function CampaignFlowTab() {
           </p>
         )}
 
-        {Object.keys(savedScanEdits).length > 0 && (
-          <div className="mt-4 rounded-md border border-border bg-muted/30 p-3">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <div className="text-xs font-medium text-foreground">
-                Opgeslagen scan-aanpassingen ({Object.keys(savedScanEdits).length})
-              </div>
-              <span className="text-[10px] text-muted-foreground">
-                automatisch opgeslagen per bron-URL
-              </span>
+        <div className="mt-4 rounded-md border border-border bg-muted/30 p-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <div className="text-xs font-medium text-foreground">
+              Opgeslagen scan-aanpassingen ({Object.keys(savedScanEdits).length})
             </div>
+            <div className="flex items-center gap-1.5">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 text-[11px]"
+                onClick={exportSavedScanEdits}
+                disabled={Object.keys(savedScanEdits).length === 0}
+              >
+                <Download className="mr-1 h-3 w-3" />
+                Exporteer
+              </Button>
+              <Label
+                htmlFor="scan-edits-import"
+                className="inline-flex h-7 cursor-pointer items-center rounded-md border border-input bg-background px-2.5 text-[11px] font-medium hover:bg-accent hover:text-accent-foreground"
+              >
+                <Upload className="mr-1 h-3 w-3" />
+                Importeer
+              </Label>
+              <input
+                id="scan-edits-import"
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void importSavedScanEdits(f);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+          </div>
+          <p className="mb-2 text-[10px] text-muted-foreground">
+            Automatisch opgeslagen per bron-URL. Importeer een eerder geëxporteerd JSON-bestand om
+            aanpassingen terug te zetten — gekoppeld aan dezelfde bron-URL.
+          </p>
+          {Object.keys(savedScanEdits).length === 0 ? (
+            <p className="text-[11px] italic text-muted-foreground">
+              Nog geen aanpassingen opgeslagen.
+            </p>
+          ) : (
             <ul className="space-y-1.5">
               {Object.values(savedScanEdits)
                 .sort((a, b) => (a.savedAt < b.savedAt ? 1 : -1))
@@ -1127,8 +1256,9 @@ export function CampaignFlowTab() {
                   );
                 })}
             </ul>
-          </div>
-        )}
+          )}
+        </div>
+
 
 
 
