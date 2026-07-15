@@ -21,12 +21,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useServerFn } from "@tanstack/react-start";
 import { askAssistant } from "@/lib/ai-assistant.functions";
+import { scanWebsite, type WebsiteScanResult } from "@/lib/website-scan.functions";
 
-type ScrapeResult = {
-  industry: string;
-  specialisation: string;
-  tone: string;
-};
+type ScrapeResult = WebsiteScanResult;
 
 type FlowTask = {
   id: string;
