@@ -271,7 +271,10 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
         (t.description ?? "").toLowerCase().includes(q) ||
         (t.body ?? "").toLowerCase().includes(q)),
   );
-  const preview = previewVersion ?? editing;
+  const preview = (previewVersion ?? editing) as
+    | (OutreachTemplate & { version?: number })
+    | (TemplateVersion & Partial<OutreachTemplate>)
+    | null;
 
   return (
     <div className="grid gap-4 xl:grid-cols-[240px_1fr_280px_240px] lg:grid-cols-[240px_1fr_280px]">
