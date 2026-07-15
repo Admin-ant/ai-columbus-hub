@@ -289,6 +289,7 @@ export function CampaignFlowTab() {
                 reason: "Heeft landingspagina bezocht",
                 createdAt: new Date().toISOString(),
                 done: false,
+                status: "pending",
               });
             }
           }
