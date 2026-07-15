@@ -223,14 +223,37 @@ export function ColumbusChatWidget() {
         }
       }
     } catch (e) {
-      setMessages((cur) => [
-        ...cur,
-        {
-          role: "assistant",
-          content: `Er ging iets mis: ${e instanceof Error ? e.message : "onbekende fout"}.`,
-        },
-      ]);
+      const aborted =
+        (e instanceof DOMException && e.name === "AbortError") ||
+        controller.signal.aborted;
+      if (aborted) {
+        // Behoud reeds gestreamde tekst en markeer als gestopt.
+        setMessages((cur) => {
+          const copy = cur.slice();
+          const last = copy[copy.length - 1];
+          if (last && last.role === "assistant") {
+            copy[copy.length - 1] = {
+              ...last,
+              content: last.content
+                ? `${last.content}\n\n_Gestopt._`
+                : "_Gestopt._",
+            };
+          } else {
+            copy.push({ role: "assistant", content: "_Gestopt._" });
+          }
+          return copy;
+        });
+      } else {
+        setMessages((cur) => [
+          ...cur,
+          {
+            role: "assistant",
+            content: `Er ging iets mis: ${e instanceof Error ? e.message : "onbekende fout"}.`,
+          },
+        ]);
+      }
     } finally {
+      abortRef.current = null;
       setSending(false);
     }
   }
