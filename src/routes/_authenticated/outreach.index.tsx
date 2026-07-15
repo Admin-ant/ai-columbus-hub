@@ -506,7 +506,7 @@ function OutreachDashboard() {
                                 onResearch={() => runResearch(t)}
                                 onPersonalize={() => runPersonalize(t)}
                                 onSendNow={() => sendNow(t)}
-                                onStartSequence={() => startSequence(t)}
+                                onStartSequence={() => openSequenceWorkflow(t)}
                                 onOpenSend={() => setSendDialogTarget(t)}
                                 onOpenDemo={() => setDemoDialogTarget(t)}
                               />
