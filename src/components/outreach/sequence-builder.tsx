@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowUp,
@@ -11,6 +11,9 @@ import {
   Clock,
   Eye,
   Save,
+  BookmarkPlus,
+  FolderOpen,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +28,13 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  loadTemplates,
+  saveTemplate,
+  deleteTemplate,
+  validateSequence,
+  type SequenceTemplate,
+} from "@/lib/sequence-workflow";
 
 export type SequenceStep = {
   day: number;
