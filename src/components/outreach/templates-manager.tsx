@@ -175,12 +175,48 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
         description: editing.description,
         subject: editing.subject,
         body: editing.body,
-      })
+        background_color: editing.background_color ?? null,
+        background_image_url: editing.background_image_url ?? null,
+        header_html: editing.header_html ?? null,
+        footer_html: editing.footer_html ?? null,
+        mail_background_id: editing.mail_background_id ?? null,
+      } as never)
       .eq("id", editing.id);
     if (error) return toast.error(error.message);
     toast.success("Opgeslagen — nieuwe versie aangemaakt");
     await load();
     await loadVersions(editing.id);
+  }
+
+  async function applyBackground(bg: MailBackground | null) {
+    if (!editing) return;
+    setEditing({
+      ...editing,
+      mail_background_id: bg?.id ?? null,
+      background_color: bg?.background_color ?? editing.background_color ?? null,
+      background_image_url: bg?.background_image_url ?? editing.background_image_url ?? null,
+      header_html: bg?.header_html ?? editing.header_html ?? null,
+      footer_html: bg?.footer_html ?? editing.footer_html ?? null,
+    });
+  }
+
+  async function saveAsBackground() {
+    if (!editing || !organizationId) return;
+    const name = window.prompt("Naam voor deze achtergrond-skin?", editing.name);
+    if (!name) return;
+    setSavingBg(true);
+    const { error } = await supabase.from("mail_backgrounds" as never).insert({
+      organization_id: organizationId,
+      name,
+      background_color: editing.background_color ?? null,
+      background_image_url: editing.background_image_url ?? null,
+      header_html: editing.header_html ?? null,
+      footer_html: editing.footer_html ?? null,
+    } as never);
+    setSavingBg(false);
+    if (error) return toast.error(error.message);
+    toast.success("Achtergrond opgeslagen als skin");
+    await loadBackgrounds();
   }
 
   async function remove(id: string) {
