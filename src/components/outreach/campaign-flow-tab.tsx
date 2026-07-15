@@ -1164,16 +1164,52 @@ export function CampaignFlowTab() {
           </p>
         )}
 
-        {Object.keys(savedScanEdits).length > 0 && (
-          <div className="mt-4 rounded-md border border-border bg-muted/30 p-3">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <div className="text-xs font-medium text-foreground">
-                Opgeslagen scan-aanpassingen ({Object.keys(savedScanEdits).length})
-              </div>
-              <span className="text-[10px] text-muted-foreground">
-                automatisch opgeslagen per bron-URL
-              </span>
+        <div className="mt-4 rounded-md border border-border bg-muted/30 p-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <div className="text-xs font-medium text-foreground">
+              Opgeslagen scan-aanpassingen ({Object.keys(savedScanEdits).length})
             </div>
+            <div className="flex items-center gap-1.5">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 text-[11px]"
+                onClick={exportSavedScanEdits}
+                disabled={Object.keys(savedScanEdits).length === 0}
+              >
+                <Download className="mr-1 h-3 w-3" />
+                Exporteer
+              </Button>
+              <Label
+                htmlFor="scan-edits-import"
+                className="inline-flex h-7 cursor-pointer items-center rounded-md border border-input bg-background px-2.5 text-[11px] font-medium hover:bg-accent hover:text-accent-foreground"
+              >
+                <Upload className="mr-1 h-3 w-3" />
+                Importeer
+              </Label>
+              <input
+                id="scan-edits-import"
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void importSavedScanEdits(f);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+          </div>
+          <p className="mb-2 text-[10px] text-muted-foreground">
+            Automatisch opgeslagen per bron-URL. Importeer een eerder geëxporteerd JSON-bestand om
+            aanpassingen terug te zetten — gekoppeld aan dezelfde bron-URL.
+          </p>
+          {Object.keys(savedScanEdits).length === 0 ? (
+            <p className="text-[11px] italic text-muted-foreground">
+              Nog geen aanpassingen opgeslagen.
+            </p>
+          ) : (
             <ul className="space-y-1.5">
               {Object.values(savedScanEdits)
                 .sort((a, b) => (a.savedAt < b.savedAt ? 1 : -1))
@@ -1220,8 +1256,9 @@ export function CampaignFlowTab() {
                   );
                 })}
             </ul>
-          </div>
-        )}
+          )}
+        </div>
+
 
 
 
