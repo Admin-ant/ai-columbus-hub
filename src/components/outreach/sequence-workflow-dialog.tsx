@@ -32,7 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { scheduleSequence } from "@/lib/outreach.functions";
+import { scheduleSequence, retryOutreachMessage } from "@/lib/outreach.functions";
 import { SequenceBuilder, type SequenceStep } from "@/components/outreach/sequence-builder";
 import { SequenceFlowDiagram } from "@/components/outreach/sequence-flow-diagram";
 import { computeSchedule, validateSequence } from "@/lib/sequence-workflow";
