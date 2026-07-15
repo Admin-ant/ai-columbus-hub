@@ -244,7 +244,7 @@ export function ColumbusChatWidget() {
                 <button
                   key={s}
                   type="button"
-                  disabled={sending}
+                  disabled={sending || !authed}
                   onClick={() => send(s)}
                   className="rounded-full border border-border bg-muted/50 px-2.5 py-1 text-[10px] font-medium text-muted-foreground transition hover:bg-muted disabled:opacity-50"
                 >
