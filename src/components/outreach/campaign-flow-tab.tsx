@@ -406,9 +406,26 @@ export function CampaignFlowTab() {
 
       {/* Actieve leads in flow */}
       <div className="rounded-lg border border-border bg-muted/30 p-5">
-        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Leads in flow ({leads.length})
-        </h3>
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Leads in flow ({leads.length})
+          </h3>
+          {leads.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={refreshStats}
+              disabled={refreshingStats}
+            >
+              {refreshingStats ? (
+                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-1 h-3 w-3" />
+              )}
+              Ververs klikstats
+            </Button>
+          )}
+        </div>
         {leads.length === 0 ? (
           <p className="text-xs text-muted-foreground">
             Nog geen leads. Start hierboven een campagne.
@@ -418,50 +435,89 @@ export function CampaignFlowTab() {
             {leads.map((l) => (
               <div
                 key={l.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-background/50 p-3"
+                className="flex flex-col gap-2 rounded-md border border-border bg-background/50 p-3"
               >
-                <div className="flex-1 min-w-[200px]">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{l.name}</span>
-                    <span className="text-xs text-muted-foreground">· {l.company}</span>
-                    {l.clicked && (
-                      <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40">
-                        Geklikt
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex-1 min-w-[200px]">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium">{l.name}</span>
+                      <span className="text-xs text-muted-foreground">· {l.company}</span>
+                      {l.clicked && (
+                        <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40">
+                          Geklikt
+                        </Badge>
+                      )}
+                      {(l.clickCount ?? 0) > 0 && (
+                        <Badge variant="outline" className="border-emerald-500/40 text-emerald-300 text-[10px]">
+                          {l.clickCount}× bezocht
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="border-border text-[10px]">
+                        Stap {l.stage}/4
                       </Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground">{l.email} · {l.website}</div>
+                    {l.lastVisitedAt && (
+                      <div className="text-[10px] text-muted-foreground/80">
+                        Laatst bezocht: {new Date(l.lastVisitedAt).toLocaleString("nl-NL")}
+                      </div>
                     )}
-                    <Badge variant="outline" className="border-border text-[10px]">
-                      Stap {l.stage}/4
-                    </Badge>
                   </div>
-                  <div className="text-xs text-muted-foreground">{l.email} · {l.website}</div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => simulateClick(l)}
+                      disabled={l.clicked}
+                    >
+                      <MousePointerClick className="mr-1 h-3 w-3" />
+                      Sim. klik
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => simulateNoResponse(l)}>
+                      <Clock className="mr-1 h-3 w-3" />
+                      Sim. geen reactie
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setLeads((cur) => cur.filter((x) => x.id !== l.id))}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => simulateClick(l)}
-                    disabled={l.clicked}
-                  >
-                    <MousePointerClick className="mr-1 h-3 w-3" />
-                    Sim. klik
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => simulateNoResponse(l)}>
-                    <Clock className="mr-1 h-3 w-3" />
-                    Sim. geen reactie
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setLeads((cur) => cur.filter((x) => x.id !== l.id))}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
+                {l.trackingUrl && (
+                  <div className="flex flex-wrap items-center gap-2 rounded-md border border-brand/30 bg-brand/5 p-2 text-xs">
+                    <Link2 className="h-3 w-3 text-brand" />
+                    <span className="text-muted-foreground">Unieke landingslink:</span>
+                    <code className="truncate max-w-[320px] text-brand">{l.trackingUrl}</code>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-2"
+                      onClick={() => {
+                        navigator.clipboard.writeText(l.trackingUrl!);
+                        toast.success("Link gekopieerd");
+                      }}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                    <a
+                      href={l.trackingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-brand underline text-[10px]"
+                    >
+                      Test klik ↗
+                    </a>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         )}
       </div>
+
 
       {/* Taken & Acties */}
       <div className="rounded-lg border border-border bg-muted/30 p-5">
