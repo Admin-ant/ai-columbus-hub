@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowUp,
@@ -11,6 +11,9 @@ import {
   Clock,
   Eye,
   Save,
+  BookmarkPlus,
+  FolderOpen,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +28,13 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  loadTemplates,
+  saveTemplate,
+  deleteTemplate,
+  validateSequence,
+  type SequenceTemplate,
+} from "@/lib/sequence-workflow";
 
 export type SequenceStep = {
   day: number;
@@ -71,6 +81,14 @@ export function SequenceBuilder({ campaignId, initialSteps, onSaved }: Props) {
   );
   const [activeStep, setActiveStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [templates, setTemplates] = useState<SequenceTemplate[]>([]);
+
+  useEffect(() => {
+    setTemplates(loadTemplates());
+  }, []);
+
+  const issues = useMemo(() => validateSequence(steps), [steps]);
+  const hasIssues = issues.length > 0;
 
   const updateStep = (i: number, patch: Partial<SequenceStep>) =>
     setSteps((cur) => cur.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
@@ -115,6 +133,10 @@ export function SequenceBuilder({ campaignId, initialSteps, onSaved }: Props) {
   };
 
   const save = async () => {
+    if (hasIssues) {
+      toast.error(issues[0].message);
+      return;
+    }
     setSaving(true);
     const { error } = await supabase
       .from("outreach_campaigns")
@@ -128,6 +150,28 @@ export function SequenceBuilder({ campaignId, initialSteps, onSaved }: Props) {
     toast.success("Sequence opgeslagen");
     onSaved(steps);
   };
+
+  const saveAsTemplate = () => {
+    const name = window.prompt("Naam voor deze workflow-template?");
+    if (!name?.trim()) return;
+    const tpl = saveTemplate(name.trim(), steps);
+    setTemplates(loadTemplates());
+    toast.success(`Opgeslagen als template: ${tpl.name}`);
+  };
+
+  const loadFromTemplate = (id: string) => {
+    const tpl = templates.find((t) => t.id === id);
+    if (!tpl) return;
+    setSteps(tpl.steps);
+    setActiveStep(0);
+    toast.success(`Geladen: ${tpl.name}`);
+  };
+
+  const removeTemplate = (id: string) => {
+    setTemplates(deleteTemplate(id));
+    toast.success("Template verwijderd");
+  };
+
 
   const current = steps[activeStep];
   const sampleVars = { contact_name: "Sanne", company: "Voorbeeld BV" };
@@ -312,8 +356,60 @@ export function SequenceBuilder({ campaignId, initialSteps, onSaved }: Props) {
             </label>
           </>
         )}
-        <div className="flex justify-end pt-2">
-          <Button onClick={save} disabled={saving} className="bg-brand hover:bg-brand/90 text-brand-foreground">
+        {hasIssues && (
+          <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-2.5 text-[11px] text-amber-100">
+            <div className="mb-1 flex items-center gap-1.5 font-semibold">
+              <AlertTriangle className="h-3.5 w-3.5" /> Nog niet klaar om te starten
+            </div>
+            <ul className="ml-4 list-disc space-y-0.5">
+              {issues.slice(0, 4).map((iss, k) => (
+                <li key={k}>{iss.message}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
+          {templates.length > 0 && (
+            <Select onValueChange={loadFromTemplate}>
+              <SelectTrigger className="h-8 w-[220px] border-border bg-muted/50 text-xs text-foreground">
+                <FolderOpen className="mr-1.5 h-3.5 w-3.5" />
+                <SelectValue placeholder="Template laden…" />
+              </SelectTrigger>
+              <SelectContent>
+                {templates.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    <div className="flex w-full items-center justify-between gap-4">
+                      <span>{t.name}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          removeTemplate(t.id);
+                        }}
+                        className="text-[10px] text-rose-400 hover:underline"
+                      >
+                        verwijder
+                      </button>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={saveAsTemplate}
+            className="border-border text-foreground hover:bg-muted"
+          >
+            <BookmarkPlus className="mr-1.5 h-3.5 w-3.5" /> Opslaan als template
+          </Button>
+          <Button
+            onClick={save}
+            disabled={saving || hasIssues}
+            className="bg-brand hover:bg-brand/90 text-brand-foreground"
+          >
             <Save className="mr-2 h-4 w-4" /> {saving ? "Opslaan..." : "Sequence opslaan"}
           </Button>
         </div>
