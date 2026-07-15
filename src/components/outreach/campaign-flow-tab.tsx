@@ -187,6 +187,21 @@ export function CampaignFlowTab() {
   const websiteTouched = website.trim().length > 0;
   const inlineUrlError = websiteTouched ? websiteValidation.error : null;
 
+  function resetScanArtifacts() {
+    setScrape(null);
+    setScanError(null);
+    setScanAttempts(0);
+    setLastScanAt(null);
+    setVariants([]);
+    setSelectedVariant(null);
+    setPreview("");
+  }
+
+  async function rescanWebsite() {
+    resetScanArtifacts();
+    return runScan();
+  }
+
   async function runScan(): Promise<ScrapeResult | null> {
     const { url, error } = validateWebsiteUrl(website);
     if (error || !url) {
@@ -709,7 +724,7 @@ export function CampaignFlowTab() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={runScan}
+                onClick={rescanWebsite}
                 disabled={scanning || !!inlineUrlError}
                 className="border-destructive/40 text-destructive hover:bg-destructive/10"
               >
@@ -738,7 +753,7 @@ export function CampaignFlowTab() {
         <div className="mt-4 flex flex-wrap gap-2">
           <Button
             variant="outline"
-            onClick={runScan}
+            onClick={scrape || scanError ? rescanWebsite : runScan}
             disabled={scanning || !website.trim() || !!inlineUrlError}
           >
             {scanning ? (
