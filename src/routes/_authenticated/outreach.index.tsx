@@ -150,7 +150,7 @@ function OutreachDashboard() {
   const research = useServerFn(researchLead);
   const genVariants = useServerFn(generatePitchVariants);
   const sendEmailFn = useServerFn(sendOutreachEmail);
-  const scheduleSeqFn = useServerFn(scheduleSequence);
+  
   const importFn = useServerFn(bulkImportTargets);
   const personalizeFn = useServerFn(personalizeForTarget);
   const bulkPersonalizeFn = useServerFn(bulkPersonalize);
