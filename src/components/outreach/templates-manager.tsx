@@ -249,11 +249,12 @@ export function TemplatesManager({
     setEditing({
       ...editing,
       mail_background_id: bg?.id ?? null,
-      background_color: bg?.background_color ?? editing.background_color ?? null,
-      background_image_url: bg?.background_image_url ?? editing.background_image_url ?? null,
-      header_html: bg?.header_html ?? editing.header_html ?? null,
-      footer_html: bg?.footer_html ?? editing.footer_html ?? null,
+      background_color: bg ? bg.background_color ?? null : null,
+      background_image_url: bg ? bg.background_image_url ?? null : null,
+      header_html: bg ? bg.header_html ?? null : null,
+      footer_html: bg ? bg.footer_html ?? null : null,
     });
+    if (bg) toast.message(`Skin "${bg.name}" toegepast — vergeet niet op te slaan`);
   }
 
   async function saveAsBackground() {
