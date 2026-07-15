@@ -637,6 +637,17 @@ function OutreachDashboard() {
         initialAt={demoDialogTarget?.demo_at ?? null}
         onSaved={load}
       />
+      <SequenceWorkflowDialog
+        open={sequenceDialogOpen}
+        onOpenChange={(o) => {
+          setSequenceDialogOpen(o);
+          if (!o) setSequenceDialogTarget(null);
+        }}
+        organizationId={currentOrganizationId}
+        target={sequenceDialogTarget}
+        initialCampaignId={sequenceDialogTarget?.campaign_id ?? null}
+        onSaved={load}
+      />
     </div>
   );
 }
