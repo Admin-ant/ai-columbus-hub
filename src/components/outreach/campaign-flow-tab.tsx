@@ -176,6 +176,8 @@ export function CampaignFlowTab() {
   useEffect(() => {
     setScrape(null);
     setScanError(null);
+    setScanAttempts(0);
+    setLastScanAt(null);
     setVariants([]);
     setSelectedVariant(null);
     setPreview("");
@@ -195,14 +197,17 @@ export function CampaignFlowTab() {
     }
     setScanning(true);
     setScanError(null);
+    setScanAttempts((n) => n + 1);
     try {
       const result = await scan({ data: { url, company: company || undefined } });
       setScrape(result);
+      setLastScanAt(new Date().toISOString());
       toast.success("Website gescand");
       return result;
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Scan mislukt";
       setScanError(msg);
+      setLastScanAt(new Date().toISOString());
       toast.error(msg);
       return null;
     } finally {
