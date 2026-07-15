@@ -82,6 +82,9 @@ function normalizeUrl(u: string): string {
 export function CampaignFlowTab() {
   const ask = useServerFn(askAssistant);
   const scan = useServerFn(scanWebsite);
+  const createLink = useServerFn(createTrackingLink);
+  const listLinks = useServerFn(listTrackingLinks);
+  const [refreshingStats, setRefreshingStats] = useState(false);
 
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
