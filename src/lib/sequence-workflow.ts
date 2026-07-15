@@ -56,9 +56,11 @@ export function computeSchedule(
   });
 }
 
-/* ------------------ Template opslag (localStorage) --------------------- */
+/* ------------------ Template opslag (per user, via Supabase) --------------------- */
 
-const TEMPLATE_KEY = "columbus.outreach.sequence-templates.v1";
+import { supabase } from "@/integrations/supabase/client";
+
+const LEGACY_KEY = "columbus.outreach.sequence-templates.v1";
 
 export type SequenceTemplate = {
   id: string;
@@ -67,10 +69,28 @@ export type SequenceTemplate = {
   steps: SequenceStep[];
 };
 
-export function loadTemplates(): SequenceTemplate[] {
+type Row = {
+  id: string;
+  name: string;
+  steps: unknown;
+  created_at: string;
+  updated_at: string;
+};
+
+function rowToTemplate(r: Row): SequenceTemplate {
+  return {
+    id: r.id,
+    name: r.name,
+    savedAt: r.updated_at ?? r.created_at,
+    steps: Array.isArray(r.steps) ? (r.steps as SequenceStep[]) : [],
+  };
+}
+
+/** Legacy read — alleen gebruikt voor eenmalige migratie naar Supabase. */
+function readLegacyTemplates(): SequenceTemplate[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = window.localStorage.getItem(TEMPLATE_KEY);
+    const raw = window.localStorage.getItem(LEGACY_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as SequenceTemplate[];
     return Array.isArray(parsed) ? parsed : [];
@@ -79,23 +99,57 @@ export function loadTemplates(): SequenceTemplate[] {
   }
 }
 
-export function saveTemplate(name: string, steps: SequenceStep[]): SequenceTemplate {
-  const list = loadTemplates();
-  const template: SequenceTemplate = {
-    id: (typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : `tpl_${Date.now()}`),
-    name,
-    savedAt: new Date().toISOString(),
-    steps,
-  };
-  list.unshift(template);
-  window.localStorage.setItem(TEMPLATE_KEY, JSON.stringify(list.slice(0, 25)));
-  return template;
+async function migrateLegacyIfAny(userId: string) {
+  const legacy = readLegacyTemplates();
+  if (legacy.length === 0) return;
+  const rows = legacy.map((t) => ({
+    user_id: userId,
+    name: t.name,
+    steps: t.steps as never,
+  }));
+  const { error } = await supabase.from("sequence_templates").insert(rows);
+  if (!error && typeof window !== "undefined") {
+    window.localStorage.removeItem(LEGACY_KEY);
+  }
 }
 
-export function deleteTemplate(id: string): SequenceTemplate[] {
-  const list = loadTemplates().filter((t) => t.id !== id);
-  window.localStorage.setItem(TEMPLATE_KEY, JSON.stringify(list));
-  return list;
+export async function loadTemplates(): Promise<SequenceTemplate[]> {
+  const { data: userData } = await supabase.auth.getUser();
+  const userId = userData.user?.id;
+  if (!userId) return [];
+
+  await migrateLegacyIfAny(userId);
+
+  const { data, error } = await supabase
+    .from("sequence_templates")
+    .select("id, name, steps, created_at, updated_at")
+    .eq("user_id", userId)
+    .order("updated_at", { ascending: false })
+    .limit(50);
+  if (error || !data) return [];
+  return (data as Row[]).map(rowToTemplate);
 }
+
+export async function saveTemplate(
+  name: string,
+  steps: SequenceStep[],
+): Promise<SequenceTemplate> {
+  const { data: userData } = await supabase.auth.getUser();
+  const userId = userData.user?.id;
+  if (!userId) throw new Error("Je moet ingelogd zijn om templates op te slaan");
+
+  const { data, error } = await supabase
+    .from("sequence_templates")
+    .insert({ user_id: userId, name, steps: steps as never })
+    .select("id, name, steps, created_at, updated_at")
+    .single();
+  if (error || !data) throw new Error(error?.message ?? "Opslaan mislukt");
+  return rowToTemplate(data as Row);
+}
+
+export async function deleteTemplate(id: string): Promise<SequenceTemplate[]> {
+  const { error } = await supabase.from("sequence_templates").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  return loadTemplates();
+}
+
