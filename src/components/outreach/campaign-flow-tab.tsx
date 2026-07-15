@@ -179,6 +179,9 @@ export function CampaignFlowTab() {
 
   const [leads, setLeads] = useState<FlowLead[]>(() => loadLS<FlowLead[]>(LS_LEADS, []));
   const [tasks, setTasks] = useState<FlowTask[]>(() => loadLS<FlowTask[]>(LS_TASKS, []));
+  const [savedScanEdits, setSavedScanEdits] = useState<Record<string, SavedScanEdit>>(
+    () => loadLS<Record<string, SavedScanEdit>>(LS_SCAN_EDITS, {}),
+  );
 
   useEffect(() => {
     localStorage.setItem(LS_LEADS, JSON.stringify(leads));
@@ -186,6 +189,9 @@ export function CampaignFlowTab() {
   useEffect(() => {
     localStorage.setItem(LS_TASKS, JSON.stringify(tasks));
   }, [tasks]);
+  useEffect(() => {
+    localStorage.setItem(LS_SCAN_EDITS, JSON.stringify(savedScanEdits));
+  }, [savedScanEdits]);
 
   const scanChanges = useMemo(() => {
     if (!scrape || !originalScrape) return [];
