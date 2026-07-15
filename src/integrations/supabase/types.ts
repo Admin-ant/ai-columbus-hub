@@ -324,6 +324,112 @@ export type Database = {
           },
         ]
       }
+      campaign_flow_leads: {
+        Row: {
+          clicked_at: string | null
+          closed_at: string | null
+          company: string
+          created_at: string
+          email: string
+          email_preview: string | null
+          email_sent_at: string | null
+          id: string
+          name: string
+          stage: number
+          tracking_link_id: string | null
+          tracking_token: string | null
+          updated_at: string
+          user_id: string
+          website: string
+        }
+        Insert: {
+          clicked_at?: string | null
+          closed_at?: string | null
+          company: string
+          created_at?: string
+          email: string
+          email_preview?: string | null
+          email_sent_at?: string | null
+          id?: string
+          name: string
+          stage?: number
+          tracking_link_id?: string | null
+          tracking_token?: string | null
+          updated_at?: string
+          user_id: string
+          website: string
+        }
+        Update: {
+          clicked_at?: string | null
+          closed_at?: string | null
+          company?: string
+          created_at?: string
+          email?: string
+          email_preview?: string | null
+          email_sent_at?: string | null
+          id?: string
+          name?: string
+          stage?: number
+          tracking_link_id?: string | null
+          tracking_token?: string | null
+          updated_at?: string
+          user_id?: string
+          website?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_flow_leads_tracking_link_id_fkey"
+            columns: ["tracking_link_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_tracking_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_flow_tasks: {
+        Row: {
+          action: string
+          created_at: string
+          done: boolean
+          done_at: string | null
+          id: string
+          lead_id: string | null
+          reason: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          done?: boolean
+          done_at?: string | null
+          id?: string
+          lead_id?: string | null
+          reason: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          done?: boolean
+          done_at?: string | null
+          id?: string
+          lead_id?: string | null
+          reason?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_flow_tasks_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_flow_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_link_visits: {
         Row: {
           id: string

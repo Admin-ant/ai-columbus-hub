@@ -30,6 +30,11 @@ import {
   listTrackingLinks,
   type TrackingLink,
 } from "@/lib/tracking-links.functions";
+import {
+  createCampaignLead,
+  listCampaignTasks,
+  type CampaignFlowTask,
+} from "@/lib/campaign-flow.functions";
 
 type ScrapeResult = WebsiteScanResult;
 
@@ -59,6 +64,7 @@ type FlowLead = {
   trackingUrl?: string | null;
   clickCount?: number;
   lastVisitedAt?: string | null;
+  serverLeadId?: string | null;
 };
 
 const LS_LEADS = "campaign-flow-leads";
@@ -84,7 +90,10 @@ export function CampaignFlowTab() {
   const scan = useServerFn(scanWebsite);
   const createLink = useServerFn(createTrackingLink);
   const listLinks = useServerFn(listTrackingLinks);
+  const createServerLead = useServerFn(createCampaignLead);
+  const fetchServerTasks = useServerFn(listCampaignTasks);
   const [refreshingStats, setRefreshingStats] = useState(false);
+  const [runningAutomation, setRunningAutomation] = useState(false);
 
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
@@ -162,6 +171,7 @@ export function CampaignFlowTab() {
       // Genereer unieke tracking-link voor deze lead
       let trackingToken: string | null = null;
       let trackingUrl: string | null = null;
+      let trackingLinkId: string | null = null;
       try {
         const link = await createLink({
           data: {
@@ -172,9 +182,29 @@ export function CampaignFlowTab() {
           },
         });
         trackingToken = link.token;
+        trackingLinkId = link.id;
         trackingUrl = `${window.location.origin}/api/public/l/${link.token}`;
       } catch (err) {
         console.warn("Tracking link kon niet worden gemaakt", err);
+      }
+
+      // Persisteer lead server-side zodat de achtergrondjob 'm kan opvolgen
+      let serverLeadId: string | null = null;
+      try {
+        const saved = await createServerLead({
+          data: {
+            name,
+            company,
+            email,
+            website: normalizeUrl(website),
+            emailPreview: previewText,
+            trackingLinkId: trackingLinkId ?? undefined,
+            trackingToken: trackingToken ?? undefined,
+          },
+        });
+        serverLeadId = saved.id;
+      } catch (err) {
+        console.warn("Server-side lead opslaan mislukt", err);
       }
 
       const lead: FlowLead = {
@@ -193,12 +223,13 @@ export function CampaignFlowTab() {
         trackingUrl,
         clickCount: 0,
         lastVisitedAt: null,
+        serverLeadId,
       };
       setLeads((cur) => [lead, ...cur]);
       toast.success(
-        trackingUrl
-          ? "Campagne gestart · unieke landingslink aangemaakt"
-          : "Campagne gestart (zonder tracking-link)",
+        trackingUrl && serverLeadId
+          ? "Campagne gestart · automation actief"
+          : "Campagne gestart",
       );
     } catch (e) {
       const msg = e instanceof Error ? e.message : "AI genereren mislukt";
@@ -266,6 +297,58 @@ export function CampaignFlowTab() {
     }
   }
 
+  async function runAutomation() {
+    setRunningAutomation(true);
+    try {
+      const res = await fetch("/api/public/hooks/campaign-flow-tick", {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error(`Tick faalde (${res.status})`);
+      const result = (await res.json()) as {
+        scanned: number;
+        callTasksCreated: number;
+        followupTasksCreated: number;
+      };
+
+      // Haal server-side taken op en merge in de lokale takenlijst
+      const serverTasks: CampaignFlowTask[] = await fetchServerTasks();
+      setTasks((cur) => {
+        const existingKeys = new Set(
+          cur.map((t) => `${t.leadName}|${t.company}|${t.action}`),
+        );
+        const extra: FlowTask[] = [];
+        for (const st of serverTasks) {
+          const key = `${st.lead_name}|${st.company}|${st.action}`;
+          if (existingKeys.has(key)) continue;
+          extra.push({
+            id: st.id,
+            leadName: st.lead_name ?? "Onbekend",
+            company: st.company ?? "",
+            action: st.action,
+            reason: st.reason,
+            createdAt: st.created_at,
+            done: st.done,
+          });
+        }
+        return [...extra, ...cur];
+      });
+
+      const total = result.callTasksCreated + result.followupTasksCreated;
+      if (total > 0) {
+        toast.success(
+          `Automation actief · ${result.callTasksCreated} bel-taken, ${result.followupTasksCreated} opvolg-taken`,
+        );
+      } else {
+        toast.info(
+          `Automation liep · ${result.scanned} leads gecontroleerd, geen nieuwe taken`,
+        );
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Automation faalde");
+    } finally {
+      setRunningAutomation(false);
+    }
+  }
 
 
   function simulateClick(lead: FlowLead) {
@@ -406,25 +489,45 @@ export function CampaignFlowTab() {
 
       {/* Actieve leads in flow */}
       <div className="rounded-lg border border-border bg-muted/30 p-5">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Leads in flow ({leads.length})
-          </h3>
-          {leads.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Leads in flow ({leads.length})
+            </h3>
+            <p className="text-[10px] text-muted-foreground/80">
+              Achtergrondjob draait automatisch elke 15 min · bel-taak bij klik, opvolg-taak na 3 dagen stilte
+            </p>
+          </div>
+          <div className="flex gap-2">
+            {leads.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={refreshStats}
+                disabled={refreshingStats}
+              >
+                {refreshingStats ? (
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-1 h-3 w-3" />
+                )}
+                Ververs klikstats
+              </Button>
+            )}
             <Button
               size="sm"
               variant="outline"
-              onClick={refreshStats}
-              disabled={refreshingStats}
+              onClick={runAutomation}
+              disabled={runningAutomation}
             >
-              {refreshingStats ? (
+              {runningAutomation ? (
                 <Loader2 className="mr-1 h-3 w-3 animate-spin" />
               ) : (
-                <RefreshCw className="mr-1 h-3 w-3" />
+                <Zap className="mr-1 h-3 w-3" />
               )}
-              Ververs klikstats
+              Run automation nu
             </Button>
-          )}
+          </div>
         </div>
         {leads.length === 0 ? (
           <p className="text-xs text-muted-foreground">
