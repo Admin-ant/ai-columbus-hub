@@ -753,7 +753,7 @@ export function CampaignFlowTab() {
         <div className="mt-4 flex flex-wrap gap-2">
           <Button
             variant="outline"
-            onClick={runScan}
+            onClick={scrape || scanError ? rescanWebsite : runScan}
             disabled={scanning || !website.trim() || !!inlineUrlError}
           >
             {scanning ? (
