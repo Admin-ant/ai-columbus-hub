@@ -369,14 +369,26 @@ export function ColumbusChatWidget() {
                 placeholder={placeholder}
                 className="max-h-28 min-h-[36px] flex-1 resize-none rounded-md border border-border bg-muted/50 px-2.5 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-brand"
               />
-              <Button
-                type="submit"
-                size="sm"
-                disabled={sending || !input.trim() || !authed}
-                className="h-9 bg-brand text-brand-foreground hover:bg-brand/90"
-              >
-                <Send className="h-3.5 w-3.5" />
-              </Button>
+              {sending ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={stop}
+                  aria-label="Stop met genereren"
+                  className="h-9 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  <Square className="h-3.5 w-3.5 fill-current" />
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={!input.trim() || !authed}
+                  className="h-9 bg-brand text-brand-foreground hover:bg-brand/90"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                </Button>
+              )}
             </form>
           </div>
         </div>
