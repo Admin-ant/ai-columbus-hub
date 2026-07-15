@@ -94,6 +94,7 @@ const columbusGroups: NavGroup[] = [
     items: [
       { title: "Mail", url: "/mail", icon: Mail },
       { title: "Agenda", url: "/agenda", icon: CalendarDays },
+      { title: "Mail skins", url: "/mail/skins", icon: Palette },
       { title: "Mail instellingen", url: "/mail/settings", icon: Settings },
     ],
   },
