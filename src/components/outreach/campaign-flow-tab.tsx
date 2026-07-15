@@ -689,9 +689,50 @@ export function CampaignFlowTab() {
         )}
 
         {scanError && (
-          <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
-            {scanError}
+          <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+              <div className="flex-1 space-y-1">
+                <div className="font-medium text-destructive">Scan mislukt</div>
+                <p className="text-destructive/90">{scanError}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {scanAttempts > 1 ? `Poging ${scanAttempts}` : "Poging 1"}
+                  {lastScanAt
+                    ? ` · ${new Date(lastScanAt).toLocaleTimeString("nl-NL", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                      })}`
+                    : ""}
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={runScan}
+                disabled={scanning || !!inlineUrlError}
+                className="border-destructive/40 text-destructive hover:bg-destructive/10"
+              >
+                {scanning ? (
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <RotateCcw className="mr-2 h-3.5 w-3.5" />
+                )}
+                Probeer opnieuw
+              </Button>
+            </div>
           </div>
+        )}
+
+        {scrape && lastScanAt && !scanError && (
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Laatste succesvolle scan om{" "}
+            {new Date(lastScanAt).toLocaleTimeString("nl-NL", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+            {scanAttempts > 1 ? ` (na ${scanAttempts} pogingen)` : ""}.
+          </p>
         )}
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -702,10 +743,20 @@ export function CampaignFlowTab() {
           >
             {scanning ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : scanError ? (
+              <RotateCcw className="mr-2 h-4 w-4" />
+            ) : scrape ? (
+              <RefreshCw className="mr-2 h-4 w-4" />
             ) : (
               <Globe className="mr-2 h-4 w-4" />
             )}
-            {scanning ? "Scannen…" : scrape ? "Opnieuw scannen" : "Scan website"}
+            {scanning
+              ? "Scannen…"
+              : scanError
+                ? "Scan opnieuw"
+                : scrape
+                  ? "Scan opnieuw"
+                  : "Scan website"}
           </Button>
           <Button
             onClick={generateVariants}
