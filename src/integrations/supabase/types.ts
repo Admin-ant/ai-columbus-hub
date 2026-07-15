@@ -2103,6 +2103,53 @@ export type Database = {
           },
         ]
       }
+      mail_backgrounds: {
+        Row: {
+          background_color: string | null
+          background_image_url: string | null
+          created_at: string
+          created_by: string | null
+          footer_html: string | null
+          header_html: string | null
+          id: string
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          background_color?: string | null
+          background_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          footer_html?: string | null
+          header_html?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          background_color?: string | null
+          background_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          footer_html?: string | null
+          header_html?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mail_backgrounds_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mail_messages: {
         Row: {
           attachments: Json
@@ -2496,39 +2543,54 @@ export type Database = {
       }
       outreach_message_templates: {
         Row: {
+          background_color: string | null
+          background_image_url: string | null
           body: string
           channel: string
           created_at: string
           created_by: string | null
           description: string | null
+          footer_html: string | null
+          header_html: string | null
           id: string
           is_default: boolean
+          mail_background_id: string | null
           name: string
           organization_id: string
           subject: string | null
           updated_at: string
         }
         Insert: {
+          background_color?: string | null
+          background_image_url?: string | null
           body: string
           channel: string
           created_at?: string
           created_by?: string | null
           description?: string | null
+          footer_html?: string | null
+          header_html?: string | null
           id?: string
           is_default?: boolean
+          mail_background_id?: string | null
           name: string
           organization_id: string
           subject?: string | null
           updated_at?: string
         }
         Update: {
+          background_color?: string | null
+          background_image_url?: string | null
           body?: string
           channel?: string
           created_at?: string
           created_by?: string | null
           description?: string | null
+          footer_html?: string | null
+          header_html?: string | null
           id?: string
           is_default?: boolean
+          mail_background_id?: string | null
           name?: string
           organization_id?: string
           subject?: string | null
