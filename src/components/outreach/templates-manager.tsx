@@ -96,6 +96,7 @@ export function TemplatesManager({
   const [sample, setSample] = useState<Record<SampleKey, string>>(DEFAULT_SAMPLE);
   const [backgrounds, setBackgrounds] = useState<MailBackground[]>([]);
   const [savingBg, setSavingBg] = useState(false);
+  const [previewSkinId, setPreviewSkinId] = useState<string | null>(null);
   const { user } = useAuth();
   const [testTo, setTestTo] = useState<string>("");
   const [sendingTest, setSendingTest] = useState(false);
@@ -332,6 +333,11 @@ export function TemplatesManager({
     | (OutreachTemplate & { version?: number })
     | (TemplateVersion & Partial<OutreachTemplate>)
     | null;
+  const previewSkin = previewSkinId ? backgrounds.find((b) => b.id === previewSkinId) ?? null : null;
+  const previewBgColor = previewSkin ? previewSkin.background_color : preview?.background_color ?? null;
+  const previewBgImage = previewSkin ? previewSkin.background_image_url : preview?.background_image_url ?? null;
+  const previewHeaderHtml = previewSkin ? previewSkin.header_html : preview?.header_html ?? null;
+  const previewFooterHtml = previewSkin ? previewSkin.footer_html : preview?.footer_html ?? null;
 
   return (
     <div className="grid gap-4 xl:grid-cols-[240px_1fr_280px_240px] lg:grid-cols-[240px_1fr_280px]">
@@ -632,7 +638,51 @@ export function TemplatesManager({
           )}
         </div>
         {preview ? (
-          <div className="rounded-lg border border-border bg-card p-3 text-sm text-card-foreground shadow-sm">
+          <div className="rounded-lg border border-border bg-card p-3 text-sm text-card-foreground shadow-sm space-y-2">
+            {editing?.channel === "email" && backgrounds.length > 0 && (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground mr-1">Skin</span>
+                <button
+                  type="button"
+                  onClick={() => setPreviewSkinId(null)}
+                  className={`rounded border px-1.5 py-0.5 text-[10px] ${
+                    !previewSkinId
+                      ? "border-primary/50 bg-primary/10 text-primary"
+                      : "border-border bg-background text-foreground hover:bg-accent"
+                  }`}
+                  title="Toon de skin die aan dit sjabloon is gekoppeld"
+                >
+                  Sjabloon
+                </button>
+                {backgrounds.map((b) => (
+                  <button
+                    key={b.id}
+                    type="button"
+                    onClick={() => setPreviewSkinId(b.id)}
+                    className={`rounded border px-1.5 py-0.5 text-[10px] ${
+                      previewSkinId === b.id
+                        ? "border-primary/50 bg-primary/10 text-primary"
+                        : "border-border bg-background text-foreground hover:bg-accent"
+                    }`}
+                  >
+                    {b.name}
+                  </button>
+                ))}
+                {previewSkin && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      applyBackground(previewSkin);
+                      setPreviewSkinId(null);
+                    }}
+                    className="ml-auto rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/15"
+                    title="Pas deze skin toe op het sjabloon"
+                  >
+                    Toepassen
+                  </button>
+                )}
+              </div>
+            )}
             {preview.subject && (
               <>
                 <div className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">Onderwerp</div>
@@ -645,24 +695,22 @@ export function TemplatesManager({
             <div
               className="rounded overflow-hidden border border-border"
               style={{
-                backgroundColor: preview.background_color ?? undefined,
-                backgroundImage: preview.background_image_url
-                  ? `url(${preview.background_image_url})`
-                  : undefined,
+                backgroundColor: previewBgColor ?? undefined,
+                backgroundImage: previewBgImage ? `url(${previewBgImage})` : undefined,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
               }}
             >
-              {preview.header_html && (
+              {previewHeaderHtml && (
                 // eslint-disable-next-line react/no-danger
-                <div dangerouslySetInnerHTML={{ __html: preview.header_html }} />
+                <div dangerouslySetInnerHTML={{ __html: previewHeaderHtml }} />
               )}
               <div className="whitespace-pre-wrap p-3 leading-relaxed text-foreground">
                 {renderTokens(preview.body, sample)}
               </div>
-              {preview.footer_html && (
+              {previewFooterHtml && (
                 // eslint-disable-next-line react/no-danger
-                <div dangerouslySetInnerHTML={{ __html: preview.footer_html }} />
+                <div dangerouslySetInnerHTML={{ __html: previewFooterHtml }} />
               )}
             </div>
           </div>
@@ -671,6 +719,7 @@ export function TemplatesManager({
             Selecteer een sjabloon
           </div>
         )}
+
 
         {/* Live variabelen — pas aan om direct in de preview te zien */}
         <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
