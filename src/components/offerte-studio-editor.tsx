@@ -647,6 +647,52 @@ export function OfferteStudioEditor({ kind, id }: Props) {
             </>
           )}
 
+          <div className="mt-4 px-2 py-1.5 text-[10px] uppercase tracking-wider text-white/40">
+            E-mailtemplate
+          </div>
+          <div className="space-y-2 px-2">
+            <select
+              value={mailTemplateId ?? ""}
+              onChange={(e) => {
+                setMailTemplateId(e.target.value || null);
+                mark();
+              }}
+              className="h-8 w-full rounded border border-white/10 bg-black/30 px-2 text-xs text-white outline-none"
+            >
+              <option value="">— Geen (standaard) —</option>
+              {mailTemplates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={mailBackgroundId ?? ""}
+              onChange={(e) => {
+                setMailBackgroundId(e.target.value || null);
+                mark();
+              }}
+              className="h-8 w-full rounded border border-white/10 bg-black/30 px-2 text-xs text-white outline-none"
+              title="Mail-achtergrond / skin"
+            >
+              <option value="">— Geen skin —</option>
+              {mailBackgrounds.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+            <a
+              href="/mail/templates"
+              target="_blank"
+              rel="noreferrer"
+              className="block text-[10px] text-white/40 hover:text-white/70"
+            >
+              Beheer templates & skins →
+            </a>
+          </div>
+
+
           <>
 
 
