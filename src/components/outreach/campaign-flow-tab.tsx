@@ -289,11 +289,16 @@ export function CampaignFlowTab() {
     setScanAttempts((n) => n + 1);
     try {
       const result = await scan({ data: { url, company: company || undefined } });
-      setScrape(result);
       setOriginalScrape(result);
+      const saved = savedScanEdits[result.source_url];
+      if (saved) {
+        setScrape(saved.edited);
+        toast.success("Website gescand — opgeslagen aanpassingen toegepast");
+      } else {
+        setScrape(result);
+        toast.success("Website gescand");
+      }
       setLastScanAt(new Date().toISOString());
-
-      toast.success("Website gescand");
       return result;
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Scan mislukt";
