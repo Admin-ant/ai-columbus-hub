@@ -131,6 +131,7 @@ export function ColumbusChatWidget() {
         method: "POST",
         headers: {
           "content-type": "application/json",
+          accept: "text/event-stream",
           ...(bearer ? { authorization: `Bearer ${bearer}` } : {}),
         },
         body: JSON.stringify({
@@ -139,16 +140,80 @@ export function ColumbusChatWidget() {
         }),
       });
 
-      const data = (await res.json().catch(() => ({}))) as {
-        reply?: string;
-        message?: string;
-        error?: string;
+      const contentType = res.headers.get("content-type") ?? "";
+      const isStream = contentType.includes("text/event-stream") && res.body;
+
+      if (!isStream) {
+        // Fallback: JSON-fouten/legacy — geen streamrespons.
+        const data = (await res.json().catch(() => ({}))) as {
+          reply?: string;
+          message?: string;
+          error?: string;
+        };
+        const reply =
+          data.reply ??
+          data.message ??
+          (data.error ? `Fout: ${data.error}` : "Geen antwoord ontvangen.");
+        setMessages((cur) => [...cur, { role: "assistant", content: reply }]);
+        return;
+      }
+
+      // Reserveer een leeg assistant-bericht en vul het progressief.
+      setMessages((cur) => [...cur, { role: "assistant", content: "" }]);
+      const appendDelta = (delta: string) => {
+        setMessages((cur) => {
+          const copy = cur.slice();
+          const last = copy[copy.length - 1];
+          if (last && last.role === "assistant") {
+            copy[copy.length - 1] = { ...last, content: last.content + delta };
+          }
+          return copy;
+        });
       };
-      const reply =
-        data.reply ??
-        data.message ??
-        (data.error ? `Fout: ${data.error}` : "Geen antwoord ontvangen.");
-      setMessages((cur) => [...cur, { role: "assistant", content: reply }]);
+      const setError = (msg: string) => {
+        setMessages((cur) => {
+          const copy = cur.slice();
+          const last = copy[copy.length - 1];
+          if (last && last.role === "assistant" && last.content === "") {
+            copy[copy.length - 1] = { ...last, content: `Fout: ${msg}` };
+          } else {
+            copy.push({ role: "assistant", content: `Fout: ${msg}` });
+          }
+          return copy;
+        });
+      };
+
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      let done = false;
+      while (!done) {
+        const { value, done: d } = await reader.read();
+        done = d;
+        if (value) buf += decoder.decode(value, { stream: true });
+        let sep: number;
+        while ((sep = buf.indexOf("\n\n")) !== -1) {
+          const raw = buf.slice(0, sep);
+          buf = buf.slice(sep + 2);
+          for (const line of raw.split("\n")) {
+            const t = line.trim();
+            if (!t.startsWith("data:")) continue;
+            const payload = t.slice(5).trim();
+            if (!payload) continue;
+            try {
+              const evt = JSON.parse(payload) as {
+                type?: string;
+                text?: string;
+                error?: string;
+              };
+              if (evt.type === "delta" && evt.text) appendDelta(evt.text);
+              else if (evt.type === "error" && evt.error) setError(evt.error);
+            } catch {
+              // negeer onparseerbare fragmenten
+            }
+          }
+        }
+      }
     } catch (e) {
       setMessages((cur) => [
         ...cur,
@@ -161,6 +226,7 @@ export function ColumbusChatWidget() {
       setSending(false);
     }
   }
+
 
   if (!mounted) return null;
   // Extern script neemt het over — verberg onze fallback.
