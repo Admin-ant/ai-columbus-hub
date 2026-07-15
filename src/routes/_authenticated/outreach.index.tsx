@@ -459,8 +459,11 @@ function OutreachDashboard() {
           <StatCard icon={Target} label="Gewonnen" value={stats.won} accent />
         </div>
 
-        <Tabs defaultValue="pipeline" className="w-full">
+        <Tabs defaultValue="flow" className="w-full">
           <TabsList className="bg-muted/50 border border-border">
+            <TabsTrigger value="flow" className="data-[state=active]:bg-brand/20 data-[state=active]:text-foreground">
+              Campagne Flow
+            </TabsTrigger>
             <TabsTrigger value="pipeline" className="data-[state=active]:bg-brand/20 data-[state=active]:text-foreground">
               Pipeline
             </TabsTrigger>
@@ -480,6 +483,11 @@ function OutreachDashboard() {
               Analytics
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="flow" className="mt-4">
+            <CampaignFlowTab />
+          </TabsContent>
+
 
           <TabsContent value="pipeline" className="mt-4">
             {loading ? (
