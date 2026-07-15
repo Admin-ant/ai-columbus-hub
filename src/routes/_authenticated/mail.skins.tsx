@@ -204,9 +204,14 @@ function MailSkinsPage() {
     <p>Met vriendelijke groet,<br/>{{sender_name}}</p>
   </div>`;
 
+  const previewBg = previewVersion?.background_color ?? bgColor;
+  const previewImg = previewVersion?.background_image_url ?? bgImage;
+  const previewHeader = previewVersion?.header_html ?? header;
+  const previewFooter = previewVersion?.footer_html ?? footer;
+
   const previewStyle: React.CSSProperties = {
-    backgroundColor: bgColor || "#ffffff",
-    backgroundImage: bgImage ? `url(${bgImage})` : undefined,
+    backgroundColor: previewBg || "#ffffff",
+    backgroundImage: previewImg ? `url(${previewImg})` : undefined,
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
