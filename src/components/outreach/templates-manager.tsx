@@ -712,14 +712,14 @@ export function TemplatesManager({
             >
               {previewHeaderHtml && (
                 // eslint-disable-next-line react/no-danger
-                <div dangerouslySetInnerHTML={{ __html: previewHeaderHtml }} />
+                <div dangerouslySetInnerHTML={{ __html: sanitizeSkinHtml(previewHeaderHtml) }} />
               )}
               <div className="whitespace-pre-wrap p-3 leading-relaxed text-foreground">
                 {renderTokens(preview.body, sample)}
               </div>
               {previewFooterHtml && (
                 // eslint-disable-next-line react/no-danger
-                <div dangerouslySetInnerHTML={{ __html: previewFooterHtml }} />
+                <div dangerouslySetInnerHTML={{ __html: sanitizeSkinHtml(previewFooterHtml) }} />
               )}
             </div>
           </div>
