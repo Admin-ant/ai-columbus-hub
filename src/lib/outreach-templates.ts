@@ -40,6 +40,23 @@ export type OutreachTemplate = {
   is_default: boolean;
   created_at: string;
   updated_at: string;
+  background_color?: string | null;
+  background_image_url?: string | null;
+  header_html?: string | null;
+  footer_html?: string | null;
+  mail_background_id?: string | null;
+};
+
+export type MailBackground = {
+  id: string;
+  organization_id: string;
+  name: string;
+  background_color: string | null;
+  background_image_url: string | null;
+  header_html: string | null;
+  footer_html: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type TokenVars = {
