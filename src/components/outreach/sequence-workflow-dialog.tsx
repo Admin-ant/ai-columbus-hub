@@ -348,44 +348,85 @@ export function SequenceWorkflowDialog({
                     Live status — laatst uitgevoerde stappen
                   </div>
                   <ul className="space-y-1.5">
-                    {logs.map((m) => (
-                      <li
-                        key={m.id}
-                        className="flex items-start justify-between gap-3 rounded border border-border/50 bg-background/40 px-2.5 py-1.5 text-xs"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            {m.status === "sent" ? (
-                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-                            ) : m.status === "failed" ? (
-                              <XCircle className="h-3.5 w-3.5 text-rose-400" />
-                            ) : (
-                              <CalendarClock className="h-3.5 w-3.5 text-amber-400" />
-                            )}
-                            <span className="font-medium text-foreground">
-                              Stap {(m.step_index ?? 0) + 1}
-                            </span>
-                            <Badge variant="outline" className="text-[9px]">
-                              {CHANNEL_LABEL[m.channel] ?? m.channel}
-                            </Badge>
-                            <span className="text-muted-foreground">{m.status}</span>
-                          </div>
-                          <div className="mt-0.5 truncate text-muted-foreground">
-                            {m.subject ?? "—"}
-                          </div>
-                          {m.error && (
-                            <div className="mt-0.5 text-[11px] text-rose-300">
-                              {m.error}
+                    {logs.map((m) => {
+                      const isRetrying = retryingId === m.id || m.status === "retrying";
+                      const statusLabel =
+                        m.status === "retrying" ? "opnieuw proberen…" : m.status;
+                      return (
+                        <li
+                          key={m.id}
+                          className="flex items-start justify-between gap-3 rounded border border-border/50 bg-background/40 px-2.5 py-1.5 text-xs"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              {m.status === "sent" ? (
+                                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                              ) : m.status === "failed" ? (
+                                <XCircle className="h-3.5 w-3.5 text-rose-400" />
+                              ) : m.status === "retrying" ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin text-sky-400" />
+                              ) : (
+                                <CalendarClock className="h-3.5 w-3.5 text-amber-400" />
+                              )}
+                              <span className="font-medium text-foreground">
+                                Stap {(m.step_index ?? 0) + 1}
+                              </span>
+                              <Badge variant="outline" className="text-[9px]">
+                                {CHANNEL_LABEL[m.channel] ?? m.channel}
+                              </Badge>
+                              <span
+                                className={
+                                  m.status === "failed"
+                                    ? "text-rose-300"
+                                    : m.status === "retrying"
+                                      ? "text-sky-300"
+                                      : "text-muted-foreground"
+                                }
+                              >
+                                {statusLabel}
+                              </span>
                             </div>
-                          )}
-                        </div>
-                        <span className="whitespace-nowrap text-[10px] text-muted-foreground">
-                          {m.sent_at
-                            ? fmtDate(new Date(m.sent_at))
-                            : fmtDate(new Date(m.created_at))}
-                        </span>
-                      </li>
-                    ))}
+                            <div className="mt-0.5 truncate text-muted-foreground">
+                              {m.subject ?? "—"}
+                            </div>
+                            {m.error && m.status !== "retrying" && (
+                              <div className="mt-0.5 text-[11px] text-rose-300">
+                                {m.error}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <span className="whitespace-nowrap text-[10px] text-muted-foreground">
+                              {m.sent_at
+                                ? fmtDate(new Date(m.sent_at))
+                                : fmtDate(new Date(m.created_at))}
+                            </span>
+                            {(m.status === "failed" || m.status === "retrying") && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={isRetrying}
+                                onClick={() => onRetry(m.id)}
+                                className="h-6 border-border px-2 text-[10px] text-foreground hover:bg-muted"
+                              >
+                                {isRetrying ? (
+                                  <>
+                                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                                    Bezig…
+                                  </>
+                                ) : (
+                                  <>
+                                    <RefreshCw className="mr-1 h-3 w-3" />
+                                    Opnieuw proberen
+                                  </>
+                                )}
+                              </Button>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
+
                   </ul>
                 </div>
               )}
