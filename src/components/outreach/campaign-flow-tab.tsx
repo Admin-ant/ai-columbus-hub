@@ -15,6 +15,7 @@ import {
   Rocket,
   Link2,
   Copy,
+  Download,
   RefreshCw,
   History,
   Play,
