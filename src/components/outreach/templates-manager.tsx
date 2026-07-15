@@ -96,6 +96,7 @@ export function TemplatesManager({
   const [sample, setSample] = useState<Record<SampleKey, string>>(DEFAULT_SAMPLE);
   const [backgrounds, setBackgrounds] = useState<MailBackground[]>([]);
   const [savingBg, setSavingBg] = useState(false);
+  const [previewSkinId, setPreviewSkinId] = useState<string | null>(null);
   const { user } = useAuth();
   const [testTo, setTestTo] = useState<string>("");
   const [sendingTest, setSendingTest] = useState(false);
