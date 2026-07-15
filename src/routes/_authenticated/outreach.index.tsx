@@ -70,7 +70,6 @@ import { researchLead, generatePitchVariants, type PitchVariant } from "@/lib/ai
 import {
   bulkImportTargets,
   sendOutreachEmail,
-  scheduleSequence,
   personalizeForTarget,
   bulkPersonalize,
 } from "@/lib/outreach.functions";
@@ -80,6 +79,8 @@ import { IncomingLeadsTab } from "@/components/outreach/incoming-leads-tab";
 import { SequenceBuilder } from "@/components/outreach/sequence-builder";
 import { SendOutreachDialog } from "@/components/outreach/send-outreach-dialog";
 import { DemoPromptDialog } from "@/components/outreach/demo-prompt-dialog";
+import { SequenceWorkflowDialog } from "@/components/outreach/sequence-workflow-dialog";
+import { SequenceFlowDiagram } from "@/components/outreach/sequence-flow-diagram";
 import { NL_PROVINCES } from "@/lib/outreach-templates";
 
 
@@ -149,7 +150,7 @@ function OutreachDashboard() {
   const research = useServerFn(researchLead);
   const genVariants = useServerFn(generatePitchVariants);
   const sendEmailFn = useServerFn(sendOutreachEmail);
-  const scheduleSeqFn = useServerFn(scheduleSequence);
+  
   const importFn = useServerFn(bulkImportTargets);
   const personalizeFn = useServerFn(personalizeForTarget);
   const bulkPersonalizeFn = useServerFn(bulkPersonalize);
@@ -159,6 +160,8 @@ function OutreachDashboard() {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [sendDialogTarget, setSendDialogTarget] = useState<TargetRow | null>(null);
   const [demoDialogTarget, setDemoDialogTarget] = useState<TargetRow | null>(null);
+  const [sequenceDialogTarget, setSequenceDialogTarget] = useState<TargetRow | null>(null);
+  const [sequenceDialogOpen, setSequenceDialogOpen] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
   async function runPersonalize(t: TargetRow) {
@@ -202,16 +205,9 @@ function OutreachDashboard() {
     }
   }
 
-  async function startSequence(t: TargetRow) {
-    if (!t.campaign_id) return toast.error("Koppel eerst aan een campagne met sequentie");
-    toast.loading("Inplannen…", { id: "sch" });
-    try {
-      await scheduleSeqFn({ data: { target_id: t.id, start_in_minutes: 1 } });
-      toast.success("Sequentie ingepland (start binnen 15 min)", { id: "sch" });
-      load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Mislukt", { id: "sch" });
-    }
+  function openSequenceWorkflow(t: TargetRow) {
+    setSequenceDialogTarget(t);
+    setSequenceDialogOpen(true);
   }
 
   async function runResearch(t: TargetRow) {
@@ -509,7 +505,7 @@ function OutreachDashboard() {
                                 onResearch={() => runResearch(t)}
                                 onPersonalize={() => runPersonalize(t)}
                                 onSendNow={() => sendNow(t)}
-                                onStartSequence={() => startSequence(t)}
+                                onStartSequence={() => openSequenceWorkflow(t)}
                                 onOpenSend={() => setSendDialogTarget(t)}
                                 onOpenDemo={() => setDemoDialogTarget(t)}
                               />
@@ -567,6 +563,7 @@ function OutreachDashboard() {
               <Empty text="Maak eerst een campagne aan." />
             ) : (
               <div className="space-y-4">
+                <SequenceFlowDiagram />
                 <div className="flex items-center gap-2">
                   <Label className="text-xs text-muted-foreground">Campagne:</Label>
                   <Select
@@ -637,6 +634,17 @@ function OutreachDashboard() {
         targetCompany={demoDialogTarget?.company}
         initialType={demoDialogTarget?.demo_type ?? null}
         initialAt={demoDialogTarget?.demo_at ?? null}
+        onSaved={load}
+      />
+      <SequenceWorkflowDialog
+        open={sequenceDialogOpen}
+        onOpenChange={(o) => {
+          setSequenceDialogOpen(o);
+          if (!o) setSequenceDialogTarget(null);
+        }}
+        organizationId={currentOrganizationId}
+        target={sequenceDialogTarget}
+        initialCampaignId={sequenceDialogTarget?.campaign_id ?? null}
         onSaved={load}
       />
     </div>
