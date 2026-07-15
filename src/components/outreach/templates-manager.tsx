@@ -84,6 +84,8 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
   const [previewVersion, setPreviewVersion] = useState<TemplateVersion | null>(null);
   const [search, setSearch] = useState("");
   const [sample, setSample] = useState<Record<SampleKey, string>>(DEFAULT_SAMPLE);
+  const [backgrounds, setBackgrounds] = useState<MailBackground[]>([]);
+  const [savingBg, setSavingBg] = useState(false);
 
   async function load() {
     if (!organizationId) {
@@ -103,8 +105,23 @@ export function TemplatesManager({ organizationId }: { organizationId: string | 
     setLoading(false);
   }
 
+  async function loadBackgrounds() {
+    if (!organizationId) {
+      setBackgrounds([]);
+      return;
+    }
+    const { data, error } = await supabase
+      .from("mail_backgrounds" as never)
+      .select("*")
+      .eq("organization_id", organizationId)
+      .order("created_at", { ascending: true });
+    if (error) return; // silently ignore — tabel is optioneel
+    setBackgrounds(((data ?? []) as unknown) as MailBackground[]);
+  }
+
   useEffect(() => {
     load();
+    loadBackgrounds();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organizationId]);
 
