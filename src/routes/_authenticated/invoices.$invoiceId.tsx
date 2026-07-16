@@ -392,6 +392,18 @@ function InvoiceDetailPage() {
     return renderInvoiceTemplatePdfBlob(templateProps);
   }, [invoice, lines, org, client, i18n.resolvedLanguage]);
 
+  // Dev-only test hook: exposes the email PDF renderer for the parity spec.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const g = window as unknown as {
+      __invoicePdfTest?: { renderEmail?: () => Promise<Blob> };
+    };
+    g.__invoicePdfTest = { ...(g.__invoicePdfTest ?? {}), renderEmail: buildTemplatePdfBlob };
+    return () => {
+      if (g.__invoicePdfTest) delete g.__invoicePdfTest.renderEmail;
+    };
+  }, [buildTemplatePdfBlob]);
+
   function downloadReceipt() {
     if (!invoice) return;
     const tpl = loadTemplate(invoice.organization_id, user?.id ?? null);
