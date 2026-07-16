@@ -11,6 +11,8 @@ import {
   Copy,
   Download,
   Eye,
+  Link2,
+  Link2Off,
   Loader2,
   Mail,
   Paperclip,
@@ -1909,8 +1911,17 @@ function ManualPaymentLinkPanel({
 
   return (
     <section className="rounded-lg border">
-      <div className="border-b px-4 py-2 text-sm font-semibold">
-        Handmatige betaallink (bijv. Mollie)
+      <div className="border-b px-4 py-2 text-sm font-semibold flex items-center justify-between gap-3">
+        <span>Handmatige betaallink (bijv. Mollie)</span>
+        {enabled ? (
+          <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-transparent text-xs">
+            <Link2 className="mr-1 h-3 w-3" /> Actief
+          </Badge>
+        ) : (
+          <Badge variant="outline" className="text-muted-foreground text-xs">
+            <Link2Off className="mr-1 h-3 w-3" /> Inactief
+          </Badge>
+        )}
       </div>
       <div className="space-y-3 p-4">
         <div className="flex items-center gap-3">
@@ -1922,6 +1933,11 @@ function ManualPaymentLinkPanel({
               <SelectItem value="true">Aan</SelectItem>
             </SelectContent>
           </Select>
+          <span className="text-[11px] text-muted-foreground">
+            {enabled
+              ? "Deze link wordt op de factuur en in mails getoond."
+              : "Er wordt geen betaallink op deze factuur getoond."}
+          </span>
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Betaallink-URL</Label>
