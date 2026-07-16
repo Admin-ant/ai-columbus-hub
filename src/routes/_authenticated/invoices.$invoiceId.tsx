@@ -337,6 +337,61 @@ function InvoiceDetailPage() {
     doc.save(filename);
   }
 
+  // Builds the same InvoiceTemplate the user sees in the preview dialog and
+  // rasterises it to a PDF blob for the email attachment. Kept in a callback
+  // so the compose dialog can trigger it on submit (async, off-screen render).
+  const buildTemplatePdfBlob = useCallback(async (): Promise<Blob> => {
+    if (!invoice) throw new Error("Factuur niet geladen");
+    const { renderInvoiceTemplatePdfBlob } = await import("@/lib/render-invoice-template-pdf");
+    const templateProps: InvoiceTemplateProps = {
+      organization: {
+        name: org?.name ?? null,
+        street: [org?.address_line1, org?.address_line2].filter(Boolean).join(" "),
+        postal_city: [org?.postal_code, org?.city].filter(Boolean).join(" "),
+        country: org?.country ?? null,
+        phone: org?.phone ?? null,
+        website: org?.website ?? null,
+        kvk: org?.kvk_number ?? null,
+        vat: org?.tax_number ?? null,
+        iban: org?.iban ?? null,
+        account_holder: org?.account_holder ?? org?.name ?? null,
+        logo_url: org?.brand_logo_url ?? org?.logo_url ?? null,
+      },
+      client: {
+        customer_number: null,
+        company_name: invoice.client_name,
+        street: client?.address_line1 ?? null,
+        postal_city: [client?.postal_code, client?.city].filter(Boolean).join(" "),
+      },
+      invoice_number: invoice.invoice_number,
+      issue_date: invoice.issue_date,
+      due_date: invoice.due_date,
+      currency: invoice.currency ?? "EUR",
+      language: i18n.resolvedLanguage ?? "nl",
+      precomputed_subtotal_cents: invoice.subtotal_cents,
+      precomputed_vat_cents: invoice.vat_cents,
+      precomputed_total_cents: invoice.total_cents,
+      payment_link_url:
+        (invoice as unknown as { payment_link_url?: string | null; mollie_checkout_url?: string | null })
+          .payment_link_url ??
+        (invoice as unknown as { mollie_checkout_url?: string | null }).mollie_checkout_url ??
+        null,
+      lines: lines.map((l) => ({
+        line_type:
+          ((l as unknown as { line_type?: InvoiceTemplateLineKind }).line_type ??
+            "item") as InvoiceTemplateLineKind,
+        description: l.description,
+        quantity: Number(l.quantity),
+        unit_price_cents: l.unit_price_cents,
+        vat_rate: Number(l.vat_rate),
+        subtotal_cents: l.subtotal_cents,
+        vat_cents: l.vat_cents,
+        total_cents: l.total_cents,
+      })),
+    };
+    return renderInvoiceTemplatePdfBlob(templateProps);
+  }, [invoice, lines, org, client, i18n.resolvedLanguage]);
+
   function downloadReceipt() {
     if (!invoice) return;
     const tpl = loadTemplate(invoice.organization_id, user?.id ?? null);
@@ -926,6 +981,7 @@ function InvoiceDetailPage() {
             lines={lines}
             organizationName={org?.name ?? null}
             buildPdf={buildPdf}
+            buildTemplatePdfBlob={buildTemplatePdfBlob}
             currentPaymentLink={currentPaymentLink}
             preferredMethod={preferredMethod}
             onSent={(to) => {
@@ -1320,6 +1376,7 @@ function EmailForm({
   lines: invoiceLines,
   organizationName,
   buildPdf,
+  buildTemplatePdfBlob,
   emailFn,
   currentPaymentLink,
   preferredMethod,
@@ -1334,6 +1391,7 @@ function EmailForm({
   lines: InvoiceLine[];
   organizationName: string | null;
   buildPdf: () => ReturnType<typeof buildInvoicePdf> | null;
+  buildTemplatePdfBlob?: () => Promise<Blob>;
   emailFn: ReturnType<typeof useServerFn<typeof emailInvoice>>;
   currentPaymentLink: string | null;
   preferredMethod: MolliePaymentMethod | null;
@@ -1512,12 +1570,19 @@ function EmailForm({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSendStatus(null);
-    const doc = buildPdf();
-    if (!doc) {
-      const msg = "PDF kon niet worden gebouwd";
-      toast.error(msg);
-      setSendStatus({ type: "error", message: msg });
-      return;
+    // Prefer the same rendered-template PDF the user sees in the preview.
+    // Fall back to the legacy jsPDF-drawn version only if no template
+    // renderer is wired up.
+    let pdfBlob: Blob | null = null;
+    if (!buildTemplatePdfBlob) {
+      const doc = buildPdf();
+      if (!doc) {
+        const msg = "PDF kon niet worden gebouwd";
+        toast.error(msg);
+        setSendStatus({ type: "error", message: msg });
+        return;
+      }
+      pdfBlob = doc.output("blob") as Blob;
     }
     setSending(true);
     try {
@@ -1570,12 +1635,17 @@ function EmailForm({
         ? `${bodyFilled}\n\nBetaal direct online via Mollie:\n${payLink}`
         : bodyFilled;
 
-      // Upload PDF to mail-attachments bucket
-      const blob = doc.output("blob");
+      // Upload PDF to mail-attachments bucket. When we have the template
+      // renderer, generate the blob now so the emailed PDF matches the
+      // on-screen preview exactly.
+      if (!pdfBlob && buildTemplatePdfBlob) {
+        pdfBlob = await buildTemplatePdfBlob();
+      }
+      if (!pdfBlob) throw new Error("PDF kon niet worden gebouwd");
       const uploadPath = `${invoice.organization_id}/invoice-${invoice.id}-${Date.now()}.pdf`;
       const { error: upErr } = await supabase.storage
         .from("mail-attachments")
-        .upload(uploadPath, blob, { contentType: "application/pdf", upsert: false });
+        .upload(uploadPath, pdfBlob, { contentType: "application/pdf", upsert: false });
       if (upErr) throw new Error(upErr.message);
 
       const cleanName = filename.trim().endsWith(".pdf") ? filename.trim() : `${filename.trim()}.pdf`;
