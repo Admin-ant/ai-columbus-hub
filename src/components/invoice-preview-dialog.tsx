@@ -98,9 +98,13 @@ export function InvoicePreviewDialog({
     const CONTENT_H_MM = A4_H_MM - MARGIN_MM * 2;
 
     // Render the template at a fixed pixel width so the aspect ratio is
-    // deterministic. 794px = 210mm @ 96dpi; we use the printable width to
-    // avoid any additional scaling by html2canvas.
-    const RENDER_W_PX = Math.round((CONTENT_W_MM / A4_W_MM) * 794);
+    // deterministic. We render at ~200 DPI (roughly 2× the standard 96 DPI)
+    // so text and images stay crisp when placed on the A4 page.
+    const TARGET_DPI = 200;
+    const RENDER_W_PX = Math.round((CONTENT_W_MM / 25.4) * TARGET_DPI);
+    // Additional canvas oversampling on top of that, clamped by the device
+    // pixel ratio so we don't blow up memory on low-end devices.
+    const CANVAS_SCALE = Math.min(3, Math.max(2, window.devicePixelRatio || 2));
 
     const wrapper = document.createElement("div");
     wrapper.style.position = "fixed";
@@ -110,6 +114,9 @@ export function InvoicePreviewDialog({
     wrapper.style.background = "#ffffff";
     wrapper.style.boxSizing = "border-box";
     wrapper.style.fontFamily = getComputedStyle(node).fontFamily;
+    // Keep text hinting crisp on the raster.
+    wrapper.style.setProperty("-webkit-font-smoothing", "antialiased");
+    wrapper.style.setProperty("text-rendering", "geometricPrecision");
 
     const clone = node.cloneNode(true) as HTMLElement;
     clone.style.width = "100%";
@@ -121,13 +128,20 @@ export function InvoicePreviewDialog({
 
     try {
       const canvas = await html2canvas(wrapper, {
-        scale: 2,
+        scale: CANVAS_SCALE,
         useCORS: true,
         backgroundColor: "#ffffff",
         windowWidth: RENDER_W_PX,
+        imageTimeout: 15000,
+        logging: false,
       });
 
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+        compress: true,
+      });
 
       // 1 mm in canvas pixels — content width fills exactly CONTENT_W_MM.
       const pxPerMm = canvas.width / CONTENT_W_MM;
@@ -142,6 +156,8 @@ export function InvoicePreviewDialog({
         pageCanvas.height = sliceHeightPx;
         const ctx = pageCanvas.getContext("2d");
         if (!ctx) break;
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
         ctx.drawImage(
@@ -149,11 +165,12 @@ export function InvoicePreviewDialog({
           0, renderedPx, canvas.width, sliceHeightPx,
           0, 0, canvas.width, sliceHeightPx,
         );
-        const sliceImg = pageCanvas.toDataURL("image/jpeg", 0.95);
+        // PNG keeps text edges sharp (JPEG blurs small type).
+        const sliceImg = pageCanvas.toDataURL("image/png");
         const sliceHeightMm = sliceHeightPx / pxPerMm;
         if (pageIndex > 0) pdf.addPage();
-        // Fixed margins on every page → template stays 1:1.
-        pdf.addImage(sliceImg, "JPEG", MARGIN_MM, MARGIN_MM, CONTENT_W_MM, sliceHeightMm);
+        pdf.addImage(sliceImg, "PNG", MARGIN_MM, MARGIN_MM, CONTENT_W_MM, sliceHeightMm, undefined, "FAST");
+
         renderedPx += sliceHeightPx;
         pageIndex += 1;
       }
