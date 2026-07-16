@@ -77,6 +77,7 @@ function ProductsPage() {
     discount_percent: "0",
     discount_type: "none" as "none" | "one_time" | "recurring",
     contract_months: "",
+    use_contract: false,
   };
   const [form, setForm] = useState(emptyForm);
 
