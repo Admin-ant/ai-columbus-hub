@@ -62,6 +62,13 @@ export const Route = createFileRoute("/_authenticated/invoices/")({
 type Invoice = Database["public"]["Tables"]["invoices"]["Row"];
 type InvoiceStatus = Database["public"]["Enums"]["invoice_status"];
 type ClientRow = { id: string; name: string; email: string | null };
+type ProductRow = {
+  id: string;
+  name: string;
+  sku: string | null;
+  unit_price_cents: number;
+  vat_rate: number;
+};
 
 const STATUS: InvoiceStatus[] = ["draft", "sent", "paid", "overdue", "cancelled"];
 
@@ -345,6 +352,7 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [clients, setClients] = useState<ClientRow[]>([]);
+  const [products, setProducts] = useState<ProductRow[]>([]);
   const [clientId, setClientId] = useState<string>("");
   const [clientName, setClientName] = useState("");
   const [issueDate, setIssueDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -374,6 +382,44 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
       .then(({ data }) => setClients((data ?? []) as ClientRow[]));
   }, [open, orgId]);
 
+  // Load products + subscribe to realtime changes so new/edited products
+  // instantly appear in the description picker.
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    const loadProducts = async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("id,name,sku,unit_price_cents,vat_rate")
+        .eq("organization_id", orgId)
+        .eq("active", true)
+        .order("name");
+      if (!active) return;
+      setProducts(
+        ((data ?? []) as Array<{
+          id: string;
+          name: string;
+          sku: string | null;
+          unit_price_cents: number;
+          vat_rate: number | string;
+        }>).map((p) => ({ ...p, vat_rate: Number(p.vat_rate) })),
+      );
+    };
+    void loadProducts();
+    const channel = supabase
+      .channel(`products-${orgId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "products", filter: `organization_id=eq.${orgId}` },
+        () => { void loadProducts(); },
+      )
+      .subscribe();
+    return () => {
+      active = false;
+      void supabase.removeChannel(channel);
+    };
+  }, [open, orgId]);
+
   const subtotalCents = lines.reduce((s, l) => s + Math.round(l.quantity * l.unit_price_cents), 0);
   const vatCents = lines.reduce(
     (s, l) => s + Math.round(l.quantity * l.unit_price_cents * (l.vat_rate / 100)),
@@ -393,6 +439,44 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
     if (!name) return toast.error("Klantnaam is verplicht");
     if (lines.some((l) => !l.description.trim())) return toast.error("Vul alle regelomschrijvingen in");
     setSaving(true);
+
+    // Autosave: nieuwe omschrijvingen (die nog niet als product bestaan) toevoegen
+    // aan Producten & Prijzen zodat ze meteen herbruikbaar zijn.
+    try {
+      const existingNames = new Set(products.map((p) => p.name.trim().toLowerCase()));
+      const seen = new Set<string>();
+      const toCreate = lines
+        .map((l) => ({
+          name: l.description.trim(),
+          unit_price_cents: Math.round(l.unit_price_cents),
+          vat_rate: l.vat_rate,
+        }))
+        .filter((l) => {
+          const key = l.name.toLowerCase();
+          if (!l.name || existingNames.has(key) || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      if (toCreate.length) {
+        const rnd = () =>
+          `AUTO-${Date.now().toString(36).slice(-4)}${Math.random().toString(36).slice(2, 6)}`.toUpperCase();
+        const rows = toCreate.map((l) => ({
+          organization_id: orgId,
+          sku: rnd(),
+          name: l.name,
+          unit_price_cents: l.unit_price_cents,
+          setup_fee_cents: 0,
+          pricing_type: "one_time" as const,
+          vat_rate: l.vat_rate,
+          discount_percent: 0,
+          discount_type: "none" as const,
+          active: true,
+        }));
+        await supabase.from("products").insert(rows);
+      }
+    } catch {
+      // niet blokkerend
+    }
 
     const { nextInvoiceNumber } = await import("@/lib/bookkeeping.functions");
 
@@ -491,6 +575,15 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
           <DialogDescription>{t("acc.inv.dialog_desc")}</DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
+          <datalist id="invoice-products">
+            {products.map((p) => (
+              <option
+                key={p.id}
+                value={p.name}
+                label={`€ ${(p.unit_price_cents / 100).toFixed(2)} · ${p.vat_rate}% BTW${p.sku ? ` · ${p.sku}` : ""}`}
+              />
+            ))}
+          </datalist>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Klant</Label>
@@ -565,10 +658,24 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
                     <TableRow key={i}>
                       <TableCell>
                         <Input
+                          list="invoice-products"
+                          placeholder="Kies uit producten of typ nieuw…"
                           value={l.description}
                           onChange={(e) => {
+                            const val = e.target.value;
                             const n = [...lines];
-                            n[i] = { ...l, description: e.target.value };
+                            const match = products.find(
+                              (p) => p.name.toLowerCase() === val.toLowerCase(),
+                            );
+                            n[i] = match
+                              ? {
+                                  ...l,
+                                  description: match.name,
+                                  unit_price_cents: match.unit_price_cents,
+                                  vat_rate: match.vat_rate,
+                                  quantity: l.quantity || 1,
+                                }
+                              : { ...l, description: val };
                             setLines(n);
                           }}
                         />
