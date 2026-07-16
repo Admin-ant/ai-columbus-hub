@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { CreditCard, Download, Loader2, Printer, X, Copy, Link2 } from "lucide-react";
+import { CreditCard, Download, Loader2, Printer, X, Copy, Link2, FileText, LayoutList } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { QRCodeSVG } from "qrcode.react";
 import jsPDF from "jspdf";
@@ -70,6 +70,64 @@ export function InvoicePreviewDialog({
     defaultPreferredMethod ?? "any",
   );
   const [restrict, setRestrict] = useState(false);
+  const [paginated, setPaginated] = useState(true);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const [pageBreaks, setPageBreaks] = useState<number[]>([]);
+  const [sheetHeight, setSheetHeight] = useState(0);
+  // A4 aspect ratio applied to the on-screen sheet: content area is (210-24) x (297-24) mm.
+  const PAGE_ASPECT = (297 - 24) / (210 - 24);
+
+  const recomputeBreaks = useCallback(() => {
+    const node = sheetRef.current;
+    if (!node || !paginated) return;
+    const rect = node.getBoundingClientRect();
+    const sheetTop = rect.top;
+    const totalHeight = rect.height;
+    setSheetHeight(totalHeight);
+    const pageHeightPx = rect.width * PAGE_ASPECT;
+    if (pageHeightPx <= 0 || totalHeight <= pageHeightPx) {
+      setPageBreaks([]);
+      return;
+    }
+    const selector = "tr,thead,tfoot,li,p,h1,h2,h3,h4,h5,h6,figure,img,section,article,[data-pdf-block]";
+    const boundaries = Array.from(node.querySelectorAll<HTMLElement>(selector))
+      .map((el) => el.getBoundingClientRect().bottom - sheetTop)
+      .filter((y) => y > 0)
+      .sort((a, b) => a - b);
+    const MIN_FILL = pageHeightPx * 0.35;
+    const breaks: number[] = [];
+    let cursor = 0;
+    while (cursor + pageHeightPx < totalHeight) {
+      const target = cursor + pageHeightPx;
+      let best = -1;
+      for (const b of boundaries) {
+        if (b <= cursor) continue;
+        if (b > target) break;
+        if (b - cursor >= MIN_FILL) best = b;
+      }
+      const cut = best === -1 ? target : best;
+      breaks.push(cut);
+      cursor = cut;
+    }
+    setPageBreaks(breaks);
+  }, [paginated, PAGE_ASPECT]);
+
+  useLayoutEffect(() => {
+    if (!paginated) return;
+    recomputeBreaks();
+    const node = sheetRef.current;
+    if (!node) return;
+    const ro = new ResizeObserver(() => recomputeBreaks());
+    ro.observe(node);
+    const mo = new MutationObserver(() => recomputeBreaks());
+    mo.observe(node, { childList: true, subtree: true, characterData: true });
+    const t = setTimeout(recomputeBreaks, 200);
+    return () => {
+      ro.disconnect();
+      mo.disconnect();
+      clearTimeout(t);
+    };
+  }, [paginated, recomputeBreaks, data]);
 
   useEffect(() => {
     setPaymentLink(data.payment_link_url ?? null);
@@ -313,6 +371,19 @@ export function InvoicePreviewDialog({
             <div className="flex items-center justify-between gap-4">
               <DialogTitle>Factuurvoorbeeld — {data.invoice_number}</DialogTitle>
               <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant={paginated ? "default" : "outline"}
+                  onClick={() => setPaginated((v) => !v)}
+                  title="Toon pagina-indeling zoals in de PDF"
+                >
+                  {paginated ? (
+                    <LayoutList className="mr-2 h-4 w-4" />
+                  ) : (
+                    <FileText className="mr-2 h-4 w-4" />
+                  )}
+                  {paginated ? "Paginavoorbeeld aan" : "Paginavoorbeeld uit"}
+                </Button>
                 <Button size="sm" onClick={handleDownloadPdf} disabled={downloadingPdf}>
                   {downloadingPdf ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -325,6 +396,7 @@ export function InvoicePreviewDialog({
                   <Printer className="mr-2 h-4 w-4" /> Print
                 </Button>
               </div>
+
             </div>
 
             {canPay && (
@@ -393,11 +465,56 @@ export function InvoicePreviewDialog({
           </div>
         </DialogHeader>
 
-        <div className="max-h-[75vh] overflow-y-auto bg-muted/30 p-6">
-          <div id="invoice-print-area" ref={printRef}>
-            <InvoiceTemplate {...data} payment_link_url={paymentLink} />
-          </div>
+        <div className="max-h-[75vh] overflow-y-auto bg-muted/40 p-6">
+          {paginated ? (
+            <div className="mx-auto" style={{ maxWidth: 820 }}>
+              <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground">
+                <span>Weergave op A4 (210 × 297 mm, 12 mm marge)</span>
+                <span>{pageBreaks.length + 1} pagina{pageBreaks.length === 0 ? "" : "'s"}</span>
+              </div>
+              <div
+                className="relative mx-auto rounded-sm bg-white shadow-[0_10px_30px_-10px_rgba(0,0,0,0.25)] ring-1 ring-black/5"
+                style={{ padding: "24px" }}
+              >
+                <div id="invoice-print-area" ref={printRef}>
+                  <div ref={sheetRef}>
+                    <InvoiceTemplate {...data} payment_link_url={paymentLink} />
+                  </div>
+                </div>
+                {/* Page-break overlay */}
+                <div className="pointer-events-none absolute inset-0">
+                  {pageBreaks.map((y, i) => (
+                    <div
+                      key={i}
+                      className="absolute left-0 right-0"
+                      style={{ top: `${24 + y}px` }}
+                    >
+                      <div className="relative">
+                        <div className="h-0 border-t-2 border-dashed border-primary/60" />
+                        <div className="absolute -top-3 right-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-primary-foreground shadow">
+                          Einde pagina {i + 1}
+                        </div>
+                        <div className="absolute top-1 left-2 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground shadow-sm">
+                          Pagina {i + 2}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {sheetHeight > 0 && (
+                    <div className="absolute left-2 top-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground shadow-sm">
+                      Pagina 1
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div id="invoice-print-area" ref={printRef}>
+              <InvoiceTemplate {...data} payment_link_url={paymentLink} />
+            </div>
+          )}
         </div>
+
       </DialogContent>
     </Dialog>
   );
