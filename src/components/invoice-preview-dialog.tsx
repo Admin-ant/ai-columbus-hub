@@ -465,11 +465,56 @@ export function InvoicePreviewDialog({
           </div>
         </DialogHeader>
 
-        <div className="max-h-[75vh] overflow-y-auto bg-muted/30 p-6">
-          <div id="invoice-print-area" ref={printRef}>
-            <InvoiceTemplate {...data} payment_link_url={paymentLink} />
-          </div>
+        <div className="max-h-[75vh] overflow-y-auto bg-muted/40 p-6">
+          {paginated ? (
+            <div className="mx-auto" style={{ maxWidth: 820 }}>
+              <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground">
+                <span>Weergave op A4 (210 × 297 mm, 12 mm marge)</span>
+                <span>{pageBreaks.length + 1} pagina{pageBreaks.length === 0 ? "" : "'s"}</span>
+              </div>
+              <div
+                className="relative mx-auto rounded-sm bg-white shadow-[0_10px_30px_-10px_rgba(0,0,0,0.25)] ring-1 ring-black/5"
+                style={{ padding: "24px" }}
+              >
+                <div id="invoice-print-area" ref={printRef}>
+                  <div ref={sheetRef}>
+                    <InvoiceTemplate {...data} payment_link_url={paymentLink} />
+                  </div>
+                </div>
+                {/* Page-break overlay */}
+                <div className="pointer-events-none absolute inset-0">
+                  {pageBreaks.map((y, i) => (
+                    <div
+                      key={i}
+                      className="absolute left-0 right-0"
+                      style={{ top: `${24 + y}px` }}
+                    >
+                      <div className="relative">
+                        <div className="h-0 border-t-2 border-dashed border-primary/60" />
+                        <div className="absolute -top-3 right-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-primary-foreground shadow">
+                          Einde pagina {i + 1}
+                        </div>
+                        <div className="absolute top-1 left-2 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground shadow-sm">
+                          Pagina {i + 2}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {sheetHeight > 0 && (
+                    <div className="absolute left-2 top-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground shadow-sm">
+                      Pagina 1
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div id="invoice-print-area" ref={printRef}>
+              <InvoiceTemplate {...data} payment_link_url={paymentLink} />
+            </div>
+          )}
         </div>
+
       </DialogContent>
     </Dialog>
   );
