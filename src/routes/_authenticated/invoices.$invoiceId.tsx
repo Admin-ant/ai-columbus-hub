@@ -1317,6 +1317,8 @@ function EmailForm({
   initialSubject,
   initialBody,
   attachments,
+  lines: invoiceLines,
+  organizationName,
   buildPdf,
   emailFn,
   currentPaymentLink,
@@ -1329,6 +1331,8 @@ function EmailForm({
   initialSubject?: string;
   initialBody?: string;
   attachments: AttachmentRow[];
+  lines: InvoiceLine[];
+  organizationName: string | null;
   buildPdf: () => ReturnType<typeof buildInvoicePdf> | null;
   emailFn: ReturnType<typeof useServerFn<typeof emailInvoice>>;
   currentPaymentLink: string | null;
@@ -1337,6 +1341,11 @@ function EmailForm({
 }) {
   const { t } = useTranslation();
   const createMollieFn = useServerFn(createMollieInvoicePayment);
+  const suggestFn = useServerFn(suggestInvoiceEmail);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiHint, setAiHint] = useState("");
+  const [aiTone, setAiTone] = useState<"vriendelijk" | "zakelijk" | "kort">("vriendelijk");
+  const [aiLoading, setAiLoading] = useState(false);
   const canPay = invoice.status !== "paid" && invoice.status !== "cancelled" && (invoice.total_cents ?? 0) > 0;
   const [includePayLink, setIncludePayLink] = useState<boolean>(canPay);
   const [to, setTo] = useState(defaultTo);
