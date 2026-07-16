@@ -210,17 +210,10 @@ function ContractDetail() {
               </Select>
             </div>
             <div className="md:col-span-2">
-              <Label className="text-xs">Betaallink-URL (bijv. Mollie)</Label>
-              <Input
-                type="url"
-                placeholder="https://www.mollie.com/paymentscreen/..."
-                defaultValue={contract.payment_link_url ?? ""}
-                disabled={!contract.payment_link_enabled}
-                onBlur={(e) => {
-                  const v = e.target.value.trim();
-                  const current = contract.payment_link_url ?? "";
-                  if (v !== current) void patch({ payment_link_url: v || null });
-                }}
+              <PaymentLinkUrlField
+                enabled={!!contract.payment_link_enabled}
+                value={contract.payment_link_url ?? ""}
+                onSave={(v) => patch({ payment_link_url: v })}
               />
               <p className="text-[11px] text-muted-foreground mt-1">
                 Als deze aan staat, wordt de link automatisch toegevoegd aan elke nieuwe maandelijkse/periodieke factuur voor deze klant.
@@ -347,5 +340,55 @@ function FieldDate({
         }}
       />
     </div>
+  );
+}
+
+function validatePaymentLinkUrl(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (trimmed.length > 500) return "URL mag maximaal 500 tekens zijn";
+  try {
+    const u = new URL(trimmed);
+    if (u.protocol !== "https:" && u.protocol !== "http:") {
+      return "URL moet beginnen met http:// of https://";
+    }
+    if (!u.hostname.includes(".")) return "Ongeldige hostnaam";
+    return null;
+  } catch {
+    return "Ongeldige URL (bijv. https://www.mollie.com/…)";
+  }
+}
+
+function PaymentLinkUrlField({
+  enabled,
+  value,
+  onSave,
+}: {
+  enabled: boolean;
+  value: string;
+  onSave: (v: string | null) => void;
+}) {
+  const [v, setV] = useState(value);
+  useEffect(() => setV(value), [value]);
+  const err = enabled ? validatePaymentLinkUrl(v) : null;
+  return (
+    <>
+      <Label className="text-xs">Betaallink-URL (bijv. Mollie)</Label>
+      <Input
+        type="url"
+        placeholder="https://www.mollie.com/paymentscreen/..."
+        value={v}
+        disabled={!enabled}
+        aria-invalid={!!err}
+        className={err ? "border-destructive focus-visible:ring-destructive" : ""}
+        onChange={(e) => setV(e.target.value)}
+        onBlur={() => {
+          const trimmed = v.trim();
+          if (enabled && trimmed && validatePaymentLinkUrl(trimmed)) return;
+          if (trimmed !== (value ?? "")) onSave(trimmed || null);
+        }}
+      />
+      {err && <p className="text-[11px] text-destructive mt-1">{err}</p>}
+    </>
   );
 }

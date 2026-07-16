@@ -1873,22 +1873,33 @@ function ManualPaymentLinkPanel({
     setUrl(currentUrl ?? "");
   }, [currentUrl]);
 
-  async function save() {
-    const trimmed = url.trim();
-    if (enabled) {
-      if (!trimmed) return toast.error("Vul een betaallink-URL in");
-      try {
-        const u = new URL(trimmed);
-        if (u.protocol !== "https:" && u.protocol !== "http:") throw new Error();
-      } catch {
-        return toast.error("Ongeldige URL");
+  const trimmedUrl = url.trim();
+  const urlError: string | null = (() => {
+    if (!enabled) return null;
+    if (!trimmedUrl) return null;
+    if (trimmedUrl.length > 500) return "URL mag maximaal 500 tekens zijn";
+    try {
+      const u = new URL(trimmedUrl);
+      if (u.protocol !== "https:" && u.protocol !== "http:") {
+        return "URL moet beginnen met http:// of https://";
       }
-      if (trimmed.length > 500) return toast.error("URL te lang");
+      if (!u.hostname.includes(".")) return "Ongeldige hostnaam";
+      return null;
+    } catch {
+      return "Ongeldige URL (bijv. https://www.mollie.com/…)";
+    }
+  })();
+  const canSave = !enabled || (!!trimmedUrl && !urlError);
+
+  async function save() {
+    if (enabled) {
+      if (!trimmedUrl) return toast.error("Vul een betaallink-URL in");
+      if (urlError) return toast.error(urlError);
     }
     setSaving(true);
     const { error } = await supabase
       .from("invoices")
-      .update({ payment_link_url: enabled ? trimmed : null })
+      .update({ payment_link_url: enabled ? trimmedUrl : null })
       .eq("id", invoiceId);
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -1920,13 +1931,19 @@ function ManualPaymentLinkPanel({
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             disabled={!enabled}
+            aria-invalid={!!urlError}
+            className={urlError ? "border-destructive focus-visible:ring-destructive" : ""}
           />
-          <p className="text-[11px] text-muted-foreground">
-            Deze link verschijnt op de factuur en in verzendmails. Voor abonnementen kun je een vaste link instellen op het contract, dan gaat die automatisch mee met elke nieuwe factuur.
-          </p>
+          {urlError ? (
+            <p className="text-[11px] text-destructive">{urlError}</p>
+          ) : (
+            <p className="text-[11px] text-muted-foreground">
+              Deze link verschijnt op de factuur en in verzendmails. Voor abonnementen kun je een vaste link instellen op het contract, dan gaat die automatisch mee met elke nieuwe factuur.
+            </p>
+          )}
         </div>
         <div className="flex justify-end">
-          <Button size="sm" onClick={save} disabled={saving}>
+          <Button size="sm" onClick={save} disabled={saving || !canSave}>
             {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
             Opslaan
           </Button>
