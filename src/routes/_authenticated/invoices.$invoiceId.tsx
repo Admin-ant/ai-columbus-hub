@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/select";
 
 import { supabase } from "@/integrations/supabase/client";
+import { renderInvoiceTemplatePdfBlob } from "@/lib/render-invoice-template-pdf";
 import type { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
