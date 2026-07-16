@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { CreditCard, Download, Loader2, Printer, X, Copy, Link2 } from "lucide-react";
+import { CreditCard, Download, Loader2, Printer, X, Copy, Link2, FileText, LayoutList } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { QRCodeSVG } from "qrcode.react";
 import jsPDF from "jspdf";
