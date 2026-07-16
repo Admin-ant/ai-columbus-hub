@@ -1579,12 +1579,17 @@ function EmailForm({
         ? `${bodyFilled}\n\nBetaal direct online via Mollie:\n${payLink}`
         : bodyFilled;
 
-      // Upload PDF to mail-attachments bucket
-      const blob = doc.output("blob");
+      // Upload PDF to mail-attachments bucket. When we have the template
+      // renderer, generate the blob now so the emailed PDF matches the
+      // on-screen preview exactly.
+      if (!pdfBlob && buildTemplatePdfBlob) {
+        pdfBlob = await buildTemplatePdfBlob();
+      }
+      if (!pdfBlob) throw new Error("PDF kon niet worden gebouwd");
       const uploadPath = `${invoice.organization_id}/invoice-${invoice.id}-${Date.now()}.pdf`;
       const { error: upErr } = await supabase.storage
         .from("mail-attachments")
-        .upload(uploadPath, blob, { contentType: "application/pdf", upsert: false });
+        .upload(uploadPath, pdfBlob, { contentType: "application/pdf", upsert: false });
       if (upErr) throw new Error(upErr.message);
 
       const cleanName = filename.trim().endsWith(".pdf") ? filename.trim() : `${filename.trim()}.pdf`;
