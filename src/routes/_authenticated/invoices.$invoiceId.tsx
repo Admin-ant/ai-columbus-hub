@@ -981,6 +981,7 @@ function InvoiceDetailPage() {
             lines={lines}
             organizationName={org?.name ?? null}
             buildPdf={buildPdf}
+            buildTemplatePdfBlob={buildTemplatePdfBlob}
             currentPaymentLink={currentPaymentLink}
             preferredMethod={preferredMethod}
             onSent={(to) => {
