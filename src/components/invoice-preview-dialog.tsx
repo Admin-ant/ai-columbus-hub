@@ -4,7 +4,7 @@ import { CreditCard, Download, Loader2, Printer, X, Copy, Link2, FileText, Layou
 import { useServerFn } from "@tanstack/react-start";
 import { QRCodeSVG } from "qrcode.react";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import html2canvas from "html2canvas-pro";
 
 import { Button } from "@/components/ui/button";
 import {
