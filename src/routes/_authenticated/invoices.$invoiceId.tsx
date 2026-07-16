@@ -755,6 +755,14 @@ function InvoiceDetailPage() {
         )}
       </section>
 
+      <ManualPaymentLinkPanel
+        invoiceId={invoice.id}
+        currentUrl={invExt.payment_link_url ?? null}
+        onSaved={() => void load()}
+      />
+
+
+
       <section className="rounded-lg border">
         <div className="flex items-center justify-between border-b px-4 py-2">
           <div className="text-sm font-semibold">Mollie betaling</div>
