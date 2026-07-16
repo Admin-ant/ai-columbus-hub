@@ -48,6 +48,7 @@ import {
   listCampaignTasks,
   updateCampaignTask,
   listCampaignTaskEvents,
+  sendCampaignFlowEmail,
   type CampaignFlowTask,
   type CampaignTaskEvent,
 } from "@/lib/campaign-flow.functions";
@@ -157,6 +158,7 @@ export function CampaignFlowTab() {
   const createLink = useServerFn(createTrackingLink);
   const listLinks = useServerFn(listTrackingLinks);
   const createServerLead = useServerFn(createCampaignLead);
+  const sendFlowEmail = useServerFn(sendCampaignFlowEmail);
   const fetchServerTasks = useServerFn(listCampaignTasks);
   const [refreshingStats, setRefreshingStats] = useState(false);
   const [runningAutomation, setRunningAutomation] = useState(false);
@@ -616,6 +618,11 @@ export function CampaignFlowTab() {
       toast.error("Scan ontbreekt");
       return;
     }
+    const toEmail = email.trim();
+    if (!toEmail || !/.+@.+\..+/.test(toEmail)) {
+      toast.error("Vul een geldig e-mailadres in — anders kan de mail niet worden verstuurd");
+      return;
+    }
     setLaunching(true);
     try {
       const previewText = chosen.body;
@@ -642,13 +649,33 @@ export function CampaignFlowTab() {
         console.warn("Tracking link kon niet worden gemaakt", err);
       }
 
+      // Verstuur de daadwerkelijke e-mail via Resend voordat we de lead opslaan.
+      const subject = `Even kort, ${company || "kennismaken"}`;
+      try {
+        await sendFlowEmail({
+          data: {
+            to: toEmail,
+            subject,
+            body: previewText,
+            trackingUrl,
+            contactName: name,
+            company,
+          },
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "E-mail versturen mislukt";
+        toast.error(`Versturen mislukt: ${msg}`);
+        setLaunching(false);
+        return;
+      }
+
       let serverLeadId: string | null = null;
       try {
         const saved = await createServerLead({
           data: {
             name,
             company,
-            email,
+            email: toEmail,
             website: normalizeUrl(website),
             emailPreview: previewText,
             trackingLinkId: trackingLinkId ?? undefined,
@@ -664,7 +691,7 @@ export function CampaignFlowTab() {
         id: leadId,
         name,
         company,
-        email,
+        email: toEmail,
         website: normalizeUrl(website),
         scrape: s,
         emailPreview: previewText,
@@ -680,7 +707,7 @@ export function CampaignFlowTab() {
       };
       setLeads((cur) => [lead, ...cur]);
       toast.success(
-        `Campagne gestart met concept "${chosen.label}"${trackingUrl && serverLeadId ? " · automation actief" : ""}`,
+        `E-mail verstuurd naar ${toEmail} met concept "${chosen.label}"${trackingUrl && serverLeadId ? " · automation actief" : ""}`,
       );
       // Reset voor volgende lead
       setVariants([]);
