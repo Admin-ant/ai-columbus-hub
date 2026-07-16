@@ -140,7 +140,9 @@ function ProductsPage() {
     const discountPercent = Math.max(0, Math.min(100, Number(form.discount_percent) || 0));
     const discountType: "none" | "one_time" | "recurring" =
       discountPercent > 0 ? (form.discount_type === "none" ? "one_time" : form.discount_type) : "none";
-    const contractMonths = form.contract_months.trim() ? Math.max(1, Number(form.contract_months)) : null;
+    const contractMonths = form.use_contract && form.contract_months.trim()
+      ? Math.max(1, Number(form.contract_months))
+      : null;
 
     setSaving(true);
     const payload = {
