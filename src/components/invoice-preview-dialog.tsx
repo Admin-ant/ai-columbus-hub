@@ -164,23 +164,21 @@ export function InvoicePreviewDialog({
     if (!node) return;
     setDownloadingPdf(true);
 
-    // Fixed A4 layout in mm — the template is scaled to fit the printable area
-    // (page minus margins) so the output is always identical, regardless of the
-    // on-screen preview width.
-    const A4_W_MM = 210;
-    const A4_H_MM = 297;
-    const MARGIN_MM = 12;
-    const CONTENT_W_MM = A4_W_MM - MARGIN_MM * 2;
-    const CONTENT_H_MM = A4_H_MM - MARGIN_MM * 2;
+    // Page + margin + quality driven by user-selected export profile.
+    const PAGE_W_MM = currentPage.w;
+    const PAGE_H_MM = currentPage.h;
+    const MARGIN_MM = currentMarginMm;
+    const CONTENT_W_MM = PAGE_W_MM - MARGIN_MM * 2;
+    const CONTENT_H_MM = PAGE_H_MM - MARGIN_MM * 2;
 
     // Render the template at a fixed pixel width so the aspect ratio is
-    // deterministic. We render at ~200 DPI (roughly 2× the standard 96 DPI)
-    // so text and images stay crisp when placed on the A4 page.
-    const TARGET_DPI = 200;
+    // deterministic. DPI is driven by the quality profile.
+    const TARGET_DPI = DPI_BY[quality];
     const RENDER_W_PX = Math.round((CONTENT_W_MM / 25.4) * TARGET_DPI);
-    // Additional canvas oversampling on top of that, clamped by the device
-    // pixel ratio so we don't blow up memory on low-end devices.
-    const CANVAS_SCALE = Math.min(3, Math.max(2, window.devicePixelRatio || 2));
+    // Additional canvas oversampling, capped lower for draft to save memory.
+    const maxScale = quality === "draft" ? 2 : 3;
+    const minScale = quality === "high" ? 2 : 1.5;
+    const CANVAS_SCALE = Math.min(maxScale, Math.max(minScale, window.devicePixelRatio || 2));
 
     const wrapper = document.createElement("div");
     wrapper.style.position = "fixed";
