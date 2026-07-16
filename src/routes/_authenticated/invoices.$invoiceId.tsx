@@ -1854,3 +1854,84 @@ function EmailForm({
     </form>
   );
 }
+
+function ManualPaymentLinkPanel({
+  invoiceId,
+  currentUrl,
+  onSaved,
+}: {
+  invoiceId: string;
+  currentUrl: string | null;
+  onSaved: () => void;
+}) {
+  const [enabled, setEnabled] = useState(!!currentUrl);
+  const [url, setUrl] = useState(currentUrl ?? "");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setEnabled(!!currentUrl);
+    setUrl(currentUrl ?? "");
+  }, [currentUrl]);
+
+  async function save() {
+    const trimmed = url.trim();
+    if (enabled) {
+      if (!trimmed) return toast.error("Vul een betaallink-URL in");
+      try {
+        const u = new URL(trimmed);
+        if (u.protocol !== "https:" && u.protocol !== "http:") throw new Error();
+      } catch {
+        return toast.error("Ongeldige URL");
+      }
+      if (trimmed.length > 500) return toast.error("URL te lang");
+    }
+    setSaving(true);
+    const { error } = await supabase
+      .from("invoices")
+      .update({ payment_link_url: enabled ? trimmed : null })
+      .eq("id", invoiceId);
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success(enabled ? "Betaallink opgeslagen" : "Betaallink verwijderd");
+    onSaved();
+  }
+
+  return (
+    <section className="rounded-lg border">
+      <div className="border-b px-4 py-2 text-sm font-semibold">
+        Handmatige betaallink (bijv. Mollie)
+      </div>
+      <div className="space-y-3 p-4">
+        <div className="flex items-center gap-3">
+          <Label className="text-xs">Betaallink actief</Label>
+          <Select value={String(enabled)} onValueChange={(v) => setEnabled(v === "true")}>
+            <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="false">Uit</SelectItem>
+              <SelectItem value="true">Aan</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Betaallink-URL</Label>
+          <Input
+            type="url"
+            placeholder="https://www.mollie.com/paymentscreen/..."
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            disabled={!enabled}
+          />
+          <p className="text-[11px] text-muted-foreground">
+            Deze link verschijnt op de factuur en in verzendmails. Voor abonnementen kun je een vaste link instellen op het contract, dan gaat die automatisch mee met elke nieuwe factuur.
+          </p>
+        </div>
+        <div className="flex justify-end">
+          <Button size="sm" onClick={save} disabled={saving}>
+            {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+            Opslaan
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
+}
