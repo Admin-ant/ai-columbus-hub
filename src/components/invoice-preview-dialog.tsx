@@ -87,55 +87,79 @@ export function InvoicePreviewDialog({
     const node = printRef.current;
     if (!node) return;
     setDownloadingPdf(true);
+
+    // Render into an off-screen A4-width container so the layout matches
+    // the printed page exactly and scales cleanly to A4.
+    const A4_WIDTH_PX = 794;   // 210mm @ 96dpi
+    const MARGIN_PX = 38;      // ~10mm safe margin
+
+    const wrapper = document.createElement("div");
+    wrapper.style.position = "fixed";
+    wrapper.style.left = "-10000px";
+    wrapper.style.top = "0";
+    wrapper.style.width = `${A4_WIDTH_PX}px`;
+    wrapper.style.background = "#ffffff";
+    wrapper.style.padding = `${MARGIN_PX}px`;
+    wrapper.style.boxSizing = "border-box";
+    wrapper.style.fontFamily = getComputedStyle(node).fontFamily;
+
+    const clone = node.cloneNode(true) as HTMLElement;
+    clone.style.width = "100%";
+    clone.style.maxWidth = "100%";
+    clone.style.boxShadow = "none";
+    clone.style.margin = "0";
+    wrapper.appendChild(clone);
+    document.body.appendChild(wrapper);
+
     try {
-      const canvas = await html2canvas(node, {
+      const canvas = await html2canvas(wrapper, {
         scale: 2,
         useCORS: true,
         backgroundColor: "#ffffff",
-        windowWidth: node.scrollWidth,
+        windowWidth: A4_WIDTH_PX,
       });
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pageW = pdf.internal.pageSize.getWidth();
-      const pageH = pdf.internal.pageSize.getHeight();
-      const imgW = pageW;
-      const imgH = (canvas.height * imgW) / canvas.width;
-      const imgData = canvas.toDataURL("image/png");
 
-      if (imgH <= pageH) {
-        pdf.addImage(imgData, "PNG", 0, 0, imgW, imgH);
-      } else {
-        // Paginate by slicing the source canvas per A4 page.
-        const pageHeightPx = (canvas.width * pageH) / pageW;
-        let renderedPx = 0;
-        while (renderedPx < canvas.height) {
-          const sliceHeightPx = Math.min(pageHeightPx, canvas.height - renderedPx);
-          const pageCanvas = document.createElement("canvas");
-          pageCanvas.width = canvas.width;
-          pageCanvas.height = sliceHeightPx;
-          const ctx = pageCanvas.getContext("2d");
-          if (!ctx) break;
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-          ctx.drawImage(
-            canvas,
-            0, renderedPx, canvas.width, sliceHeightPx,
-            0, 0, canvas.width, sliceHeightPx,
-          );
-          const sliceImg = pageCanvas.toDataURL("image/png");
-          const sliceHeightMm = (sliceHeightPx * imgW) / canvas.width;
-          if (renderedPx > 0) pdf.addPage();
-          pdf.addImage(sliceImg, "PNG", 0, 0, imgW, sliceHeightMm);
-          renderedPx += sliceHeightPx;
-        }
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageWmm = pdf.internal.pageSize.getWidth();
+      const pageHmm = pdf.internal.pageSize.getHeight();
+
+      const pxPerMm = canvas.width / pageWmm;
+      const pageHeightPx = Math.floor(pageHmm * pxPerMm);
+
+      let renderedPx = 0;
+      let pageIndex = 0;
+      while (renderedPx < canvas.height) {
+        const sliceHeightPx = Math.min(pageHeightPx, canvas.height - renderedPx);
+        const pageCanvas = document.createElement("canvas");
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = sliceHeightPx;
+        const ctx = pageCanvas.getContext("2d");
+        if (!ctx) break;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+        ctx.drawImage(
+          canvas,
+          0, renderedPx, canvas.width, sliceHeightPx,
+          0, 0, canvas.width, sliceHeightPx,
+        );
+        const sliceImg = pageCanvas.toDataURL("image/jpeg", 0.95);
+        const sliceHeightMm = sliceHeightPx / pxPerMm;
+        if (pageIndex > 0) pdf.addPage();
+        pdf.addImage(sliceImg, "JPEG", 0, 0, pageWmm, sliceHeightMm);
+        renderedPx += sliceHeightPx;
+        pageIndex += 1;
       }
+
       const filename = `factuur-${data.invoice_number || "download"}.pdf`;
       pdf.save(filename);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "PDF genereren mislukt");
     } finally {
+      if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
       setDownloadingPdf(false);
     }
   }
+
 
   async function handleCreateLink() {
     setCreatingLink(true);
