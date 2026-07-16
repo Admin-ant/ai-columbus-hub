@@ -158,6 +158,7 @@ export function CampaignFlowTab() {
   const createLink = useServerFn(createTrackingLink);
   const listLinks = useServerFn(listTrackingLinks);
   const createServerLead = useServerFn(createCampaignLead);
+  const sendFlowEmail = useServerFn(sendCampaignFlowEmail);
   const fetchServerTasks = useServerFn(listCampaignTasks);
   const [refreshingStats, setRefreshingStats] = useState(false);
   const [runningAutomation, setRunningAutomation] = useState(false);
