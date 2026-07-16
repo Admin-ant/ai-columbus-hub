@@ -1514,12 +1514,19 @@ function EmailForm({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSendStatus(null);
-    const doc = buildPdf();
-    if (!doc) {
-      const msg = "PDF kon niet worden gebouwd";
-      toast.error(msg);
-      setSendStatus({ type: "error", message: msg });
-      return;
+    // Prefer the same rendered-template PDF the user sees in the preview.
+    // Fall back to the legacy jsPDF-drawn version only if no template
+    // renderer is wired up.
+    let pdfBlob: Blob | null = null;
+    if (!buildTemplatePdfBlob) {
+      const doc = buildPdf();
+      if (!doc) {
+        const msg = "PDF kon niet worden gebouwd";
+        toast.error(msg);
+        setSendStatus({ type: "error", message: msg });
+        return;
+      }
+      pdfBlob = doc.output("blob") as Blob;
     }
     setSending(true);
     try {
