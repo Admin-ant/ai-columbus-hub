@@ -74,8 +74,26 @@ export function InvoicePreviewDialog({
   const sheetRef = useRef<HTMLDivElement>(null);
   const [pageBreaks, setPageBreaks] = useState<number[]>([]);
   const [sheetHeight, setSheetHeight] = useState(0);
-  // A4 aspect ratio applied to the on-screen sheet: content area is (210-24) x (297-24) mm.
-  const PAGE_ASPECT = (297 - 24) / (210 - 24);
+  // Export settings
+  type PageSize = "a4" | "letter";
+  type MarginProfile = "compact" | "normal" | "wide";
+  type QualityProfile = "draft" | "standard" | "high";
+  const [pageSize, setPageSize] = useState<PageSize>("a4");
+  const [marginProfile, setMarginProfile] = useState<MarginProfile>("normal");
+  const [quality, setQuality] = useState<QualityProfile>("standard");
+
+  const PAGE_DIMS: Record<PageSize, { w: number; h: number; label: string }> = {
+    a4: { w: 210, h: 297, label: "A4 (210 × 297 mm)" },
+    letter: { w: 216, h: 279, label: "Letter (216 × 279 mm)" },
+  };
+  const MARGIN_MM_BY: Record<MarginProfile, number> = { compact: 8, normal: 12, wide: 20 };
+  const DPI_BY: Record<QualityProfile, number> = { draft: 120, standard: 200, high: 260 };
+
+  const currentPage = PAGE_DIMS[pageSize];
+  const currentMarginMm = MARGIN_MM_BY[marginProfile];
+  // Preview sheet aspect ratio uses the same page size + margins.
+  const PAGE_ASPECT =
+    (currentPage.h - currentMarginMm * 2) / (currentPage.w - currentMarginMm * 2);
 
   const recomputeBreaks = useCallback(() => {
     const node = sheetRef.current;
