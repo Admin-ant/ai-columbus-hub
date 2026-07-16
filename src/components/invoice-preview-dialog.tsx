@@ -308,19 +308,54 @@ export function InvoicePreviewDialog({
       // Convert CSS-px boundaries to canvas-px so they align with the raster.
       const cssToCanvas = canvas.height / wrapperHeightCss;
       const boundariesPx = cssBoundaries.map((y) => Math.floor(y * cssToCanvas));
+      const keepRangesPx = cssKeepRanges
+        .map((r) => ({
+          top: Math.floor(r.top * cssToCanvas),
+          bottom: Math.ceil(r.bottom * cssToCanvas),
+        }))
+        .sort((a, b) => a.top - b.top);
+
+      // A boundary is "safe" only when it does NOT fall inside a keep-together
+      // range. Range bottoms remain safe (that's the natural end of a row).
+      const isInsideKeepRange = (y: number): boolean => {
+        // Binary search would be nicer, but n is small in practice.
+        for (const r of keepRangesPx) {
+          if (r.top >= y) break;
+          if (y > r.top && y < r.bottom) return true;
+        }
+        return false;
+      };
 
       const MIN_PAGE_FILL = pageContentHeightPx * 0.35; // avoid nearly-empty pages
 
       const findBreak = (start: number, maxEnd: number): number => {
-        // Largest boundary that fits: start < b <= maxEnd, and produces a
-        // reasonably filled page (>= MIN_PAGE_FILL). Otherwise hard-cut.
+        // Largest boundary that fits: start < b <= maxEnd, produces a
+        // reasonably filled page (>= MIN_PAGE_FILL), AND is not inside a
+        // keep-together range (table row, [data-keep-together] block, or
+        // thead+first-row group). Otherwise fall back to a hard cut just
+        // BEFORE any keep-range that straddles maxEnd, so we don't split it.
         let best = -1;
         for (const b of boundariesPx) {
           if (b <= start) continue;
           if (b > maxEnd) break;
-          if (b - start >= MIN_PAGE_FILL) best = b;
+          if (b - start < MIN_PAGE_FILL) continue;
+          if (isInsideKeepRange(b)) continue;
+          best = b;
         }
-        return best === -1 ? maxEnd : best;
+        if (best !== -1) return best;
+
+        // No safe boundary found. If maxEnd falls inside a keep range, back
+        // off to that range's top (so the whole range moves to next page).
+        for (const r of keepRangesPx) {
+          if (r.top >= maxEnd) break;
+          if (maxEnd > r.top && maxEnd < r.bottom) {
+            // Only back off when the range hasn't already started on this page
+            // (otherwise the row itself is taller than a page — unavoidable
+            // hard cut).
+            if (r.top > start) return r.top;
+          }
+        }
+        return maxEnd;
       };
 
       let renderedPx = 0;
