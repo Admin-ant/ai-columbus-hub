@@ -214,6 +214,31 @@ export function InvoicePreviewDialog({
         .sort((a, b) => a - b);
       const wrapperHeightCss = wrapper.getBoundingClientRect().height;
 
+      // Collect headings for the auto-generated table of contents.
+      // Any element with [data-toc] (optionally [data-toc-label="..."])
+      // or a native h1–h6 becomes a TOC entry.
+      const headingEls = Array.from(
+        wrapper.querySelectorAll<HTMLElement>(
+          "h1,h2,h3,h4,h5,h6,[data-toc]",
+        ),
+      );
+      const headings = headingEls
+        .map((el) => {
+          const tag = el.tagName.toLowerCase();
+          const levelFromTag = tag.length === 2 && tag[0] === "h" ? parseInt(tag[1], 10) : NaN;
+          const levelAttr = parseInt(el.getAttribute("data-toc-level") || "", 10);
+          const level = Math.min(
+            4,
+            Math.max(1, Number.isFinite(levelAttr) ? levelAttr : Number.isFinite(levelFromTag) ? levelFromTag : 2),
+          );
+          const text = (el.getAttribute("data-toc-label") || el.textContent || "")
+            .replace(/\s+/g, " ")
+            .trim();
+          const topCss = el.getBoundingClientRect().top - wrapperTop;
+          return { level, text, topCss };
+        })
+        .filter((h) => h.text.length > 0 && h.text.length <= 160);
+
       const canvas = await html2canvas(wrapper, {
         scale: CANVAS_SCALE,
         useCORS: true,
@@ -254,6 +279,7 @@ export function InvoicePreviewDialog({
 
       let renderedPx = 0;
       let pageIndex = 0;
+      const pageStartsPx: number[] = []; // canvas-px start of each content page
       while (renderedPx < canvas.height) {
         const remaining = canvas.height - renderedPx;
         let sliceHeightPx: number;
@@ -285,10 +311,97 @@ export function InvoicePreviewDialog({
         if (pageIndex > 0) pdf.addPage();
         pdf.addImage(sliceImg, "PNG", MARGIN_MM, MARGIN_MM, CONTENT_W_MM, sliceHeightMm, undefined, "FAST");
 
+        pageStartsPx.push(renderedPx);
         renderedPx += sliceHeightPx;
         pageIndex += 1;
       }
 
+      // Build clickable Table of Contents (only when we have ≥ 2 headings
+      // AND the document spans more than one page — a single-page invoice
+      // doesn't need a TOC).
+      if (headings.length >= 2 && pageIndex > 1) {
+        // Map each heading to its content page index (0-based).
+        const entries = headings.map((h) => {
+          const topCanvas = h.topCss * cssToCanvas;
+          let idx = 0;
+          for (let i = 0; i < pageStartsPx.length; i += 1) {
+            if (pageStartsPx[i] <= topCanvas) idx = i;
+            else break;
+          }
+          return { ...h, contentPageIndex: idx };
+        });
+
+        // Insert TOC as the new first page; all content pages shift by +1.
+        pdf.insertPage(1);
+        pdf.setPage(1);
+
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(20, 20, 20);
+        pdf.setFontSize(20);
+        pdf.text("Inhoudsopgave", MARGIN_MM, MARGIN_MM + 8);
+        pdf.setDrawColor(200, 200, 200);
+        pdf.setLineWidth(0.3);
+        pdf.line(MARGIN_MM, MARGIN_MM + 11, A4_W_MM - MARGIN_MM, MARGIN_MM + 11);
+
+        pdf.setFont("helvetica", "normal");
+        const rightX = A4_W_MM - MARGIN_MM;
+        const leftX = MARGIN_MM;
+        let y = MARGIN_MM + 22;
+        const lineGap = 7;
+        const bottomLimit = A4_H_MM - MARGIN_MM;
+
+        // Try to set outline (jsPDF outline API — best-effort).
+        // Older jsPDF versions expose pdf.outline.add(parent, title, { pageNumber }).
+        const outline = (pdf as unknown as {
+          outline?: { add: (parent: unknown, title: string, opts: { pageNumber: number }) => unknown };
+        }).outline;
+
+        for (const e of entries) {
+          if (y > bottomLimit) break; // TOC longer than one page: truncate silently
+          const targetPage = e.contentPageIndex + 2; // +1 for TOC insert, +1 to 1-index
+          const indent = (e.level - 1) * 4;
+          const fontSize = e.level === 1 ? 12 : e.level === 2 ? 11 : 10;
+          pdf.setFontSize(fontSize);
+          pdf.setTextColor(e.level === 1 ? 20 : 60, e.level === 1 ? 20 : 60, e.level === 1 ? 20 : 60);
+
+          const pageStr = String(targetPage);
+          const pageStrW = pdf.getTextWidth(pageStr);
+          const titleMaxW = rightX - (leftX + indent) - pageStrW - 6;
+          const titleLines = pdf.splitTextToSize(e.text, titleMaxW) as string[];
+          const title = titleLines[0] + (titleLines.length > 1 ? "…" : "");
+          const titleW = pdf.getTextWidth(title);
+
+          pdf.text(title, leftX + indent, y);
+          // Dotted leader between title and page number.
+          const dotsStart = leftX + indent + titleW + 2;
+          const dotsEnd = rightX - pageStrW - 2;
+          if (dotsEnd > dotsStart) {
+            pdf.setTextColor(160, 160, 160);
+            const dot = ".";
+            const dotW = pdf.getTextWidth(dot);
+            const dotCount = Math.max(0, Math.floor((dotsEnd - dotsStart) / (dotW * 1.6)));
+            if (dotCount > 0) {
+              pdf.text(" ".repeat(0) + Array(dotCount).fill(dot).join(" "), dotsStart, y);
+            }
+            pdf.setTextColor(e.level === 1 ? 20 : 60, e.level === 1 ? 20 : 60, e.level === 1 ? 20 : 60);
+          }
+          pdf.text(pageStr, rightX - pageStrW, y);
+
+          // Clickable link across the entire row.
+          pdf.link(leftX, y - fontSize * 0.35, rightX - leftX, fontSize * 0.5 + 2, {
+            pageNumber: targetPage,
+          });
+
+          // PDF bookmark / outline entry.
+          try {
+            outline?.add(null, e.text, { pageNumber: targetPage });
+          } catch {
+            // outline API unavailable — links still work.
+          }
+
+          y += lineGap;
+        }
+      }
 
       const filename = `factuur-${data.invoice_number || "download"}.pdf`;
       pdf.save(filename);
