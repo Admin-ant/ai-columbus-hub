@@ -168,8 +168,11 @@ export function InvoicePreviewDialog({
     const PAGE_W_MM = currentPage.w;
     const PAGE_H_MM = currentPage.h;
     const MARGIN_MM = currentMarginMm;
+    const HEADER_H_MM = 9;
+    const FOOTER_H_MM = 9;
     const CONTENT_W_MM = PAGE_W_MM - MARGIN_MM * 2;
-    const CONTENT_H_MM = PAGE_H_MM - MARGIN_MM * 2;
+    const CONTENT_H_MM = PAGE_H_MM - MARGIN_MM * 2 - HEADER_H_MM - FOOTER_H_MM;
+    const CONTENT_TOP_MM = MARGIN_MM + HEADER_H_MM;
 
     // Render the template at a fixed pixel width so the aspect ratio is
     // deterministic. DPI is driven by the quality profile.
