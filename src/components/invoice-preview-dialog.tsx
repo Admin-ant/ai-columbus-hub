@@ -528,6 +528,45 @@ export function InvoicePreviewDialog({
 
             </div>
 
+            <div className="flex flex-wrap items-end gap-3 rounded-md border bg-muted/30 p-3">
+              <div className="min-w-[160px] flex-1">
+                <Label className="text-xs">Paginaformaat</Label>
+                <Select value={pageSize} onValueChange={(v) => setPageSize(v as PageSize)}>
+                  <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="a4">A4 (210 × 297 mm)</SelectItem>
+                    <SelectItem value="letter">Letter (216 × 279 mm)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="min-w-[160px] flex-1">
+                <Label className="text-xs">Marges</Label>
+                <Select value={marginProfile} onValueChange={(v) => setMarginProfile(v as MarginProfile)}>
+                  <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="compact">Compact (8 mm)</SelectItem>
+                    <SelectItem value="normal">Normaal (12 mm)</SelectItem>
+                    <SelectItem value="wide">Ruim (20 mm)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="min-w-[160px] flex-1">
+                <Label className="text-xs">Kwaliteit</Label>
+                <Select value={quality} onValueChange={(v) => setQuality(v as QualityProfile)}>
+                  <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Concept (120 dpi, klein bestand)</SelectItem>
+                    <SelectItem value="standard">Standaard (200 dpi)</SelectItem>
+                    <SelectItem value="high">Hoog (260 dpi, scherpst)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="w-full text-[11px] text-muted-foreground">
+                {currentPage.label} · marge {currentMarginMm} mm · {DPI_BY[quality]} dpi
+              </p>
+            </div>
+
+
             {canPay && (
               <div className="flex flex-wrap items-end gap-3 rounded-md border bg-muted/30 p-3">
                 <div className="min-w-[220px] flex-1">
