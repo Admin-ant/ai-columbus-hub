@@ -489,7 +489,7 @@ export function InvoicePreviewDialog({
 
       // Paint header + footer on every page (including the TOC page).
       const totalPages = pdf.getNumberOfPages();
-      const headerLeft = organizationName || "";
+      const headerLeft = data.organization?.name || "";
       const headerRight = `Factuur ${data.invoice_number || ""}`.trim();
       const issueDateStr = data.issue_date
         ? new Date(data.issue_date).toLocaleDateString(data.language === "en" ? "en-IE" : "nl-NL")
