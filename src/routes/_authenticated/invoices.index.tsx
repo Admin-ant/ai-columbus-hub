@@ -537,6 +537,15 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
           <DialogDescription>{t("acc.inv.dialog_desc")}</DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
+          <datalist id="invoice-products">
+            {products.map((p) => (
+              <option
+                key={p.id}
+                value={p.name}
+                label={`€ ${(p.unit_price_cents / 100).toFixed(2)} · ${p.vat_rate}% BTW${p.sku ? ` · ${p.sku}` : ""}`}
+              />
+            ))}
+          </datalist>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Klant</Label>
