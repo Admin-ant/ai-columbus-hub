@@ -308,9 +308,27 @@ function ProductsPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="p-months">Contractduur (mnd)</Label>
-                    <Input id="p-months" type="number" min={1} placeholder="optioneel"
-                      value={form.contract_months}
-                      onChange={(e) => setForm({ ...form, contract_months: e.target.value })} />
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="p-use-contract"
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={form.use_contract}
+                        onChange={(e) => setForm({
+                          ...form,
+                          use_contract: e.target.checked,
+                          contract_months: e.target.checked ? form.contract_months : "",
+                        })}
+                      />
+                      <Label htmlFor="p-use-contract" className="text-xs font-normal text-muted-foreground">
+                        Contract gebruiken
+                      </Label>
+                    </div>
+                    {form.use_contract && (
+                      <Input id="p-months" type="number" min={1} placeholder="bv. 12"
+                        value={form.contract_months}
+                        onChange={(e) => setForm({ ...form, contract_months: e.target.value })} />
+                    )}
                   </div>
                 </div>
               </div>
