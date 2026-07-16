@@ -393,7 +393,7 @@ export function InvoicePreviewDialog({
         const sliceImg = pageCanvas.toDataURL("image/png");
         const sliceHeightMm = sliceHeightPx / pxPerMm;
         if (pageIndex > 0) pdf.addPage();
-        pdf.addImage(sliceImg, "PNG", MARGIN_MM, MARGIN_MM, CONTENT_W_MM, sliceHeightMm, undefined, "FAST");
+        pdf.addImage(sliceImg, "PNG", MARGIN_MM, CONTENT_TOP_MM, CONTENT_W_MM, sliceHeightMm, undefined, "FAST");
 
         pageStartsPx.push(renderedPx);
         renderedPx += sliceHeightPx;
