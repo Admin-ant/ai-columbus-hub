@@ -371,6 +371,19 @@ export function InvoicePreviewDialog({
             <div className="flex items-center justify-between gap-4">
               <DialogTitle>Factuurvoorbeeld — {data.invoice_number}</DialogTitle>
               <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant={paginated ? "default" : "outline"}
+                  onClick={() => setPaginated((v) => !v)}
+                  title="Toon pagina-indeling zoals in de PDF"
+                >
+                  {paginated ? (
+                    <LayoutList className="mr-2 h-4 w-4" />
+                  ) : (
+                    <FileText className="mr-2 h-4 w-4" />
+                  )}
+                  {paginated ? "Paginavoorbeeld aan" : "Paginavoorbeeld uit"}
+                </Button>
                 <Button size="sm" onClick={handleDownloadPdf} disabled={downloadingPdf}>
                   {downloadingPdf ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -383,6 +396,7 @@ export function InvoicePreviewDialog({
                   <Printer className="mr-2 h-4 w-4" /> Print
                 </Button>
               </div>
+
             </div>
 
             {canPay && (
