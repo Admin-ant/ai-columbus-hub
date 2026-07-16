@@ -267,7 +267,7 @@ export function InvoicePreviewDialog({
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
-        format: "a4",
+        format: pageSize === "letter" ? "letter" : "a4",
         compress: true,
       });
 
