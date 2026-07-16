@@ -205,6 +205,12 @@ export function InvoicePreviewDialog({
     clone.style.maxWidth = "100%";
     clone.style.boxShadow = "none";
     clone.style.margin = "0";
+    // De InvoiceTemplate-card heeft standaard max-w-[820px]; voor de PDF
+    // moet de content de volledige contentbreedte vullen. Overschrijf
+    // daarom alle max-width caps binnen de kloon.
+    clone.querySelectorAll<HTMLElement>("*").forEach((el) => {
+      el.style.maxWidth = "none";
+    });
     wrapper.appendChild(clone);
     document.body.appendChild(wrapper);
 

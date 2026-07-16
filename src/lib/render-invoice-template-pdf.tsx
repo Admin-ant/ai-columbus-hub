@@ -71,6 +71,13 @@ export async function renderInvoiceTemplatePdfBlob(
       ),
     );
 
+    // De InvoiceTemplate-card heeft standaard max-w-[820px]; forceer voor
+    // export dat alle elementen de volledige wrapper-breedte gebruiken.
+    wrapper.querySelectorAll<HTMLElement>("*").forEach((el) => {
+      el.style.maxWidth = "none";
+    });
+
+
     const wrapperTop = wrapper.getBoundingClientRect().top;
     const breakSelector =
       "tr,thead,tfoot,li,p,h1,h2,h3,h4,h5,h6,figure,img,section,article,[data-pdf-block]";
