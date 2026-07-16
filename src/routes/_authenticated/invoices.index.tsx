@@ -611,10 +611,24 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
                     <TableRow key={i}>
                       <TableCell>
                         <Input
+                          list="invoice-products"
+                          placeholder="Kies uit producten of typ nieuw…"
                           value={l.description}
                           onChange={(e) => {
+                            const val = e.target.value;
                             const n = [...lines];
-                            n[i] = { ...l, description: e.target.value };
+                            const match = products.find(
+                              (p) => p.name.toLowerCase() === val.toLowerCase(),
+                            );
+                            n[i] = match
+                              ? {
+                                  ...l,
+                                  description: match.name,
+                                  unit_price_cents: match.unit_price_cents,
+                                  vat_rate: match.vat_rate,
+                                  quantity: l.quantity || 1,
+                                }
+                              : { ...l, description: val };
                             setLines(n);
                           }}
                         />
