@@ -88,18 +88,26 @@ export function InvoicePreviewDialog({
     if (!node) return;
     setDownloadingPdf(true);
 
-    // Render into an off-screen A4-width container so the layout matches
-    // the printed page exactly and scales cleanly to A4.
-    const A4_WIDTH_PX = 794;   // 210mm @ 96dpi
-    const MARGIN_PX = 38;      // ~10mm safe margin
+    // Fixed A4 layout in mm — the template is scaled to fit the printable area
+    // (page minus margins) so the output is always identical, regardless of the
+    // on-screen preview width.
+    const A4_W_MM = 210;
+    const A4_H_MM = 297;
+    const MARGIN_MM = 12;
+    const CONTENT_W_MM = A4_W_MM - MARGIN_MM * 2;
+    const CONTENT_H_MM = A4_H_MM - MARGIN_MM * 2;
+
+    // Render the template at a fixed pixel width so the aspect ratio is
+    // deterministic. 794px = 210mm @ 96dpi; we use the printable width to
+    // avoid any additional scaling by html2canvas.
+    const RENDER_W_PX = Math.round((CONTENT_W_MM / A4_W_MM) * 794);
 
     const wrapper = document.createElement("div");
     wrapper.style.position = "fixed";
     wrapper.style.left = "-10000px";
     wrapper.style.top = "0";
-    wrapper.style.width = `${A4_WIDTH_PX}px`;
+    wrapper.style.width = `${RENDER_W_PX}px`;
     wrapper.style.background = "#ffffff";
-    wrapper.style.padding = `${MARGIN_PX}px`;
     wrapper.style.boxSizing = "border-box";
     wrapper.style.fontFamily = getComputedStyle(node).fontFamily;
 
@@ -116,20 +124,19 @@ export function InvoicePreviewDialog({
         scale: 2,
         useCORS: true,
         backgroundColor: "#ffffff",
-        windowWidth: A4_WIDTH_PX,
+        windowWidth: RENDER_W_PX,
       });
 
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pageWmm = pdf.internal.pageSize.getWidth();
-      const pageHmm = pdf.internal.pageSize.getHeight();
 
-      const pxPerMm = canvas.width / pageWmm;
-      const pageHeightPx = Math.floor(pageHmm * pxPerMm);
+      // 1 mm in canvas pixels — content width fills exactly CONTENT_W_MM.
+      const pxPerMm = canvas.width / CONTENT_W_MM;
+      const pageContentHeightPx = Math.floor(CONTENT_H_MM * pxPerMm);
 
       let renderedPx = 0;
       let pageIndex = 0;
       while (renderedPx < canvas.height) {
-        const sliceHeightPx = Math.min(pageHeightPx, canvas.height - renderedPx);
+        const sliceHeightPx = Math.min(pageContentHeightPx, canvas.height - renderedPx);
         const pageCanvas = document.createElement("canvas");
         pageCanvas.width = canvas.width;
         pageCanvas.height = sliceHeightPx;
@@ -145,7 +152,8 @@ export function InvoicePreviewDialog({
         const sliceImg = pageCanvas.toDataURL("image/jpeg", 0.95);
         const sliceHeightMm = sliceHeightPx / pxPerMm;
         if (pageIndex > 0) pdf.addPage();
-        pdf.addImage(sliceImg, "JPEG", 0, 0, pageWmm, sliceHeightMm);
+        // Fixed margins on every page → template stays 1:1.
+        pdf.addImage(sliceImg, "JPEG", MARGIN_MM, MARGIN_MM, CONTENT_W_MM, sliceHeightMm);
         renderedPx += sliceHeightPx;
         pageIndex += 1;
       }
@@ -159,6 +167,7 @@ export function InvoicePreviewDialog({
       setDownloadingPdf(false);
     }
   }
+
 
 
   async function handleCreateLink() {
