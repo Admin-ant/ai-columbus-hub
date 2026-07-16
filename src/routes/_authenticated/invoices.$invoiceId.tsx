@@ -1320,6 +1320,7 @@ function EmailForm({
   lines: invoiceLines,
   organizationName,
   buildPdf,
+  buildTemplatePdfBlob,
   emailFn,
   currentPaymentLink,
   preferredMethod,
@@ -1334,6 +1335,7 @@ function EmailForm({
   lines: InvoiceLine[];
   organizationName: string | null;
   buildPdf: () => ReturnType<typeof buildInvoicePdf> | null;
+  buildTemplatePdfBlob?: () => Promise<Blob>;
   emailFn: ReturnType<typeof useServerFn<typeof emailInvoice>>;
   currentPaymentLink: string | null;
   preferredMethod: MolliePaymentMethod | null;
