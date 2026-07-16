@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { CreditCard, Loader2, Printer, X, Copy, Link2 } from "lucide-react";
+import { CreditCard, Download, Loader2, Printer, X, Copy, Link2 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { QRCodeSVG } from "qrcode.react";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -60,6 +62,7 @@ export function InvoicePreviewDialog({
   const printRef = useRef<HTMLDivElement>(null);
   const [creatingLink, setCreatingLink] = useState(false);
   const [revoking, setRevoking] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const createFn = useServerFn(createMollieInvoicePayment);
   const revokeFn = useServerFn(revokeMollieInvoicePayment);
   const [paymentLink, setPaymentLink] = useState<string | null>(data.payment_link_url ?? null);
@@ -78,6 +81,60 @@ export function InvoicePreviewDialog({
 
   function handlePrint() {
     window.print();
+  }
+
+  async function handleDownloadPdf() {
+    const node = printRef.current;
+    if (!node) return;
+    setDownloadingPdf(true);
+    try {
+      const canvas = await html2canvas(node, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        windowWidth: node.scrollWidth,
+      });
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const imgW = pageW;
+      const imgH = (canvas.height * imgW) / canvas.width;
+      const imgData = canvas.toDataURL("image/png");
+
+      if (imgH <= pageH) {
+        pdf.addImage(imgData, "PNG", 0, 0, imgW, imgH);
+      } else {
+        // Paginate by slicing the source canvas per A4 page.
+        const pageHeightPx = (canvas.width * pageH) / pageW;
+        let renderedPx = 0;
+        while (renderedPx < canvas.height) {
+          const sliceHeightPx = Math.min(pageHeightPx, canvas.height - renderedPx);
+          const pageCanvas = document.createElement("canvas");
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = sliceHeightPx;
+          const ctx = pageCanvas.getContext("2d");
+          if (!ctx) break;
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+          ctx.drawImage(
+            canvas,
+            0, renderedPx, canvas.width, sliceHeightPx,
+            0, 0, canvas.width, sliceHeightPx,
+          );
+          const sliceImg = pageCanvas.toDataURL("image/png");
+          const sliceHeightMm = (sliceHeightPx * imgW) / canvas.width;
+          if (renderedPx > 0) pdf.addPage();
+          pdf.addImage(sliceImg, "PNG", 0, 0, imgW, sliceHeightMm);
+          renderedPx += sliceHeightPx;
+        }
+      }
+      const filename = `factuur-${data.invoice_number || "download"}.pdf`;
+      pdf.save(filename);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "PDF genereren mislukt");
+    } finally {
+      setDownloadingPdf(false);
+    }
   }
 
   async function handleCreateLink() {
@@ -148,9 +205,19 @@ export function InvoicePreviewDialog({
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-4">
               <DialogTitle>Factuurvoorbeeld — {data.invoice_number}</DialogTitle>
-              <Button size="sm" variant="outline" onClick={handlePrint}>
-                <Printer className="mr-2 h-4 w-4" /> Print / PDF
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button size="sm" onClick={handleDownloadPdf} disabled={downloadingPdf}>
+                  {downloadingPdf ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="mr-2 h-4 w-4" />
+                  )}
+                  Download PDF
+                </Button>
+                <Button size="sm" variant="outline" onClick={handlePrint}>
+                  <Printer className="mr-2 h-4 w-4" /> Print
+                </Button>
+              </div>
             </div>
 
             {canPay && (
