@@ -77,6 +77,7 @@ function ProductsPage() {
     discount_percent: "0",
     discount_type: "none" as "none" | "one_time" | "recurring",
     contract_months: "",
+    use_contract: false,
   };
   const [form, setForm] = useState(emptyForm);
 
@@ -99,6 +100,7 @@ function ProductsPage() {
       discount_percent: String(p.discount_percent ?? 0),
       discount_type: (p.discount_type ?? "none") as "none" | "one_time" | "recurring",
       contract_months: p.contract_months != null ? String(p.contract_months) : "",
+      use_contract: p.contract_months != null,
     });
     setOpen(true);
   }
@@ -138,7 +140,9 @@ function ProductsPage() {
     const discountPercent = Math.max(0, Math.min(100, Number(form.discount_percent) || 0));
     const discountType: "none" | "one_time" | "recurring" =
       discountPercent > 0 ? (form.discount_type === "none" ? "one_time" : form.discount_type) : "none";
-    const contractMonths = form.contract_months.trim() ? Math.max(1, Number(form.contract_months)) : null;
+    const contractMonths = form.use_contract && form.contract_months.trim()
+      ? Math.max(1, Number(form.contract_months))
+      : null;
 
     setSaving(true);
     const payload = {
@@ -304,9 +308,27 @@ function ProductsPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="p-months">Contractduur (mnd)</Label>
-                    <Input id="p-months" type="number" min={1} placeholder="optioneel"
-                      value={form.contract_months}
-                      onChange={(e) => setForm({ ...form, contract_months: e.target.value })} />
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="p-use-contract"
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={form.use_contract}
+                        onChange={(e) => setForm({
+                          ...form,
+                          use_contract: e.target.checked,
+                          contract_months: e.target.checked ? form.contract_months : "",
+                        })}
+                      />
+                      <Label htmlFor="p-use-contract" className="text-xs font-normal text-muted-foreground">
+                        Contract gebruiken
+                      </Label>
+                    </div>
+                    {form.use_contract && (
+                      <Input id="p-months" type="number" min={1} placeholder="bv. 12"
+                        value={form.contract_months}
+                        onChange={(e) => setForm({ ...form, contract_months: e.target.value })} />
+                    )}
                   </div>
                 </div>
               </div>
