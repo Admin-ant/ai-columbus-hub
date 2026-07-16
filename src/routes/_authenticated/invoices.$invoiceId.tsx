@@ -19,6 +19,7 @@ import {
   Pencil,
   Save,
   Send,
+  Sparkles,
   Trash2,
   Upload,
 } from "lucide-react";
