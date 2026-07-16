@@ -487,6 +487,44 @@ export function InvoicePreviewDialog({
         }
       }
 
+      // Paint header + footer on every page (including the TOC page).
+      const totalPages = pdf.getNumberOfPages();
+      const headerLeft = organizationName || "";
+      const headerRight = `Factuur ${data.invoice_number || ""}`.trim();
+      const issueDateStr = data.issue_date
+        ? new Date(data.issue_date).toLocaleDateString(data.language === "en" ? "en-IE" : "nl-NL")
+        : "";
+      for (let p = 1; p <= totalPages; p += 1) {
+        pdf.setPage(p);
+
+        // Header
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(9);
+        pdf.setTextColor(110, 110, 110);
+        if (headerLeft) pdf.text(headerLeft, MARGIN_MM, MARGIN_MM + 4);
+        if (headerRight) {
+          const w = pdf.getTextWidth(headerRight);
+          pdf.text(headerRight, PAGE_W_MM - MARGIN_MM - w, MARGIN_MM + 4);
+        }
+        pdf.setDrawColor(220, 220, 220);
+        pdf.setLineWidth(0.2);
+        pdf.line(MARGIN_MM, MARGIN_MM + 6.5, PAGE_W_MM - MARGIN_MM, MARGIN_MM + 6.5);
+
+        // Footer
+        const footerY = PAGE_H_MM - MARGIN_MM - 3;
+        pdf.line(MARGIN_MM, footerY - 3, PAGE_W_MM - MARGIN_MM, footerY - 3);
+        pdf.setTextColor(120, 120, 120);
+        pdf.setFontSize(8);
+        if (issueDateStr) pdf.text(issueDateStr, MARGIN_MM, footerY);
+        const pageStr = `Pagina ${p} van ${totalPages}`;
+        const psW = pdf.getTextWidth(pageStr);
+        pdf.text(pageStr, (PAGE_W_MM - psW) / 2, footerY);
+        if (headerRight) {
+          const w = pdf.getTextWidth(headerRight);
+          pdf.text(headerRight, PAGE_W_MM - MARGIN_MM - w, footerY);
+        }
+      }
+
       const filename = `factuur-${data.invoice_number || "download"}.pdf`;
       pdf.save(filename);
     } catch (e) {
