@@ -352,6 +352,7 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [clients, setClients] = useState<ClientRow[]>([]);
+  const [products, setProducts] = useState<ProductRow[]>([]);
   const [clientId, setClientId] = useState<string>("");
   const [clientName, setClientName] = useState("");
   const [issueDate, setIssueDate] = useState(() => new Date().toISOString().slice(0, 10));
