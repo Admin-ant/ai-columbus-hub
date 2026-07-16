@@ -1,6 +1,58 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+async function sendCampaignFlowResend(opts: {
+  from: string;
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<{ id: string }> {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) throw new Error("RESEND_API_KEY ontbreekt");
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      from: opts.from,
+      to: [opts.to],
+      subject: opts.subject,
+      html: opts.html,
+    }),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`Resend ${res.status}: ${text.slice(0, 200)}`);
+  return JSON.parse(text) as { id: string };
+}
+
+export const sendCampaignFlowEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      to: string;
+      subject: string;
+      body: string;
+      trackingUrl?: string | null;
+      contactName?: string | null;
+      company?: string | null;
+    }) => input,
+  )
+  .handler(async ({ data }) => {
+    const to = (data.to ?? "").trim();
+    if (!to || !/.+@.+\..+/.test(to)) {
+      throw new Error("Ongeldig e-mailadres voor prospect");
+    }
+    const from = process.env.OUTREACH_FROM_EMAIL ?? "outreach@resend.dev";
+    const bodyText = data.body ?? "";
+    const escaped = bodyText.replace(/</g, "&lt;");
+    const linkBlock = data.trackingUrl
+      ? `<p style="margin:16px 0 0"><a href="${data.trackingUrl}" style="color:#2563eb">Bekijk meer</a></p>`
+      : "";
+    const html = `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111;white-space:pre-wrap">${escaped}${linkBlock}</div>`;
+    const subject = (data.subject ?? "").trim() || `Even kort, ${data.company ?? ""}`.trim();
+    const r = await sendCampaignFlowResend({ from, to, subject, html });
+    return { ok: true as const, providerMessageId: r.id };
+  });
+
 export type CampaignFlowLead = {
   id: string;
   name: string;
