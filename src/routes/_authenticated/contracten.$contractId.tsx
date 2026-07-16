@@ -2,7 +2,7 @@ import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-r
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, PauseCircle, PlayCircle, Plus, Trash2, XCircle, Zap } from "lucide-react";
+import { ArrowLeft, Link2, Link2Off, Loader2, PauseCircle, PlayCircle, Plus, Trash2, XCircle, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -215,9 +215,22 @@ function ContractDetail() {
                 value={contract.payment_link_url ?? ""}
                 onSave={(v) => patch({ payment_link_url: v })}
               />
-              <p className="text-[11px] text-muted-foreground mt-1">
-                Als deze aan staat, wordt de link automatisch toegevoegd aan elke nieuwe maandelijkse/periodieke factuur voor deze klant.
-              </p>
+              <div className="flex items-center gap-2 mt-2">
+                {contract.payment_link_enabled ? (
+                  <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-transparent text-xs">
+                    <Link2 className="mr-1 h-3 w-3" /> Betaallink actief
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-muted-foreground text-xs">
+                    <Link2Off className="mr-1 h-3 w-3" /> Betaallink inactief
+                  </Badge>
+                )}
+                <span className="text-[11px] text-muted-foreground">
+                  {contract.payment_link_enabled
+                    ? "De link wordt automatisch toegevoegd aan elke nieuwe factuur."
+                    : "Er wordt geen betaallink op nieuwe facturen geplaatst."}
+                </span>
+              </div>
             </div>
           </div>
         </div>
