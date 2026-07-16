@@ -62,6 +62,13 @@ export const Route = createFileRoute("/_authenticated/invoices/")({
 type Invoice = Database["public"]["Tables"]["invoices"]["Row"];
 type InvoiceStatus = Database["public"]["Enums"]["invoice_status"];
 type ClientRow = { id: string; name: string; email: string | null };
+type ProductRow = {
+  id: string;
+  name: string;
+  sku: string | null;
+  unit_price_cents: number;
+  vat_rate: number;
+};
 
 const STATUS: InvoiceStatus[] = ["draft", "sent", "paid", "overdue", "cancelled"];
 
