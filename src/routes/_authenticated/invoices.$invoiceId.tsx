@@ -923,6 +923,8 @@ function InvoiceDetailPage() {
             initialSubject={emailMode === "reminder" ? reminderDefaults.subject : undefined}
             initialBody={emailMode === "reminder" ? reminderDefaults.body : undefined}
             attachments={attachments}
+            lines={lines}
+            organizationName={org?.name ?? null}
             buildPdf={buildPdf}
             currentPaymentLink={currentPaymentLink}
             preferredMethod={preferredMethod}
