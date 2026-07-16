@@ -159,6 +159,8 @@ const updateSchema = z.object({
     payment_terms_days: z.number().int().min(0).max(120).optional(),
     auto_invoice: z.boolean().optional(),
     notes: z.string().max(2000).nullable().optional(),
+    payment_link_enabled: z.boolean().optional(),
+    payment_link_url: z.string().trim().max(500).url("Ongeldige URL").nullable().optional().or(z.literal("").transform(() => null)),
   }),
 });
 

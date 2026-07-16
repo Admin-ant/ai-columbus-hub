@@ -872,6 +872,8 @@ export type Database = {
           notes: string | null
           notice_period_days: number
           organization_id: string
+          payment_link_enabled: boolean
+          payment_link_url: string | null
           payment_terms_days: number
           project_id: string | null
           quote_id: string | null
@@ -898,6 +900,8 @@ export type Database = {
           notes?: string | null
           notice_period_days?: number
           organization_id: string
+          payment_link_enabled?: boolean
+          payment_link_url?: string | null
           payment_terms_days?: number
           project_id?: string | null
           quote_id?: string | null
@@ -924,6 +928,8 @@ export type Database = {
           notes?: string | null
           notice_period_days?: number
           organization_id?: string
+          payment_link_enabled?: boolean
+          payment_link_url?: string | null
           payment_terms_days?: number
           project_id?: string | null
           quote_id?: string | null
