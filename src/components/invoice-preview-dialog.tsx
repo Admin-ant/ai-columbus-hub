@@ -70,6 +70,64 @@ export function InvoicePreviewDialog({
     defaultPreferredMethod ?? "any",
   );
   const [restrict, setRestrict] = useState(false);
+  const [paginated, setPaginated] = useState(true);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const [pageBreaks, setPageBreaks] = useState<number[]>([]);
+  const [sheetHeight, setSheetHeight] = useState(0);
+  // A4 aspect ratio applied to the on-screen sheet: content area is (210-24) x (297-24) mm.
+  const PAGE_ASPECT = (297 - 24) / (210 - 24);
+
+  const recomputeBreaks = useCallback(() => {
+    const node = sheetRef.current;
+    if (!node || !paginated) return;
+    const rect = node.getBoundingClientRect();
+    const sheetTop = rect.top;
+    const totalHeight = rect.height;
+    setSheetHeight(totalHeight);
+    const pageHeightPx = rect.width * PAGE_ASPECT;
+    if (pageHeightPx <= 0 || totalHeight <= pageHeightPx) {
+      setPageBreaks([]);
+      return;
+    }
+    const selector = "tr,thead,tfoot,li,p,h1,h2,h3,h4,h5,h6,figure,img,section,article,[data-pdf-block]";
+    const boundaries = Array.from(node.querySelectorAll<HTMLElement>(selector))
+      .map((el) => el.getBoundingClientRect().bottom - sheetTop)
+      .filter((y) => y > 0)
+      .sort((a, b) => a - b);
+    const MIN_FILL = pageHeightPx * 0.35;
+    const breaks: number[] = [];
+    let cursor = 0;
+    while (cursor + pageHeightPx < totalHeight) {
+      const target = cursor + pageHeightPx;
+      let best = -1;
+      for (const b of boundaries) {
+        if (b <= cursor) continue;
+        if (b > target) break;
+        if (b - cursor >= MIN_FILL) best = b;
+      }
+      const cut = best === -1 ? target : best;
+      breaks.push(cut);
+      cursor = cut;
+    }
+    setPageBreaks(breaks);
+  }, [paginated, PAGE_ASPECT]);
+
+  useLayoutEffect(() => {
+    if (!paginated) return;
+    recomputeBreaks();
+    const node = sheetRef.current;
+    if (!node) return;
+    const ro = new ResizeObserver(() => recomputeBreaks());
+    ro.observe(node);
+    const mo = new MutationObserver(() => recomputeBreaks());
+    mo.observe(node, { childList: true, subtree: true, characterData: true });
+    const t = setTimeout(recomputeBreaks, 200);
+    return () => {
+      ro.disconnect();
+      mo.disconnect();
+      clearTimeout(t);
+    };
+  }, [paginated, recomputeBreaks, data]);
 
   useEffect(() => {
     setPaymentLink(data.payment_link_url ?? null);
