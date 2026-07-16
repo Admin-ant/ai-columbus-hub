@@ -168,8 +168,11 @@ export function InvoicePreviewDialog({
     const PAGE_W_MM = currentPage.w;
     const PAGE_H_MM = currentPage.h;
     const MARGIN_MM = currentMarginMm;
+    const HEADER_H_MM = 9;
+    const FOOTER_H_MM = 9;
     const CONTENT_W_MM = PAGE_W_MM - MARGIN_MM * 2;
-    const CONTENT_H_MM = PAGE_H_MM - MARGIN_MM * 2;
+    const CONTENT_H_MM = PAGE_H_MM - MARGIN_MM * 2 - HEADER_H_MM - FOOTER_H_MM;
+    const CONTENT_TOP_MM = MARGIN_MM + HEADER_H_MM;
 
     // Render the template at a fixed pixel width so the aspect ratio is
     // deterministic. DPI is driven by the quality profile.
@@ -390,7 +393,7 @@ export function InvoicePreviewDialog({
         const sliceImg = pageCanvas.toDataURL("image/png");
         const sliceHeightMm = sliceHeightPx / pxPerMm;
         if (pageIndex > 0) pdf.addPage();
-        pdf.addImage(sliceImg, "PNG", MARGIN_MM, MARGIN_MM, CONTENT_W_MM, sliceHeightMm, undefined, "FAST");
+        pdf.addImage(sliceImg, "PNG", MARGIN_MM, CONTENT_TOP_MM, CONTENT_W_MM, sliceHeightMm, undefined, "FAST");
 
         pageStartsPx.push(renderedPx);
         renderedPx += sliceHeightPx;
@@ -419,17 +422,17 @@ export function InvoicePreviewDialog({
         pdf.setFont("helvetica", "bold");
         pdf.setTextColor(20, 20, 20);
         pdf.setFontSize(20);
-        pdf.text("Inhoudsopgave", MARGIN_MM, MARGIN_MM + 8);
+        pdf.text("Inhoudsopgave", MARGIN_MM, CONTENT_TOP_MM + 8);
         pdf.setDrawColor(200, 200, 200);
         pdf.setLineWidth(0.3);
-        pdf.line(MARGIN_MM, MARGIN_MM + 11, PAGE_W_MM - MARGIN_MM, MARGIN_MM + 11);
+        pdf.line(MARGIN_MM, CONTENT_TOP_MM + 11, PAGE_W_MM - MARGIN_MM, CONTENT_TOP_MM + 11);
 
         pdf.setFont("helvetica", "normal");
         const rightX = PAGE_W_MM - MARGIN_MM;
         const leftX = MARGIN_MM;
-        let y = MARGIN_MM + 22;
+        let y = CONTENT_TOP_MM + 22;
         const lineGap = 7;
-        const bottomLimit = PAGE_H_MM - MARGIN_MM;
+        const bottomLimit = PAGE_H_MM - MARGIN_MM - FOOTER_H_MM;
 
         // Try to set outline (jsPDF outline API — best-effort).
         // Older jsPDF versions expose pdf.outline.add(parent, title, { pageNumber }).
@@ -481,6 +484,44 @@ export function InvoicePreviewDialog({
           }
 
           y += lineGap;
+        }
+      }
+
+      // Paint header + footer on every page (including the TOC page).
+      const totalPages = pdf.getNumberOfPages();
+      const headerLeft = data.organization?.name || "";
+      const headerRight = `Factuur ${data.invoice_number || ""}`.trim();
+      const issueDateStr = data.issue_date
+        ? new Date(data.issue_date).toLocaleDateString(data.language === "en" ? "en-IE" : "nl-NL")
+        : "";
+      for (let p = 1; p <= totalPages; p += 1) {
+        pdf.setPage(p);
+
+        // Header
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(9);
+        pdf.setTextColor(110, 110, 110);
+        if (headerLeft) pdf.text(headerLeft, MARGIN_MM, MARGIN_MM + 4);
+        if (headerRight) {
+          const w = pdf.getTextWidth(headerRight);
+          pdf.text(headerRight, PAGE_W_MM - MARGIN_MM - w, MARGIN_MM + 4);
+        }
+        pdf.setDrawColor(220, 220, 220);
+        pdf.setLineWidth(0.2);
+        pdf.line(MARGIN_MM, MARGIN_MM + 6.5, PAGE_W_MM - MARGIN_MM, MARGIN_MM + 6.5);
+
+        // Footer
+        const footerY = PAGE_H_MM - MARGIN_MM - 3;
+        pdf.line(MARGIN_MM, footerY - 3, PAGE_W_MM - MARGIN_MM, footerY - 3);
+        pdf.setTextColor(120, 120, 120);
+        pdf.setFontSize(8);
+        if (issueDateStr) pdf.text(issueDateStr, MARGIN_MM, footerY);
+        const pageStr = `Pagina ${p} van ${totalPages}`;
+        const psW = pdf.getTextWidth(pageStr);
+        pdf.text(pageStr, (PAGE_W_MM - psW) / 2, footerY);
+        if (headerRight) {
+          const w = pdf.getTextWidth(headerRight);
+          pdf.text(headerRight, PAGE_W_MM - MARGIN_MM - w, footerY);
         }
       }
 
