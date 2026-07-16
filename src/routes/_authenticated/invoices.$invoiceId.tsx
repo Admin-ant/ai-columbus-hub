@@ -71,6 +71,7 @@ import {
   refreshMollieInvoiceStatus,
   type MolliePaymentMethod,
 } from "@/lib/mollie-invoice.functions";
+import { suggestInvoiceEmail } from "@/lib/invoice-email-ai.functions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatCents } from "@/lib/currency";
 import { QRCodeSVG } from "qrcode.react";
