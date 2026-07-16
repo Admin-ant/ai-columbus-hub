@@ -83,6 +83,60 @@ export function InvoicePreviewDialog({
     window.print();
   }
 
+  async function handleDownloadPdf() {
+    const node = printRef.current;
+    if (!node) return;
+    setDownloadingPdf(true);
+    try {
+      const canvas = await html2canvas(node, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        windowWidth: node.scrollWidth,
+      });
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const imgW = pageW;
+      const imgH = (canvas.height * imgW) / canvas.width;
+      const imgData = canvas.toDataURL("image/png");
+
+      if (imgH <= pageH) {
+        pdf.addImage(imgData, "PNG", 0, 0, imgW, imgH);
+      } else {
+        // Paginate by slicing the source canvas per A4 page.
+        const pageHeightPx = (canvas.width * pageH) / pageW;
+        let renderedPx = 0;
+        while (renderedPx < canvas.height) {
+          const sliceHeightPx = Math.min(pageHeightPx, canvas.height - renderedPx);
+          const pageCanvas = document.createElement("canvas");
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = sliceHeightPx;
+          const ctx = pageCanvas.getContext("2d");
+          if (!ctx) break;
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+          ctx.drawImage(
+            canvas,
+            0, renderedPx, canvas.width, sliceHeightPx,
+            0, 0, canvas.width, sliceHeightPx,
+          );
+          const sliceImg = pageCanvas.toDataURL("image/png");
+          const sliceHeightMm = (sliceHeightPx * imgW) / canvas.width;
+          if (renderedPx > 0) pdf.addPage();
+          pdf.addImage(sliceImg, "PNG", 0, 0, imgW, sliceHeightMm);
+          renderedPx += sliceHeightPx;
+        }
+      }
+      const filename = `factuur-${data.invoice_number || "download"}.pdf`;
+      pdf.save(filename);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "PDF genereren mislukt");
+    } finally {
+      setDownloadingPdf(false);
+    }
+  }
+
   async function handleCreateLink() {
     setCreatingLink(true);
     try {
