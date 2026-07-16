@@ -342,3 +342,53 @@ function FieldDate({
     </div>
   );
 }
+
+function validatePaymentLinkUrl(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (trimmed.length > 500) return "URL mag maximaal 500 tekens zijn";
+  try {
+    const u = new URL(trimmed);
+    if (u.protocol !== "https:" && u.protocol !== "http:") {
+      return "URL moet beginnen met http:// of https://";
+    }
+    if (!u.hostname.includes(".")) return "Ongeldige hostnaam";
+    return null;
+  } catch {
+    return "Ongeldige URL (bijv. https://www.mollie.com/…)";
+  }
+}
+
+function PaymentLinkUrlField({
+  enabled,
+  value,
+  onSave,
+}: {
+  enabled: boolean;
+  value: string;
+  onSave: (v: string | null) => void;
+}) {
+  const [v, setV] = useState(value);
+  useEffect(() => setV(value), [value]);
+  const err = enabled ? validatePaymentLinkUrl(v) : null;
+  return (
+    <>
+      <Label className="text-xs">Betaallink-URL (bijv. Mollie)</Label>
+      <Input
+        type="url"
+        placeholder="https://www.mollie.com/paymentscreen/..."
+        value={v}
+        disabled={!enabled}
+        aria-invalid={!!err}
+        className={err ? "border-destructive focus-visible:ring-destructive" : ""}
+        onChange={(e) => setV(e.target.value)}
+        onBlur={() => {
+          const trimmed = v.trim();
+          if (enabled && trimmed && validatePaymentLinkUrl(trimmed)) return;
+          if (trimmed !== (value ?? "")) onSave(trimmed || null);
+        }}
+      />
+      {err && <p className="text-[11px] text-destructive mt-1">{err}</p>}
+    </>
+  );
+}
