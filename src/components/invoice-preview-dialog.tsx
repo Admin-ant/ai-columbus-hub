@@ -189,8 +189,14 @@ export function InvoicePreviewDialog({
     wrapper.style.top = "0";
     wrapper.style.width = `${RENDER_W_PX}px`;
     wrapper.style.background = "#ffffff";
+    wrapper.style.color = "#0a0a0a";
     wrapper.style.boxSizing = "border-box";
     wrapper.style.fontFamily = getComputedStyle(node).fontFamily;
+    // Force the light theme tokens for PDF export so oklch dark-mode
+    // variants never leak in (user could be viewing app in dark mode).
+    wrapper.style.colorScheme = "light";
+    wrapper.classList.remove("dark");
+    wrapper.setAttribute("data-theme", "light");
     // Keep text hinting crisp on the raster.
     wrapper.style.setProperty("-webkit-font-smoothing", "antialiased");
     wrapper.style.setProperty("text-rendering", "geometricPrecision");
