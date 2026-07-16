@@ -48,6 +48,7 @@ import {
   listCampaignTasks,
   updateCampaignTask,
   listCampaignTaskEvents,
+  sendCampaignFlowEmail,
   type CampaignFlowTask,
   type CampaignTaskEvent,
 } from "@/lib/campaign-flow.functions";
