@@ -210,17 +210,10 @@ function ContractDetail() {
               </Select>
             </div>
             <div className="md:col-span-2">
-              <Label className="text-xs">Betaallink-URL (bijv. Mollie)</Label>
-              <Input
-                type="url"
-                placeholder="https://www.mollie.com/paymentscreen/..."
-                defaultValue={contract.payment_link_url ?? ""}
-                disabled={!contract.payment_link_enabled}
-                onBlur={(e) => {
-                  const v = e.target.value.trim();
-                  const current = contract.payment_link_url ?? "";
-                  if (v !== current) void patch({ payment_link_url: v || null });
-                }}
+              <PaymentLinkUrlField
+                enabled={!!contract.payment_link_enabled}
+                value={contract.payment_link_url ?? ""}
+                onSave={(v) => patch({ payment_link_url: v })}
               />
               <p className="text-[11px] text-muted-foreground mt-1">
                 Als deze aan staat, wordt de link automatisch toegevoegd aan elke nieuwe maandelijkse/periodieke factuur voor deze klant.
