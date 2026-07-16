@@ -100,6 +100,7 @@ function ProductsPage() {
       discount_percent: String(p.discount_percent ?? 0),
       discount_type: (p.discount_type ?? "none") as "none" | "one_time" | "recurring",
       contract_months: p.contract_months != null ? String(p.contract_months) : "",
+      use_contract: p.contract_months != null,
     });
     setOpen(true);
   }
