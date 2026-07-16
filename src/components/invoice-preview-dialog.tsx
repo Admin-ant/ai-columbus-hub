@@ -159,10 +159,9 @@ export function InvoicePreviewDialog({
     window.print();
   }
 
-  async function handleDownloadPdf() {
+  const exportPdfBlob = useCallback(async (): Promise<Blob> => {
     const node = printRef.current;
-    if (!node) return;
-    setDownloadingPdf(true);
+    if (!node) throw new Error("Preview niet klaar");
 
     // Page + margin + quality driven by user-selected export profile.
     const PAGE_W_MM = currentPage.w;
@@ -210,41 +209,19 @@ export function InvoicePreviewDialog({
     document.body.appendChild(wrapper);
 
     try {
-      // Collect safe page-break boundaries from the DOM BEFORE rasterizing.
-      // Any element that shouldn't be split (table rows, cards, sections,
-      // headings, paragraphs) contributes its bottom-edge as a candidate
-      // break point. We snap each page to the nearest boundary <= the
-      // theoretical cut, so lines and rows stay whole.
       const wrapperTop = wrapper.getBoundingClientRect().top;
       const breakSelector = [
-        "tr",
-        "thead",
-        "tfoot",
-        "li",
-        "p",
-        "h1", "h2", "h3", "h4", "h5", "h6",
-        "figure",
-        "img",
-        "section",
-        "article",
-        "[data-pdf-block]",
+        "tr","thead","tfoot","li","p",
+        "h1","h2","h3","h4","h5","h6",
+        "figure","img","section","article","[data-pdf-block]",
       ].join(",");
-      const boundaryEls = Array.from(
-        wrapper.querySelectorAll<HTMLElement>(breakSelector),
-      );
-      // Bottom offsets (in wrapper CSS px) that are safe to break AFTER.
+      const boundaryEls = Array.from(wrapper.querySelectorAll<HTMLElement>(breakSelector));
       const cssBoundaries = boundaryEls
         .map((el) => el.getBoundingClientRect().bottom - wrapperTop)
         .filter((y) => y > 0)
         .sort((a, b) => a - b);
 
-      // Ranges that must NEVER be broken across pages: table rows, and any
-      // element the template marks with [data-keep-together]. A boundary
-      // falling STRICTLY inside such a range (top < b < bottom) is discarded
-      // — so we never split a row at an inner paragraph or line.
-      const keepEls = Array.from(
-        wrapper.querySelectorAll<HTMLElement>("tr,[data-keep-together]"),
-      );
+      const keepEls = Array.from(wrapper.querySelectorAll<HTMLElement>("tr,[data-keep-together]"));
       const cssKeepRanges = keepEls
         .map((el) => {
           const r = el.getBoundingClientRect();
@@ -253,9 +230,6 @@ export function InvoicePreviewDialog({
         .filter((r) => r.bottom > 0 && r.bottom > r.top)
         .sort((a, b) => a.top - b.top);
 
-      // Also try to keep <thead> attached to its first body row: extend the
-      // first row's "keep" range up to the thead top when they belong to the
-      // same table. Prevents an orphan header at the bottom of a page.
       const tables = Array.from(wrapper.querySelectorAll<HTMLElement>("table"));
       for (const table of tables) {
         const thead = table.querySelector<HTMLElement>("thead");
@@ -269,13 +243,8 @@ export function InvoicePreviewDialog({
 
       const wrapperHeightCss = wrapper.getBoundingClientRect().height;
 
-      // Collect headings for the auto-generated table of contents.
-      // Any element with [data-toc] (optionally [data-toc-label="..."])
-      // or a native h1–h6 becomes a TOC entry.
       const headingEls = Array.from(
-        wrapper.querySelectorAll<HTMLElement>(
-          "h1,h2,h3,h4,h5,h6,[data-toc]",
-        ),
+        wrapper.querySelectorAll<HTMLElement>("h1,h2,h3,h4,h5,h6,[data-toc]"),
       );
       const headings = headingEls
         .map((el) => {
@@ -310,11 +279,8 @@ export function InvoicePreviewDialog({
         compress: true,
       });
 
-      // 1 mm in canvas pixels — content width fills exactly CONTENT_W_MM.
       const pxPerMm = canvas.width / CONTENT_W_MM;
       const pageContentHeightPx = Math.floor(CONTENT_H_MM * pxPerMm);
-
-      // Convert CSS-px boundaries to canvas-px so they align with the raster.
       const cssToCanvas = canvas.height / wrapperHeightCss;
       const boundariesPx = cssBoundaries.map((y) => Math.floor(y * cssToCanvas));
       const keepRangesPx = cssKeepRanges
@@ -324,10 +290,7 @@ export function InvoicePreviewDialog({
         }))
         .sort((a, b) => a.top - b.top);
 
-      // A boundary is "safe" only when it does NOT fall inside a keep-together
-      // range. Range bottoms remain safe (that's the natural end of a row).
       const isInsideKeepRange = (y: number): boolean => {
-        // Binary search would be nicer, but n is small in practice.
         for (const r of keepRangesPx) {
           if (r.top >= y) break;
           if (y > r.top && y < r.bottom) return true;
@@ -335,14 +298,8 @@ export function InvoicePreviewDialog({
         return false;
       };
 
-      const MIN_PAGE_FILL = pageContentHeightPx * 0.35; // avoid nearly-empty pages
-
+      const MIN_PAGE_FILL = pageContentHeightPx * 0.35;
       const findBreak = (start: number, maxEnd: number): number => {
-        // Largest boundary that fits: start < b <= maxEnd, produces a
-        // reasonably filled page (>= MIN_PAGE_FILL), AND is not inside a
-        // keep-together range (table row, [data-keep-together] block, or
-        // thead+first-row group). Otherwise fall back to a hard cut just
-        // BEFORE any keep-range that straddles maxEnd, so we don't split it.
         let best = -1;
         for (const b of boundariesPx) {
           if (b <= start) continue;
@@ -352,15 +309,9 @@ export function InvoicePreviewDialog({
           best = b;
         }
         if (best !== -1) return best;
-
-        // No safe boundary found. If maxEnd falls inside a keep range, back
-        // off to that range's top (so the whole range moves to next page).
         for (const r of keepRangesPx) {
           if (r.top >= maxEnd) break;
           if (maxEnd > r.top && maxEnd < r.bottom) {
-            // Only back off when the range hasn't already started on this page
-            // (otherwise the row itself is taller than a page — unavoidable
-            // hard cut).
             if (r.top > start) return r.top;
           }
         }
@@ -369,7 +320,7 @@ export function InvoicePreviewDialog({
 
       let renderedPx = 0;
       let pageIndex = 0;
-      const pageStartsPx: number[] = []; // canvas-px start of each content page
+      const pageStartsPx: number[] = [];
       while (renderedPx < canvas.height) {
         const remaining = canvas.height - renderedPx;
         let sliceHeightPx: number;
@@ -390,27 +341,17 @@ export function InvoicePreviewDialog({
         ctx.imageSmoothingQuality = "high";
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-        ctx.drawImage(
-          canvas,
-          0, renderedPx, canvas.width, sliceHeightPx,
-          0, 0, canvas.width, sliceHeightPx,
-        );
-        // PNG keeps text edges sharp (JPEG blurs small type).
+        ctx.drawImage(canvas, 0, renderedPx, canvas.width, sliceHeightPx, 0, 0, canvas.width, sliceHeightPx);
         const sliceImg = pageCanvas.toDataURL("image/png");
         const sliceHeightMm = sliceHeightPx / pxPerMm;
         if (pageIndex > 0) pdf.addPage();
         pdf.addImage(sliceImg, "PNG", MARGIN_MM, CONTENT_TOP_MM, CONTENT_W_MM, sliceHeightMm, undefined, "FAST");
-
         pageStartsPx.push(renderedPx);
         renderedPx += sliceHeightPx;
         pageIndex += 1;
       }
 
-      // Build clickable Table of Contents (only when we have ≥ 2 headings
-      // AND the document spans more than one page — a single-page invoice
-      // doesn't need a TOC).
       if (headings.length >= 2 && pageIndex > 1) {
-        // Map each heading to its content page index (0-based).
         const entries = headings.map((h) => {
           const topCanvas = h.topCss * cssToCanvas;
           let idx = 0;
@@ -421,10 +362,8 @@ export function InvoicePreviewDialog({
           return { ...h, contentPageIndex: idx };
         });
 
-        // Insert TOC as the new first page; all content pages shift by +1.
         pdf.insertPage(1);
         pdf.setPage(1);
-
         pdf.setFont("helvetica", "bold");
         pdf.setTextColor(20, 20, 20);
         pdf.setFontSize(20);
@@ -432,37 +371,30 @@ export function InvoicePreviewDialog({
         pdf.setDrawColor(200, 200, 200);
         pdf.setLineWidth(0.3);
         pdf.line(MARGIN_MM, CONTENT_TOP_MM + 11, PAGE_W_MM - MARGIN_MM, CONTENT_TOP_MM + 11);
-
         pdf.setFont("helvetica", "normal");
         const rightX = PAGE_W_MM - MARGIN_MM;
         const leftX = MARGIN_MM;
         let y = CONTENT_TOP_MM + 22;
         const lineGap = 7;
         const bottomLimit = PAGE_H_MM - MARGIN_MM - FOOTER_H_MM;
-
-        // Try to set outline (jsPDF outline API — best-effort).
-        // Older jsPDF versions expose pdf.outline.add(parent, title, { pageNumber }).
         const outline = (pdf as unknown as {
           outline?: { add: (parent: unknown, title: string, opts: { pageNumber: number }) => unknown };
         }).outline;
 
         for (const e of entries) {
-          if (y > bottomLimit) break; // TOC longer than one page: truncate silently
-          const targetPage = e.contentPageIndex + 2; // +1 for TOC insert, +1 to 1-index
+          if (y > bottomLimit) break;
+          const targetPage = e.contentPageIndex + 2;
           const indent = (e.level - 1) * 4;
           const fontSize = e.level === 1 ? 12 : e.level === 2 ? 11 : 10;
           pdf.setFontSize(fontSize);
           pdf.setTextColor(e.level === 1 ? 20 : 60, e.level === 1 ? 20 : 60, e.level === 1 ? 20 : 60);
-
           const pageStr = String(targetPage);
           const pageStrW = pdf.getTextWidth(pageStr);
           const titleMaxW = rightX - (leftX + indent) - pageStrW - 6;
           const titleLines = pdf.splitTextToSize(e.text, titleMaxW) as string[];
           const title = titleLines[0] + (titleLines.length > 1 ? "…" : "");
           const titleW = pdf.getTextWidth(title);
-
           pdf.text(title, leftX + indent, y);
-          // Dotted leader between title and page number.
           const dotsStart = leftX + indent + titleW + 2;
           const dotsEnd = rightX - pageStrW - 2;
           if (dotsEnd > dotsStart) {
@@ -471,29 +403,23 @@ export function InvoicePreviewDialog({
             const dotW = pdf.getTextWidth(dot);
             const dotCount = Math.max(0, Math.floor((dotsEnd - dotsStart) / (dotW * 1.6)));
             if (dotCount > 0) {
-              pdf.text(" ".repeat(0) + Array(dotCount).fill(dot).join(" "), dotsStart, y);
+              pdf.text(Array(dotCount).fill(dot).join(" "), dotsStart, y);
             }
             pdf.setTextColor(e.level === 1 ? 20 : 60, e.level === 1 ? 20 : 60, e.level === 1 ? 20 : 60);
           }
           pdf.text(pageStr, rightX - pageStrW, y);
-
-          // Clickable link across the entire row.
           pdf.link(leftX, y - fontSize * 0.35, rightX - leftX, fontSize * 0.5 + 2, {
             pageNumber: targetPage,
           });
-
-          // PDF bookmark / outline entry.
           try {
             outline?.add(null, e.text, { pageNumber: targetPage });
           } catch {
-            // outline API unavailable — links still work.
+            /* outline API unavailable */
           }
-
           y += lineGap;
         }
       }
 
-      // Paint header + footer on every page (including the TOC page).
       const totalPages = pdf.getNumberOfPages();
       const headerLeft = data.organization?.name || "";
       const headerRight = `Factuur ${data.invoice_number || ""}`.trim();
@@ -502,8 +428,6 @@ export function InvoicePreviewDialog({
         : "";
       for (let p = 1; p <= totalPages; p += 1) {
         pdf.setPage(p);
-
-        // Header
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(9);
         pdf.setTextColor(110, 110, 110);
@@ -515,8 +439,6 @@ export function InvoicePreviewDialog({
         pdf.setDrawColor(220, 220, 220);
         pdf.setLineWidth(0.2);
         pdf.line(MARGIN_MM, MARGIN_MM + 6.5, PAGE_W_MM - MARGIN_MM, MARGIN_MM + 6.5);
-
-        // Footer
         const footerY = PAGE_H_MM - MARGIN_MM - 3;
         pdf.line(MARGIN_MM, footerY - 3, PAGE_W_MM - MARGIN_MM, footerY - 3);
         pdf.setTextColor(120, 120, 120);
@@ -531,15 +453,46 @@ export function InvoicePreviewDialog({
         }
       }
 
-      const filename = `factuur-${data.invoice_number || "download"}.pdf`;
-      pdf.save(filename);
+      return pdf.output("blob") as Blob;
+    } finally {
+      if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
+    }
+  }, [currentPage, currentMarginMm, quality, pageSize, data]);
+
+  async function handleDownloadPdf() {
+    setDownloadingPdf(true);
+    try {
+      const blob = await exportPdfBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `factuur-${data.invoice_number || "download"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "PDF genereren mislukt");
     } finally {
-      if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
       setDownloadingPdf(false);
     }
   }
+
+  // Dev-only test hook: exposes the preview PDF renderer to Playwright so the
+  // parity spec can call it without clicking the download button (which
+  // triggers a real browser download).
+  useEffect(() => {
+    if (!open) return;
+    if (!import.meta.env.DEV) return;
+    const g = window as unknown as {
+      __invoicePdfTest?: { renderPreview?: () => Promise<Blob> };
+    };
+    g.__invoicePdfTest = { ...(g.__invoicePdfTest ?? {}), renderPreview: exportPdfBlob };
+    return () => {
+      if (g.__invoicePdfTest) delete g.__invoicePdfTest.renderPreview;
+    };
+  }, [open, exportPdfBlob]);
+
 
 
 
