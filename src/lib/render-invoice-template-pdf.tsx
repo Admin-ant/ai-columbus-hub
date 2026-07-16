@@ -39,7 +39,13 @@ export async function renderInvoiceTemplatePdfBlob(
   wrapper.style.top = "0";
   wrapper.style.width = `${RENDER_W_PX}px`;
   wrapper.style.background = "#ffffff";
+  wrapper.style.color = "#0a0a0a";
   wrapper.style.boxSizing = "border-box";
+  // Force light theme tokens so oklch dark-mode variants never leak into
+  // the raster when the app is being viewed in dark mode.
+  wrapper.style.colorScheme = "light";
+  wrapper.classList.remove("dark");
+  wrapper.setAttribute("data-theme", "light");
   wrapper.style.setProperty("-webkit-font-smoothing", "antialiased");
   wrapper.style.setProperty("text-rendering", "geometricPrecision");
   document.body.appendChild(wrapper);
