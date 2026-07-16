@@ -306,8 +306,7 @@ function ProductsPage() {
                     <Label htmlFor="p-months">Contractduur (mnd)</Label>
                     <Input id="p-months" type="number" min={1} placeholder="optioneel"
                       value={form.contract_months}
-                      onChange={(e) => setForm({ ...form, contract_months: e.target.value })}
-                      disabled={form.discount_type !== "recurring"} />
+                      onChange={(e) => setForm({ ...form, contract_months: e.target.value })} />
                   </div>
                 </div>
               </div>
