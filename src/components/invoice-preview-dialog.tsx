@@ -74,8 +74,26 @@ export function InvoicePreviewDialog({
   const sheetRef = useRef<HTMLDivElement>(null);
   const [pageBreaks, setPageBreaks] = useState<number[]>([]);
   const [sheetHeight, setSheetHeight] = useState(0);
-  // A4 aspect ratio applied to the on-screen sheet: content area is (210-24) x (297-24) mm.
-  const PAGE_ASPECT = (297 - 24) / (210 - 24);
+  // Export settings
+  type PageSize = "a4" | "letter";
+  type MarginProfile = "compact" | "normal" | "wide";
+  type QualityProfile = "draft" | "standard" | "high";
+  const [pageSize, setPageSize] = useState<PageSize>("a4");
+  const [marginProfile, setMarginProfile] = useState<MarginProfile>("normal");
+  const [quality, setQuality] = useState<QualityProfile>("standard");
+
+  const PAGE_DIMS: Record<PageSize, { w: number; h: number; label: string }> = {
+    a4: { w: 210, h: 297, label: "A4 (210 × 297 mm)" },
+    letter: { w: 216, h: 279, label: "Letter (216 × 279 mm)" },
+  };
+  const MARGIN_MM_BY: Record<MarginProfile, number> = { compact: 8, normal: 12, wide: 20 };
+  const DPI_BY: Record<QualityProfile, number> = { draft: 120, standard: 200, high: 260 };
+
+  const currentPage = PAGE_DIMS[pageSize];
+  const currentMarginMm = MARGIN_MM_BY[marginProfile];
+  // Preview sheet aspect ratio uses the same page size + margins.
+  const PAGE_ASPECT =
+    (currentPage.h - currentMarginMm * 2) / (currentPage.w - currentMarginMm * 2);
 
   const recomputeBreaks = useCallback(() => {
     const node = sheetRef.current;
@@ -146,23 +164,21 @@ export function InvoicePreviewDialog({
     if (!node) return;
     setDownloadingPdf(true);
 
-    // Fixed A4 layout in mm — the template is scaled to fit the printable area
-    // (page minus margins) so the output is always identical, regardless of the
-    // on-screen preview width.
-    const A4_W_MM = 210;
-    const A4_H_MM = 297;
-    const MARGIN_MM = 12;
-    const CONTENT_W_MM = A4_W_MM - MARGIN_MM * 2;
-    const CONTENT_H_MM = A4_H_MM - MARGIN_MM * 2;
+    // Page + margin + quality driven by user-selected export profile.
+    const PAGE_W_MM = currentPage.w;
+    const PAGE_H_MM = currentPage.h;
+    const MARGIN_MM = currentMarginMm;
+    const CONTENT_W_MM = PAGE_W_MM - MARGIN_MM * 2;
+    const CONTENT_H_MM = PAGE_H_MM - MARGIN_MM * 2;
 
     // Render the template at a fixed pixel width so the aspect ratio is
-    // deterministic. We render at ~200 DPI (roughly 2× the standard 96 DPI)
-    // so text and images stay crisp when placed on the A4 page.
-    const TARGET_DPI = 200;
+    // deterministic. DPI is driven by the quality profile.
+    const TARGET_DPI = DPI_BY[quality];
     const RENDER_W_PX = Math.round((CONTENT_W_MM / 25.4) * TARGET_DPI);
-    // Additional canvas oversampling on top of that, clamped by the device
-    // pixel ratio so we don't blow up memory on low-end devices.
-    const CANVAS_SCALE = Math.min(3, Math.max(2, window.devicePixelRatio || 2));
+    // Additional canvas oversampling, capped lower for draft to save memory.
+    const maxScale = quality === "draft" ? 2 : 3;
+    const minScale = quality === "high" ? 2 : 1.5;
+    const CANVAS_SCALE = Math.min(maxScale, Math.max(minScale, window.devicePixelRatio || 2));
 
     const wrapper = document.createElement("div");
     wrapper.style.position = "fixed";
@@ -251,7 +267,7 @@ export function InvoicePreviewDialog({
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
-        format: "a4",
+        format: pageSize === "letter" ? "letter" : "a4",
         compress: true,
       });
 
@@ -341,14 +357,14 @@ export function InvoicePreviewDialog({
         pdf.text("Inhoudsopgave", MARGIN_MM, MARGIN_MM + 8);
         pdf.setDrawColor(200, 200, 200);
         pdf.setLineWidth(0.3);
-        pdf.line(MARGIN_MM, MARGIN_MM + 11, A4_W_MM - MARGIN_MM, MARGIN_MM + 11);
+        pdf.line(MARGIN_MM, MARGIN_MM + 11, PAGE_W_MM - MARGIN_MM, MARGIN_MM + 11);
 
         pdf.setFont("helvetica", "normal");
-        const rightX = A4_W_MM - MARGIN_MM;
+        const rightX = PAGE_W_MM - MARGIN_MM;
         const leftX = MARGIN_MM;
         let y = MARGIN_MM + 22;
         const lineGap = 7;
-        const bottomLimit = A4_H_MM - MARGIN_MM;
+        const bottomLimit = PAGE_H_MM - MARGIN_MM;
 
         // Try to set outline (jsPDF outline API — best-effort).
         // Older jsPDF versions expose pdf.outline.add(parent, title, { pageNumber }).
@@ -511,6 +527,45 @@ export function InvoicePreviewDialog({
               </div>
 
             </div>
+
+            <div className="flex flex-wrap items-end gap-3 rounded-md border bg-muted/30 p-3">
+              <div className="min-w-[160px] flex-1">
+                <Label className="text-xs">Paginaformaat</Label>
+                <Select value={pageSize} onValueChange={(v) => setPageSize(v as PageSize)}>
+                  <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="a4">A4 (210 × 297 mm)</SelectItem>
+                    <SelectItem value="letter">Letter (216 × 279 mm)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="min-w-[160px] flex-1">
+                <Label className="text-xs">Marges</Label>
+                <Select value={marginProfile} onValueChange={(v) => setMarginProfile(v as MarginProfile)}>
+                  <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="compact">Compact (8 mm)</SelectItem>
+                    <SelectItem value="normal">Normaal (12 mm)</SelectItem>
+                    <SelectItem value="wide">Ruim (20 mm)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="min-w-[160px] flex-1">
+                <Label className="text-xs">Kwaliteit</Label>
+                <Select value={quality} onValueChange={(v) => setQuality(v as QualityProfile)}>
+                  <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Concept (120 dpi, klein bestand)</SelectItem>
+                    <SelectItem value="standard">Standaard (200 dpi)</SelectItem>
+                    <SelectItem value="high">Hoog (260 dpi, scherpst)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="w-full text-[11px] text-muted-foreground">
+                {currentPage.label} · marge {currentMarginMm} mm · {DPI_BY[quality]} dpi
+              </p>
+            </div>
+
 
             {canPay && (
               <div className="flex flex-wrap items-end gap-3 rounded-md border bg-muted/30 p-3">
