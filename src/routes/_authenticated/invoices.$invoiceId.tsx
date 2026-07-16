@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/select";
 
 import { supabase } from "@/integrations/supabase/client";
+import { renderInvoiceTemplatePdfBlob } from "@/lib/render-invoice-template-pdf";
 import type { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
@@ -342,7 +343,8 @@ function InvoiceDetailPage() {
   // so the compose dialog can trigger it on submit (async, off-screen render).
   const buildTemplatePdfBlob = useCallback(async (): Promise<Blob> => {
     if (!invoice) throw new Error("Factuur niet geladen");
-    const { renderInvoiceTemplatePdfBlob } = await import("@/lib/render-invoice-template-pdf");
+    // Statically imported above to avoid stale-chunk dynamic-import failures
+    // ("Failed to fetch dynamically imported module") after a redeploy.
     const templateProps: InvoiceTemplateProps = {
       organization: {
         name: org?.name ?? null,
