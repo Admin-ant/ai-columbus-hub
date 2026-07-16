@@ -228,6 +228,36 @@ export function InvoicePreviewDialog({
         .map((el) => el.getBoundingClientRect().bottom - wrapperTop)
         .filter((y) => y > 0)
         .sort((a, b) => a - b);
+
+      // Ranges that must NEVER be broken across pages: table rows, and any
+      // element the template marks with [data-keep-together]. A boundary
+      // falling STRICTLY inside such a range (top < b < bottom) is discarded
+      // — so we never split a row at an inner paragraph or line.
+      const keepEls = Array.from(
+        wrapper.querySelectorAll<HTMLElement>("tr,[data-keep-together]"),
+      );
+      const cssKeepRanges = keepEls
+        .map((el) => {
+          const r = el.getBoundingClientRect();
+          return { top: r.top - wrapperTop, bottom: r.bottom - wrapperTop };
+        })
+        .filter((r) => r.bottom > 0 && r.bottom > r.top)
+        .sort((a, b) => a.top - b.top);
+
+      // Also try to keep <thead> attached to its first body row: extend the
+      // first row's "keep" range up to the thead top when they belong to the
+      // same table. Prevents an orphan header at the bottom of a page.
+      const tables = Array.from(wrapper.querySelectorAll<HTMLElement>("table"));
+      for (const table of tables) {
+        const thead = table.querySelector<HTMLElement>("thead");
+        const firstBodyRow = table.querySelector<HTMLElement>("tbody > tr");
+        if (thead && firstBodyRow) {
+          const theadTop = thead.getBoundingClientRect().top - wrapperTop;
+          const rowBottom = firstBodyRow.getBoundingClientRect().bottom - wrapperTop;
+          cssKeepRanges.push({ top: theadTop, bottom: rowBottom });
+        }
+      }
+
       const wrapperHeightCss = wrapper.getBoundingClientRect().height;
 
       // Collect headings for the auto-generated table of contents.
