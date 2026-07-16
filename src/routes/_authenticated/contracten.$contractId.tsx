@@ -194,6 +194,39 @@ function ContractDetail() {
               Laatst gefactureerd: {contract.last_invoiced_at ? new Date(contract.last_invoiced_at).toLocaleString("nl-NL") : "nog niet"}
             </div>
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-3 border-t mt-3">
+            <div>
+              <Label className="text-xs">Betaallink op factuur</Label>
+              <Select
+                value={String(!!contract.payment_link_enabled)}
+                onValueChange={(v) => patch({ payment_link_enabled: v === "true" })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="false">Uit</SelectItem>
+                  <SelectItem value="true">Aan</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="md:col-span-2">
+              <Label className="text-xs">Betaallink-URL (bijv. Mollie)</Label>
+              <Input
+                type="url"
+                placeholder="https://www.mollie.com/paymentscreen/..."
+                defaultValue={contract.payment_link_url ?? ""}
+                disabled={!contract.payment_link_enabled}
+                onBlur={(e) => {
+                  const v = e.target.value.trim();
+                  const current = contract.payment_link_url ?? "";
+                  if (v !== current) void patch({ payment_link_url: v || null });
+                }}
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Als deze aan staat, wordt de link automatisch toegevoegd aan elke nieuwe maandelijkse/periodieke factuur voor deze klant.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="rounded-xl border bg-card p-4">
