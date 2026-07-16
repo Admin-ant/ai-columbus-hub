@@ -382,6 +382,44 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
       .then(({ data }) => setClients((data ?? []) as ClientRow[]));
   }, [open, orgId]);
 
+  // Load products + subscribe to realtime changes so new/edited products
+  // instantly appear in the description picker.
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    const loadProducts = async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("id,name,sku,unit_price_cents,vat_rate")
+        .eq("organization_id", orgId)
+        .eq("active", true)
+        .order("name");
+      if (!active) return;
+      setProducts(
+        ((data ?? []) as Array<{
+          id: string;
+          name: string;
+          sku: string | null;
+          unit_price_cents: number;
+          vat_rate: number | string;
+        }>).map((p) => ({ ...p, vat_rate: Number(p.vat_rate) })),
+      );
+    };
+    void loadProducts();
+    const channel = supabase
+      .channel(`products-${orgId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "products", filter: `organization_id=eq.${orgId}` },
+        () => { void loadProducts(); },
+      )
+      .subscribe();
+    return () => {
+      active = false;
+      void supabase.removeChannel(channel);
+    };
+  }, [open, orgId]);
+
   const subtotalCents = lines.reduce((s, l) => s + Math.round(l.quantity * l.unit_price_cents), 0);
   const vatCents = lines.reduce(
     (s, l) => s + Math.round(l.quantity * l.unit_price_cents * (l.vat_rate / 100)),
