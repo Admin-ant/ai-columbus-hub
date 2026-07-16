@@ -422,17 +422,17 @@ export function InvoicePreviewDialog({
         pdf.setFont("helvetica", "bold");
         pdf.setTextColor(20, 20, 20);
         pdf.setFontSize(20);
-        pdf.text("Inhoudsopgave", MARGIN_MM, MARGIN_MM + 8);
+        pdf.text("Inhoudsopgave", MARGIN_MM, CONTENT_TOP_MM + 8);
         pdf.setDrawColor(200, 200, 200);
         pdf.setLineWidth(0.3);
-        pdf.line(MARGIN_MM, MARGIN_MM + 11, PAGE_W_MM - MARGIN_MM, MARGIN_MM + 11);
+        pdf.line(MARGIN_MM, CONTENT_TOP_MM + 11, PAGE_W_MM - MARGIN_MM, CONTENT_TOP_MM + 11);
 
         pdf.setFont("helvetica", "normal");
         const rightX = PAGE_W_MM - MARGIN_MM;
         const leftX = MARGIN_MM;
-        let y = MARGIN_MM + 22;
+        let y = CONTENT_TOP_MM + 22;
         const lineGap = 7;
-        const bottomLimit = PAGE_H_MM - MARGIN_MM;
+        const bottomLimit = PAGE_H_MM - MARGIN_MM - FOOTER_H_MM;
 
         // Try to set outline (jsPDF outline API — best-effort).
         // Older jsPDF versions expose pdf.outline.add(parent, title, { pageNumber }).
