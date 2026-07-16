@@ -62,6 +62,7 @@ export function InvoicePreviewDialog({
   const printRef = useRef<HTMLDivElement>(null);
   const [creatingLink, setCreatingLink] = useState(false);
   const [revoking, setRevoking] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const createFn = useServerFn(createMollieInvoicePayment);
   const revokeFn = useServerFn(revokeMollieInvoicePayment);
   const [paymentLink, setPaymentLink] = useState<string | null>(data.payment_link_url ?? null);
