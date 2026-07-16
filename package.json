@@ -12,6 +12,7 @@
     "check:colors": "node scripts/check-hardcoded-colors.mjs",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
+    "test:visual:pdf": "playwright test invoice-pdf-parity",
     "ci": "bun run check:colors && bun run lint",
     "format": "prettier --write ."
   },
