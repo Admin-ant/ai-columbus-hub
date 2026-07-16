@@ -205,9 +205,19 @@ export function InvoicePreviewDialog({
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-4">
               <DialogTitle>Factuurvoorbeeld — {data.invoice_number}</DialogTitle>
-              <Button size="sm" variant="outline" onClick={handlePrint}>
-                <Printer className="mr-2 h-4 w-4" /> Print / PDF
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button size="sm" onClick={handleDownloadPdf} disabled={downloadingPdf}>
+                  {downloadingPdf ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="mr-2 h-4 w-4" />
+                  )}
+                  Download PDF
+                </Button>
+                <Button size="sm" variant="outline" onClick={handlePrint}>
+                  <Printer className="mr-2 h-4 w-4" /> Print
+                </Button>
+              </div>
             </div>
 
             {canPay && (
