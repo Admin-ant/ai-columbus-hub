@@ -127,6 +127,35 @@ export function InvoicePreviewDialog({
     document.body.appendChild(wrapper);
 
     try {
+      // Collect safe page-break boundaries from the DOM BEFORE rasterizing.
+      // Any element that shouldn't be split (table rows, cards, sections,
+      // headings, paragraphs) contributes its bottom-edge as a candidate
+      // break point. We snap each page to the nearest boundary <= the
+      // theoretical cut, so lines and rows stay whole.
+      const wrapperTop = wrapper.getBoundingClientRect().top;
+      const breakSelector = [
+        "tr",
+        "thead",
+        "tfoot",
+        "li",
+        "p",
+        "h1", "h2", "h3", "h4", "h5", "h6",
+        "figure",
+        "img",
+        "section",
+        "article",
+        "[data-pdf-block]",
+      ].join(",");
+      const boundaryEls = Array.from(
+        wrapper.querySelectorAll<HTMLElement>(breakSelector),
+      );
+      // Bottom offsets (in wrapper CSS px) that are safe to break AFTER.
+      const cssBoundaries = boundaryEls
+        .map((el) => el.getBoundingClientRect().bottom - wrapperTop)
+        .filter((y) => y > 0)
+        .sort((a, b) => a - b);
+      const wrapperHeightCss = wrapper.getBoundingClientRect().height;
+
       const canvas = await html2canvas(wrapper, {
         scale: CANVAS_SCALE,
         useCORS: true,
@@ -147,10 +176,37 @@ export function InvoicePreviewDialog({
       const pxPerMm = canvas.width / CONTENT_W_MM;
       const pageContentHeightPx = Math.floor(CONTENT_H_MM * pxPerMm);
 
+      // Convert CSS-px boundaries to canvas-px so they align with the raster.
+      const cssToCanvas = canvas.height / wrapperHeightCss;
+      const boundariesPx = cssBoundaries.map((y) => Math.floor(y * cssToCanvas));
+
+      const MIN_PAGE_FILL = pageContentHeightPx * 0.35; // avoid nearly-empty pages
+
+      const findBreak = (start: number, maxEnd: number): number => {
+        // Largest boundary that fits: start < b <= maxEnd, and produces a
+        // reasonably filled page (>= MIN_PAGE_FILL). Otherwise hard-cut.
+        let best = -1;
+        for (const b of boundariesPx) {
+          if (b <= start) continue;
+          if (b > maxEnd) break;
+          if (b - start >= MIN_PAGE_FILL) best = b;
+        }
+        return best === -1 ? maxEnd : best;
+      };
+
       let renderedPx = 0;
       let pageIndex = 0;
       while (renderedPx < canvas.height) {
-        const sliceHeightPx = Math.min(pageContentHeightPx, canvas.height - renderedPx);
+        const remaining = canvas.height - renderedPx;
+        let sliceHeightPx: number;
+        if (remaining <= pageContentHeightPx) {
+          sliceHeightPx = remaining;
+        } else {
+          const maxEnd = renderedPx + pageContentHeightPx;
+          const cut = findBreak(renderedPx, maxEnd);
+          sliceHeightPx = cut - renderedPx;
+        }
+
         const pageCanvas = document.createElement("canvas");
         pageCanvas.width = canvas.width;
         pageCanvas.height = sliceHeightPx;
@@ -174,6 +230,7 @@ export function InvoicePreviewDialog({
         renderedPx += sliceHeightPx;
         pageIndex += 1;
       }
+
 
       const filename = `factuur-${data.invoice_number || "download"}.pdf`;
       pdf.save(filename);
