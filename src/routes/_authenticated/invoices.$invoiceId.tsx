@@ -19,6 +19,7 @@ import {
   Pencil,
   Save,
   Send,
+  Sparkles,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -71,6 +72,7 @@ import {
   refreshMollieInvoiceStatus,
   type MolliePaymentMethod,
 } from "@/lib/mollie-invoice.functions";
+import { suggestInvoiceEmail } from "@/lib/invoice-email-ai.functions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatCents } from "@/lib/currency";
 import { QRCodeSVG } from "qrcode.react";
@@ -921,6 +923,8 @@ function InvoiceDetailPage() {
             initialSubject={emailMode === "reminder" ? reminderDefaults.subject : undefined}
             initialBody={emailMode === "reminder" ? reminderDefaults.body : undefined}
             attachments={attachments}
+            lines={lines}
+            organizationName={org?.name ?? null}
             buildPdf={buildPdf}
             currentPaymentLink={currentPaymentLink}
             preferredMethod={preferredMethod}
@@ -1313,6 +1317,8 @@ function EmailForm({
   initialSubject,
   initialBody,
   attachments,
+  lines: invoiceLines,
+  organizationName,
   buildPdf,
   emailFn,
   currentPaymentLink,
@@ -1325,6 +1331,8 @@ function EmailForm({
   initialSubject?: string;
   initialBody?: string;
   attachments: AttachmentRow[];
+  lines: InvoiceLine[];
+  organizationName: string | null;
   buildPdf: () => ReturnType<typeof buildInvoicePdf> | null;
   emailFn: ReturnType<typeof useServerFn<typeof emailInvoice>>;
   currentPaymentLink: string | null;
@@ -1333,6 +1341,11 @@ function EmailForm({
 }) {
   const { t } = useTranslation();
   const createMollieFn = useServerFn(createMollieInvoicePayment);
+  const suggestFn = useServerFn(suggestInvoiceEmail);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiHint, setAiHint] = useState("");
+  const [aiTone, setAiTone] = useState<"vriendelijk" | "zakelijk" | "kort">("vriendelijk");
+  const [aiLoading, setAiLoading] = useState(false);
   const canPay = invoice.status !== "paid" && invoice.status !== "cancelled" && (invoice.total_cents ?? 0) > 0;
   const [includePayLink, setIncludePayLink] = useState<boolean>(canPay);
   const [to, setTo] = useState(defaultTo);
@@ -1697,7 +1710,94 @@ function EmailForm({
         <Input value={subject} onChange={(e) => setSubject(e.target.value)} required />
       </div>
       <div className="space-y-1.5">
-        <Label>{t("invoices.message")}</Label>
+        <div className="flex items-center justify-between gap-2">
+          <Label>{t("invoices.message")}</Label>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-7 px-2 text-xs"
+            onClick={() => setAiOpen((v) => !v)}
+          >
+            <Sparkles className="mr-1 h-3 w-3" />
+            {aiOpen ? "AI verbergen" : "AI-hulp"}
+          </Button>
+        </div>
+        {aiOpen && (
+          <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+            <p className="text-xs text-muted-foreground">
+              AI stelt een begeleidende tekst voor op basis van deze factuur (klant, bedrag,
+              vervaldatum en regelomschrijvingen). Je kunt hieronder extra context meegeven —
+              bijvoorbeeld waar de factuur voor is of een periode.
+            </p>
+            <Textarea
+              rows={2}
+              value={aiHint}
+              onChange={(e) => setAiHint(e.target.value)}
+              placeholder="Extra context (optioneel), bv. 'Maandelijkse hosting mei 2026' of 'Eenmalige installatie van servers'"
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <Label className="text-xs">Toon</Label>
+              <Select value={aiTone} onValueChange={(v) => setAiTone(v as typeof aiTone)}>
+                <SelectTrigger className="h-8 w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="vriendelijk">Vriendelijk</SelectItem>
+                  <SelectItem value="zakelijk">Zakelijk</SelectItem>
+                  <SelectItem value="kort">Kort & bondig</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                size="sm"
+                onClick={async () => {
+                  setAiLoading(true);
+                  try {
+                    const r = await suggestFn({
+                      data: {
+                        client_name: invoice.client_name ?? null,
+                        invoice_number: invoice.invoice_number ?? null,
+                        total: formatCents(
+                          invoice.total_cents,
+                          "nl",
+                          invoice.currency ?? "EUR",
+                        ),
+                        due_date: invoice.due_date
+                          ? new Date(invoice.due_date).toLocaleDateString("nl")
+                          : null,
+                        issue_date: invoice.issue_date
+                          ? new Date(invoice.issue_date).toLocaleDateString("nl")
+                          : null,
+                        organization_name: organizationName,
+                        line_descriptions: invoiceLines
+                          .map((l) => l.description ?? "")
+                          .filter((d) => d.trim().length > 0),
+                        extra_context: aiHint.trim() || undefined,
+                        tone: aiTone,
+                      },
+                    });
+                    setSubject(r.subject);
+                    setBody(r.body);
+                    toast.success("AI-tekst ingevuld — pas naar wens aan");
+                  } catch (e) {
+                    toast.error(e instanceof Error ? e.message : "AI mislukt");
+                  } finally {
+                    setAiLoading(false);
+                  }
+                }}
+                disabled={aiLoading}
+              >
+                {aiLoading ? (
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-1 h-3 w-3" />
+                )}
+                Genereer tekst
+              </Button>
+            </div>
+          </div>
+        )}
         <Textarea rows={6} value={body} onChange={(e) => setBody(e.target.value)} required />
         <p className="text-xs text-muted-foreground">
           Variabelen in onderwerp en bericht:{" "}
