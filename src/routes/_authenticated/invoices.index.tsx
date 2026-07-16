@@ -440,6 +440,44 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
     if (lines.some((l) => !l.description.trim())) return toast.error("Vul alle regelomschrijvingen in");
     setSaving(true);
 
+    // Autosave: nieuwe omschrijvingen (die nog niet als product bestaan) toevoegen
+    // aan Producten & Prijzen zodat ze meteen herbruikbaar zijn.
+    try {
+      const existingNames = new Set(products.map((p) => p.name.trim().toLowerCase()));
+      const seen = new Set<string>();
+      const toCreate = lines
+        .map((l) => ({
+          name: l.description.trim(),
+          unit_price_cents: Math.round(l.unit_price_cents),
+          vat_rate: l.vat_rate,
+        }))
+        .filter((l) => {
+          const key = l.name.toLowerCase();
+          if (!l.name || existingNames.has(key) || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      if (toCreate.length) {
+        const rnd = () =>
+          `AUTO-${Date.now().toString(36).slice(-4)}${Math.random().toString(36).slice(2, 6)}`.toUpperCase();
+        const rows = toCreate.map((l) => ({
+          organization_id: orgId,
+          sku: rnd(),
+          name: l.name,
+          unit_price_cents: l.unit_price_cents,
+          setup_fee_cents: 0,
+          pricing_type: "one_time" as const,
+          vat_rate: l.vat_rate,
+          discount_percent: 0,
+          discount_type: "none" as const,
+          active: true,
+        }));
+        await supabase.from("products").insert(rows);
+      }
+    } catch {
+      // niet blokkerend
+    }
+
     const { nextInvoiceNumber } = await import("@/lib/bookkeeping.functions");
 
     let inv: { id: string } | null = null;
