@@ -214,11 +214,17 @@ export function ClientContactsManager({
                   )}
                 </div>
                 <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" title={r.is_primary ? "Primair verwijderen" : "Als primair"} onClick={() => togglePrimary(r)}>
-                    {r.is_primary ? <StarOff className="h-4 w-4" /> : <Star className="h-4 w-4" />}
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => startEdit(r)}><Pencil className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => setDeleteId(r.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  {allowed("update") && (
+                    <Button variant="ghost" size="icon" title={r.is_primary ? "Primair verwijderen" : "Als primair"} onClick={() => togglePrimary(r)}>
+                      {r.is_primary ? <StarOff className="h-4 w-4" /> : <Star className="h-4 w-4" />}
+                    </Button>
+                  )}
+                  {allowed("update") && (
+                    <Button variant="ghost" size="icon" onClick={() => startEdit(r)}><Pencil className="h-4 w-4" /></Button>
+                  )}
+                  {allowed("delete") && (
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteId(r.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  )}
                 </div>
               </div>
               <div className="mt-3 space-y-1 text-sm">
