@@ -231,10 +231,12 @@ function NewContractDialog({
   open,
   onOpenChange,
   onCreated,
+  initialClientId,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onCreated: () => void;
+  initialClientId?: string;
 }) {
   const { currentOrganizationId } = useWorkspace();
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
@@ -256,6 +258,17 @@ function NewContractDialog({
       .order("name")
       .then(({ data }) => setClients((data as { id: string; name: string }[]) ?? []));
   }, [open, currentOrganizationId]);
+
+  // Prefill client + suggested title when opened from a specific client card.
+  useEffect(() => {
+    if (!open) return;
+    if (initialClientId) {
+      setClientId(initialClientId);
+      const c = clients.find((x) => x.id === initialClientId);
+      if (c && !title.trim()) setTitle(`Abonnement ${c.name}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialClientId, clients]);
 
   const save = async () => {
     if (!currentOrganizationId || !clientId || !title.trim()) {
