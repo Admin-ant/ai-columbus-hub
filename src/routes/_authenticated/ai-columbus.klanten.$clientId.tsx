@@ -726,7 +726,7 @@ function ClientDetailPage() {
                 <CardDescription>Inkomende en verzonden e-mails gekoppeld aan deze klant (laatste 100).</CardDescription>
               </div>
               <Button size="sm" asChild>
-                <Link to="/mail"><Mail className="mr-2 h-4 w-4" /> Postvak openen</Link>
+                <Link to="/mail" search={{ clientId }}><Mail className="mr-2 h-4 w-4" /> Postvak openen</Link>
               </Button>
             </CardHeader>
             <CardContent className="p-0">
