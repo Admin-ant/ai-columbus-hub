@@ -30,6 +30,7 @@ function ContractDetail() {
 
   const [state, setState] = useState<Awaited<ReturnType<typeof fnGet>> | null>(null);
   const [busy, setBusy] = useState(false);
+  const [autosave, setAutosave] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const [newDesc, setNewDesc] = useState("");
   const [newQty, setNewQty] = useState("1");
@@ -51,6 +52,31 @@ function ContractDetail() {
   const runs = state?.runs as any[] | undefined;
   const client = state?.client as any;
 
+  // Persist in-progress "add line" input across reloads so it never gets lost.
+  const draftKey = `contract-line-draft:${contractId}`;
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d.desc) setNewDesc(d.desc);
+        if (d.qty) setNewQty(d.qty);
+        if (d.price) setNewPrice(d.price);
+        if (d.vat) setNewVat(d.vat);
+      }
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contractId]);
+  useEffect(() => {
+    try {
+      if (newDesc || newQty !== "1" || newPrice !== "0" || newVat !== "21") {
+        localStorage.setItem(draftKey, JSON.stringify({ desc: newDesc, qty: newQty, price: newPrice, vat: newVat }));
+      } else {
+        localStorage.removeItem(draftKey);
+      }
+    } catch { /* ignore */ }
+  }, [newDesc, newQty, newPrice, newVat, draftKey]);
+
   const patch = async (p: Record<string, unknown>) => {
     setBusy(true);
     try {
@@ -63,6 +89,20 @@ function ContractDetail() {
       setBusy(false);
     }
   };
+
+  // Silent autosave: no toast, no full reload — just push the patch and update status.
+  const autosavePatch = async (p: Record<string, unknown>) => {
+    setAutosave("saving");
+    try {
+      await fnUpdate({ data: { id: contractId, patch: p as never } });
+      setState((prev) => prev ? { ...prev, contract: { ...(prev as any).contract, ...p } } as any : prev);
+      setAutosave("saved");
+    } catch (e) {
+      setAutosave("error");
+      toast.error("Automatisch opslaan mislukt: " + (e as Error).message);
+    }
+  };
+
 
   const addLine = async () => {
     if (!newDesc.trim()) return;
