@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Loader2, Mail, Phone, Globe, Building2, MapPin, FileText, Briefcase, CreditCard, Users, Plus, Link2, Unlink, Pencil, Trash2, Search, History, ChevronDown, ChevronRight, Sparkles, CalendarDays, Send, Ban } from "lucide-react";
+import { ArrowLeft, Loader2, Mail, Phone, Globe, Building2, MapPin, FileText, Briefcase, CreditCard, Users, Plus, Link2, Unlink, Pencil, Trash2, Search, History, ChevronDown, ChevronRight, Sparkles, CalendarDays, Send, Ban, FileSignature, FileCheck2, Inbox } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +29,9 @@ type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
 type InvoiceRow = Database["public"]["Tables"]["invoices"]["Row"];
 type LogRow = Database["public"]["Tables"]["invoice_link_log"]["Row"];
 type AppointmentRow = Database["public"]["Tables"]["appointments"]["Row"];
+type ContractRow = Database["public"]["Tables"]["contracts"]["Row"];
+type QuoteRow = Database["public"]["Tables"]["quotes"]["Row"];
+type MailRow = Database["public"]["Tables"]["mail_messages"]["Row"];
 
 const EUR = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
 
@@ -42,6 +45,9 @@ function ClientDetailPage() {
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
   const [logs, setLogs] = useState<Record<string, LogRow[]>>({});
   const [appointments, setAppointments] = useState<AppointmentRow[]>([]);
+  const [contracts, setContracts] = useState<ContractRow[]>([]);
+  const [quotes, setQuotes] = useState<QuoteRow[]>([]);
+  const [mails, setMails] = useState<MailRow[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
