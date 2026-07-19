@@ -34,6 +34,7 @@ function ContractDetail() {
   const [newDesc, setNewDesc] = useState("");
   const [newQty, setNewQty] = useState("1");
   const [newPrice, setNewPrice] = useState("0");
+  const [newVat, setNewVat] = useState("21");
 
   const load = async () => {
     try {
