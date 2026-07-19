@@ -114,7 +114,7 @@ export function ClientQuickActions({
                 <a
                   href={`mailto:${companyEmail}`}
                   className="flex items-center justify-between"
-                  onClick={() => void logClientActivity({ clientId, kind: "email", title: `E-mail bedrijf: ${companyEmail}` })}
+                  onClick={() => void logClientActivity({ clientId, organizationId, kind: "email", title: `E-mail bedrijf: ${companyEmail}` })}
                 >
                   <span className="flex items-center">
                     <Building2 className="mr-2 h-4 w-4" /> {companyEmail}
@@ -133,7 +133,7 @@ export function ClientQuickActions({
                   <a
                     href={`mailto:${c.email!}`}
                     className="flex items-center gap-2"
-                    onClick={() => void logClientActivity({ clientId, kind: "email", title: `E-mail: ${label(c)} (${c.email})`, contactId: c.id })}
+                    onClick={() => void logClientActivity({ clientId, organizationId, kind: "email", title: `E-mail: ${label(c)} (${c.email})`, contactId: c.id })}
                   >
                     {c.is_primary && <Star className="h-3.5 w-3.5 fill-current text-brand" />}
                     <span className="truncate">{label(c)}</span>
@@ -165,7 +165,7 @@ export function ClientQuickActions({
                 <a
                   href={`tel:${companyPhone}`}
                   className="flex items-center justify-between"
-                  onClick={() => void logClientActivity({ clientId, kind: "call", title: `Belpoging bedrijf: ${companyPhone}` })}
+                  onClick={() => void logClientActivity({ clientId, organizationId, kind: "call", title: `Belpoging bedrijf: ${companyPhone}` })}
                 >
                   <span className="flex items-center">
                     <Building2 className="mr-2 h-4 w-4" /> {companyPhone}
@@ -186,7 +186,7 @@ export function ClientQuickActions({
                       <a
                         href={`tel:${c.mobile}`}
                         className="flex items-center gap-2"
-                        onClick={() => void logClientActivity({ clientId, kind: "call", title: `Belpoging: ${label(c)} (${c.mobile})`, contactId: c.id })}
+                        onClick={() => void logClientActivity({ clientId, organizationId, kind: "call", title: `Belpoging: ${label(c)} (${c.mobile})`, contactId: c.id })}
                       >
                         <Smartphone className="h-3.5 w-3.5" />
                         <span className="truncate">{label(c)}</span>
@@ -200,7 +200,7 @@ export function ClientQuickActions({
                       <a
                         href={`tel:${c.phone}`}
                         className="flex items-center gap-2"
-                        onClick={() => void logClientActivity({ clientId, kind: "call", title: `Belpoging: ${label(c)} (${c.phone})`, contactId: c.id })}
+                        onClick={() => void logClientActivity({ clientId, organizationId, kind: "call", title: `Belpoging: ${label(c)} (${c.phone})`, contactId: c.id })}
                       >
                         <Phone className="h-3.5 w-3.5" />
                         <span className="truncate">{label(c)}</span>
