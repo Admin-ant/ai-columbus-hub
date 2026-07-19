@@ -2571,6 +2571,7 @@ export type Database = {
           brand_logo_url: string | null
           brand_primary_color: string | null
           city: string | null
+          contact_permissions: Json
           country: string | null
           created_at: string
           email: string | null
@@ -2600,6 +2601,7 @@ export type Database = {
           brand_logo_url?: string | null
           brand_primary_color?: string | null
           city?: string | null
+          contact_permissions?: Json
           country?: string | null
           created_at?: string
           email?: string | null
@@ -2629,6 +2631,7 @@ export type Database = {
           brand_logo_url?: string | null
           brand_primary_color?: string | null
           city?: string | null
+          contact_permissions?: Json
           country?: string | null
           created_at?: string
           email?: string | null
@@ -3964,6 +3967,10 @@ export type Database = {
           _token: string
         }
         Returns: string
+      }
+      can_manage_client_contact: {
+        Args: { _action: string; _org_id: string }
+        Returns: boolean
       }
       convert_lead_to_customer: {
         Args: {

@@ -18,6 +18,11 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  ContactPermissionsDialog,
+  DEFAULT_PERMISSIONS,
+  type ContactPermissions,
+} from "./contact-permissions-dialog";
 
 type ContactRow = Database["public"]["Tables"]["client_contacts"]["Row"];
 
@@ -42,7 +47,8 @@ export function ClientContactsManager({
   clientId: string;
   organizationId: string | null;
 }) {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
+  const isAdmin = hasRole("admin");
   const [rows, setRows] = useState<ContactRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -50,6 +56,21 @@ export function ClientContactsManager({
   const [editId, setEditId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY);
+  const [perms, setPerms] = useState<ContactPermissions>(DEFAULT_PERMISSIONS);
+
+  function allowed(action: "create" | "update" | "delete") {
+    if (isAdmin) return true;
+    return perms[action] === "medewerker";
+  }
+
+  useEffect(() => {
+    if (!organizationId) return;
+    supabase.from("organizations").select("contact_permissions").eq("id", organizationId).maybeSingle()
+      .then(({ data }) => {
+        const p = (data?.contact_permissions ?? null) as Partial<ContactPermissions> | null;
+        if (p) setPerms({ ...DEFAULT_PERMISSIONS, ...p });
+      });
+  }, [organizationId]);
 
   async function load() {
     setLoading(true);
@@ -146,12 +167,23 @@ export function ClientContactsManager({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <div>
           <h3 className="text-base font-semibold">Contactpersonen &amp; medewerkers</h3>
           <p className="text-sm text-muted-foreground">Beheer alle medewerkers van deze klant.</p>
         </div>
-        <Button size="sm" onClick={startNew}><Plus className="mr-2 h-4 w-4" /> Nieuwe contactpersoon</Button>
+        <div className="flex items-center gap-2">
+          {isAdmin && organizationId && (
+            <ContactPermissionsDialog
+              organizationId={organizationId}
+              value={perms}
+              onSaved={setPerms}
+            />
+          )}
+          {allowed("create") && (
+            <Button size="sm" onClick={startNew}><Plus className="mr-2 h-4 w-4" /> Nieuwe contactpersoon</Button>
+          )}
+        </div>
       </div>
 
       {loading ? (
@@ -182,11 +214,17 @@ export function ClientContactsManager({
                   )}
                 </div>
                 <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" title={r.is_primary ? "Primair verwijderen" : "Als primair"} onClick={() => togglePrimary(r)}>
-                    {r.is_primary ? <StarOff className="h-4 w-4" /> : <Star className="h-4 w-4" />}
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => startEdit(r)}><Pencil className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => setDeleteId(r.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  {allowed("update") && (
+                    <Button variant="ghost" size="icon" title={r.is_primary ? "Primair verwijderen" : "Als primair"} onClick={() => togglePrimary(r)}>
+                      {r.is_primary ? <StarOff className="h-4 w-4" /> : <Star className="h-4 w-4" />}
+                    </Button>
+                  )}
+                  {allowed("update") && (
+                    <Button variant="ghost" size="icon" onClick={() => startEdit(r)}><Pencil className="h-4 w-4" /></Button>
+                  )}
+                  {allowed("delete") && (
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteId(r.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  )}
                 </div>
               </div>
               <div className="mt-3 space-y-1 text-sm">
