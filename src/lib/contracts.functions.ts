@@ -95,6 +95,7 @@ const createSchema = z.object({
   billingFrequency: z.enum(["monthly", "quarterly", "yearly"]).default("monthly"),
   paymentTermsDays: z.number().int().min(0).max(120).default(14),
   autoInvoice: z.boolean().default(true),
+  asDraft: z.boolean().default(false),
 });
 
 export const createContract = createServerFn({ method: "POST" })
