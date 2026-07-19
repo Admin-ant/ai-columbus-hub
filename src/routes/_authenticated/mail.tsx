@@ -150,11 +150,13 @@ function MailPage() {
     if (!currentOrganizationId) return;
     setLoading(true);
     const order = folder === "sent" ? "sent_at" : folder === "inbox" ? "received_at" : "created_at";
-    const { data, error } = await supabase
+    let q = supabase
       .from("mail_messages")
       .select("*")
       .eq("organization_id", currentOrganizationId)
-      .eq("folder", folder)
+      .eq("folder", folder);
+    if (clientId) q = q.eq("client_id", clientId);
+    const { data, error } = await q
       .order(order, { ascending: false, nullsFirst: false })
       .limit(200);
     if (error) toast.error(error.message);
@@ -165,7 +167,22 @@ function MailPage() {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentOrganizationId, folder]);
+  }, [currentOrganizationId, folder, clientId]);
+
+  useEffect(() => {
+    if (!clientId || !currentOrganizationId) {
+      setClientName(null);
+      return;
+    }
+    (async () => {
+      const { data } = await supabase
+        .from("clients")
+        .select("name")
+        .eq("id", clientId)
+        .maybeSingle();
+      setClientName((data as { name?: string } | null)?.name ?? null);
+    })();
+  }, [clientId, currentOrganizationId]);
 
   useEffect(() => {
     if (!currentOrganizationId) return;
@@ -186,7 +203,7 @@ function MailPage() {
       supabase.removeChannel(ch);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentOrganizationId, folder]);
+  }, [currentOrganizationId, folder, clientId]);
 
   const selected = useMemo(() => items.find((i) => i.id === selectedId) ?? null, [items, selectedId]);
 
