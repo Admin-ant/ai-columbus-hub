@@ -31,6 +31,7 @@ function ContractDetail() {
   const [state, setState] = useState<Awaited<ReturnType<typeof fnGet>> | null>(null);
   const [busy, setBusy] = useState(false);
   const [autosave, setAutosave] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const titleFlushRef = useRef<null | (() => Promise<void>)>(null);
 
   const [newDesc, setNewDesc] = useState("");
   const [newQty, setNewQty] = useState("1");
