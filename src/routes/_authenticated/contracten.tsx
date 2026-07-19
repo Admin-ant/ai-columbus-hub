@@ -322,7 +322,7 @@ function NewContractDialog({
 
 
 
-  const save = async () => {
+  const save = async (asDraft = false) => {
     if (!currentOrganizationId || !clientId || !title.trim()) {
       toast.error("Vul klant en titel in");
       return;
@@ -339,10 +339,11 @@ function NewContractDialog({
           startDate,
           billingFrequency: freq,
           paymentTermsDays: parseInt(paymentTerms || "14", 10) || 14,
-          autoInvoice: true,
+          autoInvoice: !asDraft,
+          asDraft,
         },
       });
-      toast.success("Contract aangemaakt");
+      toast.success(asDraft ? "Concept opgeslagen" : "Contract aangemaakt");
       onOpenChange(false);
       setTitle("");
       setMonthly("0");
@@ -438,8 +439,11 @@ function NewContractDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Annuleer</Button>
-          <Button onClick={save} disabled={saving}>
-            {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Opslaan
+          <Button variant="secondary" onClick={() => save(true)} disabled={saving}>
+            {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Opslaan als concept
+          </Button>
+          <Button onClick={() => save(false)} disabled={saving}>
+            {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Aanmaken & activeren
           </Button>
         </DialogFooter>
       </DialogContent>
