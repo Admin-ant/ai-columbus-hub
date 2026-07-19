@@ -28,6 +28,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 import {
   Sidebar,
@@ -61,18 +62,23 @@ type NavGroup = {
   items: NavItem[];
 };
 
-// Soft tinted styles per group — mimics the reference card look.
-const groupTint: Record<string, { btn: string; icon: string; active: string }> = {
-  Algemeen:            { btn: "bg-sky-50 border-sky-200 text-sky-900 hover:bg-sky-100 dark:bg-sky-500/10 dark:border-sky-500/25 dark:text-sky-100 dark:hover:bg-sky-500/15",             icon: "bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300",             active: "!bg-sky-100 dark:!bg-sky-500/20 ring-1 ring-sky-300 dark:ring-sky-400/40" },
-  "Sales & Marketing": { btn: "bg-violet-50 border-violet-200 text-violet-900 hover:bg-violet-100 dark:bg-violet-500/10 dark:border-violet-500/25 dark:text-violet-100 dark:hover:bg-violet-500/15", icon: "bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300", active: "!bg-violet-100 dark:!bg-violet-500/20 ring-1 ring-violet-300 dark:ring-violet-400/40" },
-  Administratie:       { btn: "bg-emerald-50 border-emerald-200 text-emerald-900 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/25 dark:text-emerald-100 dark:hover:bg-emerald-500/15", icon: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300", active: "!bg-emerald-100 dark:!bg-emerald-500/20 ring-1 ring-emerald-300 dark:ring-emerald-400/40" },
-  Communicatie:        { btn: "bg-blue-50 border-blue-200 text-blue-900 hover:bg-blue-100 dark:bg-blue-500/10 dark:border-blue-500/25 dark:text-blue-100 dark:hover:bg-blue-500/15",     icon: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",         active: "!bg-blue-100 dark:!bg-blue-500/20 ring-1 ring-blue-300 dark:ring-blue-400/40" },
-  "AI & Rapportages":  { btn: "bg-amber-50 border-amber-200 text-amber-900 hover:bg-amber-100 dark:bg-amber-500/10 dark:border-amber-500/25 dark:text-amber-100 dark:hover:bg-amber-500/15", icon: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",   active: "!bg-amber-100 dark:!bg-amber-500/20 ring-1 ring-amber-300 dark:ring-amber-400/40" },
-  Overig:              { btn: "bg-rose-50 border-rose-200 text-rose-900 hover:bg-rose-100 dark:bg-rose-500/10 dark:border-rose-500/25 dark:text-rose-100 dark:hover:bg-rose-500/15",     icon: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",         active: "!bg-rose-100 dark:!bg-rose-500/20 ring-1 ring-rose-300 dark:ring-rose-400/40" },
-  Netqloud:            { btn: "bg-cyan-50 border-cyan-200 text-cyan-900 hover:bg-cyan-100 dark:bg-cyan-500/10 dark:border-cyan-500/25 dark:text-cyan-100 dark:hover:bg-cyan-500/15",     icon: "bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300",         active: "!bg-cyan-100 dark:!bg-cyan-500/20 ring-1 ring-cyan-300 dark:ring-cyan-400/40" },
-  Beheer:              { btn: "bg-slate-50 border-slate-200 text-slate-900 hover:bg-slate-100 dark:bg-slate-500/10 dark:border-slate-500/25 dark:text-slate-100 dark:hover:bg-slate-500/15", icon: "bg-slate-200 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300",   active: "!bg-slate-100 dark:!bg-slate-500/20 ring-1 ring-slate-300 dark:ring-slate-400/40" },
+// Light-blue tinted card style for every main menu group — matches the reference card look.
+const lightBlueTint = {
+  btn: "bg-sky-50 border-sky-100 text-sky-900 hover:bg-sky-100 hover:border-sky-200 dark:bg-sky-500/10 dark:border-sky-500/20 dark:text-sky-100 dark:hover:bg-sky-500/15 dark:hover:border-sky-500/30",
+  icon: "bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300",
+  active: "!bg-sky-100 !border-sky-200 dark:!bg-sky-500/20 dark:!border-sky-500/30 ring-1 ring-sky-300 dark:ring-sky-400/40",
 };
-const defaultTint = groupTint.Algemeen;
+const groupTint: Record<string, { btn: string; icon: string; active: string }> = {
+  Algemeen: lightBlueTint,
+  "Sales & Marketing": lightBlueTint,
+  Administratie: lightBlueTint,
+  Communicatie: lightBlueTint,
+  "AI & Rapportages": lightBlueTint,
+  Overig: lightBlueTint,
+  Netqloud: lightBlueTint,
+  Beheer: lightBlueTint,
+};
+const defaultTint = lightBlueTint;
 
 const columbusGroups: NavGroup[] = [
   {
@@ -266,18 +272,25 @@ export function AppSidebar() {
                     <SidebarMenu className="gap-1.5">
                       {group.items.map((item) => (
                         <SidebarMenuItem key={item.url}>
-                          <SidebarMenuButton
-                            asChild
-                            isActive={isActive(item.url)}
-                            className={`h-auto py-2.5 rounded-lg border transition-colors ${tint.btn} ${isActive(item.url) ? tint.active : ""}`}
-                          >
-                            <Link to={item.url} className="flex items-center gap-2.5">
-                              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${tint.icon}`}>
-                                <item.icon className="h-4 w-4" />
-                              </span>
-                              <span className="truncate font-medium">{item.title}</span>
-                            </Link>
-                          </SidebarMenuButton>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <SidebarMenuButton
+                                asChild
+                                isActive={isActive(item.url)}
+                                className={`h-auto py-2.5 rounded-lg border transition-colors ${tint.btn} ${isActive(item.url) ? tint.active : ""}`}
+                              >
+                                <Link to={item.url} className="flex items-center gap-2.5">
+                                  <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${tint.icon}`}>
+                                    <item.icon className="h-4 w-4" />
+                                  </span>
+                                  <span className="truncate font-medium">{item.title}</span>
+                                </Link>
+                              </SidebarMenuButton>
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="max-w-xs">
+                              <p>{item.title}</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </SidebarMenuItem>
                       ))}
                     </SidebarMenu>
@@ -312,28 +325,42 @@ export function AppSidebar() {
                           administratieSubItems.some((s) => currentPath === s.url));
                       return (
                         <SidebarMenuItem key={item.url}>
-                          <SidebarMenuButton
-                            asChild
-                            isActive={isActive(item.url)}
-                            className={`h-auto py-2.5 rounded-lg border transition-colors ${tint.btn} ${isActive(item.url) ? tint.active : ""}`}
-                          >
-                            <Link to={item.url} className="flex items-center gap-2.5">
-                              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${tint.icon}`}>
-                                <item.icon className="h-4 w-4" />
-                              </span>
-                              <span className="truncate font-medium">{item.title}</span>
-                            </Link>
-                          </SidebarMenuButton>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <SidebarMenuButton
+                                asChild
+                                isActive={isActive(item.url)}
+                                className={`h-auto py-2.5 rounded-lg border transition-colors ${tint.btn} ${isActive(item.url) ? tint.active : ""}`}
+                              >
+                                <Link to={item.url} className="flex items-center gap-2.5">
+                                  <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${tint.icon}`}>
+                                    <item.icon className="h-4 w-4" />
+                                  </span>
+                                  <span className="truncate font-medium">{item.title}</span>
+                                </Link>
+                              </SidebarMenuButton>
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="max-w-xs">
+                              <p>{item.title}</p>
+                            </TooltipContent>
+                          </Tooltip>
                           {showSub && (
                             <SidebarMenuSub>
                               {administratieSubItems.map((s) => (
                                 <SidebarMenuSubItem key={s.url}>
-                                  <SidebarMenuSubButton asChild isActive={isActive(s.url)}>
-                                    <Link to={s.url} className="flex items-center gap-2">
-                                      <s.icon className="h-3.5 w-3.5" />
-                                      <span>{s.title}</span>
-                                    </Link>
-                                  </SidebarMenuSubButton>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <SidebarMenuSubButton asChild isActive={isActive(s.url)}>
+                                        <Link to={s.url} className="flex items-center gap-2">
+                                          <s.icon className="h-3.5 w-3.5" />
+                                          <span>{s.title}</span>
+                                        </Link>
+                                      </SidebarMenuSubButton>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right" className="max-w-xs">
+                                      <p>{s.title}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
                                 </SidebarMenuSubItem>
                               ))}
                             </SidebarMenuSub>
@@ -361,10 +388,17 @@ export function AppSidebar() {
         </div>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleSignOut}>
-              <LogOut className="h-4 w-4" />
-              <span>Uitloggen</span>
-            </SidebarMenuButton>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <SidebarMenuButton onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4" />
+                  <span>Uitloggen</span>
+                </SidebarMenuButton>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="max-w-xs">
+                <p>Uitloggen uit het portaal</p>
+              </TooltipContent>
+            </Tooltip>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
