@@ -325,28 +325,42 @@ export function AppSidebar() {
                           administratieSubItems.some((s) => currentPath === s.url));
                       return (
                         <SidebarMenuItem key={item.url}>
-                          <SidebarMenuButton
-                            asChild
-                            isActive={isActive(item.url)}
-                            className={`h-auto py-2.5 rounded-lg border transition-colors ${tint.btn} ${isActive(item.url) ? tint.active : ""}`}
-                          >
-                            <Link to={item.url} className="flex items-center gap-2.5">
-                              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${tint.icon}`}>
-                                <item.icon className="h-4 w-4" />
-                              </span>
-                              <span className="truncate font-medium">{item.title}</span>
-                            </Link>
-                          </SidebarMenuButton>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <SidebarMenuButton
+                                asChild
+                                isActive={isActive(item.url)}
+                                className={`h-auto py-2.5 rounded-lg border transition-colors ${tint.btn} ${isActive(item.url) ? tint.active : ""}`}
+                              >
+                                <Link to={item.url} className="flex items-center gap-2.5">
+                                  <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${tint.icon}`}>
+                                    <item.icon className="h-4 w-4" />
+                                  </span>
+                                  <span className="truncate font-medium">{item.title}</span>
+                                </Link>
+                              </SidebarMenuButton>
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="max-w-xs">
+                              <p>{item.title}</p>
+                            </TooltipContent>
+                          </Tooltip>
                           {showSub && (
                             <SidebarMenuSub>
                               {administratieSubItems.map((s) => (
                                 <SidebarMenuSubItem key={s.url}>
-                                  <SidebarMenuSubButton asChild isActive={isActive(s.url)}>
-                                    <Link to={s.url} className="flex items-center gap-2">
-                                      <s.icon className="h-3.5 w-3.5" />
-                                      <span>{s.title}</span>
-                                    </Link>
-                                  </SidebarMenuSubButton>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <SidebarMenuSubButton asChild isActive={isActive(s.url)}>
+                                        <Link to={s.url} className="flex items-center gap-2">
+                                          <s.icon className="h-3.5 w-3.5" />
+                                          <span>{s.title}</span>
+                                        </Link>
+                                      </SidebarMenuSubButton>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right" className="max-w-xs">
+                                      <p>{s.title}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
                                 </SidebarMenuSubItem>
                               ))}
                             </SidebarMenuSub>
