@@ -239,7 +239,7 @@ function NewContractDialog({
   initialClientId?: string;
 }) {
   const { currentOrganizationId } = useWorkspace();
-  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [clients, setClients] = useState<{ id: string; name: string; monthly_value: number | null; start_date: string | null; email: string | null }[]>([]);
   const [clientId, setClientId] = useState("");
   const [title, setTitle] = useState("");
   const [monthly, setMonthly] = useState("0");
@@ -253,22 +253,31 @@ function NewContractDialog({
     if (!open || !currentOrganizationId) return;
     void supabase
       .from("clients")
-      .select("id, name")
+      .select("id, name, monthly_value, start_date, email")
       .eq("organization_id", currentOrganizationId)
       .order("name")
-      .then(({ data }) => setClients((data as { id: string; name: string }[]) ?? []));
+      .then(({ data }) => setClients((data as typeof clients) ?? []));
   }, [open, currentOrganizationId]);
 
-  // Prefill client + suggested title when opened from a specific client card.
+  // Auto-fill fields when client selected (either via prefill or manual pick).
+  const applyClientDefaults = (id: string) => {
+    const c = clients.find((x) => x.id === id);
+    if (!c) return;
+    if (!title.trim() || title.startsWith("Abonnement ")) setTitle(`Abonnement ${c.name}`);
+    if (c.monthly_value && Number(c.monthly_value) > 0) setMonthly(String(c.monthly_value));
+    if (c.start_date) setStartDate(c.start_date);
+  };
+
+  // Prefill client + suggested title/values when opened from a specific client card.
   useEffect(() => {
     if (!open) return;
-    if (initialClientId) {
+    if (initialClientId && clients.length) {
       setClientId(initialClientId);
-      const c = clients.find((x) => x.id === initialClientId);
-      if (c && !title.trim()) setTitle(`Abonnement ${c.name}`);
+      applyClientDefaults(initialClientId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialClientId, clients]);
+
 
   const save = async () => {
     if (!currentOrganizationId || !clientId || !title.trim()) {
