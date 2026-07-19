@@ -96,14 +96,27 @@ async function runTick() {
   };
 }
 
+function checkAuth(request: Request): Response | null {
+  const cronSecret = process.env.CRON_SECRET;
+  const secret = request.headers.get("x-cron-secret");
+  if (!cronSecret || secret !== cronSecret) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+  return null;
+}
+
 export const Route = createFileRoute("/api/public/hooks/campaign-flow-tick")({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
+        const unauth = checkAuth(request);
+        if (unauth) return unauth;
         const result = await runTick();
         return Response.json(result);
       },
-      POST: async () => {
+      POST: async ({ request }) => {
+        const unauth = checkAuth(request);
+        if (unauth) return unauth;
         const result = await runTick();
         return Response.json(result);
       },

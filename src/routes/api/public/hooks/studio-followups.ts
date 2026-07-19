@@ -12,8 +12,14 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/api/public/hooks/studio-followups")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const cronSecret = process.env.CRON_SECRET;
+        const secret = request.headers.get("x-cron-secret");
+        if (!cronSecret || secret !== cronSecret) {
+          return new Response("Unauthorized", { status: 401 });
+        }
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
 
         const threshold = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
         const followupThreshold = new Date(

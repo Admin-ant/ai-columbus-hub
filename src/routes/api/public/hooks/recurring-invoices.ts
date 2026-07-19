@@ -6,13 +6,9 @@ export const Route = createFileRoute("/api/public/hooks/recurring-invoices")({
       POST: async ({ request }) => {
         // Accept either the anon apikey (used by pg_cron in this project)
         // or an explicit x-cron-secret header.
-        const anonKey = process.env.SUPABASE_PUBLISHABLE_KEY;
         const cronSecret = process.env.CRON_SECRET;
-        const apiKey = request.headers.get("apikey");
         const secret = request.headers.get("x-cron-secret");
-        const authorized =
-          (anonKey && apiKey === anonKey) || (cronSecret && secret === cronSecret);
-        if (!authorized) {
+        if (!cronSecret || secret !== cronSecret) {
           return new Response("Unauthorized", { status: 401 });
         }
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
