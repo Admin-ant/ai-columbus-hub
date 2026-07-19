@@ -629,3 +629,42 @@ function PaymentLinkUrlField({
     </>
   );
 }
+
+function AutosaveIndicator({ status }: { status: "idle" | "saving" | "saved" | "error" }) {
+  if (status === "idle") return null;
+  const cls = "text-[11px] flex items-center gap-1 px-2 py-1 rounded-md border";
+  if (status === "saving") {
+    return <span className={`${cls} border-border text-muted-foreground`}><Loader2 className="h-3 w-3 animate-spin" /> Automatisch opslaan…</span>;
+  }
+  if (status === "saved") {
+    return <span className={`${cls} border-emerald-500/30 text-emerald-600 dark:text-emerald-300`}><Check className="h-3 w-3" /> Automatisch opgeslagen</span>;
+  }
+  return <span className={`${cls} border-destructive/40 text-destructive`}><CloudOff className="h-3 w-3" /> Opslaan mislukt</span>;
+}
+
+function TitleField({ value, onSave }: { value: string; onSave: (v: string) => void | Promise<void> }) {
+  const [v, setV] = useState(value);
+  const initial = useRef(value);
+  useEffect(() => { setV(value); initial.current = value; }, [value]);
+  useEffect(() => {
+    if (v === initial.current) return;
+    const t = setTimeout(() => {
+      const trimmed = v.trim();
+      if (trimmed && trimmed !== initial.current) {
+        initial.current = trimmed;
+        void onSave(trimmed);
+      }
+    }, 700);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [v]);
+  return (
+    <Input
+      value={v}
+      onChange={(e) => setV(e.target.value)}
+      className="text-xl font-bold h-9 border-transparent hover:border-border focus-visible:border-input bg-transparent px-2 -ml-2"
+      placeholder="Contracttitel"
+    />
+  );
+}
+
