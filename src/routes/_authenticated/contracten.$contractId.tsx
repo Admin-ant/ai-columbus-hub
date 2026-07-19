@@ -104,6 +104,112 @@ function ContractDetail() {
     }
   };
 
+  const exportPdf = async () => {
+    setBusy(true);
+    try {
+      const { jsPDF } = await import("jspdf");
+      const autoTable = (await import("jspdf-autotable")).default;
+      const doc = new jsPDF({ unit: "mm", format: "a4" });
+      const M = 15;
+      let y = M;
+
+      doc.setFontSize(18).setFont("helvetica", "bold");
+      doc.text(contract.title || "Contract", M, y);
+      y += 8;
+      doc.setFontSize(10).setFont("helvetica", "normal").setTextColor(90);
+      doc.text(`Status: ${contract.status}`, M, y);
+      doc.text(`Aangemaakt: ${new Date().toLocaleDateString("nl-NL")}`, 210 - M, y, { align: "right" });
+      y += 8;
+      doc.setTextColor(0);
+
+      doc.setFont("helvetica", "bold").text("Klant", M, y);
+      doc.setFont("helvetica", "normal");
+      y += 5;
+      doc.text(client?.name ?? "—", M, y); y += 5;
+      if (client?.email) { doc.text(String(client.email), M, y); y += 5; }
+
+      y += 3;
+      doc.setFont("helvetica", "bold").text("Contract", M, y);
+      doc.setFont("helvetica", "normal");
+      y += 5;
+      const fmtDate = (d: string | null) => (d ? new Date(d).toLocaleDateString("nl-NL") : "—");
+      const freq = contract.billing_frequency === "monthly" ? "Maandelijks"
+        : contract.billing_frequency === "quarterly" ? "Per kwartaal" : "Jaarlijks";
+      const info: [string, string][] = [
+        ["Startdatum", fmtDate(contract.start_date)],
+        ["Einddatum", fmtDate(contract.end_date)],
+        ["Frequentie", freq],
+        ["Betaaltermijn", `${contract.payment_terms_days} dagen`],
+        ["Auto-facturatie", contract.auto_invoice ? "Aan" : "Uit"],
+        ["Volgende factuur", fmtDate(contract.next_invoice_date)],
+      ];
+      info.forEach(([k, v]) => { doc.text(`${k}: ${v}`, M, y); y += 5; });
+
+      y += 3;
+      const rows = (lines ?? []).map((l: any) => {
+        const excl = (Number(l.quantity) || 0) * (Number(l.unit_price_cents) || 0);
+        return [
+          l.description,
+          String(l.quantity),
+          `€ ${(l.unit_price_cents / 100).toFixed(2)}`,
+          `${l.vat_rate}%`,
+          `€ ${(excl / 100).toLocaleString("nl-NL", { minimumFractionDigits: 2 })}`,
+        ];
+      });
+
+      autoTable(doc, {
+        startY: y,
+        head: [["Omschrijving", "Aantal", "Prijs", "BTW", "Totaal excl."]],
+        body: rows.length ? rows : [["Geen regels", "", "", "", ""]],
+        theme: "striped",
+        headStyles: { fillColor: [30, 41, 59] },
+        columnStyles: { 1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" } },
+        margin: { left: M, right: M },
+      });
+
+      let subtotal = 0, vatTotal = 0;
+      const byRate = new Map<number, { excl: number; vat: number }>();
+      for (const l of lines ?? []) {
+        const excl = Math.round((Number(l.quantity) || 0) * (Number(l.unit_price_cents) || 0));
+        const vat = Math.round((excl * (Number(l.vat_rate) || 0)) / 100);
+        subtotal += excl; vatTotal += vat;
+        const cur = byRate.get(Number(l.vat_rate) || 0) ?? { excl: 0, vat: 0 };
+        cur.excl += excl; cur.vat += vat; byRate.set(Number(l.vat_rate) || 0, cur);
+      }
+      const fmtC = (c: number) => `€ ${(c / 100).toLocaleString("nl-NL", { minimumFractionDigits: 2 })}`;
+      const finalY = (doc as any).lastAutoTable?.finalY ?? y;
+      let ty = finalY + 8;
+      const right = 210 - M;
+      const label = (t: string, v: string, bold = false) => {
+        doc.setFont("helvetica", bold ? "bold" : "normal");
+        doc.text(t, right - 55, ty);
+        doc.text(v, right, ty, { align: "right" });
+        ty += 6;
+      };
+      label("Subtotaal (excl. btw)", fmtC(subtotal));
+      Array.from(byRate.entries()).sort((a, b) => a[0] - b[0]).forEach(([rate, v]) => {
+        label(`Btw ${rate}%`, fmtC(v.vat));
+      });
+      label("Totaal incl. btw", fmtC(subtotal + vatTotal), true);
+
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8).setTextColor(120);
+        doc.text(`Pagina ${i} van ${pageCount}`, 210 - M, 297 - 8, { align: "right" });
+        doc.text(contract.title || "Contract", M, 297 - 8);
+      }
+
+      const safe = (contract.title || "contract").replace(/[^\w\-]+/g, "_").slice(0, 60);
+      doc.save(`${safe}.pdf`);
+      toast.success("PDF gedownload");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (!contract) {
     return <div className="p-6 text-muted-foreground">Laden…</div>;
   }
