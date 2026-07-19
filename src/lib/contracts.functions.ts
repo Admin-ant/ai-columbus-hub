@@ -114,9 +114,9 @@ export const createContract = createServerFn({ method: "POST" })
         start_date: data.startDate,
         billing_frequency: data.billingFrequency,
         payment_terms_days: data.paymentTermsDays,
-        auto_invoice: data.autoInvoice,
-        status: "active",
-        next_invoice_date: data.startDate,
+        auto_invoice: data.asDraft ? false : data.autoInvoice,
+        status: data.asDraft ? "draft" : "active",
+        next_invoice_date: data.asDraft ? null : data.startDate,
         created_by: context.userId,
       } as never)
       .select("id")
