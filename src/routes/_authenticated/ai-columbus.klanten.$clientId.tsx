@@ -644,7 +644,13 @@ function ClientDetailPage() {
             </CardHeader>
             <CardContent className="p-0">
               {contracts.length === 0 ? (
-                <p className="p-6 text-sm text-muted-foreground">Nog geen contracten voor deze klant.</p>
+                <div className="flex flex-col items-center gap-3 p-8 text-center">
+                  <FileSignature className="h-8 w-8 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Nog geen contracten voor deze klant.</p>
+                  <Button size="sm" asChild>
+                    <Link to="/contracten"><Plus className="mr-2 h-4 w-4" /> Nieuw contract aanmaken</Link>
+                  </Button>
+                </div>
               ) : (
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50 text-left">
