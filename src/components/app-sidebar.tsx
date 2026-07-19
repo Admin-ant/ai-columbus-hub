@@ -394,7 +394,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <Tooltip>
               <TooltipTrigger asChild>
-                <SidebarMenuButton onClick={handleSignOut}>
+                <SidebarMenuButton onClick={handleSignOut} className="transition-all duration-200 ease-out hover:translate-x-0.5 hover:bg-sky-50 dark:hover:bg-sky-400/10">
                   <LogOut className="h-4 w-4" />
                   <span>Uitloggen</span>
                 </SidebarMenuButton>
