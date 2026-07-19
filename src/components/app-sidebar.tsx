@@ -63,12 +63,16 @@ type NavGroup = {
 };
 
 // Light-blue tinted card style for every main menu group — matches the reference card look.
+// Contrast tuned for WCAG AA: sky-950 text on sky-50 (~6:1), sky-900 icon on sky-100 (~4.5:1).
+// Active state uses a darker sky background with light text for clear focus/hover indication.
+// High-contrast variants target `prefers-contrast: more` and Windows `forced-colors`.
 const lightBlueTint = {
-  btn: "bg-sky-50 border-sky-100 text-sky-900 hover:bg-sky-100 hover:border-sky-200 dark:bg-sky-500/10 dark:border-sky-500/20 dark:text-sky-100 dark:hover:bg-sky-500/15 dark:hover:border-sky-500/30",
-  icon: "bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300",
-  active: "!bg-sky-100 !border-sky-200 dark:!bg-sky-500/20 dark:!border-sky-500/30 ring-1 ring-sky-300 dark:ring-sky-400/40",
+  btn: "bg-sky-50 border-sky-200 text-sky-950 hover:bg-sky-100 hover:border-sky-300 hover:text-sky-950 dark:bg-sky-400/10 dark:border-sky-400/25 dark:text-sky-50 dark:hover:bg-sky-400/18 dark:hover:border-sky-400/40 dark:hover:text-sky-50 contrast-more:bg-sky-100 contrast-more:border-sky-950 contrast-more:text-sky-950 contrast-more:font-semibold dark:contrast-more:bg-sky-400/20 dark:contrast-more:border-sky-300 dark:contrast-more:text-sky-50 forced-colors:border-CanvasText forced-colors:bg-Canvas forced-colors:text-CanvasText",
+  icon: "bg-sky-100 text-sky-900 dark:bg-sky-400/20 dark:text-sky-200 contrast-more:bg-sky-200 contrast-more:text-sky-950 dark:contrast-more:bg-sky-400/30 dark:contrast-more:text-sky-50 forced-colors:bg-CanvasText forced-colors:text-Canvas",
+  active: "!bg-sky-700 !border-sky-800 !text-sky-50 dark:!bg-sky-400/30 dark:!border-sky-400/50 dark:!text-sky-50 ring-1 ring-sky-300 dark:ring-sky-400/40 contrast-more:!bg-sky-800 contrast-more:!border-sky-950 contrast-more:!text-sky-50 dark:contrast-more:!bg-sky-400/40 dark:contrast-more:!border-sky-300 dark:contrast-more:!text-sky-50 forced-colors:!bg-Highlight forced-colors:!text-HighlightText forced-colors:!border-CanvasText",
+  activeIcon: "!bg-sky-500 !text-sky-50 dark:!bg-sky-400/40 dark:!text-sky-50 contrast-more:!bg-sky-400 contrast-more:!text-sky-950 dark:contrast-more:!bg-sky-400/50 dark:contrast-more:!text-sky-50 forced-colors:!bg-CanvasText forced-colors:!text-Canvas",
 };
-const groupTint: Record<string, { btn: string; icon: string; active: string }> = {
+const groupTint: Record<string, { btn: string; icon: string; active: string; activeIcon: string }> = {
   Algemeen: lightBlueTint,
   "Sales & Marketing": lightBlueTint,
   Administratie: lightBlueTint,
@@ -280,7 +284,7 @@ export function AppSidebar() {
                                 className={`h-auto py-2.5 rounded-lg border transition-colors ${tint.btn} ${isActive(item.url) ? tint.active : ""}`}
                               >
                                 <Link to={item.url} className="flex items-center gap-2.5">
-                                  <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${tint.icon}`}>
+                                  <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${tint.icon} ${isActive(item.url) ? tint.activeIcon : ""}`}>
                                     <item.icon className="h-4 w-4" />
                                   </span>
                                   <span className="truncate font-medium">{item.title}</span>
@@ -333,7 +337,7 @@ export function AppSidebar() {
                                 className={`h-auto py-2.5 rounded-lg border transition-colors ${tint.btn} ${isActive(item.url) ? tint.active : ""}`}
                               >
                                 <Link to={item.url} className="flex items-center gap-2.5">
-                                  <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${tint.icon}`}>
+                                  <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${tint.icon} ${isActive(item.url) ? tint.activeIcon : ""}`}>
                                     <item.icon className="h-4 w-4" />
                                   </span>
                                   <span className="truncate font-medium">{item.title}</span>
