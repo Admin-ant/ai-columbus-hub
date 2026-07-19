@@ -252,6 +252,7 @@ function ClientDetailPage() {
         </div>
         <ClientQuickActions
           clientId={clientId}
+          companyName={client.name}
           companyEmail={client.email}
           companyPhone={client.phone}
         />
