@@ -239,12 +239,25 @@ function InvoicesPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
+        <Input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Zoek op factuurnummer of klant…"
+          className="h-8 w-full sm:w-72"
+        />
+        {query && (
+          <Button size="sm" variant="ghost" onClick={() => setQuery("")} className="h-7 text-xs">
+            Wis
+          </Button>
+        )}
+        <div className="mx-1 hidden h-5 w-px bg-border sm:block" />
         {([
           { k: "all", label: "Alle", n: counts.all },
+          { k: "draft", label: "Concept", n: counts.draft },
+          { k: "sent", label: "Definitief", n: counts.sent },
           { k: "open", label: "Open", n: counts.open },
           { k: "reminder", label: "Herinnering", n: counts.reminder },
           { k: "paid", label: "Betaald", n: counts.paid },
-          { k: "draft", label: "Concept", n: counts.draft },
         ] as const).map((f) => (
           <Button
             key={f.k}
