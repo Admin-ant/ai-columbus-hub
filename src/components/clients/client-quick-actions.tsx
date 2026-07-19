@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Mail, Phone, Smartphone, Linkedin, ChevronDown, Building2, Star } from "lucide-react";
+import { Mail, Phone, Smartphone, Linkedin, ChevronDown, Building2, Star, Copy, Check } from "lucide-react";
+import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
