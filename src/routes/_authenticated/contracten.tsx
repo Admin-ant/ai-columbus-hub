@@ -52,6 +52,10 @@ export const Route = createFileRoute("/_authenticated/contracten")({
       { name: "description", content: "Beheer abonnementen en maandelijkse facturatie." },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    clientId: typeof search.clientId === "string" ? search.clientId : undefined,
+    new: search.new === "1" || search.new === 1 || search.new === true ? true : undefined,
+  }),
   component: ContractsShell,
 });
 
@@ -64,11 +68,29 @@ function ContractsShell() {
 
 function ContractsPage() {
   const { currentOrganizationId } = useWorkspace();
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
   const [rows, setRows] = useState<ContractRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [openNew, setOpenNew] = useState(false);
   const [running, setRunning] = useState(false);
+  const [initialClientId, setInitialClientId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (search.clientId || search.new) {
+      setInitialClientId(search.clientId);
+      setOpenNew(true);
+    }
+  }, [search.clientId, search.new]);
+
+  const handleOpenChange = (v: boolean) => {
+    setOpenNew(v);
+    if (!v && (search.clientId || search.new)) {
+      void navigate({ search: {}, replace: true });
+      setInitialClientId(undefined);
+    }
+  };
 
   const fnList = useServerFn(listContracts);
   const fnRun = useServerFn(runRecurringInvoices);
@@ -185,7 +207,7 @@ function ContractsPage() {
         </div>
       </div>
 
-      <NewContractDialog open={openNew} onOpenChange={setOpenNew} onCreated={load} />
+      <NewContractDialog open={openNew} onOpenChange={handleOpenChange} onCreated={load} initialClientId={initialClientId} />
     </div>
   );
 }
@@ -209,10 +231,12 @@ function NewContractDialog({
   open,
   onOpenChange,
   onCreated,
+  initialClientId,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onCreated: () => void;
+  initialClientId?: string;
 }) {
   const { currentOrganizationId } = useWorkspace();
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
@@ -234,6 +258,17 @@ function NewContractDialog({
       .order("name")
       .then(({ data }) => setClients((data as { id: string; name: string }[]) ?? []));
   }, [open, currentOrganizationId]);
+
+  // Prefill client + suggested title when opened from a specific client card.
+  useEffect(() => {
+    if (!open) return;
+    if (initialClientId) {
+      setClientId(initialClientId);
+      const c = clients.find((x) => x.id === initialClientId);
+      if (c && !title.trim()) setTitle(`Abonnement ${c.name}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialClientId, clients]);
 
   const save = async () => {
     if (!currentOrganizationId || !clientId || !title.trim()) {

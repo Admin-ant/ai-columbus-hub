@@ -645,7 +645,7 @@ function ClientDetailPage() {
                 <CardDescription>Alle contracten van deze klant met status en maandbedrag.</CardDescription>
               </div>
               <Button size="sm" asChild>
-                <Link to="/contracten"><Plus className="mr-2 h-4 w-4" /> Nieuw contract</Link>
+                <Link to="/contracten" search={{ clientId: clientId, new: true }}><Plus className="mr-2 h-4 w-4" /> Nieuw contract</Link>
               </Button>
             </CardHeader>
             <CardContent className="p-0">
@@ -654,7 +654,7 @@ function ClientDetailPage() {
                   <FileSignature className="h-8 w-8 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">Nog geen contracten voor deze klant.</p>
                   <Button size="sm" asChild>
-                    <Link to="/contracten"><Plus className="mr-2 h-4 w-4" /> Nieuw contract aanmaken</Link>
+                    <Link to="/contracten" search={{ clientId: clientId, new: true }}><Plus className="mr-2 h-4 w-4" /> Nieuw contract aanmaken</Link>
                   </Button>
                 </div>
               ) : (
