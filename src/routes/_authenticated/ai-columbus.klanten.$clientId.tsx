@@ -248,7 +248,6 @@ function ClientDetailPage() {
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
         <ClientQuickActions
           clientId={clientId}
           companyEmail={client.email}
