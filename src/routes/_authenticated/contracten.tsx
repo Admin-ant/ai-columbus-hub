@@ -239,13 +239,40 @@ function NewContractDialog({
   initialClientId?: string;
 }) {
   const { currentOrganizationId } = useWorkspace();
-  const [clients, setClients] = useState<{ id: string; name: string; monthly_value: number | null; start_date: string | null; email: string | null }[]>([]);
+  type ClientRow = {
+    id: string;
+    name: string;
+    monthly_value: number | null;
+    start_date: string | null;
+    email: string | null;
+    phone: string | null;
+    contact_person: string | null;
+    address_line1: string | null;
+    address_line2: string | null;
+    postal_code: string | null;
+    city: string | null;
+    country: string | null;
+    kvk_number: string | null;
+    vat_number: string | null;
+    website: string | null;
+  };
+  type PrimaryContact = {
+    first_name: string;
+    last_name: string | null;
+    email: string | null;
+    phone: string | null;
+    mobile: string | null;
+    job_title: string | null;
+  } | null;
+  const [clients, setClients] = useState<ClientRow[]>([]);
   const [clientId, setClientId] = useState("");
+  const [primaryContact, setPrimaryContact] = useState<PrimaryContact>(null);
   const [title, setTitle] = useState("");
   const [monthly, setMonthly] = useState("0");
   const [setup, setSetup] = useState("0");
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
   const [freq, setFreq] = useState<"monthly" | "quarterly" | "yearly">("monthly");
+  const [paymentTerms, setPaymentTerms] = useState("14");
   const [saving, setSaving] = useState(false);
   const fnCreate = useServerFn(createContract);
 
@@ -253,11 +280,26 @@ function NewContractDialog({
     if (!open || !currentOrganizationId) return;
     void supabase
       .from("clients")
-      .select("id, name, monthly_value, start_date, email")
+      .select("id, name, monthly_value, start_date, email, phone, contact_person, address_line1, address_line2, postal_code, city, country, kvk_number, vat_number, website")
       .eq("organization_id", currentOrganizationId)
       .order("name")
-      .then(({ data }) => setClients((data as typeof clients) ?? []));
+      .then(({ data }) => setClients((data as ClientRow[]) ?? []));
   }, [open, currentOrganizationId]);
+
+  const selectedClient = clients.find((c) => c.id === clientId) ?? null;
+
+  // Load primary contact whenever a client is selected.
+  useEffect(() => {
+    if (!clientId) { setPrimaryContact(null); return; }
+    void supabase
+      .from("client_contacts")
+      .select("first_name, last_name, email, phone, mobile, job_title, is_primary")
+      .eq("client_id", clientId)
+      .order("is_primary", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => setPrimaryContact((data as PrimaryContact) ?? null));
+  }, [clientId]);
 
   // Auto-fill fields when client selected (either via prefill or manual pick).
   const applyClientDefaults = (id: string) => {
@@ -279,6 +321,7 @@ function NewContractDialog({
   }, [open, initialClientId, clients]);
 
 
+
   const save = async () => {
     if (!currentOrganizationId || !clientId || !title.trim()) {
       toast.error("Vul klant en titel in");
@@ -295,7 +338,7 @@ function NewContractDialog({
           setupCents: Math.round(parseFloat(setup || "0") * 100),
           startDate,
           billingFrequency: freq,
-          paymentTermsDays: 14,
+          paymentTermsDays: parseInt(paymentTerms || "14", 10) || 14,
           autoInvoice: true,
         },
       });
@@ -314,7 +357,7 @@ function NewContractDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nieuw contract</DialogTitle>
           <DialogDescription>Maak een abonnement voor een bestaande klant.</DialogDescription>
@@ -329,6 +372,35 @@ function NewContractDialog({
               </SelectContent>
             </Select>
           </div>
+
+          {selectedClient && (
+            <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-sm text-foreground">Klantgegevens</span>
+                <span className="text-[10px] uppercase text-muted-foreground">automatisch overgenomen</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
+                <InfoRow label="Contactpersoon" value={
+                  primaryContact
+                    ? `${primaryContact.first_name}${primaryContact.last_name ? ` ${primaryContact.last_name}` : ""}${primaryContact.job_title ? ` — ${primaryContact.job_title}` : ""}`
+                    : selectedClient.contact_person
+                } />
+                <InfoRow label="E-mail" value={primaryContact?.email ?? selectedClient.email} />
+                <InfoRow label="Telefoon" value={primaryContact?.phone ?? selectedClient.phone} />
+                <InfoRow label="Mobiel" value={primaryContact?.mobile} />
+                <InfoRow label="Adres" value={[selectedClient.address_line1, selectedClient.address_line2].filter(Boolean).join(", ")} />
+                <InfoRow label="Postcode / plaats" value={[selectedClient.postal_code, selectedClient.city].filter(Boolean).join(" ")} />
+                <InfoRow label="Land" value={selectedClient.country} />
+                <InfoRow label="KvK" value={selectedClient.kvk_number} />
+                <InfoRow label="BTW-nr" value={selectedClient.vat_number} />
+                <InfoRow label="Website" value={selectedClient.website} />
+              </div>
+              <p className="text-[11px] text-muted-foreground pt-1 border-t border-border">
+                Facturatie- en contactgegevens komen uit de klantkaart en worden meegenomen op elke factuur van dit contract.
+              </p>
+            </div>
+          )}
+
           <div>
             <Label>Titel</Label>
             <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="AI Telefonie abonnement" />
@@ -357,8 +429,13 @@ function NewContractDialog({
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label>Betaaltermijn (dagen)</Label>
+              <Input type="number" min="0" max="120" value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} />
+            </div>
           </div>
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Annuleer</Button>
           <Button onClick={save} disabled={saving}>
@@ -367,5 +444,17 @@ function NewContractDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string | null | undefined }) {
+  const v = value?.toString().trim();
+  return (
+    <div className="flex justify-between gap-2">
+      <span className="text-muted-foreground">{label}</span>
+      <span className={v ? "text-foreground text-right truncate max-w-[60%]" : "text-muted-foreground/60"}>
+        {v || "—"}
+      </span>
+    </div>
   );
 }
