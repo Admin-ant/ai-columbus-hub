@@ -30,15 +30,18 @@ const PLACEHOLDERS = [
 
 export function ClientEmailComposer({
   clientId,
+  organizationId,
   companyName,
   companyEmail,
   defaultTo,
 }: {
   clientId: string;
+  organizationId: string;
   companyName: string;
   companyEmail?: string | null;
   defaultTo?: string;
 }) {
+
   const [open, setOpen] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [to, setTo] = useState<string>("");
@@ -239,14 +242,16 @@ export function ClientEmailComposer({
               target="_blank"
               rel="noreferrer"
               onClick={() => {
-                void logClientActivity({
+                logClientActivity({
                   clientId,
+                  organizationId,
                   kind: "email",
                   title: `E-mail: ${finalSubject || "(geen onderwerp)"}`,
                   body: `Aan: ${to}\n\n${finalBody}`,
                   contactId: selectedContact?.id ?? null,
                 });
               }}
+
             >
               <Send className="mr-2 h-4 w-4" /> Open in mailclient
             </a>

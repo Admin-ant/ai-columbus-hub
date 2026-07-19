@@ -17,15 +17,18 @@ type Contact = Database["public"]["Tables"]["client_contacts"]["Row"];
 
 export function ClientQuickActions({
   clientId,
+  organizationId,
   companyName,
   companyEmail,
   companyPhone,
 }: {
   clientId: string;
+  organizationId: string;
   companyName: string;
   companyEmail?: string | null;
   companyPhone?: string | null;
 }) {
+
   const [contacts, setContacts] = useState<Contact[]>([]);
 
   useEffect(() => {
