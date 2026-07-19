@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, Download, Link2, Link2Off, Loader2, PauseCircle, PlayCircle, Plus, Trash2, XCircle, Zap } from "lucide-react";
+import { ArrowLeft, Check, CloudOff, Download, Link2, Link2Off, Loader2, PauseCircle, PlayCircle, Plus, Trash2, XCircle, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +30,7 @@ function ContractDetail() {
 
   const [state, setState] = useState<Awaited<ReturnType<typeof fnGet>> | null>(null);
   const [busy, setBusy] = useState(false);
+  const [autosave, setAutosave] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const [newDesc, setNewDesc] = useState("");
   const [newQty, setNewQty] = useState("1");
@@ -51,6 +52,31 @@ function ContractDetail() {
   const runs = state?.runs as any[] | undefined;
   const client = state?.client as any;
 
+  // Persist in-progress "add line" input across reloads so it never gets lost.
+  const draftKey = `contract-line-draft:${contractId}`;
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d.desc) setNewDesc(d.desc);
+        if (d.qty) setNewQty(d.qty);
+        if (d.price) setNewPrice(d.price);
+        if (d.vat) setNewVat(d.vat);
+      }
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contractId]);
+  useEffect(() => {
+    try {
+      if (newDesc || newQty !== "1" || newPrice !== "0" || newVat !== "21") {
+        localStorage.setItem(draftKey, JSON.stringify({ desc: newDesc, qty: newQty, price: newPrice, vat: newVat }));
+      } else {
+        localStorage.removeItem(draftKey);
+      }
+    } catch { /* ignore */ }
+  }, [newDesc, newQty, newPrice, newVat, draftKey]);
+
   const patch = async (p: Record<string, unknown>) => {
     setBusy(true);
     try {
@@ -63,6 +89,20 @@ function ContractDetail() {
       setBusy(false);
     }
   };
+
+  // Silent autosave: no toast, no full reload — just push the patch and update status.
+  const autosavePatch = async (p: Record<string, unknown>) => {
+    setAutosave("saving");
+    try {
+      await fnUpdate({ data: { id: contractId, patch: p as never } });
+      setState((prev) => prev ? { ...prev, contract: { ...(prev as any).contract, ...p } } as any : prev);
+      setAutosave("saved");
+    } catch (e) {
+      setAutosave("error");
+      toast.error("Automatisch opslaan mislukt: " + (e as Error).message);
+    }
+  };
+
 
   const addLine = async () => {
     if (!newDesc.trim()) return;
@@ -221,6 +261,7 @@ function ContractDetail() {
           <Button asChild variant="ghost" size="sm">
             <Link to="/contracten"><ArrowLeft className="mr-1 h-4 w-4" /> Terug</Link>
           </Button>
+          <AutosaveIndicator status={autosave} />
           <div className="ml-auto flex gap-2">
             {contract.status === "active" ? (
               <Button size="sm" variant="outline" disabled={busy} onClick={() => patch({ status: "paused" })}>
@@ -246,23 +287,24 @@ function ContractDetail() {
         </div>
 
         <div className="rounded-xl border bg-card p-4 space-y-3">
-          <div className="flex items-start justify-between">
-            <div>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold">{contract.title}</h1>
-                <Badge variant="outline" className="text-xs">{contract.status}</Badge>
+                <TitleField value={contract.title ?? ""} onSave={(v) => autosavePatch({ title: v })} />
+                <Badge variant="outline" className="text-xs shrink-0">{contract.status}</Badge>
               </div>
               <div className="text-sm text-muted-foreground mt-1">
                 Klant: {client?.name ?? "—"}
               </div>
             </div>
-            <div className="text-right">
+            <div className="text-right shrink-0">
               <div className="text-2xl font-bold font-mono">
                 € {(contract.monthly_amount_cents / 100).toLocaleString("nl-NL", { minimumFractionDigits: 2 })}
               </div>
               <div className="text-xs text-muted-foreground">per maand</div>
             </div>
           </div>
+
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t">
             <FieldDate label="Startdatum" value={contract.start_date} onChange={(v) => patch({ start_date: v })} />
@@ -587,3 +629,42 @@ function PaymentLinkUrlField({
     </>
   );
 }
+
+function AutosaveIndicator({ status }: { status: "idle" | "saving" | "saved" | "error" }) {
+  if (status === "idle") return null;
+  const cls = "text-[11px] flex items-center gap-1 px-2 py-1 rounded-md border";
+  if (status === "saving") {
+    return <span className={`${cls} border-border text-muted-foreground`}><Loader2 className="h-3 w-3 animate-spin" /> Automatisch opslaan…</span>;
+  }
+  if (status === "saved") {
+    return <span className={`${cls} border-emerald-500/30 text-emerald-600 dark:text-emerald-300`}><Check className="h-3 w-3" /> Automatisch opgeslagen</span>;
+  }
+  return <span className={`${cls} border-destructive/40 text-destructive`}><CloudOff className="h-3 w-3" /> Opslaan mislukt</span>;
+}
+
+function TitleField({ value, onSave }: { value: string; onSave: (v: string) => void | Promise<void> }) {
+  const [v, setV] = useState(value);
+  const initial = useRef(value);
+  useEffect(() => { setV(value); initial.current = value; }, [value]);
+  useEffect(() => {
+    if (v === initial.current) return;
+    const t = setTimeout(() => {
+      const trimmed = v.trim();
+      if (trimmed && trimmed !== initial.current) {
+        initial.current = trimmed;
+        void onSave(trimmed);
+      }
+    }, 700);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [v]);
+  return (
+    <Input
+      value={v}
+      onChange={(e) => setV(e.target.value)}
+      className="text-xl font-bold h-9 border-transparent hover:border-border focus-visible:border-input bg-transparent px-2 -ml-2"
+      placeholder="Contracttitel"
+    />
+  );
+}
+
