@@ -200,7 +200,7 @@ function ClientsPage() {
                     // ignore clicks on interactive children
                     const t = e.target as HTMLElement;
                     if (t.closest("a,button")) return;
-                    window.location.assign(`/ai-columbus/klanten/${r.id}`);
+                    navigate({ to: "/ai-columbus/klanten/$clientId", params: { clientId: r.id } });
                   }}
                 >
                   <td className="px-4 py-3 font-medium">
