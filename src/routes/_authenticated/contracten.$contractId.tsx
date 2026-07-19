@@ -261,6 +261,7 @@ function ContractDetail() {
           <Button asChild variant="ghost" size="sm">
             <Link to="/contracten"><ArrowLeft className="mr-1 h-4 w-4" /> Terug</Link>
           </Button>
+          <AutosaveIndicator status={autosave} />
           <div className="ml-auto flex gap-2">
             {contract.status === "active" ? (
               <Button size="sm" variant="outline" disabled={busy} onClick={() => patch({ status: "paused" })}>
@@ -286,23 +287,24 @@ function ContractDetail() {
         </div>
 
         <div className="rounded-xl border bg-card p-4 space-y-3">
-          <div className="flex items-start justify-between">
-            <div>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold">{contract.title}</h1>
-                <Badge variant="outline" className="text-xs">{contract.status}</Badge>
+                <TitleField value={contract.title ?? ""} onSave={(v) => autosavePatch({ title: v })} />
+                <Badge variant="outline" className="text-xs shrink-0">{contract.status}</Badge>
               </div>
               <div className="text-sm text-muted-foreground mt-1">
                 Klant: {client?.name ?? "—"}
               </div>
             </div>
-            <div className="text-right">
+            <div className="text-right shrink-0">
               <div className="text-2xl font-bold font-mono">
                 € {(contract.monthly_amount_cents / 100).toLocaleString("nl-NL", { minimumFractionDigits: 2 })}
               </div>
               <div className="text-xs text-muted-foreground">per maand</div>
             </div>
           </div>
+
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t">
             <FieldDate label="Startdatum" value={contract.start_date} onChange={(v) => patch({ start_date: v })} />
