@@ -289,7 +289,7 @@ function ClientDetailPage() {
           <TabsTrigger value="contacten"><Users className="mr-2 h-4 w-4" /> Contactpersonen</TabsTrigger>
           <TabsTrigger value="projecten"><Briefcase className="mr-2 h-4 w-4" /> Projecten <Badge variant="secondary" className="ml-2">{projects.length}</Badge></TabsTrigger>
           <TabsTrigger value="contracten"><FileSignature className="mr-2 h-4 w-4" /> Contracten <Badge variant="secondary" className="ml-2">{contracts.length}</Badge></TabsTrigger>
-          <TabsTrigger value="offertes"><FileCheck2 className="mr-2 h-4 w-4" /> Offertes <Badge variant="secondary" className="ml-2">{quotes.length}</Badge></TabsTrigger>
+          <TabsTrigger value="offertes"><FileCheck2 className="mr-2 h-4 w-4" /> Offertes <Badge variant="secondary" className="ml-2">{quotes.length + studioQuotes.length}</Badge></TabsTrigger>
           <TabsTrigger value="betalingen"><CreditCard className="mr-2 h-4 w-4" /> Betalingen <Badge variant="secondary" className="ml-2">{invoices.length}</Badge></TabsTrigger>
           <TabsTrigger value="mails"><Inbox className="mr-2 h-4 w-4" /> E-mails <Badge variant="secondary" className="ml-2">{mails.length}</Badge></TabsTrigger>
           <TabsTrigger value="afspraken"><CalendarDays className="mr-2 h-4 w-4" /> Afspraken <Badge variant="secondary" className="ml-2">{appointments.length}</Badge></TabsTrigger>
