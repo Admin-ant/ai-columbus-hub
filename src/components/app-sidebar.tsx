@@ -354,7 +354,7 @@ export function AppSidebar() {
                                 <SidebarMenuSubItem key={s.url}>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <SidebarMenuSubButton asChild isActive={isActive(s.url)}>
+                                      <SidebarMenuSubButton asChild isActive={isActive(s.url)} className="transition-all duration-200 ease-out hover:translate-x-0.5 hover:bg-sky-50 dark:hover:bg-sky-400/10">
                                         <Link to={s.url} className="flex items-center gap-2">
                                           <s.icon className="h-3.5 w-3.5" />
                                           <span>{s.title}</span>
