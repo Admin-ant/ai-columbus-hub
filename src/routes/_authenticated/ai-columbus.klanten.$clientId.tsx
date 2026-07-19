@@ -51,6 +51,9 @@ function ClientDetailPage() {
   const [quotes, setQuotes] = useState<QuoteRow[]>([]);
   const [studioQuotes, setStudioQuotes] = useState<StudioQuoteRow[]>([]);
   const [mails, setMails] = useState<MailRow[]>([]);
+  const [drafts, setDrafts] = useState<MailRow[]>([]);
+  const [editingDraft, setEditingDraft] = useState<MailRow | null>(null);
+  const [composerOpen, setComposerOpen] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
