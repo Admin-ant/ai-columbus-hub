@@ -205,12 +205,13 @@ function InvoicesPage() {
 
   const counts = useMemo(() => {
     const now = Date.now();
-    const c = { all: invoices.length, paid: 0, open: 0, reminder: 0, draft: 0 };
+    const c = { all: invoices.length, paid: 0, open: 0, reminder: 0, draft: 0, sent: 0 };
     invoices.forEach((i) => {
       if (i.status === "paid") c.paid++;
       else if (i.status === "draft") c.draft++;
       else if (i.status === "sent" || i.status === "overdue") {
         c.open++;
+        if (i.status === "sent") c.sent++;
         if (i.due_date && new Date(i.due_date).getTime() < now) c.reminder++;
       }
     });
