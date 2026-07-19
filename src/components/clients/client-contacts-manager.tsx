@@ -18,6 +18,11 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  ContactPermissionsDialog,
+  DEFAULT_PERMISSIONS,
+  type ContactPermissions,
+} from "./contact-permissions-dialog";
 
 type ContactRow = Database["public"]["Tables"]["client_contacts"]["Row"];
 
