@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Pencil } from "lucide-react";
+import { Loader2, Pencil, Download } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -12,6 +13,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
+import { lookupKvk } from "@/lib/kvk-lookup.functions";
 
 type ClientRow = Database["public"]["Tables"]["clients"]["Row"];
 
@@ -54,12 +56,38 @@ export function ClientCompanyDetailsDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [fetchingKvk, setFetchingKvk] = useState(false);
   const [form, setForm] = useState<FormState>(empty(client));
+  const doLookupKvk = useServerFn(lookupKvk);
 
   useEffect(() => { if (open) setForm(empty(client)); }, [open, client]);
 
   function set<K extends keyof FormState>(k: K, v: string) {
     setForm((f) => ({ ...f, [k]: v }));
+  }
+
+  async function fetchKvk() {
+    const raw = form.kvk_number.replace(/\s+/g, "");
+    if (!/^[0-9]{8}$/.test(raw)) { toast.error("Vul eerst een geldig KvK-nummer van 8 cijfers in"); return; }
+    setFetchingKvk(true);
+    try {
+      const r = await doLookupKvk({ data: { kvkNumber: raw } });
+      setForm((f) => ({
+        ...f,
+        name: r.name ?? f.name,
+        kvk_number: r.kvk_number ?? f.kvk_number,
+        website: r.website ?? f.website,
+        address_line1: r.address_line1 ?? f.address_line1,
+        postal_code: r.postal_code ?? f.postal_code,
+        city: r.city ?? f.city,
+        country: r.country ?? f.country,
+      }));
+      toast.success("Bedrijfsgegevens opgehaald bij KvK");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Ophalen mislukt");
+    } finally {
+      setFetchingKvk(false);
+    }
   }
 
   async function save() {
@@ -107,7 +135,12 @@ export function ClientCompanyDetailsDialog({
           </div>
           <div>
             <Label>KvK-nummer</Label>
-            <Input value={form.kvk_number} onChange={(e) => set("kvk_number", e.target.value)} placeholder="12345678" />
+            <div className="flex gap-2">
+              <Input value={form.kvk_number} onChange={(e) => set("kvk_number", e.target.value)} placeholder="12345678" />
+              <Button type="button" variant="outline" onClick={fetchKvk} disabled={fetchingKvk} title="Gegevens ophalen bij KvK">
+                {fetchingKvk ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
           <div>
             <Label>BTW-nummer</Label>
