@@ -357,7 +357,7 @@ function NewContractDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nieuw contract</DialogTitle>
           <DialogDescription>Maak een abonnement voor een bestaande klant.</DialogDescription>
@@ -372,6 +372,35 @@ function NewContractDialog({
               </SelectContent>
             </Select>
           </div>
+
+          {selectedClient && (
+            <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-sm text-foreground">Klantgegevens</span>
+                <span className="text-[10px] uppercase text-muted-foreground">automatisch overgenomen</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
+                <InfoRow label="Contactpersoon" value={
+                  primaryContact
+                    ? `${primaryContact.first_name}${primaryContact.last_name ? ` ${primaryContact.last_name}` : ""}${primaryContact.job_title ? ` — ${primaryContact.job_title}` : ""}`
+                    : selectedClient.contact_person
+                } />
+                <InfoRow label="E-mail" value={primaryContact?.email ?? selectedClient.email} />
+                <InfoRow label="Telefoon" value={primaryContact?.phone ?? selectedClient.phone} />
+                <InfoRow label="Mobiel" value={primaryContact?.mobile} />
+                <InfoRow label="Adres" value={[selectedClient.address_line1, selectedClient.address_line2].filter(Boolean).join(", ")} />
+                <InfoRow label="Postcode / plaats" value={[selectedClient.postal_code, selectedClient.city].filter(Boolean).join(" ")} />
+                <InfoRow label="Land" value={selectedClient.country} />
+                <InfoRow label="KvK" value={selectedClient.kvk_number} />
+                <InfoRow label="BTW-nr" value={selectedClient.vat_number} />
+                <InfoRow label="Website" value={selectedClient.website} />
+              </div>
+              <p className="text-[11px] text-muted-foreground pt-1 border-t border-border">
+                Facturatie- en contactgegevens komen uit de klantkaart en worden meegenomen op elke factuur van dit contract.
+              </p>
+            </div>
+          )}
+
           <div>
             <Label>Titel</Label>
             <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="AI Telefonie abonnement" />
@@ -400,8 +429,13 @@ function NewContractDialog({
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label>Betaaltermijn (dagen)</Label>
+              <Input type="number" min="0" max="120" value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} />
+            </div>
           </div>
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Annuleer</Button>
           <Button onClick={save} disabled={saving}>
