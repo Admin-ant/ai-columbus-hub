@@ -334,7 +334,7 @@ export function AppSidebar() {
                               <SidebarMenuButton
                                 asChild
                                 isActive={isActive(item.url)}
-                                className={`h-auto py-2.5 rounded-lg border transition-colors ${tint.btn} ${isActive(item.url) ? tint.active : ""}`}
+                                className={`h-auto py-2.5 rounded-lg border ${tint.btn} ${isActive(item.url) ? tint.active : ""}`}
                               >
                                 <Link to={item.url} className="flex items-center gap-2.5">
                                   <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${tint.icon} ${isActive(item.url) ? tint.activeIcon : ""}`}>
