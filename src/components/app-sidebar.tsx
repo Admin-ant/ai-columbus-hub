@@ -72,7 +72,7 @@ const lightBlueTint = {
   active: "!bg-sky-700 !border-sky-800 !text-sky-50 dark:!bg-sky-400/30 dark:!border-sky-400/50 dark:!text-sky-50 ring-1 ring-sky-300 dark:ring-sky-400/40 contrast-more:!bg-sky-800 contrast-more:!border-sky-950 contrast-more:!text-sky-50 dark:contrast-more:!bg-sky-400/40 dark:contrast-more:!border-sky-300 dark:contrast-more:!text-sky-50 forced-colors:!bg-Highlight forced-colors:!text-HighlightText forced-colors:!border-CanvasText",
   activeIcon: "!bg-sky-500 !text-sky-50 dark:!bg-sky-400/40 dark:!text-sky-50 contrast-more:!bg-sky-400 contrast-more:!text-sky-950 dark:contrast-more:!bg-sky-400/50 dark:contrast-more:!text-sky-50 forced-colors:!bg-CanvasText forced-colors:!text-Canvas",
 };
-const groupTint: Record<string, { btn: string; icon: string; active: string }> = {
+const groupTint: Record<string, { btn: string; icon: string; active: string; activeIcon: string }> = {
   Algemeen: lightBlueTint,
   "Sales & Marketing": lightBlueTint,
   Administratie: lightBlueTint,
