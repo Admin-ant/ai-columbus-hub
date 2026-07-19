@@ -684,16 +684,34 @@ function ClientDetailPage() {
             <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
               <div>
                 <CardTitle className="flex items-center gap-2 text-base"><FileCheck2 className="h-4 w-4" /> Offertes</CardTitle>
-                <CardDescription>Alle offertes voor deze klant.</CardDescription>
+                <CardDescription>Offertes (uit Offertes & Offerte Studio) gekoppeld op klant-ID of naam.</CardDescription>
               </div>
               <Button size="sm" asChild>
                 <Link to="/offerte-studio"><Plus className="mr-2 h-4 w-4" /> Nieuwe offerte</Link>
               </Button>
             </CardHeader>
             <CardContent className="p-0">
-              {quotes.length === 0 ? (
-                <p className="p-6 text-sm text-muted-foreground">Nog geen offertes voor deze klant.</p>
-              ) : (
+              {(() => {
+                type Row = { id: string; title: string; status: string; created_at: string; sent_at: string | null; signed_at: string | null; total: number | null; href: "quote" | "studio" };
+                const merged: Row[] = [
+                  ...quotes.map((q): Row => ({
+                    id: q.id, title: q.title, status: q.status, created_at: q.created_at,
+                    sent_at: q.sent_at, signed_at: q.signed_at,
+                    total: q.total_amount != null ? Number(q.total_amount) : null,
+                    href: "quote",
+                  })),
+                  ...studioQuotes.map((s): Row => ({
+                    id: s.id, title: s.title ?? "(zonder titel)", status: s.status ?? "concept",
+                    created_at: s.created_at, sent_at: null,
+                    signed_at: s.accepted_at ?? null,
+                    total: null,
+                    href: "studio",
+                  })),
+                ].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+                if (merged.length === 0) {
+                  return <p className="p-6 text-sm text-muted-foreground">Nog geen offertes voor deze klant.</p>;
+                }
+                return (
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50 text-left">
                     <tr>
