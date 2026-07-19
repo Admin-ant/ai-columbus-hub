@@ -264,6 +264,25 @@ function ContractDetail() {
           </Button>
           <AutosaveIndicator status={autosave} />
           <div className="ml-auto flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy || autosave === "saving"}
+              onClick={async () => {
+                setAutosave("saving");
+                try {
+                  if (titleFlushRef.current) await titleFlushRef.current();
+                  setAutosave("saved");
+                  toast.success("Opgeslagen");
+                } catch (e) {
+                  setAutosave("error");
+                  toast.error("Opslaan mislukt: " + (e as Error).message);
+                }
+              }}
+            >
+              {autosave === "saving" ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />}
+              Opslaan
+            </Button>
             {contract.status === "active" ? (
               <Button size="sm" variant="outline" disabled={busy} onClick={() => patch({ status: "paused" })}>
                 <PauseCircle className="mr-1 h-4 w-4" /> Pauzeer
