@@ -74,10 +74,10 @@ function ContractDetail() {
           description: newDesc.trim(),
           quantity: parseFloat(newQty || "1"),
           unitPriceCents: Math.round(parseFloat(newPrice || "0") * 100),
-          vatRate: 21,
+          vatRate: parseFloat(newVat || "21"),
         },
       });
-      setNewDesc(""); setNewQty("1"); setNewPrice("0");
+      setNewDesc(""); setNewQty("1"); setNewPrice("0"); setNewVat("21");
       await load();
     } catch (e) {
       toast.error((e as Error).message);
