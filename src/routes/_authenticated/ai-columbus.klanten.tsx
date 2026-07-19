@@ -57,6 +57,7 @@ function ClientsPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY);
+  const navigate = useNavigate();
 
   async function load() {
     if (!currentOrganizationId) { setRows([]); setLoading(false); return; }
