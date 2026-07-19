@@ -18,6 +18,8 @@ export const Route = createFileRoute("/api/public/hooks/studio-followups")({
         if (!cronSecret || secret !== cronSecret) {
           return new Response("Unauthorized", { status: 401 });
         }
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
 
         const threshold = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
         const followupThreshold = new Date(
