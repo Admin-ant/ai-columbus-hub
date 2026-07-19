@@ -357,6 +357,58 @@ function ContractDetail() {
   );
 }
 
+function ContractTotals({ lines }: { lines: any[] }) {
+  const fmt = (cents: number) =>
+    `€ ${(cents / 100).toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const byRate = new Map<number, { excl: number; vat: number }>();
+  let subtotal = 0;
+  let vatTotal = 0;
+  for (const l of lines) {
+    const qty = Number(l.quantity) || 0;
+    const unit = Number(l.unit_price_cents) || 0;
+    const rate = Number(l.vat_rate) || 0;
+    const excl = Math.round(qty * unit);
+    const vat = Math.round((excl * rate) / 100);
+    subtotal += excl;
+    vatTotal += vat;
+    const cur = byRate.get(rate) ?? { excl: 0, vat: 0 };
+    cur.excl += excl;
+    cur.vat += vat;
+    byRate.set(rate, cur);
+  }
+  const total = subtotal + vatTotal;
+
+  if (lines.length === 0) return null;
+
+  return (
+    <div className="mt-4 flex justify-end">
+      <div className="w-full max-w-xs space-y-1 text-sm">
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Subtotaal (excl. btw)</span>
+          <span className="font-mono">{fmt(subtotal)}</span>
+        </div>
+        {Array.from(byRate.entries())
+          .sort((a, b) => a[0] - b[0])
+          .map(([rate, v]) => (
+            <div key={rate} className="flex justify-between text-xs text-muted-foreground">
+              <span>btw {rate}% over {fmt(v.excl)}</span>
+              <span className="font-mono">{fmt(v.vat)}</span>
+            </div>
+          ))}
+        <div className="flex justify-between border-t border-border pt-1">
+          <span className="text-muted-foreground">Btw totaal</span>
+          <span className="font-mono">{fmt(vatTotal)}</span>
+        </div>
+        <div className="flex justify-between border-t border-border pt-1 text-base font-semibold">
+          <span>Totaal (incl. btw)</span>
+          <span className="font-mono">{fmt(total)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function FieldDate({
   label, value, onChange, nullable,
 }: { label: string; value: string | null; onChange: (v: string) => void; nullable?: boolean }) {
