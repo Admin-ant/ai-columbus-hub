@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Loader2, Mail, Phone, Globe, Building2, MapPin, FileText, Briefcase, CreditCard, Users, Plus, Link2, Unlink, Pencil, Trash2, Search, History, ChevronDown, ChevronRight, Sparkles, CalendarDays, Send, Ban, FileSignature, FileCheck2, Inbox } from "lucide-react";
+import { ArrowLeft, Loader2, Mail, Phone, Globe, Building2, MapPin, FileText, Briefcase, CreditCard, Users, Plus, Link2, Unlink, Pencil, Trash2, Search, History, ChevronDown, ChevronRight, Sparkles, CalendarDays, Send, Ban, FileSignature, FileCheck2, Inbox, FileEdit } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -51,6 +51,9 @@ function ClientDetailPage() {
   const [quotes, setQuotes] = useState<QuoteRow[]>([]);
   const [studioQuotes, setStudioQuotes] = useState<StudioQuoteRow[]>([]);
   const [mails, setMails] = useState<MailRow[]>([]);
+  const [drafts, setDrafts] = useState<MailRow[]>([]);
+  const [editingDraft, setEditingDraft] = useState<MailRow | null>(null);
+  const [composerOpen, setComposerOpen] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
@@ -125,7 +128,9 @@ function ClientDetailPage() {
       const sqMap = new Map<string, StudioQuoteRow>();
       [...((sqById ?? []) as StudioQuoteRow[]), ...((sqByName ?? []) as StudioQuoteRow[])].forEach((r) => sqMap.set(r.id, r));
       setStudioQuotes(Array.from(sqMap.values()));
-      setMails((mm ?? []) as MailRow[]);
+      const allMails = (mm ?? []) as MailRow[];
+      setMails(allMails.filter((m) => m.folder !== "draft"));
+      setDrafts(allMails.filter((m) => m.folder === "draft"));
     }
     setLoading(false);
   }
@@ -772,7 +777,80 @@ function ClientDetailPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="mails" className="mt-4">
+        <TabsContent value="mails" className="mt-4 space-y-4">
+          {client && client.organization_id ? (
+            <Card>
+              <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <FileEdit className="h-4 w-4" /> Concepten
+                    <Badge variant="secondary" className="ml-2">{drafts.length}</Badge>
+                  </CardTitle>
+                  <CardDescription>Opgeslagen e-mailconcepten voor deze klant. Klik op een concept om verder te bewerken.</CardDescription>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => { setEditingDraft(null); setComposerOpen(true); }}
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Nieuw concept
+                </Button>
+              </CardHeader>
+              <CardContent className="p-0">
+                {drafts.length === 0 ? (
+                  <div className="p-6 text-sm text-muted-foreground text-center">
+                    Nog geen concepten. Maak er één aan om later verder te werken.
+                  </div>
+                ) : (
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 text-left">
+                      <tr>
+                        <th className="px-4 py-2 font-medium">Bijgewerkt</th>
+                        <th className="px-4 py-2 font-medium">Aan</th>
+                        <th className="px-4 py-2 font-medium">Onderwerp</th>
+                        <th className="px-4 py-2 font-medium text-right">Acties</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {drafts.map((d) => (
+                        <tr key={d.id} className="border-t hover:bg-muted/30 cursor-pointer" onClick={() => { setEditingDraft(d); setComposerOpen(true); }}>
+                          <td className="px-4 py-2 whitespace-nowrap text-muted-foreground">
+                            {new Date(d.updated_at).toLocaleString("nl-NL", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          </td>
+                          <td className="px-4 py-2 text-muted-foreground">{(d.to_emails ?? []).join(", ") || "—"}</td>
+                          <td className="px-4 py-2 font-medium">{d.subject || "(zonder onderwerp)"}</td>
+                          <td className="px-4 py-2 text-right">
+                            <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => { setEditingDraft(d); setComposerOpen(true); }}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={async () => {
+                                  if (!confirm("Concept verwijderen?")) return;
+                                  const { error } = await supabase.from("mail_messages").delete().eq("id", d.id);
+                                  if (error) { toast.error(error.message); return; }
+                                  toast.success("Concept verwijderd");
+                                  void loadAll();
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </CardContent>
+            </Card>
+          ) : null}
+
           <Card>
             <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
               <div>
@@ -794,6 +872,7 @@ function ClientDetailPage() {
                       organizationId={client.organization_id}
                       companyName={client.name}
                       companyEmail={client.email}
+                      onSaved={() => void loadAll()}
                     />
                   ) : null}
                 </div>
@@ -833,6 +912,25 @@ function ClientDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          {client && client.organization_id ? (
+            <ClientEmailComposer
+              clientId={client.id}
+              organizationId={client.organization_id}
+              companyName={client.name}
+              companyEmail={client.email}
+              hideTrigger
+              open={composerOpen}
+              onOpenChange={(v) => { setComposerOpen(v); if (!v) setEditingDraft(null); }}
+              draft={editingDraft ? {
+                id: editingDraft.id,
+                to: editingDraft.to_emails?.[0] ?? null,
+                subject: editingDraft.subject ?? null,
+                body: editingDraft.body_text ?? null,
+              } : null}
+              onSaved={() => void loadAll()}
+            />
+          ) : null}
         </TabsContent>
 
       </Tabs>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Mail, Send, Eye, EyeOff, RefreshCcw } from "lucide-react";
+import { Mail, Send, Eye, EyeOff, RefreshCcw, Save } from "lucide-react";
+import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { logClientActivity } from "@/lib/client-activity";
@@ -28,26 +29,51 @@ const PLACEHOLDERS = [
   { key: "{{achternaam}}", label: "Achternaam" },
 ];
 
+export type EmailDraft = {
+  id?: string | null;
+  to?: string | null;
+  subject?: string | null;
+  body?: string | null;
+};
+
 export function ClientEmailComposer({
   clientId,
   organizationId,
   companyName,
   companyEmail,
   defaultTo,
+  draft,
+  open: controlledOpen,
+  onOpenChange,
+  hideTrigger,
+  onSaved,
 }: {
   clientId: string;
   organizationId: string;
   companyName: string;
   companyEmail?: string | null;
   defaultTo?: string;
+  draft?: EmailDraft | null;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
+  onSaved?: () => void;
 }) {
 
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = (v: boolean) => {
+    onOpenChange?.(v);
+    if (controlledOpen === undefined) setUncontrolledOpen(v);
+  };
+
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [to, setTo] = useState<string>("");
   const [subject, setSubject] = useState(DEFAULT_SUBJECT);
   const [body, setBody] = useState(DEFAULT_BODY);
   const [showPreview, setShowPreview] = useState(false);
+  const [draftId, setDraftId] = useState<string | null>(draft?.id ?? null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     let ok = true;
@@ -62,19 +88,20 @@ export function ClientEmailComposer({
         const list = (data ?? []) as Contact[];
         setContacts(list);
         const primary = list.find((c) => c.is_primary) ?? list[0];
-        setTo(defaultTo ?? primary?.email ?? companyEmail ?? "");
+        setTo(draft?.to ?? defaultTo ?? primary?.email ?? companyEmail ?? "");
       }
     })();
     return () => { ok = false; };
-  }, [clientId, companyEmail, defaultTo, open]);
+  }, [clientId, companyEmail, defaultTo, open, draft?.to]);
 
   useEffect(() => {
-    if (!open) {
-      setSubject(DEFAULT_SUBJECT);
-      setBody(DEFAULT_BODY);
+    if (open) {
+      setSubject(draft?.subject ?? DEFAULT_SUBJECT);
+      setBody(draft?.body ?? DEFAULT_BODY);
+      setDraftId(draft?.id ?? null);
       setShowPreview(false);
     }
-  }, [open]);
+  }, [open, draft?.id, draft?.subject, draft?.body]);
 
   const selectedContact = useMemo(() => {
     return contacts.find((c) => c.email === to);
@@ -132,16 +159,51 @@ export function ClientEmailComposer({
     }
   }
 
+  async function saveDraft(closeAfter = false) {
+    setSaving(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const payload = {
+        organization_id: organizationId,
+        client_id: clientId,
+        folder: "draft" as const,
+        status: "draft",
+        subject: subject || null,
+        body_text: body || null,
+        to_emails: to ? [to] : [],
+        created_by: userData.user?.id ?? null,
+        updated_at: new Date().toISOString(),
+      };
+      if (draftId) {
+        const { error } = await supabase.from("mail_messages").update(payload).eq("id", draftId);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase.from("mail_messages").insert(payload).select("id").single();
+        if (error) throw error;
+        setDraftId(data.id);
+      }
+      toast.success("Concept opgeslagen");
+      onSaved?.();
+      if (closeAfter) setOpen(false);
+    } catch (e: any) {
+      toast.error(e.message ?? "Kon concept niet opslaan");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Mail className="mr-2 h-4 w-4" /> E-mail opmaken
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            <Mail className="mr-2 h-4 w-4" /> E-mail opmaken
+          </Button>
+        </DialogTrigger>
+      )}
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>E-mail opmaken</DialogTitle>
+          <DialogTitle>{draftId ? "Concept bewerken" : "E-mail opmaken"}</DialogTitle>
           <DialogDescription>
             Vul onderwerp en bericht in. Gebruik placeholders om bedrijfsnaam en contactpersoon automatisch in te vullen.
           </DialogDescription>
@@ -234,28 +296,37 @@ export function ClientEmailComposer({
           )}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Annuleren</Button>
-          <Button asChild disabled={!to}>
-            <a
-              href={mailtoHref}
-              target="_blank"
-              rel="noreferrer"
-              onClick={() => {
-                logClientActivity({
-                  clientId,
-                  organizationId,
-                  kind: "email",
-                  title: `E-mail: ${finalSubject || "(geen onderwerp)"}`,
-                  body: `Aan: ${to}\n\n${finalBody}`,
-                  contactId: selectedContact?.id ?? null,
-                });
-              }}
-
+        <DialogFooter className="gap-2 sm:justify-between">
+          <Button variant="outline" onClick={() => setOpen(false)}>Sluiten</Button>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => saveDraft(false)}
+              disabled={saving}
             >
-              <Send className="mr-2 h-4 w-4" /> Open in mailclient
-            </a>
-          </Button>
+              <Save className="mr-2 h-4 w-4" /> {draftId ? "Concept bijwerken" : "Opslaan als concept"}
+            </Button>
+            <Button asChild disabled={!to}>
+              <a
+                href={mailtoHref}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => {
+                  logClientActivity({
+                    clientId,
+                    organizationId,
+                    kind: "email",
+                    title: `E-mail: ${finalSubject || "(geen onderwerp)"}`,
+                    body: `Aan: ${to}\n\n${finalBody}`,
+                    contactId: selectedContact?.id ?? null,
+                  });
+                }}
+              >
+                <Send className="mr-2 h-4 w-4" /> Open in mailclient
+              </a>
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
