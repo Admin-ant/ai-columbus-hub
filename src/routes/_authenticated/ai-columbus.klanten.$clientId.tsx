@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Loader2, Mail, Phone, Globe, Building2, MapPin, FileText, Briefcase, CreditCard, Users, Plus, Link2, Unlink, Pencil, Trash2, Search, History, ChevronDown, ChevronRight, Sparkles, CalendarDays, Send, Ban } from "lucide-react";
+import { ArrowLeft, Loader2, Mail, Phone, Globe, Building2, MapPin, FileText, Briefcase, CreditCard, Users, Plus, Link2, Unlink, Pencil, Trash2, Search, History, ChevronDown, ChevronRight, Sparkles, CalendarDays, Send, Ban, FileSignature, FileCheck2, Inbox } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +29,9 @@ type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
 type InvoiceRow = Database["public"]["Tables"]["invoices"]["Row"];
 type LogRow = Database["public"]["Tables"]["invoice_link_log"]["Row"];
 type AppointmentRow = Database["public"]["Tables"]["appointments"]["Row"];
+type ContractRow = Database["public"]["Tables"]["contracts"]["Row"];
+type QuoteRow = Database["public"]["Tables"]["quotes"]["Row"];
+type MailRow = Database["public"]["Tables"]["mail_messages"]["Row"];
 
 const EUR = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
 
@@ -42,6 +45,9 @@ function ClientDetailPage() {
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
   const [logs, setLogs] = useState<Record<string, LogRow[]>>({});
   const [appointments, setAppointments] = useState<AppointmentRow[]>([]);
+  const [contracts, setContracts] = useState<ContractRow[]>([]);
+  const [quotes, setQuotes] = useState<QuoteRow[]>([]);
+  const [mails, setMails] = useState<MailRow[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
@@ -98,12 +104,16 @@ function ClientDetailPage() {
         setLogs({});
       }
 
-      const { data: appts } = await supabase
-        .from("appointments")
-        .select("*")
-        .eq("client_id", clientId)
-        .order("starts_at", { ascending: false });
+      const [{ data: appts }, { data: ctr }, { data: qts }, { data: mm }] = await Promise.all([
+        supabase.from("appointments").select("*").eq("client_id", clientId).order("starts_at", { ascending: false }),
+        supabase.from("contracts").select("*").eq("client_id", clientId).order("created_at", { ascending: false }),
+        supabase.from("quotes").select("*").eq("client_id", clientId).order("created_at", { ascending: false }),
+        supabase.from("mail_messages").select("*").eq("client_id", clientId).order("received_at", { ascending: false, nullsFirst: false }).order("sent_at", { ascending: false, nullsFirst: false }).limit(100),
+      ]);
       setAppointments((appts ?? []) as AppointmentRow[]);
+      setContracts((ctr ?? []) as ContractRow[]);
+      setQuotes((qts ?? []) as QuoteRow[]);
+      setMails((mm ?? []) as MailRow[]);
     }
     setLoading(false);
   }
@@ -263,11 +273,14 @@ function ClientDetailPage() {
       </div>
 
       <Tabs defaultValue="overzicht" className="w-full">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="overzicht"><Building2 className="mr-2 h-4 w-4" /> Overzicht</TabsTrigger>
           <TabsTrigger value="contacten"><Users className="mr-2 h-4 w-4" /> Contactpersonen</TabsTrigger>
           <TabsTrigger value="projecten"><Briefcase className="mr-2 h-4 w-4" /> Projecten <Badge variant="secondary" className="ml-2">{projects.length}</Badge></TabsTrigger>
+          <TabsTrigger value="contracten"><FileSignature className="mr-2 h-4 w-4" /> Contracten <Badge variant="secondary" className="ml-2">{contracts.length}</Badge></TabsTrigger>
+          <TabsTrigger value="offertes"><FileCheck2 className="mr-2 h-4 w-4" /> Offertes <Badge variant="secondary" className="ml-2">{quotes.length}</Badge></TabsTrigger>
           <TabsTrigger value="betalingen"><CreditCard className="mr-2 h-4 w-4" /> Betalingen <Badge variant="secondary" className="ml-2">{invoices.length}</Badge></TabsTrigger>
+          <TabsTrigger value="mails"><Inbox className="mr-2 h-4 w-4" /> E-mails <Badge variant="secondary" className="ml-2">{mails.length}</Badge></TabsTrigger>
           <TabsTrigger value="afspraken"><CalendarDays className="mr-2 h-4 w-4" /> Afspraken <Badge variant="secondary" className="ml-2">{appointments.length}</Badge></TabsTrigger>
         </TabsList>
 
@@ -597,6 +610,156 @@ function ClientDetailPage() {
                               <Badge variant="outline">{a.status}</Badge>
                             )}
                           </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="contracten" className="mt-4">
+          <Card>
+            <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-base"><FileSignature className="h-4 w-4" /> Contracten</CardTitle>
+                <CardDescription>Alle contracten van deze klant met status en maandbedrag.</CardDescription>
+              </div>
+              <Button size="sm" asChild>
+                <Link to="/contracten"><Plus className="mr-2 h-4 w-4" /> Nieuw contract</Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="p-0">
+              {contracts.length === 0 ? (
+                <p className="p-6 text-sm text-muted-foreground">Nog geen contracten voor deze klant.</p>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 text-left">
+                    <tr>
+                      <th className="px-4 py-2 font-medium">Titel</th>
+                      <th className="px-4 py-2 font-medium">Status</th>
+                      <th className="px-4 py-2 font-medium">Frequentie</th>
+                      <th className="px-4 py-2 font-medium">Looptijd</th>
+                      <th className="px-4 py-2 text-right font-medium">Maandbedrag</th>
+                      <th className="px-4 py-2 text-right font-medium">Openen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {contracts.map((c) => (
+                      <tr key={c.id} className="border-t">
+                        <td className="px-4 py-2 font-medium">{c.title}{c.contract_number ? <span className="ml-2 text-xs text-muted-foreground">#{c.contract_number}</span> : null}</td>
+                        <td className="px-4 py-2"><Badge variant={c.status === "active" ? "default" : "outline"}>{c.status}</Badge></td>
+                        <td className="px-4 py-2 text-muted-foreground">{c.billing_frequency}</td>
+                        <td className="px-4 py-2 text-muted-foreground">{c.start_date}{c.end_date ? ` → ${c.end_date}` : ""}</td>
+                        <td className="px-4 py-2 text-right">{EUR.format(Number(c.monthly_amount_cents) / 100)}</td>
+                        <td className="px-4 py-2 text-right">
+                          <Button variant="ghost" size="sm" asChild>
+                            <Link to="/contracten/$contractId" params={{ contractId: c.id }}><Pencil className="h-3.5 w-3.5" /></Link>
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="offertes" className="mt-4">
+          <Card>
+            <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-base"><FileCheck2 className="h-4 w-4" /> Offertes</CardTitle>
+                <CardDescription>Alle offertes voor deze klant.</CardDescription>
+              </div>
+              <Button size="sm" asChild>
+                <Link to="/offerte-studio"><Plus className="mr-2 h-4 w-4" /> Nieuwe offerte</Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="p-0">
+              {quotes.length === 0 ? (
+                <p className="p-6 text-sm text-muted-foreground">Nog geen offertes voor deze klant.</p>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 text-left">
+                    <tr>
+                      <th className="px-4 py-2 font-medium">Titel</th>
+                      <th className="px-4 py-2 font-medium">Status</th>
+                      <th className="px-4 py-2 font-medium">Aangemaakt</th>
+                      <th className="px-4 py-2 font-medium">Verzonden</th>
+                      <th className="px-4 py-2 font-medium">Getekend</th>
+                      <th className="px-4 py-2 text-right font-medium">Bedrag</th>
+                      <th className="px-4 py-2 text-right font-medium">Openen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {quotes.map((q) => (
+                      <tr key={q.id} className="border-t">
+                        <td className="px-4 py-2 font-medium">{q.title}</td>
+                        <td className="px-4 py-2"><Badge variant="outline">{q.status}</Badge></td>
+                        <td className="px-4 py-2 text-muted-foreground">{new Date(q.created_at).toLocaleDateString("nl-NL")}</td>
+                        <td className="px-4 py-2 text-muted-foreground">{q.sent_at ? new Date(q.sent_at).toLocaleDateString("nl-NL") : "—"}</td>
+                        <td className="px-4 py-2 text-muted-foreground">{q.signed_at ? new Date(q.signed_at).toLocaleDateString("nl-NL") : "—"}</td>
+                        <td className="px-4 py-2 text-right">{EUR.format(Number(q.total_amount))}</td>
+                        <td className="px-4 py-2 text-right">
+                          <Button variant="ghost" size="sm" asChild>
+                            <Link to="/offerte-studio/q/$id" params={{ id: q.id }}><Pencil className="h-3.5 w-3.5" /></Link>
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="mails" className="mt-4">
+          <Card>
+            <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-base"><Inbox className="h-4 w-4" /> E-mails</CardTitle>
+                <CardDescription>Inkomende en verzonden e-mails gekoppeld aan deze klant (laatste 100).</CardDescription>
+              </div>
+              <Button size="sm" asChild>
+                <Link to="/mail"><Mail className="mr-2 h-4 w-4" /> Postvak openen</Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="p-0">
+              {mails.length === 0 ? (
+                <p className="p-6 text-sm text-muted-foreground">Nog geen e-mails gekoppeld aan deze klant.</p>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 text-left">
+                    <tr>
+                      <th className="px-4 py-2 font-medium">Datum</th>
+                      <th className="px-4 py-2 font-medium">Richting</th>
+                      <th className="px-4 py-2 font-medium">Van / naar</th>
+                      <th className="px-4 py-2 font-medium">Onderwerp</th>
+                      <th className="px-4 py-2 font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mails.map((m) => {
+                      const when = m.sent_at ?? m.received_at ?? m.created_at;
+                      const outgoing = m.folder === "sent" || !!m.sent_at;
+                      return (
+                        <tr key={m.id} className="border-t">
+                          <td className="px-4 py-2 whitespace-nowrap text-muted-foreground">{when ? new Date(when).toLocaleString("nl-NL", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}</td>
+                          <td className="px-4 py-2">
+                            {outgoing
+                              ? <Badge variant="outline" className="gap-1"><Send className="h-3 w-3" /> Verzonden</Badge>
+                              : <Badge variant="secondary" className="gap-1"><Inbox className="h-3 w-3" /> Ontvangen</Badge>}
+                          </td>
+                          <td className="px-4 py-2 text-muted-foreground">
+                            {outgoing ? (m.to_emails ?? []).join(", ") || "—" : (m.from_name ? `${m.from_name} <${m.from_email ?? ""}>` : m.from_email ?? "—")}
+                          </td>
+                          <td className="px-4 py-2 font-medium">{m.subject || "(zonder onderwerp)"}</td>
+                          <td className="px-4 py-2"><Badge variant="outline">{m.status}</Badge></td>
                         </tr>
                       );
                     })}
