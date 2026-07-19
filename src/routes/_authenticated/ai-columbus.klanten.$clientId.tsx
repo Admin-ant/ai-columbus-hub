@@ -31,6 +31,7 @@ type LogRow = Database["public"]["Tables"]["invoice_link_log"]["Row"];
 type AppointmentRow = Database["public"]["Tables"]["appointments"]["Row"];
 type ContractRow = Database["public"]["Tables"]["contracts"]["Row"];
 type QuoteRow = Database["public"]["Tables"]["quotes"]["Row"];
+type StudioQuoteRow = Database["public"]["Tables"]["studio_quotes"]["Row"];
 type MailRow = Database["public"]["Tables"]["mail_messages"]["Row"];
 
 const EUR = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" });
