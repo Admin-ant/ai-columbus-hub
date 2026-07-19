@@ -249,9 +249,11 @@ function ClientDetailPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          {client.email && <Button variant="outline" size="sm" asChild><a href={`mailto:${client.email}`}><Mail className="mr-2 h-4 w-4" /> Mail</a></Button>}
-          {client.phone && <Button variant="outline" size="sm" asChild><a href={`tel:${client.phone}`}><Phone className="mr-2 h-4 w-4" /> Bel</a></Button>}
-        </div>
+        <ClientQuickActions
+          clientId={clientId}
+          companyEmail={client.email}
+          companyPhone={client.phone}
+        />
       </div>
 
       <Tabs defaultValue="overzicht" className="w-full">
