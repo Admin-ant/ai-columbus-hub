@@ -784,7 +784,18 @@ function ClientDetailPage() {
             </CardHeader>
             <CardContent className="p-0">
               {mails.length === 0 ? (
-                <p className="p-6 text-sm text-muted-foreground">Nog geen e-mails gekoppeld aan deze klant.</p>
+                <div className="flex flex-col items-center gap-3 p-8 text-center">
+                  <Inbox className="h-8 w-8 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Nog geen e-mails gekoppeld aan deze klant.</p>
+                  {client && client.organization_id ? (
+                    <ClientEmailComposer
+                      clientId={client.id}
+                      organizationId={client.organization_id}
+                      companyName={client.name}
+                      companyEmail={client.email}
+                    />
+                  ) : null}
+                </div>
               ) : (
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50 text-left">
