@@ -186,16 +186,17 @@ export function ClientQuickActions({
       </DropdownMenu>
 
       {/* LinkedIn */}
-      {linkedinContacts.length > 0 && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Linkedin className="mr-2 h-4 w-4" /> LinkedIn
-              <ChevronDown className="ml-1 h-3 w-3" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-64">
-            {linkedinContacts.map((c) => (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" disabled={linkedinContacts.length === 0}>
+            <Linkedin className="mr-2 h-4 w-4" /> LinkedIn
+            <ChevronDown className="ml-1 h-3 w-3" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-64">
+          <DropdownMenuLabel className="text-xs">Contactpersonen</DropdownMenuLabel>
+          {linkedinContacts.length > 0 ? (
+            linkedinContacts.map((c) => (
               <DropdownMenuItem key={c.id} asChild>
                 <a
                   href={c.linkedin_url!.startsWith("http") ? c.linkedin_url! : `https://${c.linkedin_url!}`}
@@ -203,14 +204,19 @@ export function ClientQuickActions({
                   rel="noreferrer"
                   className="flex items-center gap-2"
                 >
+                  {c.is_primary && <Star className="h-3.5 w-3.5 fill-current text-brand" />}
                   <Linkedin className="h-3.5 w-3.5" />
                   <span className="truncate">{label(c)}</span>
                 </a>
               </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
+            ))
+          ) : (
+            <DropdownMenuItem disabled className="text-muted-foreground">
+              Geen LinkedIn-link beschikbaar
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
