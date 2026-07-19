@@ -322,7 +322,7 @@ function NewContractDialog({
 
 
 
-  const save = async () => {
+  const save = async (asDraft = false) => {
     if (!currentOrganizationId || !clientId || !title.trim()) {
       toast.error("Vul klant en titel in");
       return;
@@ -339,10 +339,11 @@ function NewContractDialog({
           startDate,
           billingFrequency: freq,
           paymentTermsDays: parseInt(paymentTerms || "14", 10) || 14,
-          autoInvoice: true,
+          autoInvoice: !asDraft,
+          asDraft,
         },
       });
-      toast.success("Contract aangemaakt");
+      toast.success(asDraft ? "Concept opgeslagen" : "Contract aangemaakt");
       onOpenChange(false);
       setTitle("");
       setMonthly("0");
