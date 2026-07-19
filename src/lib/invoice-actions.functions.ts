@@ -306,7 +306,16 @@ export const removeInvoiceAttachment = createServerFn({ method: "POST" })
 export const getInvoiceAttachmentUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ storage_path: z.string() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    // Verify caller can see this attachment under RLS before signing with admin key.
+    const { data: att, error: attErr } = await context.supabase
+      .from("invoice_attachments")
+      .select("id")
+      .eq("storage_path", data.storage_path)
+      .maybeSingle();
+    if (attErr) throw new Error(attErr.message);
+    if (!att) throw new Error("Bijlage niet gevonden");
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: signed, error } = await supabaseAdmin.storage
       .from("invoice-attachments")
