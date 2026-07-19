@@ -183,10 +183,16 @@ function InvoicesPage() {
 
   const filteredInvoices = useMemo(() => {
     const now = Date.now();
+    const q = query.trim().toLowerCase();
     return invoices.filter((i) => {
+      if (q) {
+        const hay = `${i.invoice_number ?? ""} ${i.client_name ?? ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
       if (filter === "all") return true;
       if (filter === "paid") return i.status === "paid";
       if (filter === "draft") return i.status === "draft";
+      if (filter === "sent") return i.status === "sent";
       if (filter === "open") return i.status === "sent" || i.status === "overdue";
       if (filter === "reminder") {
         if (i.status !== "sent" && i.status !== "overdue") return false;
@@ -195,7 +201,7 @@ function InvoicesPage() {
       }
       return true;
     });
-  }, [invoices, filter]);
+  }, [invoices, filter, query]);
 
   const counts = useMemo(() => {
     const now = Date.now();
