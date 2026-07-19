@@ -2,7 +2,7 @@ import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-r
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, Check, CloudOff, Download, Link2, Link2Off, Loader2, PauseCircle, PlayCircle, Plus, Trash2, XCircle, Zap } from "lucide-react";
+import { ArrowLeft, Check, CloudOff, Download, Link2, Link2Off, Loader2, PauseCircle, PlayCircle, Plus, Save, Trash2, XCircle, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +31,7 @@ function ContractDetail() {
   const [state, setState] = useState<Awaited<ReturnType<typeof fnGet>> | null>(null);
   const [busy, setBusy] = useState(false);
   const [autosave, setAutosave] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const titleFlushRef = useRef<null | (() => Promise<void>)>(null);
 
   const [newDesc, setNewDesc] = useState("");
   const [newQty, setNewQty] = useState("1");
@@ -263,6 +264,25 @@ function ContractDetail() {
           </Button>
           <AutosaveIndicator status={autosave} />
           <div className="ml-auto flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy || autosave === "saving"}
+              onClick={async () => {
+                setAutosave("saving");
+                try {
+                  if (titleFlushRef.current) await titleFlushRef.current();
+                  setAutosave("saved");
+                  toast.success("Opgeslagen");
+                } catch (e) {
+                  setAutosave("error");
+                  toast.error("Opslaan mislukt: " + (e as Error).message);
+                }
+              }}
+            >
+              {autosave === "saving" ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />}
+              Opslaan
+            </Button>
             {contract.status === "active" ? (
               <Button size="sm" variant="outline" disabled={busy} onClick={() => patch({ status: "paused" })}>
                 <PauseCircle className="mr-1 h-4 w-4" /> Pauzeer
@@ -290,7 +310,7 @@ function ContractDetail() {
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <TitleField value={contract.title ?? ""} onSave={(v) => autosavePatch({ title: v })} />
+                <TitleField value={contract.title ?? ""} onSave={(v) => autosavePatch({ title: v })} flushRef={titleFlushRef} />
                 <Badge variant="outline" className="text-xs shrink-0">{contract.status}</Badge>
               </div>
               <div className="text-sm text-muted-foreground mt-1">
@@ -642,20 +662,38 @@ function AutosaveIndicator({ status }: { status: "idle" | "saving" | "saved" | "
   return <span className={`${cls} border-destructive/40 text-destructive`}><CloudOff className="h-3 w-3" /> Opslaan mislukt</span>;
 }
 
-function TitleField({ value, onSave }: { value: string; onSave: (v: string) => void | Promise<void> }) {
+function TitleField({ value, onSave, flushRef }: { value: string; onSave: (v: string) => void | Promise<void>; flushRef?: React.MutableRefObject<null | (() => Promise<void>)> }) {
   const [v, setV] = useState(value);
   const initial = useRef(value);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => { setV(value); initial.current = value; }, [value]);
+
+  const flush = async () => {
+    if (timer.current) { clearTimeout(timer.current); timer.current = null; }
+    const trimmed = v.trim();
+    if (trimmed && trimmed !== initial.current) {
+      initial.current = trimmed;
+      await onSave(trimmed);
+    }
+  };
+
+  useEffect(() => {
+    if (flushRef) flushRef.current = flush;
+    return () => { if (flushRef) flushRef.current = null; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [v, flushRef]);
+
   useEffect(() => {
     if (v === initial.current) return;
-    const t = setTimeout(() => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
       const trimmed = v.trim();
       if (trimmed && trimmed !== initial.current) {
         initial.current = trimmed;
         void onSave(trimmed);
       }
     }, 700);
-    return () => clearTimeout(t);
+    return () => { if (timer.current) clearTimeout(timer.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [v]);
   return (
