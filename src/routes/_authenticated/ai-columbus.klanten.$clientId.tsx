@@ -253,10 +253,13 @@ function ClientDetailPage() {
         </div>
         <ClientQuickActions
           clientId={clientId}
+          organizationId={client.organization_id ?? ""}
+
           companyName={client.name}
           companyEmail={client.email}
           companyPhone={client.phone}
         />
+
       </div>
 
       <Tabs defaultValue="overzicht" className="w-full">

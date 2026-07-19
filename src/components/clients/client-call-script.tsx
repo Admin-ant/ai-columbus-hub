@@ -76,13 +76,16 @@ function render(body: string, ctx: { companyName: string; contact?: Contact | nu
 
 export function ClientCallScript({
   clientId,
+  organizationId,
   companyName,
   companyPhone,
 }: {
   clientId: string;
+  organizationId: string;
   companyName: string;
   companyPhone?: string | null;
 }) {
+
   const [open, setOpen] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [customScripts, setCustomScripts] = useState<Script[]>([]);
@@ -262,14 +265,16 @@ export function ClientCallScript({
                 href={callNumber ? `tel:${callNumber}` : undefined}
                 onClick={() => {
                   if (!callNumber) return;
-                  void logClientActivity({
+                  logClientActivity({
                     clientId,
+                    organizationId,
                     kind: "call",
                     title: `Belpoging (${current.name})${callNumber ? ` — ${callNumber}` : ""}`,
                     body: preview,
                     contactId: selectedContact?.id ?? null,
                   });
                 }}
+
               >
                 <PhoneCall className="mr-2 h-4 w-4" /> Bellen
               </a>
