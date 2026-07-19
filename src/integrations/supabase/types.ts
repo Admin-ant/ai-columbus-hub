@@ -658,6 +658,45 @@ export type Database = {
         }
         Relationships: []
       }
+      client_audit_log: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          changed_fields: string[] | null
+          client_id: string
+          created_at: string
+          id: string
+          new_data: Json | null
+          old_data: Json | null
+          organization_id: string
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          changed_fields?: string[] | null
+          client_id: string
+          created_at?: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          organization_id: string
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          changed_fields?: string[] | null
+          client_id?: string
+          created_at?: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          organization_id?: string
+        }
+        Relationships: []
+      }
       client_contact_audit_log: {
         Row: {
           action: string

@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ClientContactsManager } from "@/components/clients/client-contacts-manager";
 import { ClientContactsAuditLog } from "@/components/clients/client-contacts-audit-log";
 import { ClientCompanyDetailsDialog } from "@/components/clients/client-company-details-dialog";
+import { ClientAuditLog } from "@/components/clients/client-audit-log";
 import { ClientQuickActions } from "@/components/clients/client-quick-actions";
 
 export const Route = createFileRoute("/_authenticated/ai-columbus/klanten/$clientId")({
@@ -301,7 +302,11 @@ function ClientDetailPage() {
               </Card>
             )}
           </div>
+          <div className="mt-4">
+            <ClientAuditLog clientId={clientId} />
+          </div>
         </TabsContent>
+
 
         <TabsContent value="contacten" className="mt-4 space-y-4">
           <ClientContactsManager clientId={clientId} organizationId={client.organization_id} />
