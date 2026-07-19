@@ -152,6 +152,32 @@
   }
 }
 
+@utility menu-lift {
+  transition-property: transform, box-shadow, background-color, border-color, color;
+  transition-duration: 200ms;
+  transition-timing-function: ease-out;
+  &:hover {
+    transform: translateX(2px);
+    box-shadow: 0 4px 12px -4px oklch(0.75 0.12 230 / 0.2);
+  }
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+@utility menu-glow {
+  box-shadow:
+    0 0 24px -6px oklch(0.68 0.14 230 / 0.35),
+    0 0 6px 1px oklch(0.75 0.12 230 / 0.15);
+}
+
+@utility menu-glow-dark {
+  box-shadow:
+    0 0 24px -6px oklch(0.7 0.12 230 / 0.25),
+    0 0 6px 1px oklch(0.7 0.1 230 / 0.1);
+}
+
+
 .mail-message-body {
   color: var(--color-foreground);
   background: transparent;
