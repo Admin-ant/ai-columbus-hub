@@ -16,6 +16,7 @@ import { ClientContactsManager } from "@/components/clients/client-contacts-mana
 import { ClientContactsAuditLog } from "@/components/clients/client-contacts-audit-log";
 import { ClientCompanyDetailsDialog } from "@/components/clients/client-company-details-dialog";
 import { ClientAuditLog } from "@/components/clients/client-audit-log";
+import { ClientActivityHistory } from "@/components/clients/client-activity-history";
 import { ClientQuickActions } from "@/components/clients/client-quick-actions";
 
 export const Route = createFileRoute("/_authenticated/ai-columbus/klanten/$clientId")({
