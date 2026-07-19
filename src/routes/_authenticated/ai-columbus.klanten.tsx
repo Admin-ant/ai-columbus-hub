@@ -170,9 +170,9 @@ function ClientsPage() {
       </div>
 
       <div className="overflow-hidden rounded-lg border bg-card">
-        <div className="overflow-x-auto">
+        <div className="max-h-[calc(100vh-260px)] overflow-y-auto overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-left">
+            <thead className="sticky top-0 z-10 bg-muted/80 text-left backdrop-blur">
               <tr>
                 <th className="px-4 py-3 font-medium">Naam</th>
                 <th className="px-4 py-3 font-medium">KvK</th>
@@ -192,7 +192,16 @@ function ClientsPage() {
                   Nog geen klanten. Klik op "Nieuwe klant" om er een toe te voegen.
                 </td></tr>
               ) : filtered.map((r) => (
-                <tr key={r.id} className="border-t hover:bg-muted/30">
+                <tr
+                  key={r.id}
+                  className="cursor-pointer border-t hover:bg-muted/30"
+                  onClick={(e) => {
+                    // ignore clicks on interactive children
+                    const t = e.target as HTMLElement;
+                    if (t.closest("a,button")) return;
+                    window.location.assign(`/ai-columbus/klanten/${r.id}`);
+                  }}
+                >
                   <td className="px-4 py-3 font-medium">
                     <div className="flex items-center gap-2">
                       <Building2 className="h-4 w-4 text-muted-foreground" />
@@ -238,6 +247,7 @@ function ClientsPage() {
           </table>
         </div>
       </div>
+
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl">

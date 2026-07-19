@@ -658,6 +658,78 @@ export type Database = {
         }
         Relationships: []
       }
+      client_contacts: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string | null
+          department: string | null
+          email: string | null
+          first_name: string
+          id: string
+          is_primary: boolean
+          job_title: string | null
+          last_name: string | null
+          linkedin_url: string | null
+          mobile: string | null
+          notes: string | null
+          organization_id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          email?: string | null
+          first_name: string
+          id?: string
+          is_primary?: boolean
+          job_title?: string | null
+          last_name?: string | null
+          linkedin_url?: string | null
+          mobile?: string | null
+          notes?: string | null
+          organization_id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          email?: string | null
+          first_name?: string
+          id?: string
+          is_primary?: boolean
+          job_title?: string | null
+          last_name?: string | null
+          linkedin_url?: string | null
+          mobile?: string | null
+          notes?: string | null
+          organization_id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_contacts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_contacts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_requirements: {
         Row: {
           created_at: string
