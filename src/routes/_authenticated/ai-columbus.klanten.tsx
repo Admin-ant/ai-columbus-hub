@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Plus, Loader2, Search, Pencil, Trash2, Building2, Mail, Phone, Globe, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
@@ -57,6 +57,7 @@ function ClientsPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY);
+  const navigate = useNavigate();
 
   async function load() {
     if (!currentOrganizationId) { setRows([]); setLoading(false); return; }
@@ -199,7 +200,7 @@ function ClientsPage() {
                     // ignore clicks on interactive children
                     const t = e.target as HTMLElement;
                     if (t.closest("a,button")) return;
-                    window.location.assign(`/ai-columbus/klanten/${r.id}`);
+                    navigate({ to: "/ai-columbus/klanten/$clientId", params: { clientId: r.id } });
                   }}
                 >
                   <td className="px-4 py-3 font-medium">
@@ -234,8 +235,8 @@ function ClientsPage() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="icon" asChild title="Bekijk klant">
-                        <Link to="/ai-columbus/klanten/$clientId" params={{ clientId: r.id }}><ExternalLink className="h-4 w-4" /></Link>
+                      <Button variant="ghost" size="icon" title="Open klantkaart" onClick={(e) => { e.stopPropagation(); navigate({ to: "/ai-columbus/klanten/$clientId", params: { clientId: r.id } }); }}>
+                        <ExternalLink className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => startEdit(r)}><Pencil className="h-4 w-4" /></Button>
                       <Button variant="ghost" size="icon" onClick={() => setDeleteId(r.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
