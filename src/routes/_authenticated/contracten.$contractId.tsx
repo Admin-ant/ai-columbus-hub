@@ -236,6 +236,9 @@ function ContractDetail() {
                 <XCircle className="mr-1 h-4 w-4" /> Beëindig
               </Button>
             )}
+            <Button size="sm" variant="outline" disabled={busy} onClick={exportPdf}>
+              <Download className="mr-1 h-4 w-4" /> PDF
+            </Button>
             <Button size="sm" disabled={busy} onClick={genNow}>
               <Zap className="mr-1 h-4 w-4" /> Genereer factuur nu
             </Button>
