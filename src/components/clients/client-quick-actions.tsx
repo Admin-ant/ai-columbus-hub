@@ -85,6 +85,11 @@ export function ClientQuickActions({
         companyName={companyName}
         companyEmail={companyEmail}
       />
+      <ClientCallScript
+        clientId={clientId}
+        companyName={companyName}
+        companyPhone={companyPhone}
+      />
 
       {/* E-mail */}
       <DropdownMenu>
