@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Mail, Send, Eye, EyeOff, RefreshCcw } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { logClientActivity } from "@/lib/client-activity";
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
