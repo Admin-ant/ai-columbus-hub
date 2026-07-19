@@ -207,7 +207,7 @@ function ContractsPage() {
         </div>
       </div>
 
-      <NewContractDialog open={openNew} onOpenChange={setOpenNew} onCreated={load} />
+      <NewContractDialog open={openNew} onOpenChange={handleOpenChange} onCreated={load} initialClientId={initialClientId} />
     </div>
   );
 }
