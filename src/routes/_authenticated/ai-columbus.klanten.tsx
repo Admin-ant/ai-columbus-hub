@@ -250,7 +250,7 @@ function ClientsPage() {
 
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editId ? "Klant bewerken" : "Nieuwe klant"}</DialogTitle>
             <DialogDescription>NAW-gegevens, KvK en contactgegevens van de klant.</DialogDescription>

@@ -124,7 +124,7 @@ export function ClientCompanyDetailsDialog({
       <DialogTrigger asChild>
         <Button size="sm" variant="outline"><Pencil className="mr-2 h-4 w-4" /> Bewerken</Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Bedrijfsgegevens bewerken</DialogTitle>
           <DialogDescription>KvK, BTW, adres en contactgegevens van deze klant.</DialogDescription>
