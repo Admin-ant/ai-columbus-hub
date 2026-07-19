@@ -446,3 +446,15 @@ function NewContractDialog({
     </Dialog>
   );
 }
+
+function InfoRow({ label, value }: { label: string; value: string | null | undefined }) {
+  const v = value?.toString().trim();
+  return (
+    <div className="flex justify-between gap-2">
+      <span className="text-muted-foreground">{label}</span>
+      <span className={v ? "text-foreground text-right truncate max-w-[60%]" : "text-muted-foreground/60"}>
+        {v || "—"}
+      </span>
+    </div>
+  );
+}
