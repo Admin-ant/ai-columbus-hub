@@ -251,6 +251,7 @@ export function AppSidebar() {
       <SidebarContent>
         {activeGroups.map((group) => {
           const isOpen = group.items.some((i) => isActive(i.url));
+          const tint = groupTint[group.label] ?? defaultTint;
           return (
             <Collapsible key={group.label} defaultOpen={isOpen} className="group/collapsible">
               <SidebarGroup>
@@ -262,13 +263,19 @@ export function AppSidebar() {
                 </SidebarGroupLabel>
                 <CollapsibleContent>
                   <SidebarGroupContent>
-                    <SidebarMenu>
+                    <SidebarMenu className="gap-1.5">
                       {group.items.map((item) => (
                         <SidebarMenuItem key={item.url}>
-                          <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                            <Link to={item.url} className="flex items-center gap-2">
-                              <item.icon className="h-4 w-4" />
-                              <span>{item.title}</span>
+                          <SidebarMenuButton
+                            asChild
+                            isActive={isActive(item.url)}
+                            className={`h-auto py-2.5 rounded-lg border transition-colors ${tint.btn} ${isActive(item.url) ? tint.active : ""}`}
+                          >
+                            <Link to={item.url} className="flex items-center gap-2.5">
+                              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${tint.icon}`}>
+                                <item.icon className="h-4 w-4" />
+                              </span>
+                              <span className="truncate font-medium">{item.title}</span>
                             </Link>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
