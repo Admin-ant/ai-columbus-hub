@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ClientContactsManager } from "@/components/clients/client-contacts-manager";
+import { ClientCompanyDetailsDialog } from "@/components/clients/client-company-details-dialog";
 
 export const Route = createFileRoute("/_authenticated/ai-columbus/klanten/$clientId")({
   head: () => ({ meta: [{ title: "Klant detail" }] }),
@@ -264,7 +265,10 @@ function ClientDetailPage() {
         <TabsContent value="overzicht" className="mt-4">
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
-              <CardHeader><CardTitle className="text-base">Bedrijfsgegevens</CardTitle></CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-base">Bedrijfsgegevens</CardTitle>
+                <ClientCompanyDetailsDialog client={client} onSaved={loadAll} />
+              </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <Field label="Bedrijfsnaam" value={client.name} />
                 <Field label="KvK-nummer" value={client.kvk_number} />
