@@ -715,7 +715,20 @@ function ClientDetailPage() {
                   })),
                 ].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
                 if (merged.length === 0) {
-                  return <p className="p-6 text-sm text-muted-foreground">Nog geen offertes voor deze klant.</p>;
+                  return (
+                    <div className="flex flex-col items-center gap-3 p-8 text-center">
+                      <FileCheck2 className="h-8 w-8 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">Nog geen offertes voor deze klant.</p>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        <Button size="sm" asChild>
+                          <Link to="/offerte-studio"><Plus className="mr-2 h-4 w-4" /> Nieuw in Offerte Studio</Link>
+                        </Button>
+                        <Button size="sm" variant="outline" asChild>
+                          <Link to="/quotes"><Plus className="mr-2 h-4 w-4" /> Klassieke offerte</Link>
+                        </Button>
+                      </div>
+                    </div>
+                  );
                 }
                 return (
                   <table className="w-full text-sm">
