@@ -34,6 +34,7 @@ function ContractDetail() {
   const [newDesc, setNewDesc] = useState("");
   const [newQty, setNewQty] = useState("1");
   const [newPrice, setNewPrice] = useState("0");
+  const [newVat, setNewVat] = useState("21");
 
   const load = async () => {
     try {
@@ -73,10 +74,10 @@ function ContractDetail() {
           description: newDesc.trim(),
           quantity: parseFloat(newQty || "1"),
           unitPriceCents: Math.round(parseFloat(newPrice || "0") * 100),
-          vatRate: 21,
+          vatRate: parseFloat(newVat || "21"),
         },
       });
-      setNewDesc(""); setNewQty("1"); setNewPrice("0");
+      setNewDesc(""); setNewQty("1"); setNewPrice("0"); setNewVat("21");
       await load();
     } catch (e) {
       toast.error((e as Error).message);
@@ -244,36 +245,53 @@ function ContractDetail() {
                 <th className="text-right py-1">Aantal</th>
                 <th className="text-right py-1">Prijs</th>
                 <th className="text-right py-1">BTW</th>
+                <th className="text-right py-1">Totaal excl.</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
-              {(lines ?? []).map((l) => (
-                <tr key={l.id} className="border-t border-border">
-                  <td className="py-2">{l.description}</td>
-                  <td className="py-2 text-right">{l.quantity}</td>
-                  <td className="py-2 text-right font-mono">€ {(l.unit_price_cents / 100).toFixed(2)}</td>
-                  <td className="py-2 text-right">{l.vat_rate}%</td>
-                  <td className="py-2 text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={busy}
-                      onClick={async () => {
-                        await fnDelLine({ data: { id: l.id } });
-                        void load();
-                      }}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
+              {(lines ?? []).map((l) => {
+                const lineExcl = (Number(l.quantity) || 0) * (Number(l.unit_price_cents) || 0);
+                return (
+                  <tr key={l.id} className="border-t border-border">
+                    <td className="py-2">{l.description}</td>
+                    <td className="py-2 text-right">{l.quantity}</td>
+                    <td className="py-2 text-right font-mono">€ {(l.unit_price_cents / 100).toFixed(2)}</td>
+                    <td className="py-2 text-right">{l.vat_rate}%</td>
+                    <td className="py-2 text-right font-mono">€ {(lineExcl / 100).toLocaleString("nl-NL", { minimumFractionDigits: 2 })}</td>
+                    <td className="py-2 text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={busy}
+                        onClick={async () => {
+                          await fnDelLine({ data: { id: l.id } });
+                          void load();
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
               <tr className="border-t border-border">
                 <td className="py-2"><Input value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="Omschrijving" /></td>
                 <td className="py-2 text-right"><Input value={newQty} onChange={(e) => setNewQty(e.target.value)} className="text-right w-20 ml-auto" /></td>
                 <td className="py-2 text-right"><Input value={newPrice} onChange={(e) => setNewPrice(e.target.value)} type="number" step="0.01" className="text-right w-28 ml-auto" /></td>
-                <td className="py-2 text-right text-xs text-muted-foreground">21%</td>
+                <td className="py-2 text-right">
+                  <Select value={newVat} onValueChange={setNewVat}>
+                    <SelectTrigger className="w-20 ml-auto"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">0%</SelectItem>
+                      <SelectItem value="9">9%</SelectItem>
+                      <SelectItem value="21">21%</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </td>
+                <td className="py-2 text-right font-mono text-xs text-muted-foreground">
+                  € {(((parseFloat(newQty || "0") || 0) * (parseFloat(newPrice || "0") || 0))).toLocaleString("nl-NL", { minimumFractionDigits: 2 })}
+                </td>
                 <td className="py-2 text-right">
                   <Button size="sm" variant="outline" onClick={addLine} disabled={busy}>
                     <Plus className="h-3.5 w-3.5" />
@@ -282,7 +300,10 @@ function ContractDetail() {
               </tr>
             </tbody>
           </table>
+
+          <ContractTotals lines={lines ?? []} />
         </div>
+
 
         <div className="rounded-xl border bg-card p-4">
           <h2 className="text-base font-semibold mb-3">Facturatie-historie</h2>
@@ -331,6 +352,58 @@ function ContractDetail() {
             <Loader2 className="h-3 w-3 animate-spin" /> bezig…
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function ContractTotals({ lines }: { lines: any[] }) {
+  const fmt = (cents: number) =>
+    `€ ${(cents / 100).toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const byRate = new Map<number, { excl: number; vat: number }>();
+  let subtotal = 0;
+  let vatTotal = 0;
+  for (const l of lines) {
+    const qty = Number(l.quantity) || 0;
+    const unit = Number(l.unit_price_cents) || 0;
+    const rate = Number(l.vat_rate) || 0;
+    const excl = Math.round(qty * unit);
+    const vat = Math.round((excl * rate) / 100);
+    subtotal += excl;
+    vatTotal += vat;
+    const cur = byRate.get(rate) ?? { excl: 0, vat: 0 };
+    cur.excl += excl;
+    cur.vat += vat;
+    byRate.set(rate, cur);
+  }
+  const total = subtotal + vatTotal;
+
+  if (lines.length === 0) return null;
+
+  return (
+    <div className="mt-4 flex justify-end">
+      <div className="w-full max-w-xs space-y-1 text-sm">
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Subtotaal (excl. btw)</span>
+          <span className="font-mono">{fmt(subtotal)}</span>
+        </div>
+        {Array.from(byRate.entries())
+          .sort((a, b) => a[0] - b[0])
+          .map(([rate, v]) => (
+            <div key={rate} className="flex justify-between text-xs text-muted-foreground">
+              <span>btw {rate}% over {fmt(v.excl)}</span>
+              <span className="font-mono">{fmt(v.vat)}</span>
+            </div>
+          ))}
+        <div className="flex justify-between border-t border-border pt-1">
+          <span className="text-muted-foreground">Btw totaal</span>
+          <span className="font-mono">{fmt(vatTotal)}</span>
+        </div>
+        <div className="flex justify-between border-t border-border pt-1 text-base font-semibold">
+          <span>Totaal (incl. btw)</span>
+          <span className="font-mono">{fmt(total)}</span>
+        </div>
       </div>
     </div>
   );
