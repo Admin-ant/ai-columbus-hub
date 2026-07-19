@@ -152,6 +152,7 @@ export function ClientQuickActions({
                         <Smartphone className="h-3.5 w-3.5" />
                         <span className="truncate">{label(c)}</span>
                         <span className="ml-auto truncate text-xs text-muted-foreground">{c.mobile}</span>
+                        <CopyButton value={c.mobile} />
                       </a>
                     </DropdownMenuItem>
                   )}
@@ -161,6 +162,7 @@ export function ClientQuickActions({
                         <Phone className="h-3.5 w-3.5" />
                         <span className="truncate">{label(c)}</span>
                         <span className="ml-auto truncate text-xs text-muted-foreground">{c.phone}</span>
+                        <CopyButton value={c.phone} />
                       </a>
                     </DropdownMenuItem>
                   )}
