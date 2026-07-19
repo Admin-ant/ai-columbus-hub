@@ -245,36 +245,53 @@ function ContractDetail() {
                 <th className="text-right py-1">Aantal</th>
                 <th className="text-right py-1">Prijs</th>
                 <th className="text-right py-1">BTW</th>
+                <th className="text-right py-1">Totaal excl.</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
-              {(lines ?? []).map((l) => (
-                <tr key={l.id} className="border-t border-border">
-                  <td className="py-2">{l.description}</td>
-                  <td className="py-2 text-right">{l.quantity}</td>
-                  <td className="py-2 text-right font-mono">€ {(l.unit_price_cents / 100).toFixed(2)}</td>
-                  <td className="py-2 text-right">{l.vat_rate}%</td>
-                  <td className="py-2 text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={busy}
-                      onClick={async () => {
-                        await fnDelLine({ data: { id: l.id } });
-                        void load();
-                      }}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
+              {(lines ?? []).map((l) => {
+                const lineExcl = (Number(l.quantity) || 0) * (Number(l.unit_price_cents) || 0);
+                return (
+                  <tr key={l.id} className="border-t border-border">
+                    <td className="py-2">{l.description}</td>
+                    <td className="py-2 text-right">{l.quantity}</td>
+                    <td className="py-2 text-right font-mono">€ {(l.unit_price_cents / 100).toFixed(2)}</td>
+                    <td className="py-2 text-right">{l.vat_rate}%</td>
+                    <td className="py-2 text-right font-mono">€ {(lineExcl / 100).toLocaleString("nl-NL", { minimumFractionDigits: 2 })}</td>
+                    <td className="py-2 text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={busy}
+                        onClick={async () => {
+                          await fnDelLine({ data: { id: l.id } });
+                          void load();
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
               <tr className="border-t border-border">
                 <td className="py-2"><Input value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="Omschrijving" /></td>
                 <td className="py-2 text-right"><Input value={newQty} onChange={(e) => setNewQty(e.target.value)} className="text-right w-20 ml-auto" /></td>
                 <td className="py-2 text-right"><Input value={newPrice} onChange={(e) => setNewPrice(e.target.value)} type="number" step="0.01" className="text-right w-28 ml-auto" /></td>
-                <td className="py-2 text-right text-xs text-muted-foreground">21%</td>
+                <td className="py-2 text-right">
+                  <Select value={newVat} onValueChange={setNewVat}>
+                    <SelectTrigger className="w-20 ml-auto"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">0%</SelectItem>
+                      <SelectItem value="9">9%</SelectItem>
+                      <SelectItem value="21">21%</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </td>
+                <td className="py-2 text-right font-mono text-xs text-muted-foreground">
+                  € {(((parseFloat(newQty || "0") || 0) * (parseFloat(newPrice || "0") || 0))).toLocaleString("nl-NL", { minimumFractionDigits: 2 })}
+                </td>
                 <td className="py-2 text-right">
                   <Button size="sm" variant="outline" onClick={addLine} disabled={busy}>
                     <Plus className="h-3.5 w-3.5" />
@@ -283,7 +300,10 @@ function ContractDetail() {
               </tr>
             </tbody>
           </table>
+
+          <ContractTotals lines={lines ?? []} />
         </div>
+
 
         <div className="rounded-xl border bg-card p-4">
           <h2 className="text-base font-semibold mb-3">Facturatie-historie</h2>
