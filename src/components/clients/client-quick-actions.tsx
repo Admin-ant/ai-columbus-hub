@@ -131,8 +131,11 @@ export function ClientQuickActions({
             <>
               <DropdownMenuLabel className="text-xs">Bedrijf</DropdownMenuLabel>
               <DropdownMenuItem asChild>
-                <a href={`tel:${companyPhone}`}>
-                  <Building2 className="mr-2 h-4 w-4" /> {companyPhone}
+                <a href={`tel:${companyPhone}`} className="flex items-center justify-between">
+                  <span className="flex items-center">
+                    <Building2 className="mr-2 h-4 w-4" /> {companyPhone}
+                  </span>
+                  <CopyButton value={companyPhone} />
                 </a>
               </DropdownMenuItem>
               {callContacts.length > 0 && <DropdownMenuSeparator />}
