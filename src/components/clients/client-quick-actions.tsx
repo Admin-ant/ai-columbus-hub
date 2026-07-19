@@ -86,14 +86,17 @@ export function ClientQuickActions({
       {/* E-mail opmaken */}
       <ClientEmailComposer
         clientId={clientId}
+        organizationId={organizationId}
         companyName={companyName}
         companyEmail={companyEmail}
       />
       <ClientCallScript
         clientId={clientId}
+        organizationId={organizationId}
         companyName={companyName}
         companyPhone={companyPhone}
       />
+
 
       {/* E-mail */}
       <DropdownMenu>
