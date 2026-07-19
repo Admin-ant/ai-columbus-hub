@@ -10,6 +10,7 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ClientEmailComposer } from "@/components/clients/client-email-composer";
+import { ClientCallScript } from "@/components/clients/client-call-script";
 
 type Contact = Database["public"]["Tables"]["client_contacts"]["Row"];
 
@@ -83,6 +84,11 @@ export function ClientQuickActions({
         clientId={clientId}
         companyName={companyName}
         companyEmail={companyEmail}
+      />
+      <ClientCallScript
+        clientId={clientId}
+        companyName={companyName}
+        companyPhone={companyPhone}
       />
 
       {/* E-mail */}
