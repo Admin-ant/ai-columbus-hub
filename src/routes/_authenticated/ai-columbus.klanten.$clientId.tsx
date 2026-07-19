@@ -128,7 +128,9 @@ function ClientDetailPage() {
       const sqMap = new Map<string, StudioQuoteRow>();
       [...((sqById ?? []) as StudioQuoteRow[]), ...((sqByName ?? []) as StudioQuoteRow[])].forEach((r) => sqMap.set(r.id, r));
       setStudioQuotes(Array.from(sqMap.values()));
-      setMails((mm ?? []) as MailRow[]);
+      const allMails = (mm ?? []) as MailRow[];
+      setMails(allMails.filter((m) => m.folder !== "draft"));
+      setDrafts(allMails.filter((m) => m.folder === "draft"));
     }
     setLoading(false);
   }
