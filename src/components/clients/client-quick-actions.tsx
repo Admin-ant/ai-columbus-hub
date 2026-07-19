@@ -3,6 +3,7 @@ import { Mail, Phone, Smartphone, Linkedin, ChevronDown, Building2, Star, Copy, 
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { logClientActivity } from "@/lib/client-activity";
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -104,7 +105,11 @@ export function ClientQuickActions({
             <>
               <DropdownMenuLabel className="text-xs">Bedrijf</DropdownMenuLabel>
               <DropdownMenuItem asChild>
-                <a href={`mailto:${companyEmail}`} className="flex items-center justify-between">
+                <a
+                  href={`mailto:${companyEmail}`}
+                  className="flex items-center justify-between"
+                  onClick={() => void logClientActivity({ clientId, kind: "email", title: `E-mail bedrijf: ${companyEmail}` })}
+                >
                   <span className="flex items-center">
                     <Building2 className="mr-2 h-4 w-4" /> {companyEmail}
                   </span>
@@ -119,7 +124,11 @@ export function ClientQuickActions({
               <DropdownMenuLabel className="text-xs">Contactpersonen</DropdownMenuLabel>
               {mailContacts.map((c) => (
                 <DropdownMenuItem key={c.id} asChild>
-                  <a href={`mailto:${c.email!}`} className="flex items-center gap-2">
+                  <a
+                    href={`mailto:${c.email!}`}
+                    className="flex items-center gap-2"
+                    onClick={() => void logClientActivity({ clientId, kind: "email", title: `E-mail: ${label(c)} (${c.email})`, contactId: c.id })}
+                  >
                     {c.is_primary && <Star className="h-3.5 w-3.5 fill-current text-brand" />}
                     <span className="truncate">{label(c)}</span>
                     <span className="ml-auto truncate text-xs text-muted-foreground">{c.email}</span>
@@ -147,7 +156,11 @@ export function ClientQuickActions({
             <>
               <DropdownMenuLabel className="text-xs">Bedrijf</DropdownMenuLabel>
               <DropdownMenuItem asChild>
-                <a href={`tel:${companyPhone}`} className="flex items-center justify-between">
+                <a
+                  href={`tel:${companyPhone}`}
+                  className="flex items-center justify-between"
+                  onClick={() => void logClientActivity({ clientId, kind: "call", title: `Belpoging bedrijf: ${companyPhone}` })}
+                >
                   <span className="flex items-center">
                     <Building2 className="mr-2 h-4 w-4" /> {companyPhone}
                   </span>
@@ -164,7 +177,11 @@ export function ClientQuickActions({
                 <div key={c.id}>
                   {c.mobile && (
                     <DropdownMenuItem asChild>
-                      <a href={`tel:${c.mobile}`} className="flex items-center gap-2">
+                      <a
+                        href={`tel:${c.mobile}`}
+                        className="flex items-center gap-2"
+                        onClick={() => void logClientActivity({ clientId, kind: "call", title: `Belpoging: ${label(c)} (${c.mobile})`, contactId: c.id })}
+                      >
                         <Smartphone className="h-3.5 w-3.5" />
                         <span className="truncate">{label(c)}</span>
                         <span className="ml-auto truncate text-xs text-muted-foreground">{c.mobile}</span>
@@ -174,7 +191,11 @@ export function ClientQuickActions({
                   )}
                   {c.phone && (
                     <DropdownMenuItem asChild>
-                      <a href={`tel:${c.phone}`} className="flex items-center gap-2">
+                      <a
+                        href={`tel:${c.phone}`}
+                        className="flex items-center gap-2"
+                        onClick={() => void logClientActivity({ clientId, kind: "call", title: `Belpoging: ${label(c)} (${c.phone})`, contactId: c.id })}
+                      >
                         <Phone className="h-3.5 w-3.5" />
                         <span className="truncate">{label(c)}</span>
                         <span className="ml-auto truncate text-xs text-muted-foreground">{c.phone}</span>

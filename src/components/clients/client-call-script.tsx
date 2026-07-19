@@ -3,6 +3,7 @@ import { PhoneCall, Copy, Check, Star, Building2, Smartphone, Phone, RotateCcw, 
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { logClientActivity } from "@/lib/client-activity";
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -257,7 +258,19 @@ export function ClientCallScript({
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setOpen(false)}>Sluiten</Button>
             <Button asChild disabled={!callNumber}>
-              <a href={callNumber ? `tel:${callNumber}` : undefined}>
+              <a
+                href={callNumber ? `tel:${callNumber}` : undefined}
+                onClick={() => {
+                  if (!callNumber) return;
+                  void logClientActivity({
+                    clientId,
+                    kind: "call",
+                    title: `Belpoging (${current.name})${callNumber ? ` — ${callNumber}` : ""}`,
+                    body: preview,
+                    contactId: selectedContact?.id ?? null,
+                  });
+                }}
+              >
                 <PhoneCall className="mr-2 h-4 w-4" /> Bellen
               </a>
             </Button>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Mail, Send, Eye, EyeOff, RefreshCcw } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { logClientActivity } from "@/lib/client-activity";
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -233,7 +234,20 @@ export function ClientEmailComposer({
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Annuleren</Button>
           <Button asChild disabled={!to}>
-            <a href={mailtoHref} target="_blank" rel="noreferrer">
+            <a
+              href={mailtoHref}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => {
+                void logClientActivity({
+                  clientId,
+                  kind: "email",
+                  title: `E-mail: ${finalSubject || "(geen onderwerp)"}`,
+                  body: `Aan: ${to}\n\n${finalBody}`,
+                  contactId: selectedContact?.id ?? null,
+                });
+              }}
+            >
               <Send className="mr-2 h-4 w-4" /> Open in mailclient
             </a>
           </Button>

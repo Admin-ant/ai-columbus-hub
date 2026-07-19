@@ -1136,6 +1136,7 @@ export type Database = {
         Row: {
           body: string | null
           client_id: string | null
+          contact_id: string | null
           created_at: string
           created_by: string | null
           done: boolean
@@ -1152,6 +1153,7 @@ export type Database = {
         Insert: {
           body?: string | null
           client_id?: string | null
+          contact_id?: string | null
           created_at?: string
           created_by?: string | null
           done?: boolean
@@ -1168,6 +1170,7 @@ export type Database = {
         Update: {
           body?: string | null
           client_id?: string | null
+          contact_id?: string | null
           created_at?: string
           created_by?: string | null
           done?: boolean
@@ -1187,6 +1190,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activities_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "client_contacts"
             referencedColumns: ["id"]
           },
           {
