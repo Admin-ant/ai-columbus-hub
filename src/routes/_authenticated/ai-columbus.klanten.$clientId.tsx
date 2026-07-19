@@ -18,6 +18,7 @@ import { ClientCompanyDetailsDialog } from "@/components/clients/client-company-
 import { ClientAuditLog } from "@/components/clients/client-audit-log";
 import { ClientActivityHistory } from "@/components/clients/client-activity-history";
 import { ClientQuickActions } from "@/components/clients/client-quick-actions";
+import { ClientEmailComposer } from "@/components/clients/client-email-composer";
 
 export const Route = createFileRoute("/_authenticated/ai-columbus/klanten/$clientId")({
   head: () => ({ meta: [{ title: "Klant detail" }] }),
@@ -644,7 +645,13 @@ function ClientDetailPage() {
             </CardHeader>
             <CardContent className="p-0">
               {contracts.length === 0 ? (
-                <p className="p-6 text-sm text-muted-foreground">Nog geen contracten voor deze klant.</p>
+                <div className="flex flex-col items-center gap-3 p-8 text-center">
+                  <FileSignature className="h-8 w-8 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Nog geen contracten voor deze klant.</p>
+                  <Button size="sm" asChild>
+                    <Link to="/contracten"><Plus className="mr-2 h-4 w-4" /> Nieuw contract aanmaken</Link>
+                  </Button>
+                </div>
               ) : (
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50 text-left">
@@ -709,7 +716,20 @@ function ClientDetailPage() {
                   })),
                 ].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
                 if (merged.length === 0) {
-                  return <p className="p-6 text-sm text-muted-foreground">Nog geen offertes voor deze klant.</p>;
+                  return (
+                    <div className="flex flex-col items-center gap-3 p-8 text-center">
+                      <FileCheck2 className="h-8 w-8 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">Nog geen offertes voor deze klant.</p>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        <Button size="sm" asChild>
+                          <Link to="/offerte-studio"><Plus className="mr-2 h-4 w-4" /> Nieuw in Offerte Studio</Link>
+                        </Button>
+                        <Button size="sm" variant="outline" asChild>
+                          <Link to="/quotes"><Plus className="mr-2 h-4 w-4" /> Klassieke offerte</Link>
+                        </Button>
+                      </div>
+                    </div>
+                  );
                 }
                 return (
                   <table className="w-full text-sm">
@@ -765,7 +785,18 @@ function ClientDetailPage() {
             </CardHeader>
             <CardContent className="p-0">
               {mails.length === 0 ? (
-                <p className="p-6 text-sm text-muted-foreground">Nog geen e-mails gekoppeld aan deze klant.</p>
+                <div className="flex flex-col items-center gap-3 p-8 text-center">
+                  <Inbox className="h-8 w-8 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Nog geen e-mails gekoppeld aan deze klant.</p>
+                  {client && client.organization_id ? (
+                    <ClientEmailComposer
+                      clientId={client.id}
+                      organizationId={client.organization_id}
+                      companyName={client.name}
+                      companyEmail={client.email}
+                    />
+                  ) : null}
+                </div>
               ) : (
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50 text-left">
