@@ -46,6 +46,33 @@ export function ClientQuickActions({
   const callContacts = contacts.filter((c) => !!(c.mobile || c.phone));
   const linkedinContacts = contacts.filter((c) => !!c.linkedin_url);
 
+  function CopyButton({ value }: { value: string | null | undefined }) {
+    const [copied, setCopied] = useState(false);
+    if (!value) return null;
+    return (
+      <button
+        type="button"
+        onClick={async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          try {
+            await navigator.clipboard.writeText(value);
+            setCopied(true);
+            toast.success("Gekopieerd: " + value);
+            setTimeout(() => setCopied(false), 1500);
+          } catch {
+            toast.error("Kopiëren mislukt");
+          }
+        }}
+        className="ml-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+        aria-label="Kopiëren"
+        title="Kopiëren"
+      >
+        {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+      </button>
+    );
+  }
+
   return (
     <div className="flex flex-wrap gap-2">
       {/* E-mail */}
