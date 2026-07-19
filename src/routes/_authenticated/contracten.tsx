@@ -439,8 +439,11 @@ function NewContractDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Annuleer</Button>
-          <Button onClick={save} disabled={saving}>
-            {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Opslaan
+          <Button variant="secondary" onClick={() => save(true)} disabled={saving}>
+            {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Opslaan als concept
+          </Button>
+          <Button onClick={() => save(false)} disabled={saving}>
+            {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Aanmaken & activeren
           </Button>
         </DialogFooter>
       </DialogContent>
