@@ -68,11 +68,29 @@ function ContractsShell() {
 
 function ContractsPage() {
   const { currentOrganizationId } = useWorkspace();
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
   const [rows, setRows] = useState<ContractRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [openNew, setOpenNew] = useState(false);
   const [running, setRunning] = useState(false);
+  const [initialClientId, setInitialClientId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (search.clientId || search.new) {
+      setInitialClientId(search.clientId);
+      setOpenNew(true);
+    }
+  }, [search.clientId, search.new]);
+
+  const handleOpenChange = (v: boolean) => {
+    setOpenNew(v);
+    if (!v && (search.clientId || search.new)) {
+      void navigate({ search: {}, replace: true });
+      setInitialClientId(undefined);
+    }
+  };
 
   const fnList = useServerFn(listContracts);
   const fnRun = useServerFn(runRecurringInvoices);
