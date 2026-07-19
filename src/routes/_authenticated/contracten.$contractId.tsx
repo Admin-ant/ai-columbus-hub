@@ -310,7 +310,7 @@ function ContractDetail() {
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <TitleField value={contract.title ?? ""} onSave={(v) => autosavePatch({ title: v })} />
+                <TitleField value={contract.title ?? ""} onSave={(v) => autosavePatch({ title: v })} flushRef={titleFlushRef} />
                 <Badge variant="outline" className="text-xs shrink-0">{contract.status}</Badge>
               </div>
               <div className="text-sm text-muted-foreground mt-1">
