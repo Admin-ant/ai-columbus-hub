@@ -63,8 +63,8 @@ import { Route as AuthenticatedAiColumbusModellenRouteImport } from './routes/_a
 import { Route as AuthenticatedAiColumbusLogsRouteImport } from './routes/_authenticated/ai-columbus.logs'
 import { Route as AuthenticatedAiColumbusLeadsRouteImport } from './routes/_authenticated/ai-columbus.leads'
 import { Route as AuthenticatedAiColumbusKoppelingenRouteImport } from './routes/_authenticated/ai-columbus.koppelingen'
-import { Route as AuthenticatedAiColumbusKlantenRouteImport } from './routes/_authenticated/ai-columbus.klanten'
 import { Route as AuthenticatedAiColumbusInstellingenRouteImport } from './routes/_authenticated/ai-columbus.instellingen'
+import { Route as AuthenticatedAiColumbusKlantenIndexRouteImport } from './routes/_authenticated/ai-columbus.klanten.index'
 import { Route as ApiPublicLTokenRouteImport } from './routes/api/public/l.$token'
 import { Route as ApiPublicHooksStudioFollowupsRouteImport } from './routes/api/public/hooks/studio-followups'
 import { Route as ApiPublicHooksResendEventsRouteImport } from './routes/api/public/hooks/resend-events'
@@ -381,16 +381,16 @@ const AuthenticatedAiColumbusKoppelingenRoute =
     path: '/koppelingen',
     getParentRoute: () => AuthenticatedAiColumbusRoute,
   } as any)
-const AuthenticatedAiColumbusKlantenRoute =
-  AuthenticatedAiColumbusKlantenRouteImport.update({
-    id: '/klanten',
-    path: '/klanten',
-    getParentRoute: () => AuthenticatedAiColumbusRoute,
-  } as any)
 const AuthenticatedAiColumbusInstellingenRoute =
   AuthenticatedAiColumbusInstellingenRouteImport.update({
     id: '/instellingen',
     path: '/instellingen',
+    getParentRoute: () => AuthenticatedAiColumbusRoute,
+  } as any)
+const AuthenticatedAiColumbusKlantenIndexRoute =
+  AuthenticatedAiColumbusKlantenIndexRouteImport.update({
+    id: '/klanten/',
+    path: '/klanten/',
     getParentRoute: () => AuthenticatedAiColumbusRoute,
   } as any)
 const ApiPublicLTokenRoute = ApiPublicLTokenRouteImport.update({
@@ -495,9 +495,9 @@ const AuthenticatedAiColumbusProjectenProjectIdRoute =
   } as any)
 const AuthenticatedAiColumbusKlantenClientIdRoute =
   AuthenticatedAiColumbusKlantenClientIdRouteImport.update({
-    id: '/$clientId',
-    path: '/$clientId',
-    getParentRoute: () => AuthenticatedAiColumbusKlantenRoute,
+    id: '/klanten/$clientId',
+    path: '/klanten/$clientId',
+    getParentRoute: () => AuthenticatedAiColumbusRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -526,7 +526,6 @@ export interface FileRoutesByFullPath {
   '/q/$token': typeof QTokenRoute
   '/t/$token': typeof TTokenRoute
   '/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
-  '/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenRouteWithChildren
   '/ai-columbus/koppelingen': typeof AuthenticatedAiColumbusKoppelingenRoute
   '/ai-columbus/leads': typeof AuthenticatedAiColumbusLeadsRoute
   '/ai-columbus/logs': typeof AuthenticatedAiColumbusLogsRoute
@@ -574,6 +573,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
   '/api/public/l/$token': typeof ApiPublicLTokenRoute
+  '/ai-columbus/klanten/': typeof AuthenticatedAiColumbusKlantenIndexRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -599,7 +599,6 @@ export interface FileRoutesByTo {
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
-  '/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenRouteWithChildren
   '/ai-columbus/koppelingen': typeof AuthenticatedAiColumbusKoppelingenRoute
   '/ai-columbus/leads': typeof AuthenticatedAiColumbusLeadsRoute
   '/ai-columbus/logs': typeof AuthenticatedAiColumbusLogsRoute
@@ -647,6 +646,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
   '/api/public/l/$token': typeof ApiPublicLTokenRoute
+  '/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -676,7 +676,6 @@ export interface FileRoutesById {
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
-  '/_authenticated/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenRouteWithChildren
   '/_authenticated/ai-columbus/koppelingen': typeof AuthenticatedAiColumbusKoppelingenRoute
   '/_authenticated/ai-columbus/leads': typeof AuthenticatedAiColumbusLeadsRoute
   '/_authenticated/ai-columbus/logs': typeof AuthenticatedAiColumbusLogsRoute
@@ -724,6 +723,7 @@ export interface FileRoutesById {
   '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
   '/api/public/l/$token': typeof ApiPublicLTokenRoute
+  '/_authenticated/ai-columbus/klanten/': typeof AuthenticatedAiColumbusKlantenIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -753,7 +753,6 @@ export interface FileRouteTypes {
     | '/q/$token'
     | '/t/$token'
     | '/ai-columbus/instellingen'
-    | '/ai-columbus/klanten'
     | '/ai-columbus/koppelingen'
     | '/ai-columbus/leads'
     | '/ai-columbus/logs'
@@ -801,6 +800,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
     | '/api/public/l/$token'
+    | '/ai-columbus/klanten/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -826,7 +826,6 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/'
     | '/ai-columbus/instellingen'
-    | '/ai-columbus/klanten'
     | '/ai-columbus/koppelingen'
     | '/ai-columbus/leads'
     | '/ai-columbus/logs'
@@ -874,6 +873,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
     | '/api/public/l/$token'
+    | '/ai-columbus/klanten'
   id:
     | '__root__'
     | '/_authenticated'
@@ -902,7 +902,6 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/_authenticated/'
     | '/_authenticated/ai-columbus/instellingen'
-    | '/_authenticated/ai-columbus/klanten'
     | '/_authenticated/ai-columbus/koppelingen'
     | '/_authenticated/ai-columbus/leads'
     | '/_authenticated/ai-columbus/logs'
@@ -950,6 +949,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
     | '/api/public/l/$token'
+    | '/_authenticated/ai-columbus/klanten/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1358,18 +1358,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAiColumbusKoppelingenRouteImport
       parentRoute: typeof AuthenticatedAiColumbusRoute
     }
-    '/_authenticated/ai-columbus/klanten': {
-      id: '/_authenticated/ai-columbus/klanten'
-      path: '/klanten'
-      fullPath: '/ai-columbus/klanten'
-      preLoaderRoute: typeof AuthenticatedAiColumbusKlantenRouteImport
-      parentRoute: typeof AuthenticatedAiColumbusRoute
-    }
     '/_authenticated/ai-columbus/instellingen': {
       id: '/_authenticated/ai-columbus/instellingen'
       path: '/instellingen'
       fullPath: '/ai-columbus/instellingen'
       preLoaderRoute: typeof AuthenticatedAiColumbusInstellingenRouteImport
+      parentRoute: typeof AuthenticatedAiColumbusRoute
+    }
+    '/_authenticated/ai-columbus/klanten/': {
+      id: '/_authenticated/ai-columbus/klanten/'
+      path: '/klanten'
+      fullPath: '/ai-columbus/klanten/'
+      preLoaderRoute: typeof AuthenticatedAiColumbusKlantenIndexRouteImport
       parentRoute: typeof AuthenticatedAiColumbusRoute
     }
     '/api/public/l/$token': {
@@ -1493,28 +1493,13 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/ai-columbus/klanten/$clientId': {
       id: '/_authenticated/ai-columbus/klanten/$clientId'
-      path: '/$clientId'
+      path: '/klanten/$clientId'
       fullPath: '/ai-columbus/klanten/$clientId'
       preLoaderRoute: typeof AuthenticatedAiColumbusKlantenClientIdRouteImport
-      parentRoute: typeof AuthenticatedAiColumbusKlantenRoute
+      parentRoute: typeof AuthenticatedAiColumbusRoute
     }
   }
 }
-
-interface AuthenticatedAiColumbusKlantenRouteChildren {
-  AuthenticatedAiColumbusKlantenClientIdRoute: typeof AuthenticatedAiColumbusKlantenClientIdRoute
-}
-
-const AuthenticatedAiColumbusKlantenRouteChildren: AuthenticatedAiColumbusKlantenRouteChildren =
-  {
-    AuthenticatedAiColumbusKlantenClientIdRoute:
-      AuthenticatedAiColumbusKlantenClientIdRoute,
-  }
-
-const AuthenticatedAiColumbusKlantenRouteWithChildren =
-  AuthenticatedAiColumbusKlantenRoute._addFileChildren(
-    AuthenticatedAiColumbusKlantenRouteChildren,
-  )
 
 interface AuthenticatedAiColumbusProjectenRouteChildren {
   AuthenticatedAiColumbusProjectenProjectIdRoute: typeof AuthenticatedAiColumbusProjectenProjectIdRoute
@@ -1533,7 +1518,6 @@ const AuthenticatedAiColumbusProjectenRouteWithChildren =
 
 interface AuthenticatedAiColumbusRouteChildren {
   AuthenticatedAiColumbusInstellingenRoute: typeof AuthenticatedAiColumbusInstellingenRoute
-  AuthenticatedAiColumbusKlantenRoute: typeof AuthenticatedAiColumbusKlantenRouteWithChildren
   AuthenticatedAiColumbusKoppelingenRoute: typeof AuthenticatedAiColumbusKoppelingenRoute
   AuthenticatedAiColumbusLeadsRoute: typeof AuthenticatedAiColumbusLeadsRoute
   AuthenticatedAiColumbusLogsRoute: typeof AuthenticatedAiColumbusLogsRoute
@@ -1541,14 +1525,14 @@ interface AuthenticatedAiColumbusRouteChildren {
   AuthenticatedAiColumbusProjectenRoute: typeof AuthenticatedAiColumbusProjectenRouteWithChildren
   AuthenticatedAiColumbusRapportagesRoute: typeof AuthenticatedAiColumbusRapportagesRoute
   AuthenticatedAiColumbusIndexRoute: typeof AuthenticatedAiColumbusIndexRoute
+  AuthenticatedAiColumbusKlantenClientIdRoute: typeof AuthenticatedAiColumbusKlantenClientIdRoute
+  AuthenticatedAiColumbusKlantenIndexRoute: typeof AuthenticatedAiColumbusKlantenIndexRoute
 }
 
 const AuthenticatedAiColumbusRouteChildren: AuthenticatedAiColumbusRouteChildren =
   {
     AuthenticatedAiColumbusInstellingenRoute:
       AuthenticatedAiColumbusInstellingenRoute,
-    AuthenticatedAiColumbusKlantenRoute:
-      AuthenticatedAiColumbusKlantenRouteWithChildren,
     AuthenticatedAiColumbusKoppelingenRoute:
       AuthenticatedAiColumbusKoppelingenRoute,
     AuthenticatedAiColumbusLeadsRoute: AuthenticatedAiColumbusLeadsRoute,
@@ -1559,6 +1543,10 @@ const AuthenticatedAiColumbusRouteChildren: AuthenticatedAiColumbusRouteChildren
     AuthenticatedAiColumbusRapportagesRoute:
       AuthenticatedAiColumbusRapportagesRoute,
     AuthenticatedAiColumbusIndexRoute: AuthenticatedAiColumbusIndexRoute,
+    AuthenticatedAiColumbusKlantenClientIdRoute:
+      AuthenticatedAiColumbusKlantenClientIdRoute,
+    AuthenticatedAiColumbusKlantenIndexRoute:
+      AuthenticatedAiColumbusKlantenIndexRoute,
   }
 
 const AuthenticatedAiColumbusRouteWithChildren =
