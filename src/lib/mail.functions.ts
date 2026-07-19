@@ -185,7 +185,16 @@ export const markMailRead = createServerFn({ method: "POST" })
 export const getAttachmentUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ path: z.string() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    // Verify the caller's org owns a mail_message whose attachments include this path.
+    const { data: rows, error: rowsErr } = await context.supabase
+      .from("mail_messages")
+      .select("id, attachments")
+      .contains("attachments", [{ path: data.path }] as never)
+      .limit(1);
+    if (rowsErr) throw new Error(rowsErr.message);
+    if (!rows || rows.length === 0) throw new Error("Bijlage niet gevonden");
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: signed, error } = await supabaseAdmin.storage
       .from("mail-attachments")
