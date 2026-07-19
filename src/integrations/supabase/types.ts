@@ -4017,10 +4017,6 @@ export type Database = {
         }
         Returns: string
       }
-      can_manage_client_contact: {
-        Args: { _action: string; _org_id: string }
-        Returns: boolean
-      }
       convert_lead_to_customer: {
         Args: {
           _lead_id: string
