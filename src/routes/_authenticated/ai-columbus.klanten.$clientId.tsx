@@ -712,37 +712,42 @@ function ClientDetailPage() {
                   return <p className="p-6 text-sm text-muted-foreground">Nog geen offertes voor deze klant.</p>;
                 }
                 return (
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/50 text-left">
-                    <tr>
-                      <th className="px-4 py-2 font-medium">Titel</th>
-                      <th className="px-4 py-2 font-medium">Status</th>
-                      <th className="px-4 py-2 font-medium">Aangemaakt</th>
-                      <th className="px-4 py-2 font-medium">Verzonden</th>
-                      <th className="px-4 py-2 font-medium">Getekend</th>
-                      <th className="px-4 py-2 text-right font-medium">Bedrag</th>
-                      <th className="px-4 py-2 text-right font-medium">Openen</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {quotes.map((q) => (
-                      <tr key={q.id} className="border-t">
-                        <td className="px-4 py-2 font-medium">{q.title}</td>
-                        <td className="px-4 py-2"><Badge variant="outline">{q.status}</Badge></td>
-                        <td className="px-4 py-2 text-muted-foreground">{new Date(q.created_at).toLocaleDateString("nl-NL")}</td>
-                        <td className="px-4 py-2 text-muted-foreground">{q.sent_at ? new Date(q.sent_at).toLocaleDateString("nl-NL") : "—"}</td>
-                        <td className="px-4 py-2 text-muted-foreground">{q.signed_at ? new Date(q.signed_at).toLocaleDateString("nl-NL") : "—"}</td>
-                        <td className="px-4 py-2 text-right">{EUR.format(Number(q.total_amount))}</td>
-                        <td className="px-4 py-2 text-right">
-                          <Button variant="ghost" size="sm" asChild>
-                            <Link to="/offerte-studio/q/$id" params={{ id: q.id }}><Pencil className="h-3.5 w-3.5" /></Link>
-                          </Button>
-                        </td>
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 text-left">
+                      <tr>
+                        <th className="px-4 py-2 font-medium">Titel</th>
+                        <th className="px-4 py-2 font-medium">Bron</th>
+                        <th className="px-4 py-2 font-medium">Status</th>
+                        <th className="px-4 py-2 font-medium">Aangemaakt</th>
+                        <th className="px-4 py-2 font-medium">Verzonden</th>
+                        <th className="px-4 py-2 font-medium">Getekend</th>
+                        <th className="px-4 py-2 text-right font-medium">Bedrag</th>
+                        <th className="px-4 py-2 text-right font-medium">Openen</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+                    </thead>
+                    <tbody>
+                      {merged.map((r) => (
+                        <tr key={`${r.href}-${r.id}`} className="border-t">
+                          <td className="px-4 py-2 font-medium">{r.title}</td>
+                          <td className="px-4 py-2"><Badge variant="secondary">{r.href === "studio" ? "Studio" : "Offerte"}</Badge></td>
+                          <td className="px-4 py-2"><Badge variant="outline">{r.status}</Badge></td>
+                          <td className="px-4 py-2 text-muted-foreground">{new Date(r.created_at).toLocaleDateString("nl-NL")}</td>
+                          <td className="px-4 py-2 text-muted-foreground">{r.sent_at ? new Date(r.sent_at).toLocaleDateString("nl-NL") : "—"}</td>
+                          <td className="px-4 py-2 text-muted-foreground">{r.signed_at ? new Date(r.signed_at).toLocaleDateString("nl-NL") : "—"}</td>
+                          <td className="px-4 py-2 text-right">{r.total != null ? EUR.format(r.total) : "—"}</td>
+                          <td className="px-4 py-2 text-right">
+                            <Button variant="ghost" size="sm" asChild>
+                              {r.href === "studio"
+                                ? <Link to="/offerte-studio/q/$id" params={{ id: r.id }}><Pencil className="h-3.5 w-3.5" /></Link>
+                                : <Link to="/quotes"><Pencil className="h-3.5 w-3.5" /></Link>}
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                );
+              })()}
             </CardContent>
           </Card>
         </TabsContent>
