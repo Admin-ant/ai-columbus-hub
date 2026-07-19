@@ -54,6 +54,9 @@ import { CheckCheck, EyeOff, FolderInput } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/mail")({
   head: () => ({ meta: [{ title: "Mail" }] }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    clientId: typeof search.clientId === "string" ? search.clientId : undefined,
+  }),
   component: MailPage,
 });
 
@@ -119,6 +122,9 @@ function StatusBadge({ m }: { m: MailRow }) {
 
 function MailPage() {
   const { currentOrganizationId, currentOrganization } = useWorkspace();
+  const { clientId } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const [clientName, setClientName] = useState<string | null>(null);
   const [folder, setFolder] = useState<Folder>("inbox");
   const [items, setItems] = useState<MailRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -144,11 +150,13 @@ function MailPage() {
     if (!currentOrganizationId) return;
     setLoading(true);
     const order = folder === "sent" ? "sent_at" : folder === "inbox" ? "received_at" : "created_at";
-    const { data, error } = await supabase
+    let q = supabase
       .from("mail_messages")
       .select("*")
       .eq("organization_id", currentOrganizationId)
-      .eq("folder", folder)
+      .eq("folder", folder);
+    if (clientId) q = q.eq("client_id", clientId);
+    const { data, error } = await q
       .order(order, { ascending: false, nullsFirst: false })
       .limit(200);
     if (error) toast.error(error.message);
@@ -159,7 +167,22 @@ function MailPage() {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentOrganizationId, folder]);
+  }, [currentOrganizationId, folder, clientId]);
+
+  useEffect(() => {
+    if (!clientId || !currentOrganizationId) {
+      setClientName(null);
+      return;
+    }
+    (async () => {
+      const { data } = await supabase
+        .from("clients")
+        .select("name")
+        .eq("id", clientId)
+        .maybeSingle();
+      setClientName((data as { name?: string } | null)?.name ?? null);
+    })();
+  }, [clientId, currentOrganizationId]);
 
   useEffect(() => {
     if (!currentOrganizationId) return;
@@ -180,7 +203,7 @@ function MailPage() {
       supabase.removeChannel(ch);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentOrganizationId, folder]);
+  }, [currentOrganizationId, folder, clientId]);
 
   const selected = useMemo(() => items.find((i) => i.id === selectedId) ?? null, [items, selectedId]);
 
@@ -295,6 +318,21 @@ function MailPage() {
             </Button>
           </div>
         </div>
+
+        {clientId && (
+          <div className="flex items-center justify-between gap-3 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm">
+            <span className="text-foreground">
+              Gefilterd op klant: <strong>{clientName ?? "…"}</strong>
+            </span>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => navigate({ search: { clientId: undefined } })}
+            >
+              <XCircle className="mr-1 h-4 w-4" /> Wis filter
+            </Button>
+          </div>
+        )}
 
         <div className="grid gap-4 lg:grid-cols-[200px_360px_1fr]">
           {/* Folders */}
