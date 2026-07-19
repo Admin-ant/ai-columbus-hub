@@ -88,8 +88,11 @@ export function ClientQuickActions({
             <>
               <DropdownMenuLabel className="text-xs">Bedrijf</DropdownMenuLabel>
               <DropdownMenuItem asChild>
-                <a href={`mailto:${companyEmail}`}>
-                  <Building2 className="mr-2 h-4 w-4" /> {companyEmail}
+                <a href={`mailto:${companyEmail}`} className="flex items-center justify-between">
+                  <span className="flex items-center">
+                    <Building2 className="mr-2 h-4 w-4" /> {companyEmail}
+                  </span>
+                  <CopyButton value={companyEmail} />
                 </a>
               </DropdownMenuItem>
               {mailContacts.length > 0 && <DropdownMenuSeparator />}
