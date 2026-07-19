@@ -319,6 +319,21 @@ function MailPage() {
           </div>
         </div>
 
+        {clientId && (
+          <div className="flex items-center justify-between gap-3 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm">
+            <span className="text-foreground">
+              Gefilterd op klant: <strong>{clientName ?? "…"}</strong>
+            </span>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => navigate({ search: { clientId: undefined } })}
+            >
+              <XCircle className="mr-1 h-4 w-4" /> Wis filter
+            </Button>
+          </div>
+        )}
+
         <div className="grid gap-4 lg:grid-cols-[200px_360px_1fr]">
           {/* Folders */}
           <div className="space-y-1">
