@@ -122,6 +122,9 @@ function StatusBadge({ m }: { m: MailRow }) {
 
 function MailPage() {
   const { currentOrganizationId, currentOrganization } = useWorkspace();
+  const { clientId } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const [clientName, setClientName] = useState<string | null>(null);
   const [folder, setFolder] = useState<Folder>("inbox");
   const [items, setItems] = useState<MailRow[]>([]);
   const [loading, setLoading] = useState(true);
