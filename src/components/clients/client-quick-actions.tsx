@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Mail, Phone, Smartphone, Linkedin, ChevronDown, Building2, Star } from "lucide-react";
+import { Mail, Phone, Smartphone, Linkedin, ChevronDown, Building2, Star, Copy, Check } from "lucide-react";
+import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -45,6 +46,33 @@ export function ClientQuickActions({
   const callContacts = contacts.filter((c) => !!(c.mobile || c.phone));
   const linkedinContacts = contacts.filter((c) => !!c.linkedin_url);
 
+  function CopyButton({ value }: { value: string | null | undefined }) {
+    const [copied, setCopied] = useState(false);
+    if (!value) return null;
+    return (
+      <button
+        type="button"
+        onClick={async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          try {
+            await navigator.clipboard.writeText(value);
+            setCopied(true);
+            toast.success("Gekopieerd: " + value);
+            setTimeout(() => setCopied(false), 1500);
+          } catch {
+            toast.error("Kopiëren mislukt");
+          }
+        }}
+        className="ml-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+        aria-label="Kopiëren"
+        title="Kopiëren"
+      >
+        {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+      </button>
+    );
+  }
+
   return (
     <div className="flex flex-wrap gap-2">
       {/* E-mail */}
@@ -60,8 +88,11 @@ export function ClientQuickActions({
             <>
               <DropdownMenuLabel className="text-xs">Bedrijf</DropdownMenuLabel>
               <DropdownMenuItem asChild>
-                <a href={`mailto:${companyEmail}`}>
-                  <Building2 className="mr-2 h-4 w-4" /> {companyEmail}
+                <a href={`mailto:${companyEmail}`} className="flex items-center justify-between">
+                  <span className="flex items-center">
+                    <Building2 className="mr-2 h-4 w-4" /> {companyEmail}
+                  </span>
+                  <CopyButton value={companyEmail} />
                 </a>
               </DropdownMenuItem>
               {mailContacts.length > 0 && <DropdownMenuSeparator />}
@@ -76,6 +107,7 @@ export function ClientQuickActions({
                     {c.is_primary && <Star className="h-3.5 w-3.5 fill-current text-brand" />}
                     <span className="truncate">{label(c)}</span>
                     <span className="ml-auto truncate text-xs text-muted-foreground">{c.email}</span>
+                    <CopyButton value={c.email} />
                   </a>
                 </DropdownMenuItem>
               ))}
@@ -99,8 +131,11 @@ export function ClientQuickActions({
             <>
               <DropdownMenuLabel className="text-xs">Bedrijf</DropdownMenuLabel>
               <DropdownMenuItem asChild>
-                <a href={`tel:${companyPhone}`}>
-                  <Building2 className="mr-2 h-4 w-4" /> {companyPhone}
+                <a href={`tel:${companyPhone}`} className="flex items-center justify-between">
+                  <span className="flex items-center">
+                    <Building2 className="mr-2 h-4 w-4" /> {companyPhone}
+                  </span>
+                  <CopyButton value={companyPhone} />
                 </a>
               </DropdownMenuItem>
               {callContacts.length > 0 && <DropdownMenuSeparator />}
@@ -117,6 +152,7 @@ export function ClientQuickActions({
                         <Smartphone className="h-3.5 w-3.5" />
                         <span className="truncate">{label(c)}</span>
                         <span className="ml-auto truncate text-xs text-muted-foreground">{c.mobile}</span>
+                        <CopyButton value={c.mobile} />
                       </a>
                     </DropdownMenuItem>
                   )}
@@ -126,6 +162,7 @@ export function ClientQuickActions({
                         <Phone className="h-3.5 w-3.5" />
                         <span className="truncate">{label(c)}</span>
                         <span className="ml-auto truncate text-xs text-muted-foreground">{c.phone}</span>
+                        <CopyButton value={c.phone} />
                       </a>
                     </DropdownMenuItem>
                   )}
