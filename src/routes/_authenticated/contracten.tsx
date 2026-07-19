@@ -52,6 +52,10 @@ export const Route = createFileRoute("/_authenticated/contracten")({
       { name: "description", content: "Beheer abonnementen en maandelijkse facturatie." },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    clientId: typeof search.clientId === "string" ? search.clientId : undefined,
+    new: search.new === "1" || search.new === 1 || search.new === true ? true : undefined,
+  }),
   component: ContractsShell,
 });
 
