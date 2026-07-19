@@ -338,7 +338,7 @@ function NewContractDialog({
           setupCents: Math.round(parseFloat(setup || "0") * 100),
           startDate,
           billingFrequency: freq,
-          paymentTermsDays: 14,
+          paymentTermsDays: parseInt(paymentTerms || "14", 10) || 14,
           autoInvoice: true,
         },
       });
