@@ -167,12 +167,23 @@ export function ClientContactsManager({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <div>
           <h3 className="text-base font-semibold">Contactpersonen &amp; medewerkers</h3>
           <p className="text-sm text-muted-foreground">Beheer alle medewerkers van deze klant.</p>
         </div>
-        <Button size="sm" onClick={startNew}><Plus className="mr-2 h-4 w-4" /> Nieuwe contactpersoon</Button>
+        <div className="flex items-center gap-2">
+          {isAdmin && organizationId && (
+            <ContactPermissionsDialog
+              organizationId={organizationId}
+              value={perms}
+              onSaved={setPerms}
+            />
+          )}
+          {allowed("create") && (
+            <Button size="sm" onClick={startNew}><Plus className="mr-2 h-4 w-4" /> Nieuwe contactpersoon</Button>
+          )}
+        </div>
       </div>
 
       {loading ? (
