@@ -44,8 +44,8 @@ import {
 } from "@/components/ui/table";
 import { useWorkspace } from "@/hooks/use-workspace";
 
-type FilterKey = "all" | "paid" | "open" | "reminder" | "draft";
-const VALID_FILTERS: FilterKey[] = ["all", "paid", "open", "reminder", "draft"];
+type FilterKey = "all" | "paid" | "open" | "reminder" | "draft" | "sent";
+const VALID_FILTERS: FilterKey[] = ["all", "paid", "open", "reminder", "draft", "sent"];
 
 export const Route = createFileRoute("/_authenticated/invoices/")({
   head: () => ({ meta: [{ title: "Facturen" }] }),
@@ -98,6 +98,7 @@ function InvoicesPage() {
   const [loading, setLoading] = useState(true);
   const search = Route.useSearch();
   const [filter, setFilter] = useState<FilterKey>(search.filter ?? "all");
+  const [query, setQuery] = useState("");
   useEffect(() => {
     if (search.filter && search.filter !== filter) setFilter(search.filter);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -182,10 +183,16 @@ function InvoicesPage() {
 
   const filteredInvoices = useMemo(() => {
     const now = Date.now();
+    const q = query.trim().toLowerCase();
     return invoices.filter((i) => {
+      if (q) {
+        const hay = `${i.invoice_number ?? ""} ${i.client_name ?? ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
       if (filter === "all") return true;
       if (filter === "paid") return i.status === "paid";
       if (filter === "draft") return i.status === "draft";
+      if (filter === "sent") return i.status === "sent";
       if (filter === "open") return i.status === "sent" || i.status === "overdue";
       if (filter === "reminder") {
         if (i.status !== "sent" && i.status !== "overdue") return false;
@@ -194,16 +201,17 @@ function InvoicesPage() {
       }
       return true;
     });
-  }, [invoices, filter]);
+  }, [invoices, filter, query]);
 
   const counts = useMemo(() => {
     const now = Date.now();
-    const c = { all: invoices.length, paid: 0, open: 0, reminder: 0, draft: 0 };
+    const c = { all: invoices.length, paid: 0, open: 0, reminder: 0, draft: 0, sent: 0 };
     invoices.forEach((i) => {
       if (i.status === "paid") c.paid++;
       else if (i.status === "draft") c.draft++;
       else if (i.status === "sent" || i.status === "overdue") {
         c.open++;
+        if (i.status === "sent") c.sent++;
         if (i.due_date && new Date(i.due_date).getTime() < now) c.reminder++;
       }
     });
@@ -231,12 +239,25 @@ function InvoicesPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
+        <Input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Zoek op factuurnummer of klant…"
+          className="h-8 w-full sm:w-72"
+        />
+        {query && (
+          <Button size="sm" variant="ghost" onClick={() => setQuery("")} className="h-7 text-xs">
+            Wis
+          </Button>
+        )}
+        <div className="mx-1 hidden h-5 w-px bg-border sm:block" />
         {([
           { k: "all", label: "Alle", n: counts.all },
+          { k: "draft", label: "Concept", n: counts.draft },
+          { k: "sent", label: "Definitief", n: counts.sent },
           { k: "open", label: "Open", n: counts.open },
           { k: "reminder", label: "Herinnering", n: counts.reminder },
           { k: "paid", label: "Betaald", n: counts.paid },
-          { k: "draft", label: "Concept", n: counts.draft },
         ] as const).map((f) => (
           <Button
             key={f.k}
