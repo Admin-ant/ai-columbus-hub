@@ -105,7 +105,11 @@ export function ClientQuickActions({
             <>
               <DropdownMenuLabel className="text-xs">Bedrijf</DropdownMenuLabel>
               <DropdownMenuItem asChild>
-                <a href={`mailto:${companyEmail}`} className="flex items-center justify-between">
+                <a
+                  href={`mailto:${companyEmail}`}
+                  className="flex items-center justify-between"
+                  onClick={() => void logClientActivity({ clientId, kind: "email", title: `E-mail bedrijf: ${companyEmail}` })}
+                >
                   <span className="flex items-center">
                     <Building2 className="mr-2 h-4 w-4" /> {companyEmail}
                   </span>
