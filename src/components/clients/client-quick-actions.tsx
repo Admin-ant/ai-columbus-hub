@@ -124,7 +124,11 @@ export function ClientQuickActions({
               <DropdownMenuLabel className="text-xs">Contactpersonen</DropdownMenuLabel>
               {mailContacts.map((c) => (
                 <DropdownMenuItem key={c.id} asChild>
-                  <a href={`mailto:${c.email!}`} className="flex items-center gap-2">
+                  <a
+                    href={`mailto:${c.email!}`}
+                    className="flex items-center gap-2"
+                    onClick={() => void logClientActivity({ clientId, kind: "email", title: `E-mail: ${label(c)} (${c.email})`, contactId: c.id })}
+                  >
                     {c.is_primary && <Star className="h-3.5 w-3.5 fill-current text-brand" />}
                     <span className="truncate">{label(c)}</span>
                     <span className="ml-auto truncate text-xs text-muted-foreground">{c.email}</span>
