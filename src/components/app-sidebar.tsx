@@ -388,10 +388,17 @@ export function AppSidebar() {
         </div>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleSignOut}>
-              <LogOut className="h-4 w-4" />
-              <span>Uitloggen</span>
-            </SidebarMenuButton>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <SidebarMenuButton onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4" />
+                  <span>Uitloggen</span>
+                </SidebarMenuButton>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="max-w-xs">
+                <p>Uitloggen uit het portaal</p>
+              </TooltipContent>
+            </Tooltip>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
