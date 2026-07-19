@@ -78,6 +78,13 @@ export function ClientQuickActions({
 
   return (
     <div className="flex flex-wrap gap-2">
+      {/* E-mail opmaken */}
+      <ClientEmailComposer
+        clientId={clientId}
+        companyName={companyName}
+        companyEmail={companyEmail}
+      />
+
       {/* E-mail */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
