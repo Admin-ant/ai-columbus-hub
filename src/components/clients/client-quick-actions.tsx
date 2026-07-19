@@ -3,6 +3,7 @@ import { Mail, Phone, Smartphone, Linkedin, ChevronDown, Building2, Star, Copy, 
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { logClientActivity } from "@/lib/client-activity";
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import {
