@@ -44,8 +44,8 @@ import {
 } from "@/components/ui/table";
 import { useWorkspace } from "@/hooks/use-workspace";
 
-type FilterKey = "all" | "paid" | "open" | "reminder" | "draft";
-const VALID_FILTERS: FilterKey[] = ["all", "paid", "open", "reminder", "draft"];
+type FilterKey = "all" | "paid" | "open" | "reminder" | "draft" | "sent";
+const VALID_FILTERS: FilterKey[] = ["all", "paid", "open", "reminder", "draft", "sent"];
 
 export const Route = createFileRoute("/_authenticated/invoices/")({
   head: () => ({ meta: [{ title: "Facturen" }] }),
