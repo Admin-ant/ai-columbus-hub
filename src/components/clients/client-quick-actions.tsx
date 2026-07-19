@@ -15,10 +15,12 @@ type Contact = Database["public"]["Tables"]["client_contacts"]["Row"];
 
 export function ClientQuickActions({
   clientId,
+  companyName,
   companyEmail,
   companyPhone,
 }: {
   clientId: string;
+  companyName: string;
   companyEmail?: string | null;
   companyPhone?: string | null;
 }) {
