@@ -322,7 +322,7 @@ function NewContractDialog({
         <div className="space-y-3">
           <div>
             <Label>Klant</Label>
-            <Select value={clientId} onValueChange={setClientId}>
+            <Select value={clientId} onValueChange={(v) => { setClientId(v); applyClientDefaults(v); }}>
               <SelectTrigger><SelectValue placeholder="Kies klant…" /></SelectTrigger>
               <SelectContent>
                 {clients.map((c) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}
