@@ -104,12 +104,16 @@ function ClientDetailPage() {
         setLogs({});
       }
 
-      const { data: appts } = await supabase
-        .from("appointments")
-        .select("*")
-        .eq("client_id", clientId)
-        .order("starts_at", { ascending: false });
+      const [{ data: appts }, { data: ctr }, { data: qts }, { data: mm }] = await Promise.all([
+        supabase.from("appointments").select("*").eq("client_id", clientId).order("starts_at", { ascending: false }),
+        supabase.from("contracts").select("*").eq("client_id", clientId).order("created_at", { ascending: false }),
+        supabase.from("quotes").select("*").eq("client_id", clientId).order("created_at", { ascending: false }),
+        supabase.from("mail_messages").select("*").eq("client_id", clientId).order("received_at", { ascending: false, nullsFirst: false }).order("sent_at", { ascending: false, nullsFirst: false }).limit(100),
+      ]);
       setAppointments((appts ?? []) as AppointmentRow[]);
+      setContracts((ctr ?? []) as ContractRow[]);
+      setQuotes((qts ?? []) as QuoteRow[]);
+      setMails((mm ?? []) as MailRow[]);
     }
     setLoading(false);
   }
