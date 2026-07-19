@@ -48,6 +48,7 @@ function ClientDetailPage() {
   const [appointments, setAppointments] = useState<AppointmentRow[]>([]);
   const [contracts, setContracts] = useState<ContractRow[]>([]);
   const [quotes, setQuotes] = useState<QuoteRow[]>([]);
+  const [studioQuotes, setStudioQuotes] = useState<StudioQuoteRow[]>([]);
   const [mails, setMails] = useState<MailRow[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
