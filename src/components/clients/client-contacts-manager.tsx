@@ -47,7 +47,8 @@ export function ClientContactsManager({
   clientId: string;
   organizationId: string | null;
 }) {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
+  const isAdmin = hasRole("admin");
   const [rows, setRows] = useState<ContactRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -55,6 +56,21 @@ export function ClientContactsManager({
   const [editId, setEditId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY);
+  const [perms, setPerms] = useState<ContactPermissions>(DEFAULT_PERMISSIONS);
+
+  function allowed(action: "create" | "update" | "delete") {
+    if (isAdmin) return true;
+    return perms[action] === "medewerker";
+  }
+
+  useEffect(() => {
+    if (!organizationId) return;
+    supabase.from("organizations").select("contact_permissions").eq("id", organizationId).maybeSingle()
+      .then(({ data }) => {
+        const p = (data?.contact_permissions ?? null) as Partial<ContactPermissions> | null;
+        if (p) setPerms({ ...DEFAULT_PERMISSIONS, ...p });
+      });
+  }, [organizationId]);
 
   async function load() {
     setLoading(true);
