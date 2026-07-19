@@ -98,6 +98,7 @@ function InvoicesPage() {
   const [loading, setLoading] = useState(true);
   const search = Route.useSearch();
   const [filter, setFilter] = useState<FilterKey>(search.filter ?? "all");
+  const [query, setQuery] = useState("");
   useEffect(() => {
     if (search.filter && search.filter !== filter) setFilter(search.filter);
     // eslint-disable-next-line react-hooks/exhaustive-deps
