@@ -3,6 +3,7 @@ import { PhoneCall, Copy, Check, Star, Building2, Smartphone, Phone, RotateCcw, 
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { logClientActivity } from "@/lib/client-activity";
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import {
