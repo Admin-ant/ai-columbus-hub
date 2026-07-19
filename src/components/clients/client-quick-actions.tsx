@@ -9,15 +9,18 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ClientEmailComposer } from "@/components/clients/client-email-composer";
 
 type Contact = Database["public"]["Tables"]["client_contacts"]["Row"];
 
 export function ClientQuickActions({
   clientId,
+  companyName,
   companyEmail,
   companyPhone,
 }: {
   clientId: string;
+  companyName: string;
   companyEmail?: string | null;
   companyPhone?: string | null;
 }) {
@@ -75,6 +78,13 @@ export function ClientQuickActions({
 
   return (
     <div className="flex flex-wrap gap-2">
+      {/* E-mail opmaken */}
+      <ClientEmailComposer
+        clientId={clientId}
+        companyName={companyName}
+        companyEmail={companyEmail}
+      />
+
       {/* E-mail */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
