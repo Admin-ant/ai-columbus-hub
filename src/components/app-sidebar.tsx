@@ -337,7 +337,7 @@ export function AppSidebar() {
                                 className={`h-auto py-2.5 rounded-lg border transition-colors ${tint.btn} ${isActive(item.url) ? tint.active : ""}`}
                               >
                                 <Link to={item.url} className="flex items-center gap-2.5">
-                                  <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${tint.icon}`}>
+                                  <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${tint.icon} ${isActive(item.url) ? tint.activeIcon : ""}`}>
                                     <item.icon className="h-4 w-4" />
                                   </span>
                                   <span className="truncate font-medium">{item.title}</span>
