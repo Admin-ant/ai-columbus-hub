@@ -662,20 +662,38 @@ function AutosaveIndicator({ status }: { status: "idle" | "saving" | "saved" | "
   return <span className={`${cls} border-destructive/40 text-destructive`}><CloudOff className="h-3 w-3" /> Opslaan mislukt</span>;
 }
 
-function TitleField({ value, onSave }: { value: string; onSave: (v: string) => void | Promise<void> }) {
+function TitleField({ value, onSave, flushRef }: { value: string; onSave: (v: string) => void | Promise<void>; flushRef?: React.MutableRefObject<null | (() => Promise<void>)> }) {
   const [v, setV] = useState(value);
   const initial = useRef(value);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => { setV(value); initial.current = value; }, [value]);
+
+  const flush = async () => {
+    if (timer.current) { clearTimeout(timer.current); timer.current = null; }
+    const trimmed = v.trim();
+    if (trimmed && trimmed !== initial.current) {
+      initial.current = trimmed;
+      await onSave(trimmed);
+    }
+  };
+
+  useEffect(() => {
+    if (flushRef) flushRef.current = flush;
+    return () => { if (flushRef) flushRef.current = null; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [v, flushRef]);
+
   useEffect(() => {
     if (v === initial.current) return;
-    const t = setTimeout(() => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
       const trimmed = v.trim();
       if (trimmed && trimmed !== initial.current) {
         initial.current = trimmed;
         void onSave(trimmed);
       }
     }, 700);
-    return () => clearTimeout(t);
+    return () => { if (timer.current) clearTimeout(timer.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [v]);
   return (
