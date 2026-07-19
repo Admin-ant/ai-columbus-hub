@@ -236,67 +236,92 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        {activeGroups.map((group) => (
-          <SidebarGroup key={group.label}>
-            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {group.items.map((item) => (
-                  <SidebarMenuItem key={item.url}>
-                    <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                      <Link to={item.url} className="flex items-center gap-2">
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+        {activeGroups.map((group) => {
+          const isOpen = group.items.some((i) => isActive(i.url));
+          return (
+            <Collapsible key={group.label} defaultOpen={isOpen} className="group/collapsible">
+              <SidebarGroup>
+                <SidebarGroupLabel asChild>
+                  <CollapsibleTrigger className="flex w-full items-center justify-between hover:text-foreground">
+                    {group.label}
+                    <ChevronDown className="h-4 w-4 transition-transform group-data-[state=closed]/collapsible:-rotate-90" />
+                  </CollapsibleTrigger>
+                </SidebarGroupLabel>
+                <CollapsibleContent>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {group.items.map((item) => (
+                        <SidebarMenuItem key={item.url}>
+                          <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                            <Link to={item.url} className="flex items-center gap-2">
+                              <item.icon className="h-4 w-4" />
+                              <span>{item.title}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </CollapsibleContent>
+              </SidebarGroup>
+            </Collapsible>
+          );
+        })}
 
         {visibleAdmin.length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Beheer</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {visibleAdmin.map((item) => {
-                  const isAdministratie = item.url === "/administratie";
-                  const showSub =
-                    isAdministratie &&
-                    (currentPath === "/administratie" ||
-                      administratieSubItems.some((s) => currentPath === s.url));
-                  return (
-                    <SidebarMenuItem key={item.url}>
-                      <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                        <Link to={item.url} className="flex items-center gap-2">
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                      {showSub && (
-                        <SidebarMenuSub>
-                          {administratieSubItems.map((s) => (
-                            <SidebarMenuSubItem key={s.url}>
-                              <SidebarMenuSubButton asChild isActive={isActive(s.url)}>
-                                <Link to={s.url} className="flex items-center gap-2">
-                                  <s.icon className="h-3.5 w-3.5" />
-                                  <span>{s.title}</span>
-                                </Link>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      )}
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+          <Collapsible
+            defaultOpen={visibleAdmin.some((i) => isActive(i.url)) || administratieSubItems.some((s) => isActive(s.url))}
+            className="group/collapsible"
+          >
+            <SidebarGroup>
+              <SidebarGroupLabel asChild>
+                <CollapsibleTrigger className="flex w-full items-center justify-between hover:text-foreground">
+                  Beheer
+                  <ChevronDown className="h-4 w-4 transition-transform group-data-[state=closed]/collapsible:-rotate-90" />
+                </CollapsibleTrigger>
+              </SidebarGroupLabel>
+              <CollapsibleContent>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {visibleAdmin.map((item) => {
+                      const isAdministratie = item.url === "/administratie";
+                      const showSub =
+                        isAdministratie &&
+                        (currentPath === "/administratie" ||
+                          administratieSubItems.some((s) => currentPath === s.url));
+                      return (
+                        <SidebarMenuItem key={item.url}>
+                          <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                            <Link to={item.url} className="flex items-center gap-2">
+                              <item.icon className="h-4 w-4" />
+                              <span>{item.title}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                          {showSub && (
+                            <SidebarMenuSub>
+                              {administratieSubItems.map((s) => (
+                                <SidebarMenuSubItem key={s.url}>
+                                  <SidebarMenuSubButton asChild isActive={isActive(s.url)}>
+                                    <Link to={s.url} className="flex items-center gap-2">
+                                      <s.icon className="h-3.5 w-3.5" />
+                                      <span>{s.title}</span>
+                                    </Link>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              ))}
+                            </SidebarMenuSub>
+                          )}
+                        </SidebarMenuItem>
+                      );
+                    })}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </CollapsibleContent>
+            </SidebarGroup>
+          </Collapsible>
         )}
       </SidebarContent>
+
       <SidebarFooter className="border-t">
         <div className="flex items-center gap-2 px-2 py-2 group-data-[collapsible=icon]:hidden">
           <Avatar className="h-8 w-8">
