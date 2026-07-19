@@ -296,26 +296,9 @@ function ClientDetailPage() {
         </TabsContent>
 
         <TabsContent value="contacten" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Contactpersonen</CardTitle>
-              <CardDescription>Primaire contactpersoon van deze klant.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {client.contact_person || client.email || client.phone ? (
-                <div className="rounded-lg border p-4">
-                  <div className="font-medium">{client.contact_person || "Contactpersoon"}</div>
-                  <div className="mt-2 space-y-1 text-sm text-muted-foreground">
-                    {client.email && <a href={`mailto:${client.email}`} className="flex items-center gap-2 hover:text-foreground"><Mail className="h-3.5 w-3.5" /> {client.email}</a>}
-                    {client.phone && <a href={`tel:${client.phone}`} className="flex items-center gap-2 hover:text-foreground"><Phone className="h-3.5 w-3.5" /> {client.phone}</a>}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">Nog geen contactpersoon ingevoerd.</p>
-              )}
-            </CardContent>
-          </Card>
+          <ClientContactsManager clientId={clientId} organizationId={client.organization_id} />
         </TabsContent>
+
 
         <TabsContent value="projecten" className="mt-4">
           <Card>
