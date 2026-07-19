@@ -303,8 +303,9 @@ function ClientDetailPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="contacten" className="mt-4">
+        <TabsContent value="contacten" className="mt-4 space-y-4">
           <ClientContactsManager clientId={clientId} organizationId={client.organization_id} />
+          <ClientContactsAuditLog clientId={clientId} />
         </TabsContent>
 
 
