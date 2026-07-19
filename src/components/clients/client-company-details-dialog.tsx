@@ -14,6 +14,7 @@ import {
   DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { lookupKvk } from "@/lib/kvk-lookup.functions";
+import { AddressAutocomplete } from "@/components/clients/address-autocomplete";
 
 type ClientRow = Database["public"]["Tables"]["clients"]["Row"];
 
@@ -160,11 +161,24 @@ export function ClientCompanyDetailsDialog({
           </div>
           <div />
           <div className="md:col-span-2">
-            <Label>Adres</Label>
-            <Input value={form.address_line1} onChange={(e) => set("address_line1", e.target.value)} placeholder="Straat en huisnummer" />
+            <AddressAutocomplete
+              label="Adres (zoek op straat, postcode of plaats)"
+              value={form.address_line1}
+              onChange={(v) => set("address_line1", v)}
+              onSelect={(addr) => {
+                setForm((f) => ({
+                  ...f,
+                  address_line1: addr.address_line1 ?? f.address_line1,
+                  postal_code: addr.postal_code ?? f.postal_code,
+                  city: addr.city ?? f.city,
+                  country: addr.country ?? f.country,
+                }));
+              }}
+              placeholder="Bijv. Damrak 1 Amsterdam of 1012LG 1"
+            />
           </div>
           <div className="md:col-span-2">
-            <Input value={form.address_line2} onChange={(e) => set("address_line2", e.target.value)} placeholder="Adres (regel 2)" />
+            <Input value={form.address_line2} onChange={(e) => set("address_line2", e.target.value)} placeholder="Adres (regel 2, optioneel)" />
           </div>
           <div>
             <Label>Postcode</Label>
