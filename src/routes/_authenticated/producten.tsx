@@ -795,7 +795,6 @@ function PrintPreviewDialog({
         </div>
 
         {(() => {
-          const A4_W = 1123, A4_H = 794;
           const pages: Product[][] = pdfPages;
 
 
@@ -804,7 +803,7 @@ function PrintPreviewDialog({
               <div className="mx-auto flex flex-col items-center gap-6" style={{ transform: "scale(0.75)", transformOrigin: "top center" }}>
                 {pages.map((pageRows, pageIdx) => (
                   <div key={pageIdx} className="relative bg-white text-black shadow-md ring-1 ring-neutral-200"
-                    style={{ width: `${A4_W}px`, height: `${A4_H}px`, padding: `${padPx}px` }}>
+                    style={{ width: `${pageWpx}px`, height: `${pageHpx}px`, padding: `${padPx}px` }}>
                     <div style={{ zoom: scale, height: "100%", display: "flex", flexDirection: "column" }}>
                       {pageIdx === 0 && (
                         <div className="flex items-end justify-between border-b pb-3">
