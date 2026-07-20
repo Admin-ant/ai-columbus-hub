@@ -67,6 +67,7 @@ type ProductRow = {
   name: string;
   sku: string | null;
   unit_price_cents: number;
+  setup_fee_cents: number;
   vat_rate: number;
 };
 
