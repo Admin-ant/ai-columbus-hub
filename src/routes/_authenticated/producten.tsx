@@ -501,7 +501,22 @@ function ProductsPage() {
 
 type PaperFormat = "a4" | "letter";
 type Orientation = "portrait" | "landscape";
-type LayoutOpts = { marginMm: number; scale: number; format: PaperFormat; orientation: Orientation };
+type HeaderFooterOpts = {
+  showHeader: boolean;
+  showFooter: boolean;
+  title: string;
+  headerLeft: string;
+  headerRight: string;
+  footerLeft: string;
+  footerRight: string;
+};
+type LayoutOpts = {
+  marginMm: number;
+  scale: number;
+  format: PaperFormat;
+  orientation: Orientation;
+  hf: HeaderFooterOpts;
+};
 type SortKey = "sku" | "name" | "price" | "type";
 type SortDir = "asc" | "desc";
 
