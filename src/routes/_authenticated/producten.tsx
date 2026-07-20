@@ -221,7 +221,7 @@ function ProductsPage() {
     return t;
   }, [products]);
 
-  async function exportPdf() {
+  async function exportPdf(list: Product[] = filteredProducts) {
     const { default: jsPDF } = await import("jspdf");
     const { default: autoTable } = await import("jspdf-autotable");
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
@@ -238,7 +238,7 @@ function ProductsPage() {
     autoTable(doc, {
       startY: 26,
       head: [["Artikelnr.", "Naam", "Type", "Prijs", "Opstart", "BTW", "Korting", "Status"]],
-      body: filteredProducts.map((p) => [
+      body: list.map((p) => [
         p.sku ?? "—",
         p.description ? `${p.name}\n${p.description}` : p.name,
         PRICING_LABELS[p.pricing_type],
@@ -274,6 +274,7 @@ function ProductsPage() {
 
     doc.save(`prijslijst-${new Date().toISOString().slice(0, 10)}.pdf`);
   }
+
 
   function printList() {
     window.print();
