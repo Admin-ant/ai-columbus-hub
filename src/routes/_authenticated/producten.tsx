@@ -291,6 +291,13 @@ function ProductsPage() {
             Beheer diensten, maandtarieven en credittarieven voor de actieve organisatie.
           </p>
         </div>
+        <div className="flex flex-wrap items-center gap-2 print:hidden">
+        <Button variant="outline" onClick={printList} disabled={loading || filteredProducts.length === 0}>
+          <Printer className="mr-2 h-4 w-4" /> Printen
+        </Button>
+        <Button variant="outline" onClick={exportPdf} disabled={loading || filteredProducts.length === 0}>
+          <FileDown className="mr-2 h-4 w-4" /> PDF
+        </Button>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setForm(emptyForm); } }}>
           <DialogTrigger asChild>
             <Button onClick={openCreate}>
