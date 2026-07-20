@@ -773,7 +773,25 @@ function PrintPreviewDialog({
               onChange={(e) => setScale(Number(e.target.value) / 100)} className="w-32" />
             <span className="w-10 tabular-nums">{Math.round(scale * 100)}%</span>
           </label>
-          <Button size="sm" variant="ghost" className="h-7" onClick={() => { setMarginMm(12); setScale(1); }}>Reset</Button>
+          <div className="mx-1 h-6 w-px bg-border" />
+          <span className="text-muted-foreground">Formaat</span>
+          <Select value={format} onValueChange={(v) => setFormat(v as PaperFormat)}>
+            <SelectTrigger className="h-7 w-24"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {(Object.keys(PAPER_LABEL) as PaperFormat[]).map((k) => (
+                <SelectItem key={k} value={k}>{PAPER_LABEL[k]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={orientation} onValueChange={(v) => setOrientation(v as Orientation)}>
+            <SelectTrigger className="h-7 w-28"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {(Object.keys(ORIENTATION_LABEL) as Orientation[]).map((k) => (
+                <SelectItem key={k} value={k}>{ORIENTATION_LABEL[k]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button size="sm" variant="ghost" className="h-7" onClick={() => { setMarginMm(12); setScale(1); setFormat("a4"); setOrientation("landscape"); }}>Reset</Button>
         </div>
 
         {(() => {
