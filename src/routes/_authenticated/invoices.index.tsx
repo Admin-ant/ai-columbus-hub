@@ -67,6 +67,7 @@ type ProductRow = {
   name: string;
   sku: string | null;
   unit_price_cents: number;
+  setup_fee_cents: number;
   vat_rate: number;
 };
 
@@ -411,7 +412,7 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
     const loadProducts = async () => {
       const { data } = await supabase
         .from("products")
-        .select("id,name,sku,unit_price_cents,vat_rate")
+        .select("id,name,sku,unit_price_cents,setup_fee_cents,vat_rate")
         .eq("organization_id", orgId)
         .eq("active", true)
         .order("name");
@@ -422,8 +423,13 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
           name: string;
           sku: string | null;
           unit_price_cents: number;
+          setup_fee_cents: number | null;
           vat_rate: number | string;
-        }>).map((p) => ({ ...p, vat_rate: Number(p.vat_rate) })),
+        }>).map((p) => ({
+          ...p,
+          setup_fee_cents: Number(p.setup_fee_cents ?? 0),
+          vat_rate: Number(p.vat_rate),
+        })),
       );
     };
     void loadProducts();
@@ -697,6 +703,22 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
                                   quantity: l.quantity || 1,
                                 }
                               : { ...l, description: val };
+                            // Voeg automatisch een regel toe met eenmalige opstartkosten
+                            if (match && match.setup_fee_cents > 0) {
+                              const setupDesc = `Eenmalige opstartkosten — ${match.name}`;
+                              const alreadyThere = n.some(
+                                (row, idx) => idx !== i && row.description.trim().toLowerCase() === setupDesc.toLowerCase(),
+                              );
+                              if (!alreadyThere) {
+                                n.push({
+                                  description: setupDesc,
+                                  quantity: 1,
+                                  unit_price_cents: match.setup_fee_cents,
+                                  vat_rate: match.vat_rate,
+                                });
+                                toast.success(`Eenmalige opstartkosten toegevoegd (${(match.setup_fee_cents / 100).toFixed(2)} €)`);
+                              }
+                            }
                             setLines(n);
                           }}
                         />
