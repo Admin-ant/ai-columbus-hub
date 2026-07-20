@@ -699,7 +699,8 @@ function PrintPreviewDialog({
   const [scale, setScale] = useState<number>(1);
   const [format, setFormat] = useState<PaperFormat>("a4");
   const [orientation, setOrientation] = useState<Orientation>("landscape");
-  const opts: LayoutOpts = { marginMm, scale, format, orientation };
+  const [hf, setHf] = useState<HeaderFooterOpts>(DEFAULT_HF);
+  const opts: LayoutOpts = { marginMm, scale, format, orientation, hf };
   const PX_PER_MM = 3.7795;
   const padPx = Math.round(marginMm * PX_PER_MM);
   const pageMm = pageSizeMm(opts);
