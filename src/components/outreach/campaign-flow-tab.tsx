@@ -29,7 +29,19 @@ import {
   Upload,
   Search,
   ArrowUpDown,
+  Eye,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  renderCampaignEmailHtml,
+  resolveCampaignLogoUrl,
+} from "@/lib/campaign-flow-email";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -181,6 +193,8 @@ export function CampaignFlowTab() {
   >([]);
   const [selectedVariant, setSelectedVariant] = useState<number | null>(null);
   const [launching, setLaunching] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
 
   const [leads, setLeads] = useState<FlowLead[]>(() => loadLS<FlowLead[]>(LS_LEADS, []));
   const [tasks, setTasks] = useState<FlowTask[]>(() => loadLS<FlowTask[]>(LS_TASKS, []));
@@ -290,6 +304,31 @@ export function CampaignFlowTab() {
       },
     ].map((p) => ({ ...p, tone }));
   }, [scrape, name, company]);
+
+  const previewBodyText = useMemo(() => {
+    if (selectedVariant !== null && variants[selectedVariant]) {
+      return variants[selectedVariant].body;
+    }
+    if (livePreviews.length > 0) return livePreviews[0].body;
+    return "";
+  }, [selectedVariant, variants, livePreviews]);
+
+  const previewHtml = useMemo(() => {
+    if (!previewBodyText) return "";
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    return renderCampaignEmailHtml({
+      bodyText: previewBodyText,
+      trackingUrl: origin ? `${origin}/api/public/l/preview-token` : null,
+      logoUrl: resolveCampaignLogoUrl(origin),
+      senderName: "AI van Columbus",
+      senderTitle: null,
+    });
+  }, [previewBodyText]);
+
+  const previewSubject = useMemo(
+    () => `Even kort, ${company.trim() || "kennismaken"}`,
+    [company],
+  );
 
   const filteredScanEdits = useMemo(() => {
     const q = scanEditSearch.trim().toLowerCase();
@@ -1214,9 +1253,22 @@ export function CampaignFlowTab() {
                     </div>
                   ))}
                 </div>
-                <p className="mt-2 text-[10px] text-muted-foreground">
-                  Dit is een indicatief sjabloon. De definitieve concepten worden door AI gegenereerd op basis van deze velden.
-                </p>
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <p className="text-[10px] text-muted-foreground">
+                    Dit is een indicatief sjabloon. De definitieve concepten worden door AI gegenereerd op basis van deze velden.
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setPreviewOpen(true)}
+                    disabled={!previewBodyText}
+                    className="h-7 gap-1.5 text-[11px]"
+                  >
+                    <Eye className="h-3 w-3" />
+                    Preview mail
+                  </Button>
+                </div>
               </div>
             )}
 
@@ -1704,7 +1756,21 @@ export function CampaignFlowTab() {
                 />
               </div>
             )}
-            <div className="flex justify-end">
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setPreviewOpen(true)}
+                disabled={!previewBodyText}
+                title={
+                  previewBodyText
+                    ? "Bekijk hoe de mail eruitziet voor deze klant"
+                    : "Genereer eerst concepten of vul de scan in"
+                }
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                Preview mail
+              </Button>
               <Button
                 onClick={launchCampaign}
                 disabled={launching || selectedVariant === null}
@@ -1915,6 +1981,83 @@ export function CampaignFlowTab() {
           </div>
         )}
       </div>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-4 w-4 text-brand" />
+              Preview kennismakingsmail
+            </DialogTitle>
+            <DialogDescription>
+              Zo ziet de mail eruit voor{" "}
+              <span className="font-medium text-foreground">
+                {name.trim() || "[naam]"}
+              </span>{" "}
+              van{" "}
+              <span className="font-medium text-foreground">
+                {company.trim() || "[bedrijf]"}
+              </span>
+              {email.trim() ? (
+                <>
+                  {" "}
+                  ({email.trim()})
+                </>
+              ) : null}
+              .
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs">
+              <div className="min-w-0">
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Onderwerp
+                </div>
+                <div className="truncate font-medium text-foreground">
+                  {previewSubject}
+                </div>
+              </div>
+              <div className="flex gap-1">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={previewDevice === "desktop" ? "default" : "outline"}
+                  onClick={() => setPreviewDevice("desktop")}
+                  className="h-7 px-2 text-[11px]"
+                >
+                  Desktop
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={previewDevice === "mobile" ? "default" : "outline"}
+                  onClick={() => setPreviewDevice("mobile")}
+                  className="h-7 px-2 text-[11px]"
+                >
+                  Mobiel
+                </Button>
+              </div>
+            </div>
+            <div className="flex justify-center overflow-auto rounded-md border border-border bg-[#f4f5f7] p-3">
+              <iframe
+                title="E-mailvoorbeeld"
+                srcDoc={previewHtml}
+                sandbox=""
+                className="rounded-md border border-border bg-white shadow-sm"
+                style={{
+                  width: previewDevice === "mobile" ? 380 : 680,
+                  height: 560,
+                }}
+              />
+            </div>
+            {!previewBodyText && (
+              <p className="text-xs text-muted-foreground">
+                Vul website en klantgegevens in of genereer AI-concepten om een preview te zien.
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
