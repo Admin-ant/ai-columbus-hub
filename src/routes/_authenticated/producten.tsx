@@ -763,6 +763,28 @@ function PrintPreviewDialog({
     return () => { cancelled = true; };
   }, [finalList, marginMm, scale, format, orientation, hf]);
 
+  // Zoom & pagina-navigatie voor de preview
+  const [viewZoom, setViewZoom] = useState<number>(0.75);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const pageRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const totalPages = pdfPages.length;
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages || 1);
+  }, [totalPages, currentPage]);
+  function goToPage(n: number) {
+    const clamped = Math.max(1, Math.min(totalPages, n));
+    setCurrentPage(clamped);
+    const el = pageRefs.current[clamped - 1];
+    const container = scrollRef.current;
+    if (el && container) {
+      container.scrollTo({ top: el.offsetTop - 8, behavior: "smooth" });
+    }
+  }
+  function zoomStep(delta: number) {
+    setViewZoom((z) => Math.max(0.3, Math.min(2, Math.round((z + delta) * 100) / 100)));
+  }
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
