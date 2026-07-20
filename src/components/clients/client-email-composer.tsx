@@ -363,6 +363,27 @@ export function ClientEmailComposer({
         </DialogHeader>
 
         <div className="space-y-4">
+          {!fromLoading && !fromValid && (
+            <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div className="flex-1">
+                <div className="font-medium">Geen geldig 'Van'-adres ingesteld</div>
+                <div className="text-xs text-destructive/90">
+                  Verzenden is uitgeschakeld tot je een afzenderadres instelt bij{" "}
+                  <Link to="/mail/settings" className="underline underline-offset-2">Mail-instellingen</Link>.
+                </div>
+              </div>
+            </div>
+          )}
+          {fromValid && invalidRecipients.length > 0 && (
+            <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div className="flex-1">
+                <div className="font-medium">Ongeldig ontvangeradres</div>
+                <div className="text-xs text-destructive/90 break-all">{invalidRecipients.join(", ")}</div>
+              </div>
+            </div>
+          )}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <Label>Aan {toList.length > 0 && <span className="text-xs text-muted-foreground">({toList.length} geselecteerd)</span>}</Label>
