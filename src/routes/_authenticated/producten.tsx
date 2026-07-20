@@ -226,55 +226,10 @@ function ProductsPage() {
     const { default: autoTable } = await import("jspdf-autotable");
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
     const orgName = currentOrganization?.name ?? "";
-    const now = new Date().toLocaleDateString("nl-NL", { day: "2-digit", month: "long", year: "numeric" });
     const m = Math.max(5, Math.min(30, opts.marginMm));
-    const s = Math.max(0.6, Math.min(1.4, opts.scale));
 
-    doc.setFontSize(16 * s);
-    doc.text("Prijslijst", m, m + 3);
-    doc.setFontSize(10 * s);
-    doc.setTextColor(120);
-    doc.text(`${orgName}${orgName ? " — " : ""}${now}`, m, m + 9);
-    doc.setTextColor(0);
-
-    autoTable(doc, {
-      startY: m + 14,
-      margin: { left: m, right: m, top: m, bottom: m },
-      head: [["Artikelnr.", "Naam", "Type", "Prijs", "Opstart", "BTW", "Korting", "Status"]],
-      body: list.map((p) => [
-        p.sku ?? "—",
-        p.description ? `${p.name}\n${p.description}` : p.name,
-        PRICING_LABELS[p.pricing_type],
-        EUR.format(Number(p.unit_price_cents ?? 0) / 100),
-        EUR.format(Number(p.setup_fee_cents ?? 0) / 100),
-        `${Number(p.vat_rate)}%`,
-        Number(p.discount_percent ?? 0) > 0
-          ? `${Number(p.discount_percent)}% ${p.discount_type === "recurring" ? `/mnd${p.contract_months ? ` · ${p.contract_months}m` : ""}` : "eenmalig"}`
-          : "—",
-        p.active ? "Actief" : "Inactief",
-      ]),
-      styles: { fontSize: 9 * s, cellPadding: 2 * s },
-      headStyles: { fillColor: [30, 41, 59], textColor: 255 },
-      columnStyles: {
-        0: { cellWidth: 22 * s },
-        3: { halign: "right" },
-        4: { halign: "right" },
-        5: { halign: "right" },
-      },
-      didDrawPage: () => {
-        const pageCount = doc.getNumberOfPages();
-        const pageSize = doc.internal.pageSize;
-        doc.setFontSize(8);
-        doc.setTextColor(150);
-        doc.text(
-          `Pagina ${doc.getCurrentPageInfo().pageNumber} / ${pageCount}`,
-          pageSize.getWidth() - m,
-          pageSize.getHeight() - Math.max(4, m / 2),
-          { align: "right" },
-        );
-      },
-    });
-
+    drawPdfHeader(doc, orgName, opts);
+    autoTable(doc, buildAutoTableConfig(list, opts, m, doc));
     doc.save(`prijslijst-${new Date().toISOString().slice(0, 10)}.pdf`);
   }
 
