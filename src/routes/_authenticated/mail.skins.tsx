@@ -691,16 +691,39 @@ function MailSkinsPage() {
             <div className="mb-3 grid grid-cols-1 gap-2 rounded-md border border-dashed border-border bg-muted/30 p-2 sm:grid-cols-3">
               <div>
                 <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Onderwerp</Label>
-                <Input value={sampleSubject} onChange={(e) => setSampleSubject(e.target.value)} className="h-7 text-xs" />
+                <Input
+                  value={sampleSubject}
+                  onChange={(e) => setSampleSubject(e.target.value)}
+                  aria-invalid={subjectError ? true : undefined}
+                  className={`h-7 text-xs ${subjectError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                />
+                {subjectError && <p className="mt-1 text-[10px] text-destructive">{subjectError}</p>}
               </div>
               <div>
                 <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Contact</Label>
-                <Input value={sampleContact} onChange={(e) => setSampleContact(e.target.value)} className="h-7 text-xs" />
+                <Input
+                  value={sampleContact}
+                  onChange={(e) => setSampleContact(e.target.value)}
+                  aria-invalid={contactError ? true : undefined}
+                  className={`h-7 text-xs ${contactError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                />
+                {contactError && <p className="mt-1 text-[10px] text-destructive">{contactError}</p>}
               </div>
               <div>
                 <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Afzender</Label>
-                <Input value={sampleSender} onChange={(e) => setSampleSender(e.target.value)} className="h-7 text-xs" />
+                <Input
+                  value={sampleSender}
+                  onChange={(e) => setSampleSender(e.target.value)}
+                  aria-invalid={senderError ? true : undefined}
+                  className={`h-7 text-xs ${senderError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                />
+                {senderError && <p className="mt-1 text-[10px] text-destructive">{senderError}</p>}
               </div>
+              {hasPreviewErrors && (
+                <div className="sm:col-span-3 rounded border border-destructive/40 bg-destructive/10 px-2 py-1 text-[11px] text-destructive">
+                  Opslaan is geblokkeerd totdat alle preview-velden geldig zijn.
+                </div>
+              )}
             </div>
 
             <div className="rounded border border-border p-3" style={previewStyle}>
