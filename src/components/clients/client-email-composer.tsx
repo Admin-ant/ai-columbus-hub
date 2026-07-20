@@ -387,6 +387,8 @@ export function ClientEmailComposer({
           to: toList,
           subject: finalSubject,
           body: finalBody,
+          from_name: selectedSender?.from_name ?? undefined,
+          reply_to: selectedSender?.reply_to ?? undefined,
         } as any,
       });
       toast.success(`Verstuurd naar ${toList.length} ontvanger${toList.length > 1 ? "s" : ""}`);
