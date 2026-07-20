@@ -221,10 +221,10 @@ function ProductsPage() {
     return t;
   }, [products]);
 
-  async function exportPdf(list: Product[] = filteredProducts, opts: LayoutOpts = { marginMm: 12, scale: 1 }) {
+  async function exportPdf(list: Product[] = filteredProducts, opts: LayoutOpts = DEFAULT_LAYOUT) {
     const { default: jsPDF } = await import("jspdf");
     const { default: autoTable } = await import("jspdf-autotable");
-    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const doc = new jsPDF({ orientation: opts.orientation, unit: "mm", format: opts.format });
     const orgName = currentOrganization?.name ?? "";
     const m = Math.max(5, Math.min(30, opts.marginMm));
 
@@ -232,6 +232,7 @@ function ProductsPage() {
     autoTable(doc, buildAutoTableConfig(list, opts, m, doc));
     doc.save(`prijslijst-${new Date().toISOString().slice(0, 10)}.pdf`);
   }
+
 
 
 
@@ -488,7 +489,7 @@ function ProductsPage() {
     </div>
   );
 
-  function printFromPreview(list: Product[], opts: LayoutOpts = { marginMm: 12, scale: 1 }) {
+  function printFromPreview(list: Product[], opts: LayoutOpts = DEFAULT_LAYOUT) {
     const html = buildPrintableHtml(currentOrganization?.name ?? "", list, opts);
     const w = window.open("", "_blank", "width=1100,height=800");
     if (!w) return toast.error("Sta pop-ups toe om te printen");
@@ -500,9 +501,26 @@ function ProductsPage() {
   }
 }
 
-type LayoutOpts = { marginMm: number; scale: number };
+type PaperFormat = "a4" | "letter";
+type Orientation = "portrait" | "landscape";
+type LayoutOpts = { marginMm: number; scale: number; format: PaperFormat; orientation: Orientation };
 type SortKey = "sku" | "name" | "price" | "type";
 type SortDir = "asc" | "desc";
+
+// Paginaformaten in mm (breedte × hoogte in staand).
+const PAPER_MM: Record<PaperFormat, { w: number; h: number }> = {
+  a4: { w: 210, h: 297 },
+  letter: { w: 215.9, h: 279.4 },
+};
+const PAPER_LABEL: Record<PaperFormat, string> = { a4: "A4", letter: "Letter" };
+const ORIENTATION_LABEL: Record<Orientation, string> = { portrait: "Staand", landscape: "Liggend" };
+function pageSizeMm(opts: LayoutOpts): { w: number; h: number } {
+  const base = PAPER_MM[opts.format];
+  return opts.orientation === "landscape" ? { w: base.h, h: base.w } : base;
+}
+
+const DEFAULT_LAYOUT: LayoutOpts = { marginMm: 12, scale: 1, format: "a4", orientation: "landscape" };
+
 type StatusFilter = "all" | "active" | "inactive";
 
 function productRow(p: Product): (string | number)[] {
@@ -581,7 +599,7 @@ async function computePdfPageGroups(list: Product[], opts: LayoutOpts): Promise<
   if (list.length === 0) return [[]];
   const { default: jsPDF } = await import("jspdf");
   const { default: autoTable } = await import("jspdf-autotable");
-  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const doc = new jsPDF({ orientation: opts.orientation, unit: "mm", format: opts.format });
   const m = Math.max(5, Math.min(30, opts.marginMm));
   drawPdfHeader(doc, "", opts);
   const rowPage = new Array<number>(list.length).fill(1);
@@ -623,9 +641,15 @@ function PrintPreviewDialog({
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [marginMm, setMarginMm] = useState<number>(12);
   const [scale, setScale] = useState<number>(1);
-  const opts: LayoutOpts = { marginMm, scale };
+  const [format, setFormat] = useState<PaperFormat>("a4");
+  const [orientation, setOrientation] = useState<Orientation>("landscape");
+  const opts: LayoutOpts = { marginMm, scale, format, orientation };
   const PX_PER_MM = 3.7795;
   const padPx = Math.round(marginMm * PX_PER_MM);
+  const pageMm = pageSizeMm(opts);
+  const pageWpx = Math.round(pageMm.w * PX_PER_MM);
+  const pageHpx = Math.round(pageMm.h * PX_PER_MM);
+
 
 
   useEffect(() => {
@@ -680,7 +704,7 @@ function PrintPreviewDialog({
       .then((pages) => { if (!cancelled) setPdfPages(pages.length ? pages : [[]]); })
       .catch(() => { if (!cancelled) setPdfPages([finalList]); });
     return () => { cancelled = true; };
-  }, [finalList, marginMm, scale]);
+  }, [finalList, marginMm, scale, format, orientation]);
 
 
   return (
@@ -749,11 +773,28 @@ function PrintPreviewDialog({
               onChange={(e) => setScale(Number(e.target.value) / 100)} className="w-32" />
             <span className="w-10 tabular-nums">{Math.round(scale * 100)}%</span>
           </label>
-          <Button size="sm" variant="ghost" className="h-7" onClick={() => { setMarginMm(12); setScale(1); }}>Reset</Button>
+          <div className="mx-1 h-6 w-px bg-border" />
+          <span className="text-muted-foreground">Formaat</span>
+          <Select value={format} onValueChange={(v) => setFormat(v as PaperFormat)}>
+            <SelectTrigger className="h-7 w-24"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {(Object.keys(PAPER_LABEL) as PaperFormat[]).map((k) => (
+                <SelectItem key={k} value={k}>{PAPER_LABEL[k]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={orientation} onValueChange={(v) => setOrientation(v as Orientation)}>
+            <SelectTrigger className="h-7 w-28"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {(Object.keys(ORIENTATION_LABEL) as Orientation[]).map((k) => (
+                <SelectItem key={k} value={k}>{ORIENTATION_LABEL[k]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button size="sm" variant="ghost" className="h-7" onClick={() => { setMarginMm(12); setScale(1); setFormat("a4"); setOrientation("landscape"); }}>Reset</Button>
         </div>
 
         {(() => {
-          const A4_W = 1123, A4_H = 794;
           const pages: Product[][] = pdfPages;
 
 
@@ -762,7 +803,7 @@ function PrintPreviewDialog({
               <div className="mx-auto flex flex-col items-center gap-6" style={{ transform: "scale(0.75)", transformOrigin: "top center" }}>
                 {pages.map((pageRows, pageIdx) => (
                   <div key={pageIdx} className="relative bg-white text-black shadow-md ring-1 ring-neutral-200"
-                    style={{ width: `${A4_W}px`, height: `${A4_H}px`, padding: `${padPx}px` }}>
+                    style={{ width: `${pageWpx}px`, height: `${pageHpx}px`, padding: `${padPx}px` }}>
                     <div style={{ zoom: scale, height: "100%", display: "flex", flexDirection: "column" }}>
                       {pageIdx === 0 && (
                         <div className="flex items-end justify-between border-b pb-3">
@@ -831,7 +872,7 @@ function PrintPreviewDialog({
 
 
         <DialogFooter className="gap-2 sm:justify-between">
-          <div className="text-xs text-muted-foreground">Layout: A4 liggend · marges {marginMm} mm · schaal {Math.round(scale * 100)}%</div>
+          <div className="text-xs text-muted-foreground">Layout: {PAPER_LABEL[format]} {ORIENTATION_LABEL[orientation].toLowerCase()} · marges {marginMm} mm · schaal {Math.round(scale * 100)}%</div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Sluiten</Button>
             <Button variant="outline" disabled={finalList.length === 0} onClick={() => onPrint(finalList, opts)}>
@@ -853,7 +894,7 @@ function escapeHtml(s: string) {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
 
-function buildPrintableHtml(orgName: string, products: Product[], opts: LayoutOpts = { marginMm: 12, scale: 1 }) {
+function buildPrintableHtml(orgName: string, products: Product[], opts: LayoutOpts = DEFAULT_LAYOUT) {
   const now = new Date().toLocaleDateString("nl-NL", { day: "2-digit", month: "long", year: "numeric" });
   const m = Math.max(5, Math.min(30, opts.marginMm));
   const s = Math.max(0.6, Math.min(1.4, opts.scale));
@@ -870,7 +911,7 @@ function buildPrintableHtml(orgName: string, products: Product[], opts: LayoutOp
     </tr>`).join("");
   return `<!doctype html><html><head><meta charset="utf-8"><title>Prijslijst</title>
     <style>
-      @page { size: A4 landscape; margin: ${m}mm; }
+      @page { size: ${opts.format === "letter" ? "letter" : "A4"} ${opts.orientation}; margin: ${m}mm; }
       body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; color:#111; margin:0; font-size: ${12 * s}px; }
       h1 { margin:0; font-size: ${22 * s}px; }
       table { width:100%; border-collapse: collapse; margin-top: 12px; font-size: ${12 * s}px; }
