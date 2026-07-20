@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Mail, Send, Eye, EyeOff, RefreshCcw, Save, Plus, Loader2 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { Mail, Send, Eye, EyeOff, RefreshCcw, Save, Plus, Loader2, ExternalLink } from "lucide-react";
 import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
@@ -10,8 +11,10 @@ import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { logClientActivity } from "@/lib/client-activity";
+import { sendMail } from "@/lib/mail.functions";
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,9 +22,6 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
 
 type Contact = Database["public"]["Tables"]["client_contacts"]["Row"];
 
@@ -74,12 +74,13 @@ export function ClientEmailComposer({
   };
 
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [to, setTo] = useState<string>("");
+  const [toList, setToList] = useState<string[]>([]);
   const [subject, setSubject] = useState(DEFAULT_SUBJECT);
   const [body, setBody] = useState(DEFAULT_BODY);
   const [showPreview, setShowPreview] = useState(false);
   const [draftId, setDraftId] = useState<string | null>(draft?.id ?? null);
   const [saving, setSaving] = useState(false);
+  const [sending, setSending] = useState(false);
   const [localCompanyEmail, setLocalCompanyEmail] = useState<string | null>(companyEmail ?? null);
   const [addOpen, setAddOpen] = useState(false);
   const [addEmail, setAddEmail] = useState("");
@@ -87,11 +88,12 @@ export function ClientEmailComposer({
   const [addFirstName, setAddFirstName] = useState("");
   const [addLastName, setAddLastName] = useState("");
   const [addSaving, setAddSaving] = useState(false);
-  const [initialized, setInitialized] = useState(false);
+
+  const sendMailFn = useServerFn(sendMail);
 
   useEffect(() => { setLocalCompanyEmail(companyEmail ?? null); }, [companyEmail]);
 
-  const loadContacts = async (preferredEmail?: string) => {
+  const loadContacts = async () => {
     const { data } = await supabase
       .from("client_contacts")
       .select("*")
@@ -104,14 +106,14 @@ export function ClientEmailComposer({
   };
 
   useEffect(() => {
-    if (!open) { setInitialized(false); return; }
+    if (!open) return;
     let ok = true;
     (async () => {
       const list = await loadContacts();
       if (!ok) return;
       const primary = list.find((c) => c.is_primary) ?? list[0];
-      setTo(draft?.to ?? defaultTo ?? primary?.email ?? localCompanyEmail ?? "");
-      setInitialized(true);
+      const initial = draft?.to ?? defaultTo ?? primary?.email ?? localCompanyEmail ?? "";
+      setToList(initial ? [initial] : []);
     })();
     return () => { ok = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -126,9 +128,10 @@ export function ClientEmailComposer({
     }
   }, [open, draft?.id, draft?.subject, draft?.body]);
 
+  const primaryTo = toList[0] ?? "";
   const selectedContact = useMemo(() => {
-    return contacts.find((c) => c.email === to);
-  }, [contacts, to]);
+    return contacts.find((c) => c.email === primaryTo);
+  }, [contacts, primaryTo]);
 
   const replacePlaceholders = (text: string) => {
     const contact = selectedContact ?? contacts.find((c) => c.is_primary) ?? contacts[0];
@@ -145,25 +148,34 @@ export function ClientEmailComposer({
   const finalSubject = replacePlaceholders(subject);
   const finalBody = replacePlaceholders(body);
   const mailtoHref = useMemo(() => {
-    if (!to) return "#";
+    if (toList.length === 0) return "#";
     const params = new URLSearchParams();
     if (finalSubject) params.set("subject", finalSubject);
     if (finalBody) params.set("body", finalBody);
-    return `mailto:${to}?${params.toString()}`;
-  }, [to, finalSubject, finalBody]);
+    return `mailto:${toList.join(",")}?${params.toString()}`;
+  }, [toList, finalSubject, finalBody]);
 
   const recipientOptions = useMemo(() => {
-    const opts: { value: string; label: string }[] = [];
+    const opts: { value: string; label: string; hint?: string }[] = [];
     if (localCompanyEmail) {
-      opts.push({ value: localCompanyEmail, label: `${companyName} (bedrijf)` });
+      opts.push({ value: localCompanyEmail, label: `${companyName}`, hint: "bedrijf" });
     }
     contacts.forEach((c) => {
       if (!c.email) return;
       const name = [c.first_name, c.last_name].filter(Boolean).join(" ").trim() || c.email;
-      opts.push({ value: c.email, label: `${name}${c.is_primary ? " ★" : ""} — ${c.email}` });
+      opts.push({ value: c.email, label: `${name}${c.is_primary ? " ★" : ""}`, hint: c.email });
     });
-    return opts;
+    // Dedupe
+    const seen = new Set<string>();
+    return opts.filter((o) => (seen.has(o.value) ? false : (seen.add(o.value), true)));
   }, [contacts, localCompanyEmail, companyName]);
+
+  function toggleRecipient(email: string, on: boolean) {
+    setToList((prev) => {
+      if (on) return prev.includes(email) ? prev : [...prev, email];
+      return prev.filter((e) => e !== email);
+    });
+  }
 
   async function addRecipient() {
     const email = addEmail.trim();
@@ -190,7 +202,7 @@ export function ClientEmailComposer({
         if (error) throw error;
         await loadContacts();
       }
-      setTo(email); // keep subject/body intact
+      setToList((prev) => (prev.includes(email) ? prev : [...prev, email]));
       toast.success("E-mailadres toegevoegd");
       setAddOpen(false);
       setAddEmail(""); setAddFirstName(""); setAddLastName("");
@@ -230,7 +242,7 @@ export function ClientEmailComposer({
         status: "draft",
         subject: subject || null,
         body_text: body || null,
-        to_emails: to ? [to] : [],
+        to_emails: toList,
         created_by: userData.user?.id ?? null,
         updated_at: new Date().toISOString(),
       };
@@ -252,6 +264,45 @@ export function ClientEmailComposer({
     }
   }
 
+  async function sendNow() {
+    if (toList.length === 0) return toast.error("Kies minstens één ontvanger");
+    if (!finalSubject.trim()) return toast.error("Onderwerp is verplicht");
+    setSending(true);
+    try {
+      await sendMailFn({
+        data: {
+          organization_id: organizationId,
+          client_id: clientId,
+          to: toList,
+          subject: finalSubject,
+          body: finalBody,
+        } as any,
+      });
+      toast.success(`Verstuurd naar ${toList.length} ontvanger${toList.length > 1 ? "s" : ""}`);
+      logClientActivity({
+        clientId,
+        organizationId,
+        kind: "email",
+        title: `E-mail: ${finalSubject}`,
+        body: `Aan: ${toList.join(", ")}\n\n${finalBody}`,
+        contactId: selectedContact?.id ?? null,
+      });
+      // Remove draft if present (it's now been sent)
+      if (draftId) {
+        await supabase.from("mail_messages").delete().eq("id", draftId);
+      }
+      onSaved?.();
+      setOpen(false);
+    } catch (e: any) {
+      toast.error(e.message ?? "Versturen mislukt");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const hasRecipients = recipientOptions.length > 0;
+  const canSend = toList.length > 0 && !sending;
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {!hideTrigger && (
@@ -265,14 +316,14 @@ export function ClientEmailComposer({
         <DialogHeader>
           <DialogTitle>{draftId ? "Concept bewerken" : "E-mail opmaken"}</DialogTitle>
           <DialogDescription>
-            Vul onderwerp en bericht in. Gebruik placeholders om bedrijfsnaam en contactpersoon automatisch in te vullen.
+            Kies één of meerdere ontvangers en verstuur direct vanuit het klantenportaal.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label>Aan</Label>
+              <Label>Aan {toList.length > 0 && <span className="text-xs text-muted-foreground">({toList.length} geselecteerd)</span>}</Label>
               <Popover open={addOpen} onOpenChange={setAddOpen}>
                 <PopoverTrigger asChild>
                   <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs">
@@ -321,23 +372,38 @@ export function ClientEmailComposer({
                 </PopoverContent>
               </Popover>
             </div>
-            <Select value={to} onValueChange={setTo} disabled={recipientOptions.length === 0}>
-              <SelectTrigger>
-                <SelectValue placeholder={recipientOptions.length === 0 ? "Geen e-mailadres bekend" : "Kies een ontvanger"} />
-              </SelectTrigger>
-              <SelectContent>
-                {recipientOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {recipientOptions.length === 0 && (
+            {hasRecipients ? (
+              <div className="rounded border divide-y max-h-56 overflow-y-auto">
+                {recipientOptions.map((opt) => {
+                  const checked = toList.includes(opt.value);
+                  return (
+                    <label
+                      key={opt.value}
+                      className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-muted/50"
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(v) => toggleRecipient(opt.value, v === true)}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate">
+                          {opt.label}
+                          {opt.hint === "bedrijf" && (
+                            <span className="ml-2 text-xs text-muted-foreground">(bedrijf)</span>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">{opt.value}</div>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            ) : (
               <p className="text-xs text-destructive">
                 Geen e-mailadressen bekend voor deze klant. Gebruik <b>E-mailadres toevoegen</b> hierboven — je concept blijft behouden.
               </p>
             )}
           </div>
-
 
           <div className="space-y-1.5">
             <Label>Onderwerp</Label>
@@ -374,7 +440,7 @@ export function ClientEmailComposer({
               placeholder="Typ hier je bericht..."
             />
             <p className="text-xs text-muted-foreground">
-              Klik op een placeholder om deze in te voegen op de cursorpositie.
+              Klik op een placeholder om deze in te voegen op de cursorpositie. Placeholders gebruiken de eerst geselecteerde contactpersoon.
             </p>
           </div>
 
@@ -401,7 +467,7 @@ export function ClientEmailComposer({
           {showPreview && (
             <div className="rounded border bg-muted/50 p-4 space-y-2">
               <div className="text-sm font-medium">Voorbeeld</div>
-              <div className="text-sm"><span className="text-muted-foreground">Aan:</span> {to || "—"}</div>
+              <div className="text-sm"><span className="text-muted-foreground">Aan:</span> {toList.join(", ") || "—"}</div>
               <div className="text-sm"><span className="text-muted-foreground">Onderwerp:</span> {finalSubject}</div>
               <pre className="whitespace-pre-wrap text-sm font-sans text-foreground">{finalBody}</pre>
             </div>
@@ -410,34 +476,35 @@ export function ClientEmailComposer({
 
         <DialogFooter className="gap-2 sm:justify-between">
           <Button variant="outline" onClick={() => setOpen(false)}>Sluiten</Button>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              asChild
+              disabled={toList.length === 0}
+              title={toList.length === 0 ? "Geen ontvanger geselecteerd" : "Openen in je eigen mailclient"}
+            >
+              <a href={mailtoHref} target="_blank" rel="noreferrer">
+                <ExternalLink className="mr-2 h-4 w-4" /> Mailclient
+              </a>
+            </Button>
             <Button
               type="button"
               variant="secondary"
               onClick={() => saveDraft(false)}
-              disabled={saving || !to}
-              title={!to ? "Geen e-mailadres — kies of voeg een ontvanger toe" : undefined}
+              disabled={saving || toList.length === 0}
+              title={toList.length === 0 ? "Geen e-mailadres — kies of voeg een ontvanger toe" : undefined}
             >
               <Save className="mr-2 h-4 w-4" /> {draftId ? "Concept bijwerken" : "Opslaan als concept"}
             </Button>
-            <Button asChild disabled={!to}>
-              <a
-                href={mailtoHref}
-                target="_blank"
-                rel="noreferrer"
-                onClick={() => {
-                  logClientActivity({
-                    clientId,
-                    organizationId,
-                    kind: "email",
-                    title: `E-mail: ${finalSubject || "(geen onderwerp)"}`,
-                    body: `Aan: ${to}\n\n${finalBody}`,
-                    contactId: selectedContact?.id ?? null,
-                  });
-                }}
-              >
-                <Send className="mr-2 h-4 w-4" /> Open in mailclient
-              </a>
+            <Button
+              type="button"
+              onClick={sendNow}
+              disabled={!canSend}
+            >
+              {sending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+              Verstuur direct
             </Button>
           </div>
         </DialogFooter>
