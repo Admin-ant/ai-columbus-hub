@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Palette, Plus, Trash2, Copy, Save, History, RotateCcw, Eye, Download, Upload, GitCompare, Search, CalendarIcon, X } from "lucide-react";
+import { ArrowLeft, Palette, Plus, Trash2, Copy, Save, History, RotateCcw, Eye, Download, Upload, GitCompare, Search, CalendarIcon, X, Monitor, Smartphone, RefreshCw } from "lucide-react";
 import { format, isSameDay, parseISO } from "date-fns";
 import { nl } from "date-fns/locale/nl";
 import { toast } from "sonner";
