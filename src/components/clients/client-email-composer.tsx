@@ -154,8 +154,8 @@ export function ClientEmailComposer({
 
   const recipientOptions = useMemo(() => {
     const opts: { value: string; label: string }[] = [];
-    if (companyEmail) {
-      opts.push({ value: companyEmail, label: `${companyName} (bedrijf)` });
+    if (localCompanyEmail) {
+      opts.push({ value: localCompanyEmail, label: `${companyName} (bedrijf)` });
     }
     contacts.forEach((c) => {
       if (!c.email) return;
@@ -163,7 +163,44 @@ export function ClientEmailComposer({
       opts.push({ value: c.email, label: `${name}${c.is_primary ? " ★" : ""} — ${c.email}` });
     });
     return opts;
-  }, [contacts, companyEmail, companyName]);
+  }, [contacts, localCompanyEmail, companyName]);
+
+  async function addRecipient() {
+    const email = addEmail.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Vul een geldig e-mailadres in");
+      return;
+    }
+    setAddSaving(true);
+    try {
+      if (addTarget === "company") {
+        const { error } = await supabase.from("clients").update({ email }).eq("id", clientId);
+        if (error) throw error;
+        setLocalCompanyEmail(email);
+      } else {
+        const payload: any = {
+          client_id: clientId,
+          organization_id: organizationId,
+          email,
+          first_name: addFirstName.trim() || null,
+          last_name: addLastName.trim() || null,
+          is_primary: contacts.length === 0,
+        };
+        const { error } = await supabase.from("client_contacts").insert(payload);
+        if (error) throw error;
+        await loadContacts();
+      }
+      setTo(email); // keep subject/body intact
+      toast.success("E-mailadres toegevoegd");
+      setAddOpen(false);
+      setAddEmail(""); setAddFirstName(""); setAddLastName("");
+      onSaved?.();
+    } catch (e: any) {
+      toast.error(e.message ?? "Toevoegen mislukt");
+    } finally {
+      setAddSaving(false);
+    }
+  }
 
   function insertPlaceholder(key: string) {
     const textarea = document.getElementById("email-body") as HTMLTextAreaElement | null;
