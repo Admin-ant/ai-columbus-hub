@@ -212,24 +212,23 @@ export function ClientEmailComposer({
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label>Aan</Label>
-            <Select value={to} onValueChange={setTo}>
+            <Select value={to} onValueChange={setTo} disabled={recipientOptions.length === 0}>
               <SelectTrigger>
-                <SelectValue placeholder="Kies een ontvanger" />
+                <SelectValue placeholder={recipientOptions.length === 0 ? "Geen e-mailadres bekend" : "Kies een ontvanger"} />
               </SelectTrigger>
               <SelectContent>
-                {recipientOptions.length === 0 ? (
-                  <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                    Geen e-mailadres bekend
-                  </div>
-                ) : (
-                  recipientOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                  ))
-                )}
+                {recipientOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
               </SelectContent>
-
             </Select>
+            {recipientOptions.length === 0 && (
+              <p className="text-xs text-destructive">
+                Geen e-mailadressen bekend voor deze klant. Voeg eerst een contactpersoon met e-mailadres toe of vul het bedrijfs-e-mailadres in — dan kun je opslaan of versturen.
+              </p>
+            )}
           </div>
+
 
           <div className="space-y-1.5">
             <Label>Onderwerp</Label>
@@ -307,7 +306,8 @@ export function ClientEmailComposer({
               type="button"
               variant="secondary"
               onClick={() => saveDraft(false)}
-              disabled={saving}
+              disabled={saving || !to}
+              title={!to ? "Geen e-mailadres — kies of voeg een ontvanger toe" : undefined}
             >
               <Save className="mr-2 h-4 w-4" /> {draftId ? "Concept bijwerken" : "Opslaan als concept"}
             </Button>
