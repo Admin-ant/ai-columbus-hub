@@ -742,27 +742,8 @@ function PrintPreviewDialog({
 
         {(() => {
           const A4_W = 1123, A4_H = 794;
-          const contentH = A4_H - padPx * 2;
-          const headerBlock = 60 * scale;
-          const tableHead = 30 * scale;
-          const footerBlock = 24 * scale;
-          const rowH = (p: typeof visible[number]) => (p.description ? 40 : 26) * scale;
+          const pages: Product[][] = pdfPages;
 
-          const pages: Array<typeof visible> = [];
-          let current: typeof visible = [];
-          let used = tableHead + footerBlock + headerBlock; // header only on page 1, but budget conservatively
-          for (const p of visible) {
-            const h = rowH(p);
-            if (used + h > contentH && current.length > 0) {
-              pages.push(current);
-              current = [];
-              used = tableHead + footerBlock; // subsequent pages: no title block
-            }
-            current.push(p);
-            used += h;
-          }
-          if (current.length > 0) pages.push(current);
-          if (pages.length === 0) pages.push([]);
 
           return (
             <div className="max-h-[60vh] overflow-auto rounded-md border bg-muted/30 p-4">
