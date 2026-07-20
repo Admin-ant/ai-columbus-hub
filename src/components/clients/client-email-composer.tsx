@@ -92,7 +92,11 @@ export function ClientEmailComposer({
   const [addLastName, setAddLastName] = useState("");
   const [addSaving, setAddSaving] = useState(false);
   const [fromEmail, setFromEmail] = useState<string | null>(null);
+  const [fromName, setFromName] = useState<string | null>(null);
   const [fromLoading, setFromLoading] = useState(false);
+  type SenderOption = { id: string; label: string; from_name: string | null; reply_to: string | null; email: string };
+  const [senderOptions, setSenderOptions] = useState<SenderOption[]>([]);
+  const [selectedSenderId, setSelectedSenderId] = useState<string>("default");
 
   const sendMailFn = useServerFn(sendMail);
 
