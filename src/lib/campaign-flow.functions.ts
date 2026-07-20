@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import logoEmailAsset from "@/assets/logo-columbus-email.png.asset.json";
 
 async function sendCampaignFlowResend(opts: {
   from: string;
