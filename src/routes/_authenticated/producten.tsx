@@ -575,6 +575,12 @@ function PrintPreviewDialog({
   const [pricing, setPricing] = useState<"all" | PricingType>("all");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [marginMm, setMarginMm] = useState<number>(12);
+  const [scale, setScale] = useState<number>(1);
+  const opts: LayoutOpts = { marginMm, scale };
+  const PX_PER_MM = 3.7795;
+  const padPx = Math.round(marginMm * PX_PER_MM);
+
 
   useEffect(() => {
     if (open) setSelected(new Set(initialSelection));
