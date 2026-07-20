@@ -217,13 +217,17 @@ export function ClientEmailComposer({
                 <SelectValue placeholder="Kies een ontvanger" />
               </SelectTrigger>
               <SelectContent>
-                {recipientOptions.length === 0 && (
-                  <SelectItem value="" disabled>Geen e-mailadres bekend</SelectItem>
+                {recipientOptions.length === 0 ? (
+                  <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                    Geen e-mailadres bekend
+                  </div>
+                ) : (
+                  recipientOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))
                 )}
-                {recipientOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                ))}
               </SelectContent>
+
             </Select>
           </div>
 
