@@ -565,9 +565,10 @@ function PrintPreviewDialog({
   orgName: string;
   products: Product[];
   initialSelection: string[];
-  onPrint: (list: Product[]) => void;
-  onPdf: (list: Product[]) => void;
+  onPrint: (list: Product[], opts: LayoutOpts) => void;
+  onPdf: (list: Product[], opts: LayoutOpts) => void;
 }) {
+
   const now = new Date().toLocaleDateString("nl-NL", { day: "2-digit", month: "long", year: "numeric" });
   const [selected, setSelected] = useState<Set<string>>(new Set(initialSelection));
   const [status, setStatus] = useState<StatusFilter>("all");
