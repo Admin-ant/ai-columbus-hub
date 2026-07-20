@@ -156,6 +156,10 @@ function MailSkinsPage() {
 
   async function save() {
     if (!currentOrganizationId) return;
+    if (hasPreviewErrors) {
+      toast.error(previewErrors[0] ?? "Controleer de onderwerp- en contactvelden");
+      return;
+    }
     let clean;
     try {
       clean = sanitizeSkinInput({
@@ -389,6 +393,32 @@ function MailSkinsPage() {
   const [sampleSender, setSampleSender] = useState("Team Columbus");
   const [previewNonce, setPreviewNonce] = useState(0);
 
+  // Client-side validatie voor de preview-velden.
+  // Regels: verplicht, geen HTML/scherpe haken, en lengtelimieten.
+  function validatePreviewField(
+    label: string,
+    value: string,
+    max: number,
+  ): string | null {
+    const v = value.trim();
+    if (!v) return `${label} is verplicht`;
+    if (v.length > max) return `${label} mag maximaal ${max} tekens zijn`;
+    if (/[<>]/.test(v)) return `${label} mag geen < of > tekens bevatten`;
+    // Basale controle op HTML/scripts
+    if (/<\s*\/?[a-z]/i.test(v) || /javascript:/i.test(v)) {
+      return `${label} mag geen HTML of scripts bevatten`;
+    }
+    return null;
+  }
+
+  const subjectError = validatePreviewField("Onderwerp", sampleSubject, 200);
+  const contactError = validatePreviewField("Contact", sampleContact, 120);
+  const senderError = validatePreviewField("Afzender", sampleSender, 120);
+  const previewErrors = [subjectError, contactError, senderError].filter(
+    (e): e is string => Boolean(e),
+  );
+  const hasPreviewErrors = previewErrors.length > 0;
+
   const renderTokens = useCallback(
     (s: string) =>
       s
@@ -577,7 +607,7 @@ function MailSkinsPage() {
                     <Download className="h-3.5 w-3.5" /> Exporteer
                   </Button>
                 )}
-                <Button size="sm" onClick={save} disabled={saving} className="gap-1">
+                <Button size="sm" onClick={save} disabled={saving || hasPreviewErrors} className="gap-1" title={hasPreviewErrors ? previewErrors.join(" • ") : undefined}>
                   <Save className="h-3.5 w-3.5" /> {saving ? "Opslaan…" : "Opslaan"}
                 </Button>
               </div>
@@ -661,16 +691,39 @@ function MailSkinsPage() {
             <div className="mb-3 grid grid-cols-1 gap-2 rounded-md border border-dashed border-border bg-muted/30 p-2 sm:grid-cols-3">
               <div>
                 <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Onderwerp</Label>
-                <Input value={sampleSubject} onChange={(e) => setSampleSubject(e.target.value)} className="h-7 text-xs" />
+                <Input
+                  value={sampleSubject}
+                  onChange={(e) => setSampleSubject(e.target.value)}
+                  aria-invalid={subjectError ? true : undefined}
+                  className={`h-7 text-xs ${subjectError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                />
+                {subjectError && <p className="mt-1 text-[10px] text-destructive">{subjectError}</p>}
               </div>
               <div>
                 <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Contact</Label>
-                <Input value={sampleContact} onChange={(e) => setSampleContact(e.target.value)} className="h-7 text-xs" />
+                <Input
+                  value={sampleContact}
+                  onChange={(e) => setSampleContact(e.target.value)}
+                  aria-invalid={contactError ? true : undefined}
+                  className={`h-7 text-xs ${contactError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                />
+                {contactError && <p className="mt-1 text-[10px] text-destructive">{contactError}</p>}
               </div>
               <div>
                 <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Afzender</Label>
-                <Input value={sampleSender} onChange={(e) => setSampleSender(e.target.value)} className="h-7 text-xs" />
+                <Input
+                  value={sampleSender}
+                  onChange={(e) => setSampleSender(e.target.value)}
+                  aria-invalid={senderError ? true : undefined}
+                  className={`h-7 text-xs ${senderError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                />
+                {senderError && <p className="mt-1 text-[10px] text-destructive">{senderError}</p>}
               </div>
+              {hasPreviewErrors && (
+                <div className="sm:col-span-3 rounded border border-destructive/40 bg-destructive/10 px-2 py-1 text-[11px] text-destructive">
+                  Opslaan is geblokkeerd totdat alle preview-velden geldig zijn.
+                </div>
+              )}
             </div>
 
             <div className="rounded border border-border p-3" style={previewStyle}>
