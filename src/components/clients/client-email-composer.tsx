@@ -127,6 +127,15 @@ export function ClientEmailComposer({
     return list;
   };
 
+  // Reset stale state immediately when switching clients so contacts van de
+  // vorige klant nooit blijven staan terwijl de nieuwe lijst laadt.
+  useEffect(() => {
+    setContacts([]);
+    setToList([]);
+    setLocalCompanyEmail(companyEmail ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientId]);
+
   useEffect(() => {
     if (!open) return;
     let ok = true;
@@ -138,6 +147,22 @@ export function ClientEmailComposer({
       setToList(initial ? [initial] : []);
     })();
     return () => { ok = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientId, open]);
+
+  // Live-refresh contactenlijst zodra er iets voor deze klant verandert,
+  // bijvoorbeeld wanneer een nieuw adres wordt toegevoegd of verwijderd.
+  useEffect(() => {
+    if (!open || !clientId) return;
+    const channel = supabase
+      .channel(`client-contacts-${clientId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "client_contacts", filter: `client_id=eq.${clientId}` },
+        () => { loadContacts(); },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId, open]);
 
