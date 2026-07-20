@@ -221,10 +221,10 @@ function ProductsPage() {
     return t;
   }, [products]);
 
-  async function exportPdf(list: Product[] = filteredProducts, opts: LayoutOpts = { marginMm: 12, scale: 1 }) {
+  async function exportPdf(list: Product[] = filteredProducts, opts: LayoutOpts = DEFAULT_LAYOUT) {
     const { default: jsPDF } = await import("jspdf");
     const { default: autoTable } = await import("jspdf-autotable");
-    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const doc = new jsPDF({ orientation: opts.orientation, unit: "mm", format: opts.format });
     const orgName = currentOrganization?.name ?? "";
     const m = Math.max(5, Math.min(30, opts.marginMm));
 
@@ -232,6 +232,7 @@ function ProductsPage() {
     autoTable(doc, buildAutoTableConfig(list, opts, m, doc));
     doc.save(`prijslijst-${new Date().toISOString().slice(0, 10)}.pdf`);
   }
+
 
 
 
