@@ -389,6 +389,32 @@ function MailSkinsPage() {
   const [sampleSender, setSampleSender] = useState("Team Columbus");
   const [previewNonce, setPreviewNonce] = useState(0);
 
+  // Client-side validatie voor de preview-velden.
+  // Regels: verplicht, geen HTML/scherpe haken, en lengtelimieten.
+  function validatePreviewField(
+    label: string,
+    value: string,
+    max: number,
+  ): string | null {
+    const v = value.trim();
+    if (!v) return `${label} is verplicht`;
+    if (v.length > max) return `${label} mag maximaal ${max} tekens zijn`;
+    if (/[<>]/.test(v)) return `${label} mag geen < of > tekens bevatten`;
+    // Basale controle op HTML/scripts
+    if (/<\s*\/?[a-z]/i.test(v) || /javascript:/i.test(v)) {
+      return `${label} mag geen HTML of scripts bevatten`;
+    }
+    return null;
+  }
+
+  const subjectError = validatePreviewField("Onderwerp", sampleSubject, 200);
+  const contactError = validatePreviewField("Contact", sampleContact, 120);
+  const senderError = validatePreviewField("Afzender", sampleSender, 120);
+  const previewErrors = [subjectError, contactError, senderError].filter(
+    (e): e is string => Boolean(e),
+  );
+  const hasPreviewErrors = previewErrors.length > 0;
+
   const renderTokens = useCallback(
     (s: string) =>
       s
