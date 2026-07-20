@@ -107,17 +107,64 @@ export function ClientEmailComposer({
     let ok = true;
     setFromLoading(true);
     (async () => {
-      const { data } = await supabase
+      const { data: settings } = await supabase
         .from("mail_settings")
-        .select("from_email")
+        .select("from_email, from_name, reply_to")
         .eq("organization_id", organizationId)
         .maybeSingle();
       if (!ok) return;
-      setFromEmail((data?.from_email as string | null) ?? null);
+      const orgFromEmail = (settings?.from_email as string | null) ?? null;
+      const orgFromName = (settings?.from_name as string | null) ?? null;
+      const orgReplyTo = (settings?.reply_to as string | null) ?? null;
+      setFromEmail(orgFromEmail);
+      setFromName(orgFromName);
+
+      // Load team members (organization_members → profiles)
+      const { data: memberRows } = await supabase
+        .from("organization_members")
+        .select("user_id")
+        .eq("organization_id", organizationId);
+      const userIds = (memberRows ?? []).map((m: any) => m.user_id).filter(Boolean);
+      let members: Array<{ id: string; display_name: string | null; email: string | null }> = [];
+      if (userIds.length > 0) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("id, display_name, email")
+          .in("id", userIds);
+        members = (profs ?? []) as any;
+      }
+      if (!ok) return;
+
+      const opts: SenderOption[] = [];
+      opts.push({
+        id: "default",
+        label: `Organisatie${orgFromName ? ` — ${orgFromName}` : ""}${orgFromEmail ? ` <${orgFromEmail}>` : ""}`,
+        from_name: orgFromName,
+        reply_to: orgReplyTo,
+        email: orgFromEmail ?? "",
+      });
+      for (const m of members) {
+        if (!m.email || !EMAIL_RE.test(m.email)) continue;
+        const name = m.display_name?.trim() || m.email;
+        opts.push({
+          id: m.id,
+          label: `${name} <${m.email}>`,
+          from_name: name,
+          reply_to: m.email,
+          email: m.email,
+        });
+      }
+      setSenderOptions(opts);
+      setSelectedSenderId("default");
       setFromLoading(false);
     })();
     return () => { ok = false; };
   }, [open, organizationId]);
+
+  const selectedSender = useMemo(
+    () => senderOptions.find((o) => o.id === selectedSenderId) ?? senderOptions[0] ?? null,
+    [senderOptions, selectedSenderId],
+  );
 
   const loadContacts = async () => {
     const { data } = await supabase
