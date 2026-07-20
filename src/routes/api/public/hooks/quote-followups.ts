@@ -146,6 +146,15 @@ export const Route = createFileRoute("/api/public/hooks/quote-followups")({
           }
         }
 
+        const processed = (quotes as unknown as unknown[] | null)?.length ?? 0;
+        if (runId) {
+          await supabaseAdmin.from("cron_job_runs").update({
+            status: errors.length > 0 && sent === 0 ? "error" : "ok",
+            finished_at: new Date().toISOString(),
+            processed, sent, skipped, failed: errors.length,
+            error: errors.length ? errors.slice(0, 5).join("; ") : null,
+          } as never).eq("id", runId);
+        }
         return new Response(JSON.stringify({ ok: true, sent, skipped, errors }), {
           headers: { "Content-Type": "application/json" },
         });
