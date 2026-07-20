@@ -532,7 +532,29 @@ function pageSizeMm(opts: LayoutOpts): { w: number; h: number } {
   return opts.orientation === "landscape" ? { w: base.h, h: base.w } : base;
 }
 
-const DEFAULT_LAYOUT: LayoutOpts = { marginMm: 12, scale: 1, format: "a4", orientation: "landscape" };
+const DEFAULT_HF: HeaderFooterOpts = {
+  showHeader: true,
+  showFooter: true,
+  title: "Prijslijst",
+  headerLeft: "{org} — {date}",
+  headerRight: "{count} artikelen",
+  footerLeft: "",
+  footerRight: "Pagina {page} / {pages}",
+};
+
+const DEFAULT_LAYOUT: LayoutOpts = {
+  marginMm: 12, scale: 1, format: "a4", orientation: "landscape", hf: DEFAULT_HF,
+};
+
+function resolveTemplate(tpl: string, ctx: { page: number; pages: number; org: string; date: string; title: string; count: number }) {
+  return tpl
+    .replaceAll("{page}", String(ctx.page))
+    .replaceAll("{pages}", String(ctx.pages))
+    .replaceAll("{org}", ctx.org)
+    .replaceAll("{date}", ctx.date)
+    .replaceAll("{title}", ctx.title)
+    .replaceAll("{count}", String(ctx.count));
+}
 
 type StatusFilter = "all" | "active" | "inactive";
 
