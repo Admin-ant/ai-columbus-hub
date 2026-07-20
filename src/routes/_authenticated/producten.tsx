@@ -500,9 +500,26 @@ function ProductsPage() {
   }
 }
 
-type LayoutOpts = { marginMm: number; scale: number };
+type PaperFormat = "a4" | "letter";
+type Orientation = "portrait" | "landscape";
+type LayoutOpts = { marginMm: number; scale: number; format: PaperFormat; orientation: Orientation };
 type SortKey = "sku" | "name" | "price" | "type";
 type SortDir = "asc" | "desc";
+
+// Paginaformaten in mm (breedte × hoogte in staand).
+const PAPER_MM: Record<PaperFormat, { w: number; h: number }> = {
+  a4: { w: 210, h: 297 },
+  letter: { w: 215.9, h: 279.4 },
+};
+const PAPER_LABEL: Record<PaperFormat, string> = { a4: "A4", letter: "Letter" };
+const ORIENTATION_LABEL: Record<Orientation, string> = { portrait: "Staand", landscape: "Liggend" };
+function pageSizeMm(opts: LayoutOpts): { w: number; h: number } {
+  const base = PAPER_MM[opts.format];
+  return opts.orientation === "landscape" ? { w: base.h, h: base.w } : base;
+}
+
+const DEFAULT_LAYOUT: LayoutOpts = { marginMm: 12, scale: 1, format: "a4", orientation: "landscape" };
+
 type StatusFilter = "all" | "active" | "inactive";
 
 function productRow(p: Product): (string | number)[] {
