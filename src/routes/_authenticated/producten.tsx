@@ -533,8 +533,8 @@ function ProductsPage() {
     </div>
   );
 
-  function printFromPreview(list: Product[]) {
-    const html = buildPrintableHtml(currentOrganization?.name ?? "", list);
+  function printFromPreview(list: Product[], opts: LayoutOpts = { marginMm: 12, scale: 1 }) {
+    const html = buildPrintableHtml(currentOrganization?.name ?? "", list, opts);
     const w = window.open("", "_blank", "width=1100,height=800");
     if (!w) return toast.error("Sta pop-ups toe om te printen");
     w.document.open();
@@ -545,9 +545,11 @@ function ProductsPage() {
   }
 }
 
+type LayoutOpts = { marginMm: number; scale: number };
 type SortKey = "sku" | "name" | "price" | "type";
 type SortDir = "asc" | "desc";
 type StatusFilter = "all" | "active" | "inactive";
+
 
 function PrintPreviewDialog({
   open,
