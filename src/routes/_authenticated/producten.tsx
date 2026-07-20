@@ -221,22 +221,25 @@ function ProductsPage() {
     return t;
   }, [products]);
 
-  async function exportPdf(list: Product[] = filteredProducts) {
+  async function exportPdf(list: Product[] = filteredProducts, opts: LayoutOpts = { marginMm: 12, scale: 1 }) {
     const { default: jsPDF } = await import("jspdf");
     const { default: autoTable } = await import("jspdf-autotable");
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
     const orgName = currentOrganization?.name ?? "";
     const now = new Date().toLocaleDateString("nl-NL", { day: "2-digit", month: "long", year: "numeric" });
+    const m = Math.max(5, Math.min(30, opts.marginMm));
+    const s = Math.max(0.6, Math.min(1.4, opts.scale));
 
-    doc.setFontSize(16);
-    doc.text("Prijslijst", 14, 15);
-    doc.setFontSize(10);
+    doc.setFontSize(16 * s);
+    doc.text("Prijslijst", m, m + 3);
+    doc.setFontSize(10 * s);
     doc.setTextColor(120);
-    doc.text(`${orgName}${orgName ? " — " : ""}${now}`, 14, 21);
+    doc.text(`${orgName}${orgName ? " — " : ""}${now}`, m, m + 9);
     doc.setTextColor(0);
 
     autoTable(doc, {
-      startY: 26,
+      startY: m + 14,
+      margin: { left: m, right: m, top: m, bottom: m },
       head: [["Artikelnr.", "Naam", "Type", "Prijs", "Opstart", "BTW", "Korting", "Status"]],
       body: list.map((p) => [
         p.sku ?? "—",
@@ -250,10 +253,10 @@ function ProductsPage() {
           : "—",
         p.active ? "Actief" : "Inactief",
       ]),
-      styles: { fontSize: 9, cellPadding: 2 },
+      styles: { fontSize: 9 * s, cellPadding: 2 * s },
       headStyles: { fillColor: [30, 41, 59], textColor: 255 },
       columnStyles: {
-        0: { cellWidth: 22 },
+        0: { cellWidth: 22 * s },
         3: { halign: "right" },
         4: { halign: "right" },
         5: { halign: "right" },
@@ -265,8 +268,8 @@ function ProductsPage() {
         doc.setTextColor(150);
         doc.text(
           `Pagina ${doc.getCurrentPageInfo().pageNumber} / ${pageCount}`,
-          pageSize.getWidth() - 14,
-          pageSize.getHeight() - 8,
+          pageSize.getWidth() - m,
+          pageSize.getHeight() - Math.max(4, m / 2),
           { align: "right" },
         );
       },
@@ -274,6 +277,7 @@ function ProductsPage() {
 
     doc.save(`prijslijst-${new Date().toISOString().slice(0, 10)}.pdf`);
   }
+
 
 
   function printList() {
@@ -529,8 +533,8 @@ function ProductsPage() {
     </div>
   );
 
-  function printFromPreview(list: Product[]) {
-    const html = buildPrintableHtml(currentOrganization?.name ?? "", list);
+  function printFromPreview(list: Product[], opts: LayoutOpts = { marginMm: 12, scale: 1 }) {
+    const html = buildPrintableHtml(currentOrganization?.name ?? "", list, opts);
     const w = window.open("", "_blank", "width=1100,height=800");
     if (!w) return toast.error("Sta pop-ups toe om te printen");
     w.document.open();
@@ -541,9 +545,11 @@ function ProductsPage() {
   }
 }
 
+type LayoutOpts = { marginMm: number; scale: number };
 type SortKey = "sku" | "name" | "price" | "type";
 type SortDir = "asc" | "desc";
 type StatusFilter = "all" | "active" | "inactive";
+
 
 function PrintPreviewDialog({
   open,
@@ -559,15 +565,22 @@ function PrintPreviewDialog({
   orgName: string;
   products: Product[];
   initialSelection: string[];
-  onPrint: (list: Product[]) => void;
-  onPdf: (list: Product[]) => void;
+  onPrint: (list: Product[], opts: LayoutOpts) => void;
+  onPdf: (list: Product[], opts: LayoutOpts) => void;
 }) {
+
   const now = new Date().toLocaleDateString("nl-NL", { day: "2-digit", month: "long", year: "numeric" });
   const [selected, setSelected] = useState<Set<string>>(new Set(initialSelection));
   const [status, setStatus] = useState<StatusFilter>("all");
   const [pricing, setPricing] = useState<"all" | PricingType>("all");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [marginMm, setMarginMm] = useState<number>(12);
+  const [scale, setScale] = useState<number>(1);
+  const opts: LayoutOpts = { marginMm, scale };
+  const PX_PER_MM = 3.7795;
+  const padPx = Math.round(marginMm * PX_PER_MM);
+
 
   useEffect(() => {
     if (open) setSelected(new Set(initialSelection));
@@ -664,12 +677,31 @@ function PrintPreviewDialog({
           </div>
         </div>
 
+        <div className="flex flex-wrap items-center gap-3 rounded-md border bg-muted/30 p-2 text-xs">
+          <label className="flex items-center gap-2">
+            <span className="text-muted-foreground">Marges</span>
+            <input type="range" min={5} max={30} step={1} value={marginMm}
+              onChange={(e) => setMarginMm(Number(e.target.value))} className="w-32" />
+            <span className="w-10 tabular-nums">{marginMm} mm</span>
+          </label>
+          <div className="mx-1 h-6 w-px bg-border" />
+          <label className="flex items-center gap-2">
+            <span className="text-muted-foreground">Schaal</span>
+            <input type="range" min={60} max={140} step={5} value={Math.round(scale * 100)}
+              onChange={(e) => setScale(Number(e.target.value) / 100)} className="w-32" />
+            <span className="w-10 tabular-nums">{Math.round(scale * 100)}%</span>
+          </label>
+          <Button size="sm" variant="ghost" className="h-7" onClick={() => { setMarginMm(12); setScale(1); }}>Reset</Button>
+        </div>
+
         <div className="max-h-[60vh] overflow-auto rounded-md border bg-muted/30 p-4">
           <div
             className="mx-auto bg-white text-black shadow-sm"
-            style={{ width: "1123px", minHeight: "794px", padding: "40px 48px", transform: "scale(0.75)", transformOrigin: "top center" }}
+            style={{ width: "1123px", minHeight: "794px", padding: `${padPx}px`, transform: "scale(0.75)", transformOrigin: "top center" }}
           >
+            <div style={{ zoom: scale }}>
             <div className="flex items-end justify-between border-b pb-3">
+
               <div>
                 <div className="text-2xl font-bold">Prijslijst</div>
                 <div className="text-xs text-neutral-500">{orgName}{orgName ? " — " : ""}{now}</div>
@@ -714,18 +746,20 @@ function PrintPreviewDialog({
               </tbody>
             </table>
             <div className="mt-6 text-right text-[10px] text-neutral-400">Alleen geselecteerde rijen worden geëxporteerd</div>
+            </div>
           </div>
         </div>
 
         <DialogFooter className="gap-2 sm:justify-between">
-          <div className="text-xs text-muted-foreground">Layout: A4 liggend · marges 12 mm</div>
+          <div className="text-xs text-muted-foreground">Layout: A4 liggend · marges {marginMm} mm · schaal {Math.round(scale * 100)}%</div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Sluiten</Button>
-            <Button variant="outline" disabled={finalList.length === 0} onClick={() => onPrint(finalList)}>
+            <Button variant="outline" disabled={finalList.length === 0} onClick={() => onPrint(finalList, opts)}>
               <Printer className="mr-2 h-4 w-4" /> Printen
             </Button>
-            <Button disabled={finalList.length === 0} onClick={() => onPdf(finalList)}>
+            <Button disabled={finalList.length === 0} onClick={() => onPdf(finalList, opts)}>
               <FileDown className="mr-2 h-4 w-4" /> Download PDF
+
             </Button>
           </div>
         </DialogFooter>
@@ -739,12 +773,14 @@ function escapeHtml(s: string) {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
 
-function buildPrintableHtml(orgName: string, products: Product[]) {
+function buildPrintableHtml(orgName: string, products: Product[], opts: LayoutOpts = { marginMm: 12, scale: 1 }) {
   const now = new Date().toLocaleDateString("nl-NL", { day: "2-digit", month: "long", year: "numeric" });
+  const m = Math.max(5, Math.min(30, opts.marginMm));
+  const s = Math.max(0.6, Math.min(1.4, opts.scale));
   const rows = products.map((p, idx) => `
     <tr style="background:${idx % 2 ? "#fafafa" : "white"}">
-      <td style="padding:6px 8px;font-family:monospace;font-size:11px">${escapeHtml(p.sku ?? "—")}</td>
-      <td style="padding:6px 8px"><div style="font-weight:600">${escapeHtml(p.name)}</div>${p.description ? `<div style="font-size:11px;color:#666">${escapeHtml(p.description)}</div>` : ""}</td>
+      <td style="padding:6px 8px;font-family:monospace;font-size:${11 * s}px">${escapeHtml(p.sku ?? "—")}</td>
+      <td style="padding:6px 8px"><div style="font-weight:600">${escapeHtml(p.name)}</div>${p.description ? `<div style="font-size:${11 * s}px;color:#666">${escapeHtml(p.description)}</div>` : ""}</td>
       <td style="padding:6px 8px">${PRICING_LABELS[p.pricing_type]}</td>
       <td style="padding:6px 8px;text-align:right">${EUR.format(Number(p.unit_price_cents ?? 0) / 100)}</td>
       <td style="padding:6px 8px;text-align:right">${EUR.format(Number(p.setup_fee_cents ?? 0) / 100)}</td>
@@ -754,14 +790,15 @@ function buildPrintableHtml(orgName: string, products: Product[]) {
     </tr>`).join("");
   return `<!doctype html><html><head><meta charset="utf-8"><title>Prijslijst</title>
     <style>
-      @page { size: A4 landscape; margin: 12mm; }
-      body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; color:#111; margin:0; }
-      h1 { margin:0; font-size: 22px; }
-      table { width:100%; border-collapse: collapse; margin-top: 12px; font-size: 12px; }
+      @page { size: A4 landscape; margin: ${m}mm; }
+      body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; color:#111; margin:0; font-size: ${12 * s}px; }
+      h1 { margin:0; font-size: ${22 * s}px; }
+      table { width:100%; border-collapse: collapse; margin-top: 12px; font-size: ${12 * s}px; }
       thead th { background:#1e293b; color:white; padding:6px 8px; text-align:left; font-weight:500; }
       thead th.r { text-align:right; }
       tbody td { border-bottom: 1px solid #eee; vertical-align: top; }
     </style></head><body>
+
     <div style="display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid #ddd;padding-bottom:8px">
       <div><h1>Prijslijst</h1><div style="font-size:11px;color:#666">${escapeHtml(orgName)}${orgName ? " — " : ""}${now}</div></div>
       <div style="font-size:11px;color:#999">${products.length} artikelen</div>
