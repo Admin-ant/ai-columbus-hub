@@ -193,6 +193,8 @@ export function CampaignFlowTab() {
   >([]);
   const [selectedVariant, setSelectedVariant] = useState<number | null>(null);
   const [launching, setLaunching] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
 
   const [leads, setLeads] = useState<FlowLead[]>(() => loadLS<FlowLead[]>(LS_LEADS, []));
   const [tasks, setTasks] = useState<FlowTask[]>(() => loadLS<FlowTask[]>(LS_TASKS, []));
