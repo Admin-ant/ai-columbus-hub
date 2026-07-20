@@ -677,12 +677,31 @@ function PrintPreviewDialog({
           </div>
         </div>
 
+        <div className="flex flex-wrap items-center gap-3 rounded-md border bg-muted/30 p-2 text-xs">
+          <label className="flex items-center gap-2">
+            <span className="text-muted-foreground">Marges</span>
+            <input type="range" min={5} max={30} step={1} value={marginMm}
+              onChange={(e) => setMarginMm(Number(e.target.value))} className="w-32" />
+            <span className="w-10 tabular-nums">{marginMm} mm</span>
+          </label>
+          <div className="mx-1 h-6 w-px bg-border" />
+          <label className="flex items-center gap-2">
+            <span className="text-muted-foreground">Schaal</span>
+            <input type="range" min={60} max={140} step={5} value={Math.round(scale * 100)}
+              onChange={(e) => setScale(Number(e.target.value) / 100)} className="w-32" />
+            <span className="w-10 tabular-nums">{Math.round(scale * 100)}%</span>
+          </label>
+          <Button size="sm" variant="ghost" className="h-7" onClick={() => { setMarginMm(12); setScale(1); }}>Reset</Button>
+        </div>
+
         <div className="max-h-[60vh] overflow-auto rounded-md border bg-muted/30 p-4">
           <div
             className="mx-auto bg-white text-black shadow-sm"
-            style={{ width: "1123px", minHeight: "794px", padding: "40px 48px", transform: "scale(0.75)", transformOrigin: "top center" }}
+            style={{ width: "1123px", minHeight: "794px", padding: `${padPx}px`, transform: "scale(0.75)", transformOrigin: "top center" }}
           >
+            <div style={{ zoom: scale }}>
             <div className="flex items-end justify-between border-b pb-3">
+
               <div>
                 <div className="text-2xl font-bold">Prijslijst</div>
                 <div className="text-xs text-neutral-500">{orgName}{orgName ? " — " : ""}{now}</div>
