@@ -305,6 +305,31 @@ export function CampaignFlowTab() {
     ].map((p) => ({ ...p, tone }));
   }, [scrape, name, company]);
 
+  const previewBodyText = useMemo(() => {
+    if (selectedVariant !== null && variants[selectedVariant]) {
+      return variants[selectedVariant].body;
+    }
+    if (livePreviews.length > 0) return livePreviews[0].body;
+    return "";
+  }, [selectedVariant, variants, livePreviews]);
+
+  const previewHtml = useMemo(() => {
+    if (!previewBodyText) return "";
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    return renderCampaignEmailHtml({
+      bodyText: previewBodyText,
+      trackingUrl: origin ? `${origin}/api/public/l/preview-token` : null,
+      logoUrl: resolveCampaignLogoUrl(origin),
+      senderName: "AI van Columbus",
+      senderTitle: null,
+    });
+  }, [previewBodyText]);
+
+  const previewSubject = useMemo(
+    () => `Even kort, ${company.trim() || "kennismaken"}`,
+    [company],
+  );
+
   const filteredScanEdits = useMemo(() => {
     const q = scanEditSearch.trim().toLowerCase();
     const entries = Object.values(savedScanEdits);
