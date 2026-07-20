@@ -91,10 +91,29 @@ export function ClientEmailComposer({
   const [addFirstName, setAddFirstName] = useState("");
   const [addLastName, setAddLastName] = useState("");
   const [addSaving, setAddSaving] = useState(false);
+  const [fromEmail, setFromEmail] = useState<string | null>(null);
+  const [fromLoading, setFromLoading] = useState(false);
 
   const sendMailFn = useServerFn(sendMail);
 
   useEffect(() => { setLocalCompanyEmail(companyEmail ?? null); }, [companyEmail]);
+
+  useEffect(() => {
+    if (!open) return;
+    let ok = true;
+    setFromLoading(true);
+    (async () => {
+      const { data } = await supabase
+        .from("mail_settings")
+        .select("from_email")
+        .eq("organization_id", organizationId)
+        .maybeSingle();
+      if (!ok) return;
+      setFromEmail((data?.from_email as string | null) ?? null);
+      setFromLoading(false);
+    })();
+    return () => { ok = false; };
+  }, [open, organizationId]);
 
   const loadContacts = async () => {
     const { data } = await supabase
