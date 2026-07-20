@@ -306,7 +306,8 @@ export function ClientEmailComposer({
               type="button"
               variant="secondary"
               onClick={() => saveDraft(false)}
-              disabled={saving}
+              disabled={saving || !to}
+              title={!to ? "Geen e-mailadres — kies of voeg een ontvanger toe" : undefined}
             >
               <Save className="mr-2 h-4 w-4" /> {draftId ? "Concept bijwerken" : "Opslaan als concept"}
             </Button>
