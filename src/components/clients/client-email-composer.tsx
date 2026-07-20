@@ -80,25 +80,42 @@ export function ClientEmailComposer({
   const [showPreview, setShowPreview] = useState(false);
   const [draftId, setDraftId] = useState<string | null>(draft?.id ?? null);
   const [saving, setSaving] = useState(false);
+  const [localCompanyEmail, setLocalCompanyEmail] = useState<string | null>(companyEmail ?? null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addEmail, setAddEmail] = useState("");
+  const [addTarget, setAddTarget] = useState<"company" | "contact">("contact");
+  const [addFirstName, setAddFirstName] = useState("");
+  const [addLastName, setAddLastName] = useState("");
+  const [addSaving, setAddSaving] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => { setLocalCompanyEmail(companyEmail ?? null); }, [companyEmail]);
+
+  const loadContacts = async (preferredEmail?: string) => {
+    const { data } = await supabase
+      .from("client_contacts")
+      .select("*")
+      .eq("client_id", clientId)
+      .order("is_primary", { ascending: false })
+      .order("first_name", { ascending: true });
+    const list = (data ?? []) as Contact[];
+    setContacts(list);
+    return list;
+  };
 
   useEffect(() => {
+    if (!open) { setInitialized(false); return; }
     let ok = true;
     (async () => {
-      const { data } = await supabase
-        .from("client_contacts")
-        .select("*")
-        .eq("client_id", clientId)
-        .order("is_primary", { ascending: false })
-        .order("first_name", { ascending: true });
-      if (ok) {
-        const list = (data ?? []) as Contact[];
-        setContacts(list);
-        const primary = list.find((c) => c.is_primary) ?? list[0];
-        setTo(draft?.to ?? defaultTo ?? primary?.email ?? companyEmail ?? "");
-      }
+      const list = await loadContacts();
+      if (!ok) return;
+      const primary = list.find((c) => c.is_primary) ?? list[0];
+      setTo(draft?.to ?? defaultTo ?? primary?.email ?? localCompanyEmail ?? "");
+      setInitialized(true);
     })();
     return () => { ok = false; };
-  }, [clientId, companyEmail, defaultTo, open, draft?.to]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientId, open]);
 
   useEffect(() => {
     if (open) {
