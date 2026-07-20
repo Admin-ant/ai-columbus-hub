@@ -603,7 +603,7 @@ function MailSkinsPage() {
                     <Download className="h-3.5 w-3.5" /> Exporteer
                   </Button>
                 )}
-                <Button size="sm" onClick={save} disabled={saving} className="gap-1">
+                <Button size="sm" onClick={save} disabled={saving || hasPreviewErrors} className="gap-1" title={hasPreviewErrors ? previewErrors.join(" • ") : undefined}>
                   <Save className="h-3.5 w-3.5" /> {saving ? "Opslaan…" : "Opslaan"}
                 </Button>
               </div>
