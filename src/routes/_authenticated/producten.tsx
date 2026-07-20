@@ -221,6 +221,65 @@ function ProductsPage() {
     return t;
   }, [products]);
 
+  async function exportPdf() {
+    const { default: jsPDF } = await import("jspdf");
+    const { default: autoTable } = await import("jspdf-autotable");
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const orgName = currentOrganization?.name ?? "";
+    const now = new Date().toLocaleDateString("nl-NL", { day: "2-digit", month: "long", year: "numeric" });
+
+    doc.setFontSize(16);
+    doc.text("Prijslijst", 14, 15);
+    doc.setFontSize(10);
+    doc.setTextColor(120);
+    doc.text(`${orgName}${orgName ? " — " : ""}${now}`, 14, 21);
+    doc.setTextColor(0);
+
+    autoTable(doc, {
+      startY: 26,
+      head: [["Artikelnr.", "Naam", "Type", "Prijs", "Opstart", "BTW", "Korting", "Status"]],
+      body: filteredProducts.map((p) => [
+        p.sku ?? "—",
+        p.description ? `${p.name}\n${p.description}` : p.name,
+        PRICING_LABELS[p.pricing_type],
+        EUR.format(Number(p.unit_price_cents ?? 0) / 100),
+        EUR.format(Number(p.setup_fee_cents ?? 0) / 100),
+        `${Number(p.vat_rate)}%`,
+        Number(p.discount_percent ?? 0) > 0
+          ? `${Number(p.discount_percent)}% ${p.discount_type === "recurring" ? `/mnd${p.contract_months ? ` · ${p.contract_months}m` : ""}` : "eenmalig"}`
+          : "—",
+        p.active ? "Actief" : "Inactief",
+      ]),
+      styles: { fontSize: 9, cellPadding: 2 },
+      headStyles: { fillColor: [30, 41, 59], textColor: 255 },
+      columnStyles: {
+        0: { cellWidth: 22 },
+        3: { halign: "right" },
+        4: { halign: "right" },
+        5: { halign: "right" },
+      },
+      didDrawPage: () => {
+        const pageCount = doc.getNumberOfPages();
+        const pageSize = doc.internal.pageSize;
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text(
+          `Pagina ${doc.getCurrentPageInfo().pageNumber} / ${pageCount}`,
+          pageSize.getWidth() - 14,
+          pageSize.getHeight() - 8,
+          { align: "right" },
+        );
+      },
+    });
+
+    doc.save(`prijslijst-${new Date().toISOString().slice(0, 10)}.pdf`);
+  }
+
+  function printList() {
+    window.print();
+  }
+
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
