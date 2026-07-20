@@ -271,7 +271,56 @@ export function ClientEmailComposer({
 
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label>Aan</Label>
+            <div className="flex items-center justify-between">
+              <Label>Aan</Label>
+              <Popover open={addOpen} onOpenChange={setAddOpen}>
+                <PopoverTrigger asChild>
+                  <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                    <Plus className="mr-1 h-3.5 w-3.5" /> E-mailadres toevoegen
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-80 space-y-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">E-mailadres</Label>
+                    <Input
+                      type="email"
+                      value={addEmail}
+                      onChange={(e) => setAddEmail(e.target.value)}
+                      placeholder="naam@bedrijf.nl"
+                    />
+                  </div>
+                  <RadioGroup value={addTarget} onValueChange={(v) => setAddTarget(v as any)} className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="contact" id="add-target-contact" />
+                      <Label htmlFor="add-target-contact" className="text-xs font-normal">Als nieuwe contactpersoon</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="company" id="add-target-company" />
+                      <Label htmlFor="add-target-company" className="text-xs font-normal">Als bedrijfs-e-mailadres</Label>
+                    </div>
+                  </RadioGroup>
+                  {addTarget === "contact" && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Voornaam</Label>
+                        <Input value={addFirstName} onChange={(e) => setAddFirstName(e.target.value)} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Achternaam</Label>
+                        <Input value={addLastName} onChange={(e) => setAddLastName(e.target.value)} />
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex justify-end gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => setAddOpen(false)}>Annuleren</Button>
+                    <Button size="sm" onClick={addRecipient} disabled={addSaving || !addEmail.trim()}>
+                      {addSaving && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+                      Toevoegen
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
             <Select value={to} onValueChange={setTo} disabled={recipientOptions.length === 0}>
               <SelectTrigger>
                 <SelectValue placeholder={recipientOptions.length === 0 ? "Geen e-mailadres bekend" : "Kies een ontvanger"} />
@@ -284,7 +333,7 @@ export function ClientEmailComposer({
             </Select>
             {recipientOptions.length === 0 && (
               <p className="text-xs text-destructive">
-                Geen e-mailadressen bekend voor deze klant. Voeg eerst een contactpersoon met e-mailadres toe of vul het bedrijfs-e-mailadres in — dan kun je opslaan of versturen.
+                Geen e-mailadressen bekend voor deze klant. Gebruik <b>E-mailadres toevoegen</b> hierboven — je concept blijft behouden.
               </p>
             )}
           </div>
