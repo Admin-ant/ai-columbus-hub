@@ -848,7 +848,46 @@ function PrintPreviewDialog({
               ))}
             </SelectContent>
           </Select>
-          <Button size="sm" variant="ghost" className="h-7" onClick={() => { setMarginMm(12); setScale(1); setFormat("a4"); setOrientation("landscape"); }}>Reset</Button>
+          <Button size="sm" variant="ghost" className="h-7" onClick={() => { setMarginMm(12); setScale(1); setFormat("a4"); setOrientation("landscape"); setHf(DEFAULT_HF); }}>Reset</Button>
+        </div>
+
+        <div className="rounded-md border bg-muted/30 p-2 text-xs space-y-2">
+          <div className="flex flex-wrap items-center gap-4">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={hf.showHeader} onChange={(e) => setHf({ ...hf, showHeader: e.target.checked })} />
+              <span>Koptekst tonen</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={hf.showFooter} onChange={(e) => setHf({ ...hf, showFooter: e.target.checked })} />
+              <span>Voettekst tonen</span>
+            </label>
+            <span className="ml-auto text-[10px] text-muted-foreground">
+              Tokens: <code>{"{page}"}</code> <code>{"{pages}"}</code> <code>{"{org}"}</code> <code>{"{date}"}</code> <code>{"{title}"}</code> <code>{"{count}"}</code>
+            </span>
+          </div>
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+            <label className="flex flex-col gap-1">
+              <span className="text-muted-foreground">Titel</span>
+              <Input className="h-7" value={hf.title} onChange={(e) => setHf({ ...hf, title: e.target.value })} disabled={!hf.showHeader} />
+            </label>
+            <div />
+            <label className="flex flex-col gap-1">
+              <span className="text-muted-foreground">Koptekst links</span>
+              <Input className="h-7" value={hf.headerLeft} onChange={(e) => setHf({ ...hf, headerLeft: e.target.value })} disabled={!hf.showHeader} />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-muted-foreground">Koptekst rechts</span>
+              <Input className="h-7" value={hf.headerRight} onChange={(e) => setHf({ ...hf, headerRight: e.target.value })} disabled={!hf.showHeader} />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-muted-foreground">Voettekst links</span>
+              <Input className="h-7" value={hf.footerLeft} onChange={(e) => setHf({ ...hf, footerLeft: e.target.value })} disabled={!hf.showFooter} />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-muted-foreground">Voettekst rechts</span>
+              <Input className="h-7" value={hf.footerRight} onChange={(e) => setHf({ ...hf, footerRight: e.target.value })} disabled={!hf.showFooter} />
+            </label>
+          </div>
         </div>
 
         {(() => {
