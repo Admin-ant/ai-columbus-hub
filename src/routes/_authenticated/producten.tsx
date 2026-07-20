@@ -521,15 +521,16 @@ function ProductsPage() {
         open={previewOpen}
         onOpenChange={setPreviewOpen}
         orgName={currentOrganization?.name ?? ""}
-        products={filteredProducts}
+        products={products}
+        initialSelection={filteredProducts.map((p) => p.id)}
         onPrint={printFromPreview}
         onPdf={exportPdf}
       />
     </div>
   );
 
-  function printFromPreview() {
-    const html = buildPrintableHtml(currentOrganization?.name ?? "", filteredProducts);
+  function printFromPreview(list: Product[]) {
+    const html = buildPrintableHtml(currentOrganization?.name ?? "", list);
     const w = window.open("", "_blank", "width=1100,height=800");
     if (!w) return toast.error("Sta pop-ups toe om te printen");
     w.document.open();
@@ -540,11 +541,16 @@ function ProductsPage() {
   }
 }
 
+type SortKey = "sku" | "name" | "price" | "type";
+type SortDir = "asc" | "desc";
+type StatusFilter = "all" | "active" | "inactive";
+
 function PrintPreviewDialog({
   open,
   onOpenChange,
   orgName,
   products,
+  initialSelection,
   onPrint,
   onPdf,
 }: {
@@ -552,18 +558,113 @@ function PrintPreviewDialog({
   onOpenChange: (v: boolean) => void;
   orgName: string;
   products: Product[];
-  onPrint: () => void;
-  onPdf: () => void;
+  initialSelection: string[];
+  onPrint: (list: Product[]) => void;
+  onPdf: (list: Product[]) => void;
 }) {
   const now = new Date().toLocaleDateString("nl-NL", { day: "2-digit", month: "long", year: "numeric" });
-  // A4 landscape at 96dpi ≈ 1123x794px. Scale down to fit dialog.
+  const [selected, setSelected] = useState<Set<string>>(new Set(initialSelection));
+  const [status, setStatus] = useState<StatusFilter>("all");
+  const [pricing, setPricing] = useState<"all" | PricingType>("all");
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  useEffect(() => {
+    if (open) setSelected(new Set(initialSelection));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const visible = useMemo(() => {
+    const list = products.filter((p) => {
+      if (status === "active" && !p.active) return false;
+      if (status === "inactive" && p.active) return false;
+      if (pricing !== "all" && p.pricing_type !== pricing) return false;
+      return true;
+    });
+    const dir = sortDir === "asc" ? 1 : -1;
+    list.sort((a, b) => {
+      let av: string | number = "", bv: string | number = "";
+      if (sortKey === "sku") { av = (a.sku ?? "").toLowerCase(); bv = (b.sku ?? "").toLowerCase(); }
+      else if (sortKey === "name") { av = a.name.toLowerCase(); bv = b.name.toLowerCase(); }
+      else if (sortKey === "type") { av = PRICING_LABELS[a.pricing_type]; bv = PRICING_LABELS[b.pricing_type]; }
+      else if (sortKey === "price") { av = Number(a.unit_price_cents ?? 0); bv = Number(b.unit_price_cents ?? 0); }
+      return av < bv ? -1 * dir : av > bv ? 1 * dir : 0;
+    });
+    return list;
+  }, [products, status, pricing, sortKey, sortDir]);
+
+  const finalList = useMemo(() => visible.filter((p) => selected.has(p.id)), [visible, selected]);
+
+  const allVisibleSelected = visible.length > 0 && visible.every((p) => selected.has(p.id));
+  function toggleAll() {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allVisibleSelected) visible.forEach((p) => next.delete(p.id));
+      else visible.forEach((p) => next.add(p.id));
+      return next;
+    });
+  }
+  function toggleOne(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl">
         <DialogHeader>
           <DialogTitle>Voorbeeld — Prijslijst</DialogTitle>
         </DialogHeader>
-        <div className="max-h-[70vh] overflow-auto rounded-md border bg-muted/30 p-4">
+
+        <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 p-2 text-sm">
+          <Select value={status} onValueChange={(v) => setStatus(v as StatusFilter)}>
+            <SelectTrigger className="h-8 w-36"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Alle statussen</SelectItem>
+              <SelectItem value="active">Alleen actief</SelectItem>
+              <SelectItem value="inactive">Alleen inactief</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={pricing} onValueChange={(v) => setPricing(v as "all" | PricingType)}>
+            <SelectTrigger className="h-8 w-40"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Alle prijstypes</SelectItem>
+              {(Object.keys(PRICING_LABELS) as PricingType[]).map((k) => (
+                <SelectItem key={k} value={k}>{PRICING_LABELS[k]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="mx-1 h-6 w-px bg-border" />
+          <span className="text-xs text-muted-foreground">Sorteer:</span>
+          <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
+            <SelectTrigger className="h-8 w-36"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="sku">Artikelnr.</SelectItem>
+              <SelectItem value="name">Naam</SelectItem>
+              <SelectItem value="type">Type</SelectItem>
+              <SelectItem value="price">Prijs</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={sortDir} onValueChange={(v) => setSortDir(v as SortDir)}>
+            <SelectTrigger className="h-8 w-28"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="asc">Oplopend</SelectItem>
+              <SelectItem value="desc">Aflopend</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="mx-1 h-6 w-px bg-border" />
+          <Button size="sm" variant="ghost" className="h-8" onClick={toggleAll}>
+            {allVisibleSelected ? "Deselecteer zichtbaar" : "Selecteer zichtbaar"}
+          </Button>
+          <div className="ml-auto text-xs text-muted-foreground">
+            {finalList.length} geselecteerd · {visible.length} zichtbaar · {products.length} totaal
+          </div>
+        </div>
+
+        <div className="max-h-[60vh] overflow-auto rounded-md border bg-muted/30 p-4">
           <div
             className="mx-auto bg-white text-black shadow-sm"
             style={{ width: "1123px", minHeight: "794px", padding: "40px 48px", transform: "scale(0.75)", transformOrigin: "top center" }}
@@ -573,53 +674,66 @@ function PrintPreviewDialog({
                 <div className="text-2xl font-bold">Prijslijst</div>
                 <div className="text-xs text-neutral-500">{orgName}{orgName ? " — " : ""}{now}</div>
               </div>
-              <div className="text-xs text-neutral-400">{products.length} artikelen</div>
+              <div className="text-xs text-neutral-400">{finalList.length} artikelen</div>
             </div>
             <table className="mt-4 w-full border-collapse text-[12px]">
               <thead>
                 <tr className="bg-slate-800 text-white">
+                  <th className="w-8 px-2 py-1.5"></th>
                   {["Artikelnr.","Naam","Type","Prijs","Opstart","BTW","Korting","Status"].map((h, i) => (
                     <th key={h} className={`px-2 py-1.5 text-left font-medium ${[3,4,5].includes(i) ? "text-right" : ""}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {products.map((p, idx) => (
-                  <tr key={p.id} className={idx % 2 ? "bg-neutral-50" : ""}>
-                    <td className="px-2 py-1.5 font-mono text-[11px]">{p.sku ?? "—"}</td>
-                    <td className="px-2 py-1.5">
-                      <div className="font-medium">{p.name}</div>
-                      {p.description && <div className="text-[11px] text-neutral-500">{p.description}</div>}
-                    </td>
-                    <td className="px-2 py-1.5">{PRICING_LABELS[p.pricing_type]}</td>
-                    <td className="px-2 py-1.5 text-right tabular-nums">{EUR.format(Number(p.unit_price_cents ?? 0) / 100)}</td>
-                    <td className="px-2 py-1.5 text-right tabular-nums">{EUR.format(Number(p.setup_fee_cents ?? 0) / 100)}</td>
-                    <td className="px-2 py-1.5 text-right tabular-nums">{Number(p.vat_rate)}%</td>
-                    <td className="px-2 py-1.5">
-                      {Number(p.discount_percent ?? 0) > 0
-                        ? `${Number(p.discount_percent)}% ${p.discount_type === "recurring" ? `/mnd${p.contract_months ? ` · ${p.contract_months}m` : ""}` : "eenmalig"}`
-                        : "—"}
-                    </td>
-                    <td className="px-2 py-1.5">{p.active ? "Actief" : "Inactief"}</td>
-                  </tr>
-                ))}
+                {visible.map((p, idx) => {
+                  const isSel = selected.has(p.id);
+                  return (
+                    <tr key={p.id} className={`${idx % 2 ? "bg-neutral-50" : ""} ${!isSel ? "opacity-40" : ""}`}>
+                      <td className="px-2 py-1.5">
+                        <input type="checkbox" checked={isSel} onChange={() => toggleOne(p.id)} className="h-3.5 w-3.5" />
+                      </td>
+                      <td className="px-2 py-1.5 font-mono text-[11px]">{p.sku ?? "—"}</td>
+                      <td className="px-2 py-1.5">
+                        <div className="font-medium">{p.name}</div>
+                        {p.description && <div className="text-[11px] text-neutral-500">{p.description}</div>}
+                      </td>
+                      <td className="px-2 py-1.5">{PRICING_LABELS[p.pricing_type]}</td>
+                      <td className="px-2 py-1.5 text-right tabular-nums">{EUR.format(Number(p.unit_price_cents ?? 0) / 100)}</td>
+                      <td className="px-2 py-1.5 text-right tabular-nums">{EUR.format(Number(p.setup_fee_cents ?? 0) / 100)}</td>
+                      <td className="px-2 py-1.5 text-right tabular-nums">{Number(p.vat_rate)}%</td>
+                      <td className="px-2 py-1.5">
+                        {Number(p.discount_percent ?? 0) > 0
+                          ? `${Number(p.discount_percent)}% ${p.discount_type === "recurring" ? `/mnd${p.contract_months ? ` · ${p.contract_months}m` : ""}` : "eenmalig"}`
+                          : "—"}
+                      </td>
+                      <td className="px-2 py-1.5">{p.active ? "Actief" : "Inactief"}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
-            <div className="mt-6 text-right text-[10px] text-neutral-400">Pagina 1</div>
+            <div className="mt-6 text-right text-[10px] text-neutral-400">Alleen geselecteerde rijen worden geëxporteerd</div>
           </div>
         </div>
+
         <DialogFooter className="gap-2 sm:justify-between">
           <div className="text-xs text-muted-foreground">Layout: A4 liggend · marges 12 mm</div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Sluiten</Button>
-            <Button variant="outline" onClick={onPrint}><Printer className="mr-2 h-4 w-4" /> Printen</Button>
-            <Button onClick={onPdf}><FileDown className="mr-2 h-4 w-4" /> Download PDF</Button>
+            <Button variant="outline" disabled={finalList.length === 0} onClick={() => onPrint(finalList)}>
+              <Printer className="mr-2 h-4 w-4" /> Printen
+            </Button>
+            <Button disabled={finalList.length === 0} onClick={() => onPdf(finalList)}>
+              <FileDown className="mr-2 h-4 w-4" /> Download PDF
+            </Button>
           </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
 
 function escapeHtml(s: string) {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
