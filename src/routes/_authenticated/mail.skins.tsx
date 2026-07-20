@@ -156,6 +156,10 @@ function MailSkinsPage() {
 
   async function save() {
     if (!currentOrganizationId) return;
+    if (hasPreviewErrors) {
+      toast.error(previewErrors[0] ?? "Controleer de onderwerp- en contactvelden");
+      return;
+    }
     let clean;
     try {
       clean = sanitizeSkinInput({
