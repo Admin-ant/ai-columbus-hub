@@ -998,10 +998,26 @@ function escapeHtml(s: string) {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
 
+function cssStr(s: string) {
+  return `"${s.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}
+
 function buildPrintableHtml(orgName: string, products: Product[], opts: LayoutOpts = DEFAULT_LAYOUT) {
   const now = new Date().toLocaleDateString("nl-NL", { day: "2-digit", month: "long", year: "numeric" });
   const m = Math.max(5, Math.min(30, opts.marginMm));
   const s = Math.max(0.6, Math.min(1.4, opts.scale));
+  const hf = opts.hf;
+  // Voor de @page-regels vervangen we alle tokens behalve {page}/{pages} —
+  // die worden door de browser vervangen via CSS counter(page)/counter(pages).
+  const staticCtx = { page: 0, pages: 0, org: orgName, date: now, title: hf.title, count: products.length };
+  const rep = (tpl: string) => resolveTemplate(tpl, staticCtx)
+    .replace(/\{page\}/g, '" counter(page) "')
+    .replace(/\{pages\}/g, '" counter(pages) "');
+  const headerLeftCss = hf.showHeader && hf.headerLeft ? `@top-left { content: ${cssStr(rep(hf.headerLeft))}; font-size: 9pt; color:#666; }` : "";
+  const headerCenterCss = hf.showHeader && hf.title ? `@top-center { content: ${cssStr(rep(hf.title))}; font-size: 11pt; font-weight: 600; }` : "";
+  const headerRightCss = hf.showHeader && hf.headerRight ? `@top-right { content: ${cssStr(rep(hf.headerRight))}; font-size: 9pt; color:#666; }` : "";
+  const footerLeftCss = hf.showFooter && hf.footerLeft ? `@bottom-left { content: ${cssStr(rep(hf.footerLeft))}; font-size: 8pt; color:#888; }` : "";
+  const footerRightCss = hf.showFooter && hf.footerRight ? `@bottom-right { content: ${cssStr(rep(hf.footerRight))}; font-size: 8pt; color:#888; }` : "";
   const rows = products.map((p, idx) => `
     <tr style="background:${idx % 2 ? "#fafafa" : "white"}">
       <td style="padding:6px 8px;font-family:monospace;font-size:${11 * s}px">${escapeHtml(p.sku ?? "—")}</td>
@@ -1013,21 +1029,23 @@ function buildPrintableHtml(orgName: string, products: Product[], opts: LayoutOp
       <td style="padding:6px 8px">${Number(p.discount_percent ?? 0) > 0 ? `${Number(p.discount_percent)}% ${p.discount_type === "recurring" ? `/mnd${p.contract_months ? ` · ${p.contract_months}m` : ""}` : "eenmalig"}` : "—"}</td>
       <td style="padding:6px 8px">${p.active ? "Actief" : "Inactief"}</td>
     </tr>`).join("");
-  return `<!doctype html><html><head><meta charset="utf-8"><title>Prijslijst</title>
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(hf.title || "Prijslijst")}</title>
     <style>
-      @page { size: ${opts.format === "letter" ? "letter" : "A4"} ${opts.orientation}; margin: ${m}mm; }
+      @page {
+        size: ${opts.format === "letter" ? "letter" : "A4"} ${opts.orientation};
+        margin: ${m}mm;
+        ${headerLeftCss}
+        ${headerCenterCss}
+        ${headerRightCss}
+        ${footerLeftCss}
+        ${footerRightCss}
+      }
       body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; color:#111; margin:0; font-size: ${12 * s}px; }
-      h1 { margin:0; font-size: ${22 * s}px; }
-      table { width:100%; border-collapse: collapse; margin-top: 12px; font-size: ${12 * s}px; }
+      table { width:100%; border-collapse: collapse; font-size: ${12 * s}px; }
       thead th { background:#1e293b; color:white; padding:6px 8px; text-align:left; font-weight:500; }
       thead th.r { text-align:right; }
       tbody td { border-bottom: 1px solid #eee; vertical-align: top; }
     </style></head><body>
-
-    <div style="display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid #ddd;padding-bottom:8px">
-      <div><h1>Prijslijst</h1><div style="font-size:11px;color:#666">${escapeHtml(orgName)}${orgName ? " — " : ""}${now}</div></div>
-      <div style="font-size:11px;color:#999">${products.length} artikelen</div>
-    </div>
     <table>
       <thead><tr><th>Artikelnr.</th><th>Naam</th><th>Type</th><th class="r">Prijs</th><th class="r">Opstart</th><th class="r">BTW</th><th>Korting</th><th>Status</th></tr></thead>
       <tbody>${rows}</tbody>
