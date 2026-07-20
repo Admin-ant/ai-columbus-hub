@@ -1981,6 +1981,83 @@ export function CampaignFlowTab() {
           </div>
         )}
       </div>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-4 w-4 text-brand" />
+              Preview kennismakingsmail
+            </DialogTitle>
+            <DialogDescription>
+              Zo ziet de mail eruit voor{" "}
+              <span className="font-medium text-foreground">
+                {name.trim() || "[naam]"}
+              </span>{" "}
+              van{" "}
+              <span className="font-medium text-foreground">
+                {company.trim() || "[bedrijf]"}
+              </span>
+              {email.trim() ? (
+                <>
+                  {" "}
+                  ({email.trim()})
+                </>
+              ) : null}
+              .
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs">
+              <div className="min-w-0">
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Onderwerp
+                </div>
+                <div className="truncate font-medium text-foreground">
+                  {previewSubject}
+                </div>
+              </div>
+              <div className="flex gap-1">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={previewDevice === "desktop" ? "default" : "outline"}
+                  onClick={() => setPreviewDevice("desktop")}
+                  className="h-7 px-2 text-[11px]"
+                >
+                  Desktop
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={previewDevice === "mobile" ? "default" : "outline"}
+                  onClick={() => setPreviewDevice("mobile")}
+                  className="h-7 px-2 text-[11px]"
+                >
+                  Mobiel
+                </Button>
+              </div>
+            </div>
+            <div className="flex justify-center overflow-auto rounded-md border border-border bg-[#f4f5f7] p-3">
+              <iframe
+                title="E-mailvoorbeeld"
+                srcDoc={previewHtml}
+                sandbox=""
+                className="rounded-md border border-border bg-white shadow-sm"
+                style={{
+                  width: previewDevice === "mobile" ? 380 : 680,
+                  height: 560,
+                }}
+              />
+            </div>
+            {!previewBodyText && (
+              <p className="text-xs text-muted-foreground">
+                Vul website en klantgegevens in of genereer AI-concepten om een preview te zien.
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
