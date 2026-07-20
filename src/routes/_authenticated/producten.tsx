@@ -641,9 +641,15 @@ function PrintPreviewDialog({
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [marginMm, setMarginMm] = useState<number>(12);
   const [scale, setScale] = useState<number>(1);
-  const opts: LayoutOpts = { marginMm, scale };
+  const [format, setFormat] = useState<PaperFormat>("a4");
+  const [orientation, setOrientation] = useState<Orientation>("landscape");
+  const opts: LayoutOpts = { marginMm, scale, format, orientation };
   const PX_PER_MM = 3.7795;
   const padPx = Math.round(marginMm * PX_PER_MM);
+  const pageMm = pageSizeMm(opts);
+  const pageWpx = Math.round(pageMm.w * PX_PER_MM);
+  const pageHpx = Math.round(pageMm.h * PX_PER_MM);
+
 
 
   useEffect(() => {
