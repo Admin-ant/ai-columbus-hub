@@ -619,22 +619,77 @@ function MailSkinsPage() {
 
           {/* Live preview */}
           <div className="rounded-lg border border-border bg-card p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="text-sm font-semibold">Live preview</div>
-              {previewVersion && (
-                <Badge variant="outline" className="border-primary/40 bg-primary/10 text-[10px] text-primary">
-                  Voorbeeld v{previewVersion.version}
-                </Badge>
-              )}
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="text-sm font-semibold">Live preview</div>
+                {previewVersion && (
+                  <Badge variant="outline" className="border-primary/40 bg-primary/10 text-[10px] text-primary">
+                    Voorbeeld v{previewVersion.version}
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="flex items-center rounded-md border border-border bg-background p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewDevice("desktop")}
+                    className={`inline-flex h-6 items-center gap-1 rounded px-2 text-[10px] font-medium transition ${previewDevice === "desktop" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    title="Desktop weergave"
+                  >
+                    <Monitor className="h-3 w-3" /> Desktop
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewDevice("mobile")}
+                    className={`inline-flex h-6 items-center gap-1 rounded px-2 text-[10px] font-medium transition ${previewDevice === "mobile" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    title="Mobiele weergave"
+                  >
+                    <Smartphone className="h-3 w-3" /> Mobiel
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewNonce((n) => n + 1)}
+                  className="inline-flex h-7 items-center gap-1 rounded border border-border bg-background px-2 text-[10px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+                  title="Vernieuw preview"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                </button>
+              </div>
             </div>
+
+            <div className="mb-3 grid grid-cols-1 gap-2 rounded-md border border-dashed border-border bg-muted/30 p-2 sm:grid-cols-3">
+              <div>
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Onderwerp</Label>
+                <Input value={sampleSubject} onChange={(e) => setSampleSubject(e.target.value)} className="h-7 text-xs" />
+              </div>
+              <div>
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Contact</Label>
+                <Input value={sampleContact} onChange={(e) => setSampleContact(e.target.value)} className="h-7 text-xs" />
+              </div>
+              <div>
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Afzender</Label>
+                <Input value={sampleSender} onChange={(e) => setSampleSender(e.target.value)} className="h-7 text-xs" />
+              </div>
+            </div>
+
             <div className="rounded border border-border p-3" style={previewStyle}>
-              <div className="mx-auto max-w-[600px] rounded bg-white shadow-sm">
-                <div dangerouslySetInnerHTML={{ __html: sanitizeSkinHtml(previewHeader) }} />
-                <div dangerouslySetInnerHTML={{ __html: previewBody }} />
-                <div dangerouslySetInnerHTML={{ __html: sanitizeSkinHtml(previewFooter) }} />
+              <div
+                key={previewNonce}
+                className="mx-auto overflow-hidden rounded bg-white shadow-sm transition-all"
+                style={{ maxWidth: previewDevice === "mobile" ? 360 : 600, width: "100%" }}
+              >
+                <div className="border-b border-border/60 bg-muted/40 px-4 py-2 text-[11px] text-muted-foreground">
+                  <div className="truncate"><span className="font-medium text-foreground">Aan:</span> {sampleContact || "—"}</div>
+                  <div className="truncate"><span className="font-medium text-foreground">Onderwerp:</span> {renderTokens(sampleSubject) || "—"}</div>
+                </div>
+                <div dangerouslySetInnerHTML={{ __html: sanitizeSkinHtml(renderTokens(previewHeader)) }} />
+                <div dangerouslySetInnerHTML={{ __html: renderTokens(previewBodyTemplate) }} />
+                <div dangerouslySetInnerHTML={{ __html: sanitizeSkinHtml(renderTokens(previewFooter)) }} />
               </div>
             </div>
           </div>
+
 
           {/* Version history */}
           <div className="rounded-lg border border-border bg-card p-3">
