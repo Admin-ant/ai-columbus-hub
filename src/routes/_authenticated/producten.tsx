@@ -489,7 +489,7 @@ function ProductsPage() {
     </div>
   );
 
-  function printFromPreview(list: Product[], opts: LayoutOpts = { marginMm: 12, scale: 1 }) {
+  function printFromPreview(list: Product[], opts: LayoutOpts = DEFAULT_LAYOUT) {
     const html = buildPrintableHtml(currentOrganization?.name ?? "", list, opts);
     const w = window.open("", "_blank", "width=1100,height=800");
     if (!w) return toast.error("Sta pop-ups toe om te printen");
