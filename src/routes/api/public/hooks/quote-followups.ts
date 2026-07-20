@@ -64,6 +64,12 @@ export const Route = createFileRoute("/api/public/hooks/quote-followups")({
           return new Response("Unauthorized", { status: 401 });
         }
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { data: runRow } = await supabaseAdmin
+          .from("cron_job_runs")
+          .insert({ job_name: "quote-followups", status: "running" } as never)
+          .select("id")
+          .single();
+        const runId = (runRow as { id: string } | null)?.id ?? null;
 
         // Pull candidates: sent, not accepted, not revoked, followups enabled,
         // last follow-up older than 1 day or never.
@@ -78,6 +84,11 @@ export const Route = createFileRoute("/api/public/hooks/quote-followups")({
           .not("sent_at", "is", null)
           .lt("followup_count", 3);
         if (error) {
+          if (runId) {
+            await supabaseAdmin.from("cron_job_runs").update({
+              status: "error", finished_at: new Date().toISOString(), error: error.message,
+            } as never).eq("id", runId);
+          }
           return new Response(JSON.stringify({ error: error.message }), { status: 500 });
         }
 
