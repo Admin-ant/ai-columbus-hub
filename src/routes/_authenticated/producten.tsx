@@ -773,12 +773,14 @@ function escapeHtml(s: string) {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
 
-function buildPrintableHtml(orgName: string, products: Product[]) {
+function buildPrintableHtml(orgName: string, products: Product[], opts: LayoutOpts = { marginMm: 12, scale: 1 }) {
   const now = new Date().toLocaleDateString("nl-NL", { day: "2-digit", month: "long", year: "numeric" });
+  const m = Math.max(5, Math.min(30, opts.marginMm));
+  const s = Math.max(0.6, Math.min(1.4, opts.scale));
   const rows = products.map((p, idx) => `
     <tr style="background:${idx % 2 ? "#fafafa" : "white"}">
-      <td style="padding:6px 8px;font-family:monospace;font-size:11px">${escapeHtml(p.sku ?? "—")}</td>
-      <td style="padding:6px 8px"><div style="font-weight:600">${escapeHtml(p.name)}</div>${p.description ? `<div style="font-size:11px;color:#666">${escapeHtml(p.description)}</div>` : ""}</td>
+      <td style="padding:6px 8px;font-family:monospace;font-size:${11 * s}px">${escapeHtml(p.sku ?? "—")}</td>
+      <td style="padding:6px 8px"><div style="font-weight:600">${escapeHtml(p.name)}</div>${p.description ? `<div style="font-size:${11 * s}px;color:#666">${escapeHtml(p.description)}</div>` : ""}</td>
       <td style="padding:6px 8px">${PRICING_LABELS[p.pricing_type]}</td>
       <td style="padding:6px 8px;text-align:right">${EUR.format(Number(p.unit_price_cents ?? 0) / 100)}</td>
       <td style="padding:6px 8px;text-align:right">${EUR.format(Number(p.setup_fee_cents ?? 0) / 100)}</td>
@@ -788,14 +790,15 @@ function buildPrintableHtml(orgName: string, products: Product[]) {
     </tr>`).join("");
   return `<!doctype html><html><head><meta charset="utf-8"><title>Prijslijst</title>
     <style>
-      @page { size: A4 landscape; margin: 12mm; }
-      body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; color:#111; margin:0; }
-      h1 { margin:0; font-size: 22px; }
-      table { width:100%; border-collapse: collapse; margin-top: 12px; font-size: 12px; }
+      @page { size: A4 landscape; margin: ${m}mm; }
+      body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; color:#111; margin:0; font-size: ${12 * s}px; }
+      h1 { margin:0; font-size: ${22 * s}px; }
+      table { width:100%; border-collapse: collapse; margin-top: 12px; font-size: ${12 * s}px; }
       thead th { background:#1e293b; color:white; padding:6px 8px; text-align:left; font-weight:500; }
       thead th.r { text-align:right; }
       tbody td { border-bottom: 1px solid #eee; vertical-align: top; }
     </style></head><body>
+
     <div style="display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid #ddd;padding-bottom:8px">
       <div><h1>Prijslijst</h1><div style="font-size:11px;color:#666">${escapeHtml(orgName)}${orgName ? " — " : ""}${now}</div></div>
       <div style="font-size:11px;color:#999">${products.length} artikelen</div>
