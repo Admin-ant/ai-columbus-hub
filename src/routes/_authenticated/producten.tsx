@@ -784,11 +784,10 @@ function PrintPreviewDialog({
                         </thead>
                         <tbody>
                           {pageRows.map((p, idx) => {
-                            const isSel = selected.has(p.id);
                             return (
-                              <tr key={p.id} className={`${idx % 2 ? "bg-neutral-50" : ""} ${!isSel ? "opacity-40" : ""}`}>
+                              <tr key={p.id} className={idx % 2 ? "bg-neutral-50" : ""}>
                                 <td className="px-2 py-1.5">
-                                  <input type="checkbox" checked={isSel} onChange={() => toggleOne(p.id)} className="h-3.5 w-3.5" />
+                                  <input type="checkbox" checked={true} onChange={() => toggleOne(p.id)} className="h-3.5 w-3.5" />
                                 </td>
                                 <td className="px-2 py-1.5 font-mono text-[11px]">{p.sku ?? "—"}</td>
                                 <td className="px-2 py-1.5">
