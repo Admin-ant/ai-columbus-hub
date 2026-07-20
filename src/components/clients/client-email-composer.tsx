@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Mail, Send, Eye, EyeOff, RefreshCcw, Save } from "lucide-react";
+import { Mail, Send, Eye, EyeOff, RefreshCcw, Save, Plus, Loader2 } from "lucide-react";
+import {
+  Popover, PopoverContent, PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  RadioGroup, RadioGroupItem,
+} from "@/components/ui/radio-group";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -74,25 +80,42 @@ export function ClientEmailComposer({
   const [showPreview, setShowPreview] = useState(false);
   const [draftId, setDraftId] = useState<string | null>(draft?.id ?? null);
   const [saving, setSaving] = useState(false);
+  const [localCompanyEmail, setLocalCompanyEmail] = useState<string | null>(companyEmail ?? null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addEmail, setAddEmail] = useState("");
+  const [addTarget, setAddTarget] = useState<"company" | "contact">("contact");
+  const [addFirstName, setAddFirstName] = useState("");
+  const [addLastName, setAddLastName] = useState("");
+  const [addSaving, setAddSaving] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => { setLocalCompanyEmail(companyEmail ?? null); }, [companyEmail]);
+
+  const loadContacts = async (preferredEmail?: string) => {
+    const { data } = await supabase
+      .from("client_contacts")
+      .select("*")
+      .eq("client_id", clientId)
+      .order("is_primary", { ascending: false })
+      .order("first_name", { ascending: true });
+    const list = (data ?? []) as Contact[];
+    setContacts(list);
+    return list;
+  };
 
   useEffect(() => {
+    if (!open) { setInitialized(false); return; }
     let ok = true;
     (async () => {
-      const { data } = await supabase
-        .from("client_contacts")
-        .select("*")
-        .eq("client_id", clientId)
-        .order("is_primary", { ascending: false })
-        .order("first_name", { ascending: true });
-      if (ok) {
-        const list = (data ?? []) as Contact[];
-        setContacts(list);
-        const primary = list.find((c) => c.is_primary) ?? list[0];
-        setTo(draft?.to ?? defaultTo ?? primary?.email ?? companyEmail ?? "");
-      }
+      const list = await loadContacts();
+      if (!ok) return;
+      const primary = list.find((c) => c.is_primary) ?? list[0];
+      setTo(draft?.to ?? defaultTo ?? primary?.email ?? localCompanyEmail ?? "");
+      setInitialized(true);
     })();
     return () => { ok = false; };
-  }, [clientId, companyEmail, defaultTo, open, draft?.to]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientId, open]);
 
   useEffect(() => {
     if (open) {
@@ -131,8 +154,8 @@ export function ClientEmailComposer({
 
   const recipientOptions = useMemo(() => {
     const opts: { value: string; label: string }[] = [];
-    if (companyEmail) {
-      opts.push({ value: companyEmail, label: `${companyName} (bedrijf)` });
+    if (localCompanyEmail) {
+      opts.push({ value: localCompanyEmail, label: `${companyName} (bedrijf)` });
     }
     contacts.forEach((c) => {
       if (!c.email) return;
@@ -140,7 +163,44 @@ export function ClientEmailComposer({
       opts.push({ value: c.email, label: `${name}${c.is_primary ? " ★" : ""} — ${c.email}` });
     });
     return opts;
-  }, [contacts, companyEmail, companyName]);
+  }, [contacts, localCompanyEmail, companyName]);
+
+  async function addRecipient() {
+    const email = addEmail.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Vul een geldig e-mailadres in");
+      return;
+    }
+    setAddSaving(true);
+    try {
+      if (addTarget === "company") {
+        const { error } = await supabase.from("clients").update({ email }).eq("id", clientId);
+        if (error) throw error;
+        setLocalCompanyEmail(email);
+      } else {
+        const payload: any = {
+          client_id: clientId,
+          organization_id: organizationId,
+          email,
+          first_name: addFirstName.trim() || null,
+          last_name: addLastName.trim() || null,
+          is_primary: contacts.length === 0,
+        };
+        const { error } = await supabase.from("client_contacts").insert(payload);
+        if (error) throw error;
+        await loadContacts();
+      }
+      setTo(email); // keep subject/body intact
+      toast.success("E-mailadres toegevoegd");
+      setAddOpen(false);
+      setAddEmail(""); setAddFirstName(""); setAddLastName("");
+      onSaved?.();
+    } catch (e: any) {
+      toast.error(e.message ?? "Toevoegen mislukt");
+    } finally {
+      setAddSaving(false);
+    }
+  }
 
   function insertPlaceholder(key: string) {
     const textarea = document.getElementById("email-body") as HTMLTextAreaElement | null;
@@ -211,7 +271,56 @@ export function ClientEmailComposer({
 
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label>Aan</Label>
+            <div className="flex items-center justify-between">
+              <Label>Aan</Label>
+              <Popover open={addOpen} onOpenChange={setAddOpen}>
+                <PopoverTrigger asChild>
+                  <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                    <Plus className="mr-1 h-3.5 w-3.5" /> E-mailadres toevoegen
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-80 space-y-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">E-mailadres</Label>
+                    <Input
+                      type="email"
+                      value={addEmail}
+                      onChange={(e) => setAddEmail(e.target.value)}
+                      placeholder="naam@bedrijf.nl"
+                    />
+                  </div>
+                  <RadioGroup value={addTarget} onValueChange={(v) => setAddTarget(v as any)} className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="contact" id="add-target-contact" />
+                      <Label htmlFor="add-target-contact" className="text-xs font-normal">Als nieuwe contactpersoon</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="company" id="add-target-company" />
+                      <Label htmlFor="add-target-company" className="text-xs font-normal">Als bedrijfs-e-mailadres</Label>
+                    </div>
+                  </RadioGroup>
+                  {addTarget === "contact" && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Voornaam</Label>
+                        <Input value={addFirstName} onChange={(e) => setAddFirstName(e.target.value)} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Achternaam</Label>
+                        <Input value={addLastName} onChange={(e) => setAddLastName(e.target.value)} />
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex justify-end gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => setAddOpen(false)}>Annuleren</Button>
+                    <Button size="sm" onClick={addRecipient} disabled={addSaving || !addEmail.trim()}>
+                      {addSaving && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+                      Toevoegen
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
             <Select value={to} onValueChange={setTo} disabled={recipientOptions.length === 0}>
               <SelectTrigger>
                 <SelectValue placeholder={recipientOptions.length === 0 ? "Geen e-mailadres bekend" : "Kies een ontvanger"} />
@@ -224,7 +333,7 @@ export function ClientEmailComposer({
             </Select>
             {recipientOptions.length === 0 && (
               <p className="text-xs text-destructive">
-                Geen e-mailadressen bekend voor deze klant. Voeg eerst een contactpersoon met e-mailadres toe of vul het bedrijfs-e-mailadres in — dan kun je opslaan of versturen.
+                Geen e-mailadressen bekend voor deze klant. Gebruik <b>E-mailadres toevoegen</b> hierboven — je concept blijft behouden.
               </p>
             )}
           </div>
