@@ -14,6 +14,7 @@
     "test:visual:update": "playwright test --update-snapshots",
     "test:visual:pdf": "playwright test invoice-pdf-parity",
     "test:grants": "node scripts/check-mail-skin-grants.mjs",
+    "test:e2e": "playwright test --config=playwright.e2e.config.ts",
     "ci": "bun run check:colors && bun run lint",
     "format": "prettier --write ."
   },
