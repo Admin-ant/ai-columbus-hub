@@ -227,9 +227,7 @@ function ProductsPage() {
     const doc = new jsPDF({ orientation: opts.orientation, unit: "mm", format: opts.format });
     const orgName = currentOrganization?.name ?? "";
     const m = Math.max(5, Math.min(30, opts.marginMm));
-
-    drawPdfHeader(doc, orgName, opts);
-    autoTable(doc, buildAutoTableConfig(list, opts, m, doc));
+    autoTable(doc, buildAutoTableConfig(list, opts, m, doc, undefined, orgName));
     doc.save(`prijslijst-${new Date().toISOString().slice(0, 10)}.pdf`);
   }
 
@@ -503,7 +501,22 @@ function ProductsPage() {
 
 type PaperFormat = "a4" | "letter";
 type Orientation = "portrait" | "landscape";
-type LayoutOpts = { marginMm: number; scale: number; format: PaperFormat; orientation: Orientation };
+type HeaderFooterOpts = {
+  showHeader: boolean;
+  showFooter: boolean;
+  title: string;
+  headerLeft: string;
+  headerRight: string;
+  footerLeft: string;
+  footerRight: string;
+};
+type LayoutOpts = {
+  marginMm: number;
+  scale: number;
+  format: PaperFormat;
+  orientation: Orientation;
+  hf: HeaderFooterOpts;
+};
 type SortKey = "sku" | "name" | "price" | "type";
 type SortDir = "asc" | "desc";
 
@@ -519,7 +532,29 @@ function pageSizeMm(opts: LayoutOpts): { w: number; h: number } {
   return opts.orientation === "landscape" ? { w: base.h, h: base.w } : base;
 }
 
-const DEFAULT_LAYOUT: LayoutOpts = { marginMm: 12, scale: 1, format: "a4", orientation: "landscape" };
+const DEFAULT_HF: HeaderFooterOpts = {
+  showHeader: true,
+  showFooter: true,
+  title: "Prijslijst",
+  headerLeft: "{org} — {date}",
+  headerRight: "{count} artikelen",
+  footerLeft: "",
+  footerRight: "Pagina {page} / {pages}",
+};
+
+const DEFAULT_LAYOUT: LayoutOpts = {
+  marginMm: 12, scale: 1, format: "a4", orientation: "landscape", hf: DEFAULT_HF,
+};
+
+function resolveTemplate(tpl: string, ctx: { page: number; pages: number; org: string; date: string; title: string; count: number }) {
+  return tpl
+    .replaceAll("{page}", String(ctx.page))
+    .replaceAll("{pages}", String(ctx.pages))
+    .replaceAll("{org}", ctx.org)
+    .replaceAll("{date}", ctx.date)
+    .replaceAll("{title}", ctx.title)
+    .replaceAll("{count}", String(ctx.count));
+}
 
 type StatusFilter = "all" | "active" | "inactive";
 
@@ -538,16 +573,44 @@ function productRow(p: Product): (string | number)[] {
   ];
 }
 
-function drawPdfHeader(doc: import("jspdf").jsPDF, orgName: string, opts: LayoutOpts) {
+const HEADER_MM = 14;
+const FOOTER_MM = 8;
+
+function drawPdfChrome(
+  doc: import("jspdf").jsPDF,
+  opts: LayoutOpts,
+  orgName: string,
+  totalRows: number,
+) {
   const m = Math.max(5, Math.min(30, opts.marginMm));
   const s = Math.max(0.6, Math.min(1.4, opts.scale));
   const now = new Date().toLocaleDateString("nl-NL", { day: "2-digit", month: "long", year: "numeric" });
-  doc.setFontSize(16 * s);
-  doc.text("Prijslijst", m, m + 3);
-  doc.setFontSize(10 * s);
-  doc.setTextColor(120);
-  doc.text(`${orgName}${orgName ? " — " : ""}${now}`, m, m + 9);
-  doc.setTextColor(0);
+  const pw = doc.internal.pageSize.getWidth();
+  const ph = doc.internal.pageSize.getHeight();
+  const pages = doc.getNumberOfPages();
+  const page = doc.getCurrentPageInfo().pageNumber;
+  const ctx = { page, pages, org: orgName, date: now, title: opts.hf.title, count: totalRows };
+
+  if (opts.hf.showHeader) {
+    doc.setTextColor(0);
+    doc.setFontSize(14 * s);
+    doc.text(resolveTemplate(opts.hf.title, ctx), m, m + 4);
+    doc.setFontSize(9 * s);
+    doc.setTextColor(120);
+    if (opts.hf.headerLeft) doc.text(resolveTemplate(opts.hf.headerLeft, ctx), m, m + 10);
+    if (opts.hf.headerRight) doc.text(resolveTemplate(opts.hf.headerRight, ctx), pw - m, m + 10, { align: "right" });
+    doc.setDrawColor(220);
+    doc.line(m, m + HEADER_MM - 2, pw - m, m + HEADER_MM - 2);
+    doc.setTextColor(0);
+  }
+  if (opts.hf.showFooter) {
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    const fy = ph - Math.max(4, m / 2);
+    if (opts.hf.footerLeft) doc.text(resolveTemplate(opts.hf.footerLeft, ctx), m, fy);
+    if (opts.hf.footerRight) doc.text(resolveTemplate(opts.hf.footerRight, ctx), pw - m, fy, { align: "right" });
+    doc.setTextColor(0);
+  }
 }
 
 // Deelt de autoTable-config zodat preview én PDF-export exact dezelfde
@@ -558,11 +621,14 @@ function buildAutoTableConfig(
   m: number,
   doc: import("jspdf").jsPDF,
   onRowPage?: (rowIndex: number, page: number) => void,
+  orgName: string = "",
 ) {
   const s = Math.max(0.6, Math.min(1.4, opts.scale));
+  const topPad = opts.hf.showHeader ? HEADER_MM : 0;
+  const botPad = opts.hf.showFooter ? FOOTER_MM : 0;
   return {
-    startY: m + 14,
-    margin: { left: m, right: m, top: m, bottom: m },
+    startY: m + topPad,
+    margin: { left: m, right: m, top: m + topPad, bottom: m + botPad },
     head: [["Artikelnr.", "Naam", "Type", "Prijs", "Opstart", "BTW", "Korting", "Status"]],
     body: list.map(productRow),
     styles: { fontSize: 9 * s, cellPadding: 2 * s },
@@ -579,16 +645,7 @@ function buildAutoTableConfig(
       }
     },
     didDrawPage: () => {
-      const pageCount = doc.getNumberOfPages();
-      const pageSize = doc.internal.pageSize;
-      doc.setFontSize(8);
-      doc.setTextColor(150);
-      doc.text(
-        `Pagina ${doc.getCurrentPageInfo().pageNumber} / ${pageCount}`,
-        pageSize.getWidth() - m,
-        pageSize.getHeight() - Math.max(4, m / 2),
-        { align: "right" },
-      );
+      drawPdfChrome(doc, opts, orgName, list.length);
     },
   };
 }
@@ -601,7 +658,6 @@ async function computePdfPageGroups(list: Product[], opts: LayoutOpts): Promise<
   const { default: autoTable } = await import("jspdf-autotable");
   const doc = new jsPDF({ orientation: opts.orientation, unit: "mm", format: opts.format });
   const m = Math.max(5, Math.min(30, opts.marginMm));
-  drawPdfHeader(doc, "", opts);
   const rowPage = new Array<number>(list.length).fill(1);
   autoTable(doc, buildAutoTableConfig(list, opts, m, doc, (i, p) => { rowPage[i] = p; }));
   const totalPages = doc.getNumberOfPages();
@@ -643,7 +699,8 @@ function PrintPreviewDialog({
   const [scale, setScale] = useState<number>(1);
   const [format, setFormat] = useState<PaperFormat>("a4");
   const [orientation, setOrientation] = useState<Orientation>("landscape");
-  const opts: LayoutOpts = { marginMm, scale, format, orientation };
+  const [hf, setHf] = useState<HeaderFooterOpts>(DEFAULT_HF);
+  const opts: LayoutOpts = { marginMm, scale, format, orientation, hf };
   const PX_PER_MM = 3.7795;
   const padPx = Math.round(marginMm * PX_PER_MM);
   const pageMm = pageSizeMm(opts);
@@ -704,7 +761,7 @@ function PrintPreviewDialog({
       .then((pages) => { if (!cancelled) setPdfPages(pages.length ? pages : [[]]); })
       .catch(() => { if (!cancelled) setPdfPages([finalList]); });
     return () => { cancelled = true; };
-  }, [finalList, marginMm, scale, format, orientation]);
+  }, [finalList, marginMm, scale, format, orientation, hf]);
 
 
   return (
@@ -791,7 +848,46 @@ function PrintPreviewDialog({
               ))}
             </SelectContent>
           </Select>
-          <Button size="sm" variant="ghost" className="h-7" onClick={() => { setMarginMm(12); setScale(1); setFormat("a4"); setOrientation("landscape"); }}>Reset</Button>
+          <Button size="sm" variant="ghost" className="h-7" onClick={() => { setMarginMm(12); setScale(1); setFormat("a4"); setOrientation("landscape"); setHf(DEFAULT_HF); }}>Reset</Button>
+        </div>
+
+        <div className="rounded-md border bg-muted/30 p-2 text-xs space-y-2">
+          <div className="flex flex-wrap items-center gap-4">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={hf.showHeader} onChange={(e) => setHf({ ...hf, showHeader: e.target.checked })} />
+              <span>Koptekst tonen</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={hf.showFooter} onChange={(e) => setHf({ ...hf, showFooter: e.target.checked })} />
+              <span>Voettekst tonen</span>
+            </label>
+            <span className="ml-auto text-[10px] text-muted-foreground">
+              Tokens: <code>{"{page}"}</code> <code>{"{pages}"}</code> <code>{"{org}"}</code> <code>{"{date}"}</code> <code>{"{title}"}</code> <code>{"{count}"}</code>
+            </span>
+          </div>
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+            <label className="flex flex-col gap-1">
+              <span className="text-muted-foreground">Titel</span>
+              <Input className="h-7" value={hf.title} onChange={(e) => setHf({ ...hf, title: e.target.value })} disabled={!hf.showHeader} />
+            </label>
+            <div />
+            <label className="flex flex-col gap-1">
+              <span className="text-muted-foreground">Koptekst links</span>
+              <Input className="h-7" value={hf.headerLeft} onChange={(e) => setHf({ ...hf, headerLeft: e.target.value })} disabled={!hf.showHeader} />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-muted-foreground">Koptekst rechts</span>
+              <Input className="h-7" value={hf.headerRight} onChange={(e) => setHf({ ...hf, headerRight: e.target.value })} disabled={!hf.showHeader} />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-muted-foreground">Voettekst links</span>
+              <Input className="h-7" value={hf.footerLeft} onChange={(e) => setHf({ ...hf, footerLeft: e.target.value })} disabled={!hf.showFooter} />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-muted-foreground">Voettekst rechts</span>
+              <Input className="h-7" value={hf.footerRight} onChange={(e) => setHf({ ...hf, footerRight: e.target.value })} disabled={!hf.showFooter} />
+            </label>
+          </div>
         </div>
 
         {(() => {
@@ -805,16 +901,19 @@ function PrintPreviewDialog({
                   <div key={pageIdx} className="relative bg-white text-black shadow-md ring-1 ring-neutral-200"
                     style={{ width: `${pageWpx}px`, height: `${pageHpx}px`, padding: `${padPx}px` }}>
                     <div style={{ zoom: scale, height: "100%", display: "flex", flexDirection: "column" }}>
-                      {pageIdx === 0 && (
-                        <div className="flex items-end justify-between border-b pb-3">
-                          <div>
-                            <div className="text-2xl font-bold">Prijslijst</div>
-                            <div className="text-xs text-neutral-500">{orgName}{orgName ? " — " : ""}{now}</div>
+                      {hf.showHeader && (() => {
+                        const ctx = { page: pageIdx + 1, pages: pages.length, org: orgName, date: now, title: hf.title, count: finalList.length };
+                        return (
+                          <div className="flex items-end justify-between border-b pb-2">
+                            <div>
+                              <div className="text-xl font-bold">{resolveTemplate(hf.title, ctx)}</div>
+                              {hf.headerLeft && <div className="text-[11px] text-neutral-500">{resolveTemplate(hf.headerLeft, ctx)}</div>}
+                            </div>
+                            {hf.headerRight && <div className="text-[11px] text-neutral-400">{resolveTemplate(hf.headerRight, ctx)}</div>}
                           </div>
-                          <div className="text-xs text-neutral-400">{finalList.length} artikelen</div>
-                        </div>
-                      )}
-                      <table className={`${pageIdx === 0 ? "mt-4" : ""} w-full border-collapse text-[12px]`}>
+                        );
+                      })()}
+                      <table className={`${hf.showHeader ? "mt-3" : ""} w-full border-collapse text-[12px]`}>
                         <thead>
                           <tr className="bg-slate-800 text-white">
                             <th className="w-8 px-2 py-1.5"></th>
@@ -850,10 +949,15 @@ function PrintPreviewDialog({
                           })}
                         </tbody>
                       </table>
-                      <div className="mt-auto flex items-center justify-between pt-3 text-[10px] text-neutral-400">
-                        <span>{pageIdx === pages.length - 1 ? "Alleen geselecteerde rijen worden geëxporteerd" : ""}</span>
-                        <span>Pagina {pageIdx + 1} / {pages.length}</span>
-                      </div>
+                      {hf.showFooter && (() => {
+                        const ctx = { page: pageIdx + 1, pages: pages.length, org: orgName, date: now, title: hf.title, count: finalList.length };
+                        return (
+                          <div className="mt-auto flex items-center justify-between pt-2 text-[10px] text-neutral-400">
+                            <span>{resolveTemplate(hf.footerLeft, ctx)}</span>
+                            <span>{resolveTemplate(hf.footerRight, ctx)}</span>
+                          </div>
+                        );
+                      })()}
                     </div>
                     {/* page-break indicator */}
                     {pageIdx < pages.length - 1 && (
@@ -894,10 +998,26 @@ function escapeHtml(s: string) {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
 
+function cssStr(s: string) {
+  return `"${s.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}
+
 function buildPrintableHtml(orgName: string, products: Product[], opts: LayoutOpts = DEFAULT_LAYOUT) {
   const now = new Date().toLocaleDateString("nl-NL", { day: "2-digit", month: "long", year: "numeric" });
   const m = Math.max(5, Math.min(30, opts.marginMm));
   const s = Math.max(0.6, Math.min(1.4, opts.scale));
+  const hf = opts.hf;
+  // Voor de @page-regels vervangen we alle tokens behalve {page}/{pages} —
+  // die worden door de browser vervangen via CSS counter(page)/counter(pages).
+  const staticCtx = { page: 0, pages: 0, org: orgName, date: now, title: hf.title, count: products.length };
+  const rep = (tpl: string) => resolveTemplate(tpl, staticCtx)
+    .replace(/\{page\}/g, '" counter(page) "')
+    .replace(/\{pages\}/g, '" counter(pages) "');
+  const headerLeftCss = hf.showHeader && hf.headerLeft ? `@top-left { content: ${cssStr(rep(hf.headerLeft))}; font-size: 9pt; color:#666; }` : "";
+  const headerCenterCss = hf.showHeader && hf.title ? `@top-center { content: ${cssStr(rep(hf.title))}; font-size: 11pt; font-weight: 600; }` : "";
+  const headerRightCss = hf.showHeader && hf.headerRight ? `@top-right { content: ${cssStr(rep(hf.headerRight))}; font-size: 9pt; color:#666; }` : "";
+  const footerLeftCss = hf.showFooter && hf.footerLeft ? `@bottom-left { content: ${cssStr(rep(hf.footerLeft))}; font-size: 8pt; color:#888; }` : "";
+  const footerRightCss = hf.showFooter && hf.footerRight ? `@bottom-right { content: ${cssStr(rep(hf.footerRight))}; font-size: 8pt; color:#888; }` : "";
   const rows = products.map((p, idx) => `
     <tr style="background:${idx % 2 ? "#fafafa" : "white"}">
       <td style="padding:6px 8px;font-family:monospace;font-size:${11 * s}px">${escapeHtml(p.sku ?? "—")}</td>
@@ -909,21 +1029,23 @@ function buildPrintableHtml(orgName: string, products: Product[], opts: LayoutOp
       <td style="padding:6px 8px">${Number(p.discount_percent ?? 0) > 0 ? `${Number(p.discount_percent)}% ${p.discount_type === "recurring" ? `/mnd${p.contract_months ? ` · ${p.contract_months}m` : ""}` : "eenmalig"}` : "—"}</td>
       <td style="padding:6px 8px">${p.active ? "Actief" : "Inactief"}</td>
     </tr>`).join("");
-  return `<!doctype html><html><head><meta charset="utf-8"><title>Prijslijst</title>
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(hf.title || "Prijslijst")}</title>
     <style>
-      @page { size: ${opts.format === "letter" ? "letter" : "A4"} ${opts.orientation}; margin: ${m}mm; }
+      @page {
+        size: ${opts.format === "letter" ? "letter" : "A4"} ${opts.orientation};
+        margin: ${m}mm;
+        ${headerLeftCss}
+        ${headerCenterCss}
+        ${headerRightCss}
+        ${footerLeftCss}
+        ${footerRightCss}
+      }
       body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; color:#111; margin:0; font-size: ${12 * s}px; }
-      h1 { margin:0; font-size: ${22 * s}px; }
-      table { width:100%; border-collapse: collapse; margin-top: 12px; font-size: ${12 * s}px; }
+      table { width:100%; border-collapse: collapse; font-size: ${12 * s}px; }
       thead th { background:#1e293b; color:white; padding:6px 8px; text-align:left; font-weight:500; }
       thead th.r { text-align:right; }
       tbody td { border-bottom: 1px solid #eee; vertical-align: top; }
     </style></head><body>
-
-    <div style="display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid #ddd;padding-bottom:8px">
-      <div><h1>Prijslijst</h1><div style="font-size:11px;color:#666">${escapeHtml(orgName)}${orgName ? " — " : ""}${now}</div></div>
-      <div style="font-size:11px;color:#999">${products.length} artikelen</div>
-    </div>
     <table>
       <thead><tr><th>Artikelnr.</th><th>Naam</th><th>Type</th><th class="r">Prijs</th><th class="r">Opstart</th><th class="r">BTW</th><th>Korting</th><th>Status</th></tr></thead>
       <tbody>${rows}</tbody>
