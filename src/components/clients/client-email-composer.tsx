@@ -469,6 +469,27 @@ export function ClientEmailComposer({
               </div>
             </div>
           )}
+          {senderOptions.length > 0 && (
+            <div className="space-y-1.5">
+              <Label htmlFor="from-select">Van</Label>
+              <select
+                id="from-select"
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                value={selectedSenderId}
+                onChange={(e) => setSelectedSenderId(e.target.value)}
+                disabled={fromLoading}
+              >
+                {senderOptions.map((o) => (
+                  <option key={o.id} value={o.id}>{o.label}</option>
+                ))}
+              </select>
+              {selectedSender && selectedSender.id !== "default" && (
+                <p className="text-xs text-muted-foreground">
+                  Technische afzender blijft <span className="font-mono">{fromEmail ?? "—"}</span> (geverifieerd domein). Naam en Reply-To gebruiken de gekozen contactpersoon, zodat antwoorden bij hen terechtkomen.
+                </p>
+              )}
+            </div>
+          )}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <Label>Aan {toList.length > 0 && <span className="text-xs text-muted-foreground">({toList.length} geselecteerd)</span>}</Label>
