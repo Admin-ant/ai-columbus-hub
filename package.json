@@ -13,6 +13,7 @@
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
     "test:visual:pdf": "playwright test invoice-pdf-parity",
+    "test:grants": "node scripts/check-mail-skin-grants.mjs",
     "ci": "bun run check:colors && bun run lint",
     "format": "prettier --write ."
   },
