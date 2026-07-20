@@ -121,6 +121,18 @@ function StatusBadge({ m }: { m: MailRow }) {
 }
 
 function MailPage() {
+  // When a child route (mail/skins, mail/settings, mail/templates, mail/flow) matches,
+  // render only the child — the inbox layout below is exclusive to /mail itself.
+  const hasChildMatch = useRouterState({
+    select: (s) =>
+      s.matches.some(
+        (m) =>
+          m.routeId.startsWith("/_authenticated/mail/") &&
+          m.routeId !== "/_authenticated/mail",
+      ),
+  });
+  if (hasChildMatch) return <Outlet />;
+
   const { currentOrganizationId, currentOrganization } = useWorkspace();
   const { clientId } = Route.useSearch();
   const navigate = Route.useNavigate();
