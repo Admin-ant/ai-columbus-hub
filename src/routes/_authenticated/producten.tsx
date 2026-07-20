@@ -279,6 +279,9 @@ function ProductsPage() {
     window.print();
   }
 
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+
 
   return (
     <div className="space-y-6">
