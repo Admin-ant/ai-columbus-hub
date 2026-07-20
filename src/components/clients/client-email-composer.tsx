@@ -565,6 +565,7 @@ export function ClientEmailComposer({
               type="button"
               onClick={sendNow}
               disabled={!canSend}
+              title={blockReason ?? undefined}
             >
               {sending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
               Verstuur direct
