@@ -121,8 +121,7 @@ export const sendCampaignFlowEmail = createServerFn({ method: "POST" })
       process.env.VITE_PUBLIC_APP_URL ??
       "https://aiqloud.nl"
     ).replace(/\/$/, "");
-    const logoAsset = await import("@/assets/logo-columbus-email.png.asset.json");
-    const logoRel = (logoAsset as unknown as { default: { url: string } }).default.url;
+    const logoRel = logoEmailAsset.url;
     const logoUrl = logoRel.startsWith("http") ? logoRel : `${publicBase}${logoRel}`;
 
     const html = renderCampaignEmailHtml({
