@@ -226,55 +226,10 @@ function ProductsPage() {
     const { default: autoTable } = await import("jspdf-autotable");
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
     const orgName = currentOrganization?.name ?? "";
-    const now = new Date().toLocaleDateString("nl-NL", { day: "2-digit", month: "long", year: "numeric" });
     const m = Math.max(5, Math.min(30, opts.marginMm));
-    const s = Math.max(0.6, Math.min(1.4, opts.scale));
 
-    doc.setFontSize(16 * s);
-    doc.text("Prijslijst", m, m + 3);
-    doc.setFontSize(10 * s);
-    doc.setTextColor(120);
-    doc.text(`${orgName}${orgName ? " — " : ""}${now}`, m, m + 9);
-    doc.setTextColor(0);
-
-    autoTable(doc, {
-      startY: m + 14,
-      margin: { left: m, right: m, top: m, bottom: m },
-      head: [["Artikelnr.", "Naam", "Type", "Prijs", "Opstart", "BTW", "Korting", "Status"]],
-      body: list.map((p) => [
-        p.sku ?? "—",
-        p.description ? `${p.name}\n${p.description}` : p.name,
-        PRICING_LABELS[p.pricing_type],
-        EUR.format(Number(p.unit_price_cents ?? 0) / 100),
-        EUR.format(Number(p.setup_fee_cents ?? 0) / 100),
-        `${Number(p.vat_rate)}%`,
-        Number(p.discount_percent ?? 0) > 0
-          ? `${Number(p.discount_percent)}% ${p.discount_type === "recurring" ? `/mnd${p.contract_months ? ` · ${p.contract_months}m` : ""}` : "eenmalig"}`
-          : "—",
-        p.active ? "Actief" : "Inactief",
-      ]),
-      styles: { fontSize: 9 * s, cellPadding: 2 * s },
-      headStyles: { fillColor: [30, 41, 59], textColor: 255 },
-      columnStyles: {
-        0: { cellWidth: 22 * s },
-        3: { halign: "right" },
-        4: { halign: "right" },
-        5: { halign: "right" },
-      },
-      didDrawPage: () => {
-        const pageCount = doc.getNumberOfPages();
-        const pageSize = doc.internal.pageSize;
-        doc.setFontSize(8);
-        doc.setTextColor(150);
-        doc.text(
-          `Pagina ${doc.getCurrentPageInfo().pageNumber} / ${pageCount}`,
-          pageSize.getWidth() - m,
-          pageSize.getHeight() - Math.max(4, m / 2),
-          { align: "right" },
-        );
-      },
-    });
-
+    drawPdfHeader(doc, orgName, opts);
+    autoTable(doc, buildAutoTableConfig(list, opts, m, doc));
     doc.save(`prijslijst-${new Date().toISOString().slice(0, 10)}.pdf`);
   }
 
@@ -550,6 +505,97 @@ type SortKey = "sku" | "name" | "price" | "type";
 type SortDir = "asc" | "desc";
 type StatusFilter = "all" | "active" | "inactive";
 
+function productRow(p: Product): (string | number)[] {
+  return [
+    p.sku ?? "—",
+    p.description ? `${p.name}\n${p.description}` : p.name,
+    PRICING_LABELS[p.pricing_type],
+    EUR.format(Number(p.unit_price_cents ?? 0) / 100),
+    EUR.format(Number(p.setup_fee_cents ?? 0) / 100),
+    `${Number(p.vat_rate)}%`,
+    Number(p.discount_percent ?? 0) > 0
+      ? `${Number(p.discount_percent)}% ${p.discount_type === "recurring" ? `/mnd${p.contract_months ? ` · ${p.contract_months}m` : ""}` : "eenmalig"}`
+      : "—",
+    p.active ? "Actief" : "Inactief",
+  ];
+}
+
+function drawPdfHeader(doc: import("jspdf").jsPDF, orgName: string, opts: LayoutOpts) {
+  const m = Math.max(5, Math.min(30, opts.marginMm));
+  const s = Math.max(0.6, Math.min(1.4, opts.scale));
+  const now = new Date().toLocaleDateString("nl-NL", { day: "2-digit", month: "long", year: "numeric" });
+  doc.setFontSize(16 * s);
+  doc.text("Prijslijst", m, m + 3);
+  doc.setFontSize(10 * s);
+  doc.setTextColor(120);
+  doc.text(`${orgName}${orgName ? " — " : ""}${now}`, m, m + 9);
+  doc.setTextColor(0);
+}
+
+// Deelt de autoTable-config zodat preview én PDF-export exact dezelfde
+// pagina-indeling opleveren.
+function buildAutoTableConfig(
+  list: Product[],
+  opts: LayoutOpts,
+  m: number,
+  doc: import("jspdf").jsPDF,
+  onRowPage?: (rowIndex: number, page: number) => void,
+) {
+  const s = Math.max(0.6, Math.min(1.4, opts.scale));
+  return {
+    startY: m + 14,
+    margin: { left: m, right: m, top: m, bottom: m },
+    head: [["Artikelnr.", "Naam", "Type", "Prijs", "Opstart", "BTW", "Korting", "Status"]],
+    body: list.map(productRow),
+    styles: { fontSize: 9 * s, cellPadding: 2 * s },
+    headStyles: { fillColor: [30, 41, 59] as [number, number, number], textColor: 255 },
+    columnStyles: {
+      0: { cellWidth: 22 * s },
+      3: { halign: "right" as const },
+      4: { halign: "right" as const },
+      5: { halign: "right" as const },
+    },
+    didDrawCell: (data: { section: string; column: { index: number }; row: { index: number }; pageNumber: number }) => {
+      if (data.section === "body" && data.column.index === 0 && onRowPage) {
+        onRowPage(data.row.index, data.pageNumber);
+      }
+    },
+    didDrawPage: () => {
+      const pageCount = doc.getNumberOfPages();
+      const pageSize = doc.internal.pageSize;
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(
+        `Pagina ${doc.getCurrentPageInfo().pageNumber} / ${pageCount}`,
+        pageSize.getWidth() - m,
+        pageSize.getHeight() - Math.max(4, m / 2),
+        { align: "right" },
+      );
+    },
+  };
+}
+
+// Voert een headless autoTable-pass uit om te bepalen op welke pagina elke
+// rij landt in de uiteindelijke PDF. Retourneert Product[] per pagina.
+async function computePdfPageGroups(list: Product[], opts: LayoutOpts): Promise<Product[][]> {
+  if (list.length === 0) return [[]];
+  const { default: jsPDF } = await import("jspdf");
+  const { default: autoTable } = await import("jspdf-autotable");
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const m = Math.max(5, Math.min(30, opts.marginMm));
+  drawPdfHeader(doc, "", opts);
+  const rowPage = new Array<number>(list.length).fill(1);
+  autoTable(doc, buildAutoTableConfig(list, opts, m, doc, (i, p) => { rowPage[i] = p; }));
+  const totalPages = doc.getNumberOfPages();
+  const pages: Product[][] = Array.from({ length: totalPages }, () => []);
+  list.forEach((p, i) => {
+    const idx = Math.max(1, Math.min(totalPages, rowPage[i])) - 1;
+    pages[idx].push(p);
+  });
+  return pages;
+}
+
+
 
 function PrintPreviewDialog({
   open,
@@ -625,6 +671,18 @@ function PrintPreviewDialog({
     });
   }
 
+  // Bereken paginagroepen via een headless jsPDF/autoTable-pass, zodat de
+  // preview exact dezelfde paginabreuken toont als de uiteindelijke PDF.
+  const [pdfPages, setPdfPages] = useState<Product[][]>([[]]);
+  useEffect(() => {
+    let cancelled = false;
+    computePdfPageGroups(finalList, opts)
+      .then((pages) => { if (!cancelled) setPdfPages(pages.length ? pages : [[]]); })
+      .catch(() => { if (!cancelled) setPdfPages([finalList]); });
+    return () => { cancelled = true; };
+  }, [finalList, marginMm, scale]);
+
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl">
@@ -696,27 +754,8 @@ function PrintPreviewDialog({
 
         {(() => {
           const A4_W = 1123, A4_H = 794;
-          const contentH = A4_H - padPx * 2;
-          const headerBlock = 60 * scale;
-          const tableHead = 30 * scale;
-          const footerBlock = 24 * scale;
-          const rowH = (p: typeof visible[number]) => (p.description ? 40 : 26) * scale;
+          const pages: Product[][] = pdfPages;
 
-          const pages: Array<typeof visible> = [];
-          let current: typeof visible = [];
-          let used = tableHead + footerBlock + headerBlock; // header only on page 1, but budget conservatively
-          for (const p of visible) {
-            const h = rowH(p);
-            if (used + h > contentH && current.length > 0) {
-              pages.push(current);
-              current = [];
-              used = tableHead + footerBlock; // subsequent pages: no title block
-            }
-            current.push(p);
-            used += h;
-          }
-          if (current.length > 0) pages.push(current);
-          if (pages.length === 0) pages.push([]);
 
           return (
             <div className="max-h-[60vh] overflow-auto rounded-md border bg-muted/30 p-4">
@@ -745,11 +784,10 @@ function PrintPreviewDialog({
                         </thead>
                         <tbody>
                           {pageRows.map((p, idx) => {
-                            const isSel = selected.has(p.id);
                             return (
-                              <tr key={p.id} className={`${idx % 2 ? "bg-neutral-50" : ""} ${!isSel ? "opacity-40" : ""}`}>
+                              <tr key={p.id} className={idx % 2 ? "bg-neutral-50" : ""}>
                                 <td className="px-2 py-1.5">
-                                  <input type="checkbox" checked={isSel} onChange={() => toggleOne(p.id)} className="h-3.5 w-3.5" />
+                                  <input type="checkbox" checked={true} onChange={() => toggleOne(p.id)} className="h-3.5 w-3.5" />
                                 </td>
                                 <td className="px-2 py-1.5 font-mono text-[11px]">{p.sku ?? "—"}</td>
                                 <td className="px-2 py-1.5">
