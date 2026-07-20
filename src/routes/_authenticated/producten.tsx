@@ -694,61 +694,103 @@ function PrintPreviewDialog({
           <Button size="sm" variant="ghost" className="h-7" onClick={() => { setMarginMm(12); setScale(1); }}>Reset</Button>
         </div>
 
-        <div className="max-h-[60vh] overflow-auto rounded-md border bg-muted/30 p-4">
-          <div
-            className="mx-auto bg-white text-black shadow-sm"
-            style={{ width: "1123px", minHeight: "794px", padding: `${padPx}px`, transform: "scale(0.75)", transformOrigin: "top center" }}
-          >
-            <div style={{ zoom: scale }}>
-            <div className="flex items-end justify-between border-b pb-3">
+        {(() => {
+          const A4_W = 1123, A4_H = 794;
+          const contentH = A4_H - padPx * 2;
+          const headerBlock = 60 * scale;
+          const tableHead = 30 * scale;
+          const footerBlock = 24 * scale;
+          const rowH = (p: typeof visible[number]) => (p.description ? 40 : 26) * scale;
 
-              <div>
-                <div className="text-2xl font-bold">Prijslijst</div>
-                <div className="text-xs text-neutral-500">{orgName}{orgName ? " — " : ""}{now}</div>
+          const pages: Array<typeof visible> = [];
+          let current: typeof visible = [];
+          let used = tableHead + footerBlock + headerBlock; // header only on page 1, but budget conservatively
+          for (const p of visible) {
+            const h = rowH(p);
+            if (used + h > contentH && current.length > 0) {
+              pages.push(current);
+              current = [];
+              used = tableHead + footerBlock; // subsequent pages: no title block
+            }
+            current.push(p);
+            used += h;
+          }
+          if (current.length > 0) pages.push(current);
+          if (pages.length === 0) pages.push([]);
+
+          return (
+            <div className="max-h-[60vh] overflow-auto rounded-md border bg-muted/30 p-4">
+              <div className="mx-auto flex flex-col items-center gap-6" style={{ transform: "scale(0.75)", transformOrigin: "top center" }}>
+                {pages.map((pageRows, pageIdx) => (
+                  <div key={pageIdx} className="relative bg-white text-black shadow-md ring-1 ring-neutral-200"
+                    style={{ width: `${A4_W}px`, height: `${A4_H}px`, padding: `${padPx}px` }}>
+                    <div style={{ zoom: scale, height: "100%", display: "flex", flexDirection: "column" }}>
+                      {pageIdx === 0 && (
+                        <div className="flex items-end justify-between border-b pb-3">
+                          <div>
+                            <div className="text-2xl font-bold">Prijslijst</div>
+                            <div className="text-xs text-neutral-500">{orgName}{orgName ? " — " : ""}{now}</div>
+                          </div>
+                          <div className="text-xs text-neutral-400">{finalList.length} artikelen</div>
+                        </div>
+                      )}
+                      <table className={`${pageIdx === 0 ? "mt-4" : ""} w-full border-collapse text-[12px]`}>
+                        <thead>
+                          <tr className="bg-slate-800 text-white">
+                            <th className="w-8 px-2 py-1.5"></th>
+                            {["Artikelnr.","Naam","Type","Prijs","Opstart","BTW","Korting","Status"].map((h, i) => (
+                              <th key={h} className={`px-2 py-1.5 text-left font-medium ${[3,4,5].includes(i) ? "text-right" : ""}`}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pageRows.map((p, idx) => {
+                            const isSel = selected.has(p.id);
+                            return (
+                              <tr key={p.id} className={`${idx % 2 ? "bg-neutral-50" : ""} ${!isSel ? "opacity-40" : ""}`}>
+                                <td className="px-2 py-1.5">
+                                  <input type="checkbox" checked={isSel} onChange={() => toggleOne(p.id)} className="h-3.5 w-3.5" />
+                                </td>
+                                <td className="px-2 py-1.5 font-mono text-[11px]">{p.sku ?? "—"}</td>
+                                <td className="px-2 py-1.5">
+                                  <div className="font-medium">{p.name}</div>
+                                  {p.description && <div className="text-[11px] text-neutral-500">{p.description}</div>}
+                                </td>
+                                <td className="px-2 py-1.5">{PRICING_LABELS[p.pricing_type]}</td>
+                                <td className="px-2 py-1.5 text-right tabular-nums">{EUR.format(Number(p.unit_price_cents ?? 0) / 100)}</td>
+                                <td className="px-2 py-1.5 text-right tabular-nums">{EUR.format(Number(p.setup_fee_cents ?? 0) / 100)}</td>
+                                <td className="px-2 py-1.5 text-right tabular-nums">{Number(p.vat_rate)}%</td>
+                                <td className="px-2 py-1.5">
+                                  {Number(p.discount_percent ?? 0) > 0
+                                    ? `${Number(p.discount_percent)}% ${p.discount_type === "recurring" ? `/mnd${p.contract_months ? ` · ${p.contract_months}m` : ""}` : "eenmalig"}`
+                                    : "—"}
+                                </td>
+                                <td className="px-2 py-1.5">{p.active ? "Actief" : "Inactief"}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                      <div className="mt-auto flex items-center justify-between pt-3 text-[10px] text-neutral-400">
+                        <span>{pageIdx === pages.length - 1 ? "Alleen geselecteerde rijen worden geëxporteerd" : ""}</span>
+                        <span>Pagina {pageIdx + 1} / {pages.length}</span>
+                      </div>
+                    </div>
+                    {/* page-break indicator */}
+                    {pageIdx < pages.length - 1 && (
+                      <div className="pointer-events-none absolute -bottom-3 left-0 right-0 flex items-center gap-2 px-4 text-[10px] font-medium uppercase tracking-wider text-rose-500">
+                        <div className="h-px flex-1 border-t border-dashed border-rose-400" />
+                        <span>Paginabreuk</span>
+                        <div className="h-px flex-1 border-t border-dashed border-rose-400" />
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-              <div className="text-xs text-neutral-400">{finalList.length} artikelen</div>
             </div>
-            <table className="mt-4 w-full border-collapse text-[12px]">
-              <thead>
-                <tr className="bg-slate-800 text-white">
-                  <th className="w-8 px-2 py-1.5"></th>
-                  {["Artikelnr.","Naam","Type","Prijs","Opstart","BTW","Korting","Status"].map((h, i) => (
-                    <th key={h} className={`px-2 py-1.5 text-left font-medium ${[3,4,5].includes(i) ? "text-right" : ""}`}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {visible.map((p, idx) => {
-                  const isSel = selected.has(p.id);
-                  return (
-                    <tr key={p.id} className={`${idx % 2 ? "bg-neutral-50" : ""} ${!isSel ? "opacity-40" : ""}`}>
-                      <td className="px-2 py-1.5">
-                        <input type="checkbox" checked={isSel} onChange={() => toggleOne(p.id)} className="h-3.5 w-3.5" />
-                      </td>
-                      <td className="px-2 py-1.5 font-mono text-[11px]">{p.sku ?? "—"}</td>
-                      <td className="px-2 py-1.5">
-                        <div className="font-medium">{p.name}</div>
-                        {p.description && <div className="text-[11px] text-neutral-500">{p.description}</div>}
-                      </td>
-                      <td className="px-2 py-1.5">{PRICING_LABELS[p.pricing_type]}</td>
-                      <td className="px-2 py-1.5 text-right tabular-nums">{EUR.format(Number(p.unit_price_cents ?? 0) / 100)}</td>
-                      <td className="px-2 py-1.5 text-right tabular-nums">{EUR.format(Number(p.setup_fee_cents ?? 0) / 100)}</td>
-                      <td className="px-2 py-1.5 text-right tabular-nums">{Number(p.vat_rate)}%</td>
-                      <td className="px-2 py-1.5">
-                        {Number(p.discount_percent ?? 0) > 0
-                          ? `${Number(p.discount_percent)}% ${p.discount_type === "recurring" ? `/mnd${p.contract_months ? ` · ${p.contract_months}m` : ""}` : "eenmalig"}`
-                          : "—"}
-                      </td>
-                      <td className="px-2 py-1.5">{p.active ? "Actief" : "Inactief"}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            <div className="mt-6 text-right text-[10px] text-neutral-400">Alleen geselecteerde rijen worden geëxporteerd</div>
-            </div>
-          </div>
-        </div>
+          );
+        })()}
+
 
         <DialogFooter className="gap-2 sm:justify-between">
           <div className="text-xs text-muted-foreground">Layout: A4 liggend · marges {marginMm} mm · schaal {Math.round(scale * 100)}%</div>
