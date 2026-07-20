@@ -287,7 +287,13 @@ export function ClientEmailComposer({
   }
 
   async function sendNow() {
+    if (!fromEmail || !EMAIL_RE.test(fromEmail)) {
+      return toast.error("Geen geldig 'Van'-adres ingesteld — stel dit eerst in bij Mail-instellingen");
+    }
     if (toList.length === 0) return toast.error("Kies minstens één ontvanger");
+    if (invalidRecipients.length > 0) {
+      return toast.error(`Ongeldig e-mailadres: ${invalidRecipients.join(", ")}`);
+    }
     if (!finalSubject.trim()) return toast.error("Onderwerp is verplicht");
     setSending(true);
     try {
@@ -323,7 +329,21 @@ export function ClientEmailComposer({
   }
 
   const hasRecipients = recipientOptions.length > 0;
-  const canSend = toList.length > 0 && !sending;
+  const invalidRecipients = useMemo(() => toList.filter((e) => !EMAIL_RE.test(e)), [toList]);
+  const fromValid = !!fromEmail && EMAIL_RE.test(fromEmail);
+  const canSend =
+    toList.length > 0 &&
+    invalidRecipients.length === 0 &&
+    fromValid &&
+    !sending &&
+    !fromLoading;
+  const blockReason = !fromValid
+    ? "Geen geldig 'Van'-adres ingesteld"
+    : invalidRecipients.length > 0
+      ? `Ongeldig ontvangeradres: ${invalidRecipients.join(", ")}`
+      : toList.length === 0
+        ? "Kies minstens één ontvanger"
+        : null;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
