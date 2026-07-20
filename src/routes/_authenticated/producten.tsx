@@ -227,9 +227,7 @@ function ProductsPage() {
     const doc = new jsPDF({ orientation: opts.orientation, unit: "mm", format: opts.format });
     const orgName = currentOrganization?.name ?? "";
     const m = Math.max(5, Math.min(30, opts.marginMm));
-
-    drawPdfHeader(doc, orgName, opts);
-    autoTable(doc, buildAutoTableConfig(list, opts, m, doc));
+    autoTable(doc, buildAutoTableConfig(list, opts, m, doc, undefined, orgName));
     doc.save(`prijslijst-${new Date().toISOString().slice(0, 10)}.pdf`);
   }
 
