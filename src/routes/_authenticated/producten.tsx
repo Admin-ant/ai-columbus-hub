@@ -515,9 +515,149 @@ function ProductsPage() {
           </Table>
         </div>
       )}
+
+      <PrintPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        orgName={currentOrganization?.name ?? ""}
+        products={filteredProducts}
+        onPrint={printFromPreview}
+        onPdf={exportPdf}
+      />
     </div>
   );
+
+  function printFromPreview() {
+    const html = buildPrintableHtml(currentOrganization?.name ?? "", filteredProducts);
+    const w = window.open("", "_blank", "width=1100,height=800");
+    if (!w) return toast.error("Sta pop-ups toe om te printen");
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    setTimeout(() => { w.print(); }, 300);
+  }
 }
+
+function PrintPreviewDialog({
+  open,
+  onOpenChange,
+  orgName,
+  products,
+  onPrint,
+  onPdf,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  orgName: string;
+  products: Product[];
+  onPrint: () => void;
+  onPdf: () => void;
+}) {
+  const now = new Date().toLocaleDateString("nl-NL", { day: "2-digit", month: "long", year: "numeric" });
+  // A4 landscape at 96dpi ≈ 1123x794px. Scale down to fit dialog.
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-6xl">
+        <DialogHeader>
+          <DialogTitle>Voorbeeld — Prijslijst</DialogTitle>
+        </DialogHeader>
+        <div className="max-h-[70vh] overflow-auto rounded-md border bg-muted/30 p-4">
+          <div
+            className="mx-auto bg-white text-black shadow-sm"
+            style={{ width: "1123px", minHeight: "794px", padding: "40px 48px", transform: "scale(0.75)", transformOrigin: "top center" }}
+          >
+            <div className="flex items-end justify-between border-b pb-3">
+              <div>
+                <div className="text-2xl font-bold">Prijslijst</div>
+                <div className="text-xs text-neutral-500">{orgName}{orgName ? " — " : ""}{now}</div>
+              </div>
+              <div className="text-xs text-neutral-400">{products.length} artikelen</div>
+            </div>
+            <table className="mt-4 w-full border-collapse text-[12px]">
+              <thead>
+                <tr className="bg-slate-800 text-white">
+                  {["Artikelnr.","Naam","Type","Prijs","Opstart","BTW","Korting","Status"].map((h, i) => (
+                    <th key={h} className={`px-2 py-1.5 text-left font-medium ${[3,4,5].includes(i) ? "text-right" : ""}`}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((p, idx) => (
+                  <tr key={p.id} className={idx % 2 ? "bg-neutral-50" : ""}>
+                    <td className="px-2 py-1.5 font-mono text-[11px]">{p.sku ?? "—"}</td>
+                    <td className="px-2 py-1.5">
+                      <div className="font-medium">{p.name}</div>
+                      {p.description && <div className="text-[11px] text-neutral-500">{p.description}</div>}
+                    </td>
+                    <td className="px-2 py-1.5">{PRICING_LABELS[p.pricing_type]}</td>
+                    <td className="px-2 py-1.5 text-right tabular-nums">{EUR.format(Number(p.unit_price_cents ?? 0) / 100)}</td>
+                    <td className="px-2 py-1.5 text-right tabular-nums">{EUR.format(Number(p.setup_fee_cents ?? 0) / 100)}</td>
+                    <td className="px-2 py-1.5 text-right tabular-nums">{Number(p.vat_rate)}%</td>
+                    <td className="px-2 py-1.5">
+                      {Number(p.discount_percent ?? 0) > 0
+                        ? `${Number(p.discount_percent)}% ${p.discount_type === "recurring" ? `/mnd${p.contract_months ? ` · ${p.contract_months}m` : ""}` : "eenmalig"}`
+                        : "—"}
+                    </td>
+                    <td className="px-2 py-1.5">{p.active ? "Actief" : "Inactief"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="mt-6 text-right text-[10px] text-neutral-400">Pagina 1</div>
+          </div>
+        </div>
+        <DialogFooter className="gap-2 sm:justify-between">
+          <div className="text-xs text-muted-foreground">Layout: A4 liggend · marges 12 mm</div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Sluiten</Button>
+            <Button variant="outline" onClick={onPrint}><Printer className="mr-2 h-4 w-4" /> Printen</Button>
+            <Button onClick={onPdf}><FileDown className="mr-2 h-4 w-4" /> Download PDF</Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function escapeHtml(s: string) {
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+}
+
+function buildPrintableHtml(orgName: string, products: Product[]) {
+  const now = new Date().toLocaleDateString("nl-NL", { day: "2-digit", month: "long", year: "numeric" });
+  const rows = products.map((p, idx) => `
+    <tr style="background:${idx % 2 ? "#fafafa" : "white"}">
+      <td style="padding:6px 8px;font-family:monospace;font-size:11px">${escapeHtml(p.sku ?? "—")}</td>
+      <td style="padding:6px 8px"><div style="font-weight:600">${escapeHtml(p.name)}</div>${p.description ? `<div style="font-size:11px;color:#666">${escapeHtml(p.description)}</div>` : ""}</td>
+      <td style="padding:6px 8px">${PRICING_LABELS[p.pricing_type]}</td>
+      <td style="padding:6px 8px;text-align:right">${EUR.format(Number(p.unit_price_cents ?? 0) / 100)}</td>
+      <td style="padding:6px 8px;text-align:right">${EUR.format(Number(p.setup_fee_cents ?? 0) / 100)}</td>
+      <td style="padding:6px 8px;text-align:right">${Number(p.vat_rate)}%</td>
+      <td style="padding:6px 8px">${Number(p.discount_percent ?? 0) > 0 ? `${Number(p.discount_percent)}% ${p.discount_type === "recurring" ? `/mnd${p.contract_months ? ` · ${p.contract_months}m` : ""}` : "eenmalig"}` : "—"}</td>
+      <td style="padding:6px 8px">${p.active ? "Actief" : "Inactief"}</td>
+    </tr>`).join("");
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Prijslijst</title>
+    <style>
+      @page { size: A4 landscape; margin: 12mm; }
+      body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; color:#111; margin:0; }
+      h1 { margin:0; font-size: 22px; }
+      table { width:100%; border-collapse: collapse; margin-top: 12px; font-size: 12px; }
+      thead th { background:#1e293b; color:white; padding:6px 8px; text-align:left; font-weight:500; }
+      thead th.r { text-align:right; }
+      tbody td { border-bottom: 1px solid #eee; vertical-align: top; }
+    </style></head><body>
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid #ddd;padding-bottom:8px">
+      <div><h1>Prijslijst</h1><div style="font-size:11px;color:#666">${escapeHtml(orgName)}${orgName ? " — " : ""}${now}</div></div>
+      <div style="font-size:11px;color:#999">${products.length} artikelen</div>
+    </div>
+    <table>
+      <thead><tr><th>Artikelnr.</th><th>Naam</th><th>Type</th><th class="r">Prijs</th><th class="r">Opstart</th><th class="r">BTW</th><th>Korting</th><th>Status</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    </body></html>`;
+}
+
 
 function SummaryCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
