@@ -917,11 +917,59 @@ function PrintPreviewDialog({
 
 
           return (
-            <div className="max-h-[60vh] overflow-auto rounded-md border bg-muted/30 p-4">
-              <div className="mx-auto flex flex-col items-center gap-6" style={{ transform: "scale(0.75)", transformOrigin: "top center" }}>
+            <div className="rounded-md border bg-muted/30">
+              <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-2 border-b bg-background/95 px-3 py-2 backdrop-blur">
+                <div className="flex items-center gap-1">
+                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => goToPage(1)} disabled={currentPage <= 1} title="Eerste pagina">
+                    <ChevronsLeft className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => goToPage(currentPage - 1)} disabled={currentPage <= 1} title="Vorige pagina">
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="flex items-center gap-1 px-2 text-xs">
+                    <span>Pagina</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={totalPages}
+                      value={currentPage}
+                      onChange={(e) => goToPage(Number(e.target.value) || 1)}
+                      className="h-7 w-14 rounded border bg-background px-1 text-center tabular-nums"
+                    />
+                    <span className="text-muted-foreground">/ {totalPages}</span>
+                  </div>
+                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => goToPage(currentPage + 1)} disabled={currentPage >= totalPages} title="Volgende pagina">
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => goToPage(totalPages)} disabled={currentPage >= totalPages} title="Laatste pagina">
+                    <ChevronsRight className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => zoomStep(-0.1)} title="Uitzoomen">
+                    <ZoomOut className="h-4 w-4" />
+                  </Button>
+                  <span className="w-12 text-center text-xs tabular-nums">{Math.round(viewZoom * 100)}%</span>
+                  <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => zoomStep(0.1)} title="Inzoomen">
+                    <ZoomIn className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setViewZoom(0.75)}>Reset</Button>
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setViewZoom(1)}>100%</Button>
+                </div>
+              </div>
+              <div ref={scrollRef} className="max-h-[60vh] overflow-auto p-4">
+                <div className="mx-auto flex flex-col items-center gap-6" style={{ transform: `scale(${viewZoom})`, transformOrigin: "top center" }}>
                 {pages.map((pageRows, pageIdx) => (
-                  <div key={pageIdx} className="relative bg-white text-black shadow-md ring-1 ring-neutral-200"
-                    style={{ width: `${pageWpx}px`, height: `${pageHpx}px`, padding: `${padPx}px` }}>
+                  <div
+                    key={pageIdx}
+                    ref={(el) => { pageRefs.current[pageIdx] = el; }}
+                    className={`relative bg-white text-black shadow-md ring-1 ${currentPage === pageIdx + 1 ? "ring-2 ring-primary" : "ring-neutral-200"}`}
+                    style={{ width: `${pageWpx}px`, height: `${pageHpx}px`, padding: `${padPx}px` }}
+                    onClick={() => setCurrentPage(pageIdx + 1)}
+                  >
+                    <div className="pointer-events-none absolute right-2 top-2 rounded bg-neutral-900/70 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                      {pageIdx + 1} / {pages.length}
+                    </div>
                     <div style={{ zoom: scale, height: "100%", display: "flex", flexDirection: "column" }}>
                       {hf.showHeader && (() => {
                         const ctx = { page: pageIdx + 1, pages: pages.length, org: orgName, date: now, title: hf.title, count: finalList.length };
@@ -991,6 +1039,7 @@ function PrintPreviewDialog({
                     )}
                   </div>
                 ))}
+                </div>
               </div>
             </div>
           );
