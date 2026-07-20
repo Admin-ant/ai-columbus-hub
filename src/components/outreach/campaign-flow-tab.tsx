@@ -1253,9 +1253,22 @@ export function CampaignFlowTab() {
                     </div>
                   ))}
                 </div>
-                <p className="mt-2 text-[10px] text-muted-foreground">
-                  Dit is een indicatief sjabloon. De definitieve concepten worden door AI gegenereerd op basis van deze velden.
-                </p>
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <p className="text-[10px] text-muted-foreground">
+                    Dit is een indicatief sjabloon. De definitieve concepten worden door AI gegenereerd op basis van deze velden.
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setPreviewOpen(true)}
+                    disabled={!previewBodyText}
+                    className="h-7 gap-1.5 text-[11px]"
+                  >
+                    <Eye className="h-3 w-3" />
+                    Preview mail
+                  </Button>
+                </div>
               </div>
             )}
 
