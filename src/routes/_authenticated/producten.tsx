@@ -894,7 +894,7 @@ function buildPrintableHtml(orgName: string, products: Product[], opts: LayoutOp
     </tr>`).join("");
   return `<!doctype html><html><head><meta charset="utf-8"><title>Prijslijst</title>
     <style>
-      @page { size: A4 landscape; margin: ${m}mm; }
+      @page { size: ${opts.format === "letter" ? "letter" : "A4"} ${opts.orientation}; margin: ${m}mm; }
       body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; color:#111; margin:0; font-size: ${12 * s}px; }
       h1 { margin:0; font-size: ${22 * s}px; }
       table { width:100%; border-collapse: collapse; margin-top: 12px; font-size: ${12 * s}px; }
