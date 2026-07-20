@@ -53,6 +53,7 @@ const SEND_SCHEMA = z.object({
   subject: z.string().min(1).max(300),
   body: z.string().min(1).max(50000),
   from_name: z.string().max(120).optional(),
+  reply_to: z.string().email().optional().nullable(),
   client_id: z.string().uuid().optional().nullable(),
   lead_id: z.string().uuid().optional().nullable(),
   in_reply_to: z.string().optional().nullable(),
@@ -79,7 +80,7 @@ export const sendMail = createServerFn({ method: "POST" })
     const from_email = s?.from_email || process.env.OUTREACH_FROM_EMAIL || "outreach@resend.dev";
     const from_name = data.from_name ?? s?.from_name ?? null;
     const from = from_name ? `${from_name} <${from_email}>` : from_email;
-    const replyTo = s?.reply_to || undefined;
+    const replyTo = data.reply_to || s?.reply_to || undefined;
     const fullBody = s?.signature ? `${data.body}\n\n${s.signature}` : data.body;
 
     const html = `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111;white-space:pre-wrap">${fullBody.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]!))}</div>`;

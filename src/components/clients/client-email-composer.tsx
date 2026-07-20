@@ -92,7 +92,11 @@ export function ClientEmailComposer({
   const [addLastName, setAddLastName] = useState("");
   const [addSaving, setAddSaving] = useState(false);
   const [fromEmail, setFromEmail] = useState<string | null>(null);
+  const [fromName, setFromName] = useState<string | null>(null);
   const [fromLoading, setFromLoading] = useState(false);
+  type SenderOption = { id: string; label: string; from_name: string | null; reply_to: string | null; email: string };
+  const [senderOptions, setSenderOptions] = useState<SenderOption[]>([]);
+  const [selectedSenderId, setSelectedSenderId] = useState<string>("default");
 
   const sendMailFn = useServerFn(sendMail);
 
@@ -103,17 +107,64 @@ export function ClientEmailComposer({
     let ok = true;
     setFromLoading(true);
     (async () => {
-      const { data } = await supabase
+      const { data: settings } = await supabase
         .from("mail_settings")
-        .select("from_email")
+        .select("from_email, from_name, reply_to")
         .eq("organization_id", organizationId)
         .maybeSingle();
       if (!ok) return;
-      setFromEmail((data?.from_email as string | null) ?? null);
+      const orgFromEmail = (settings?.from_email as string | null) ?? null;
+      const orgFromName = (settings?.from_name as string | null) ?? null;
+      const orgReplyTo = (settings?.reply_to as string | null) ?? null;
+      setFromEmail(orgFromEmail);
+      setFromName(orgFromName);
+
+      // Load team members (organization_members → profiles)
+      const { data: memberRows } = await supabase
+        .from("organization_members")
+        .select("user_id")
+        .eq("organization_id", organizationId);
+      const userIds = (memberRows ?? []).map((m: any) => m.user_id).filter(Boolean);
+      let members: Array<{ id: string; display_name: string | null; email: string | null }> = [];
+      if (userIds.length > 0) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("id, display_name, email")
+          .in("id", userIds);
+        members = (profs ?? []) as any;
+      }
+      if (!ok) return;
+
+      const opts: SenderOption[] = [];
+      opts.push({
+        id: "default",
+        label: `Organisatie${orgFromName ? ` — ${orgFromName}` : ""}${orgFromEmail ? ` <${orgFromEmail}>` : ""}`,
+        from_name: orgFromName,
+        reply_to: orgReplyTo,
+        email: orgFromEmail ?? "",
+      });
+      for (const m of members) {
+        if (!m.email || !EMAIL_RE.test(m.email)) continue;
+        const name = m.display_name?.trim() || m.email;
+        opts.push({
+          id: m.id,
+          label: `${name} <${m.email}>`,
+          from_name: name,
+          reply_to: m.email,
+          email: m.email,
+        });
+      }
+      setSenderOptions(opts);
+      setSelectedSenderId("default");
       setFromLoading(false);
     })();
     return () => { ok = false; };
   }, [open, organizationId]);
+
+  const selectedSender = useMemo(
+    () => senderOptions.find((o) => o.id === selectedSenderId) ?? senderOptions[0] ?? null,
+    [senderOptions, selectedSenderId],
+  );
 
   const loadContacts = async () => {
     const { data } = await supabase
@@ -336,6 +387,8 @@ export function ClientEmailComposer({
           to: toList,
           subject: finalSubject,
           body: finalBody,
+          from_name: selectedSender?.from_name ?? undefined,
+          reply_to: selectedSender?.reply_to ?? undefined,
         } as any,
       });
       toast.success(`Verstuurd naar ${toList.length} ontvanger${toList.length > 1 ? "s" : ""}`);
@@ -414,6 +467,27 @@ export function ClientEmailComposer({
                 <div className="font-medium">Ongeldig ontvangeradres</div>
                 <div className="text-xs text-destructive/90 break-all">{invalidRecipients.join(", ")}</div>
               </div>
+            </div>
+          )}
+          {senderOptions.length > 0 && (
+            <div className="space-y-1.5">
+              <Label htmlFor="from-select">Van</Label>
+              <select
+                id="from-select"
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                value={selectedSenderId}
+                onChange={(e) => setSelectedSenderId(e.target.value)}
+                disabled={fromLoading}
+              >
+                {senderOptions.map((o) => (
+                  <option key={o.id} value={o.id}>{o.label}</option>
+                ))}
+              </select>
+              {selectedSender && selectedSender.id !== "default" && (
+                <p className="text-xs text-muted-foreground">
+                  Technische afzender blijft <span className="font-mono">{fromEmail ?? "—"}</span> (geverifieerd domein). Naam en Reply-To gebruiken de gekozen contactpersoon, zodat antwoorden bij hen terechtkomen.
+                </p>
+              )}
             </div>
           )}
           <div className="space-y-1.5">
