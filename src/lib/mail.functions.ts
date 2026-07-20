@@ -53,6 +53,7 @@ const SEND_SCHEMA = z.object({
   subject: z.string().min(1).max(300),
   body: z.string().min(1).max(50000),
   from_name: z.string().max(120).optional(),
+  reply_to: z.string().email().optional().nullable(),
   client_id: z.string().uuid().optional().nullable(),
   lead_id: z.string().uuid().optional().nullable(),
   in_reply_to: z.string().optional().nullable(),
