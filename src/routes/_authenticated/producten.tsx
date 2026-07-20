@@ -872,7 +872,7 @@ function PrintPreviewDialog({
 
 
         <DialogFooter className="gap-2 sm:justify-between">
-          <div className="text-xs text-muted-foreground">Layout: A4 liggend · marges {marginMm} mm · schaal {Math.round(scale * 100)}%</div>
+          <div className="text-xs text-muted-foreground">Layout: {PAPER_LABEL[format]} {ORIENTATION_LABEL[orientation].toLowerCase()} · marges {marginMm} mm · schaal {Math.round(scale * 100)}%</div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Sluiten</Button>
             <Button variant="outline" disabled={finalList.length === 0} onClick={() => onPrint(finalList, opts)}>
