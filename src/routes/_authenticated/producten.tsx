@@ -573,16 +573,44 @@ function productRow(p: Product): (string | number)[] {
   ];
 }
 
-function drawPdfHeader(doc: import("jspdf").jsPDF, orgName: string, opts: LayoutOpts) {
+const HEADER_MM = 14;
+const FOOTER_MM = 8;
+
+function drawPdfChrome(
+  doc: import("jspdf").jsPDF,
+  opts: LayoutOpts,
+  orgName: string,
+  totalRows: number,
+) {
   const m = Math.max(5, Math.min(30, opts.marginMm));
   const s = Math.max(0.6, Math.min(1.4, opts.scale));
   const now = new Date().toLocaleDateString("nl-NL", { day: "2-digit", month: "long", year: "numeric" });
-  doc.setFontSize(16 * s);
-  doc.text("Prijslijst", m, m + 3);
-  doc.setFontSize(10 * s);
-  doc.setTextColor(120);
-  doc.text(`${orgName}${orgName ? " — " : ""}${now}`, m, m + 9);
-  doc.setTextColor(0);
+  const pw = doc.internal.pageSize.getWidth();
+  const ph = doc.internal.pageSize.getHeight();
+  const pages = doc.getNumberOfPages();
+  const page = doc.getCurrentPageInfo().pageNumber;
+  const ctx = { page, pages, org: orgName, date: now, title: opts.hf.title, count: totalRows };
+
+  if (opts.hf.showHeader) {
+    doc.setTextColor(0);
+    doc.setFontSize(14 * s);
+    doc.text(resolveTemplate(opts.hf.title, ctx), m, m + 4);
+    doc.setFontSize(9 * s);
+    doc.setTextColor(120);
+    if (opts.hf.headerLeft) doc.text(resolveTemplate(opts.hf.headerLeft, ctx), m, m + 10);
+    if (opts.hf.headerRight) doc.text(resolveTemplate(opts.hf.headerRight, ctx), pw - m, m + 10, { align: "right" });
+    doc.setDrawColor(220);
+    doc.line(m, m + HEADER_MM - 2, pw - m, m + HEADER_MM - 2);
+    doc.setTextColor(0);
+  }
+  if (opts.hf.showFooter) {
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    const fy = ph - Math.max(4, m / 2);
+    if (opts.hf.footerLeft) doc.text(resolveTemplate(opts.hf.footerLeft, ctx), m, fy);
+    if (opts.hf.footerRight) doc.text(resolveTemplate(opts.hf.footerRight, ctx), pw - m, fy, { align: "right" });
+    doc.setTextColor(0);
+  }
 }
 
 // Deelt de autoTable-config zodat preview én PDF-export exact dezelfde
@@ -593,11 +621,14 @@ function buildAutoTableConfig(
   m: number,
   doc: import("jspdf").jsPDF,
   onRowPage?: (rowIndex: number, page: number) => void,
+  orgName: string = "",
 ) {
   const s = Math.max(0.6, Math.min(1.4, opts.scale));
+  const topPad = opts.hf.showHeader ? HEADER_MM : 0;
+  const botPad = opts.hf.showFooter ? FOOTER_MM : 0;
   return {
-    startY: m + 14,
-    margin: { left: m, right: m, top: m, bottom: m },
+    startY: m + topPad,
+    margin: { left: m, right: m, top: m + topPad, bottom: m + botPad },
     head: [["Artikelnr.", "Naam", "Type", "Prijs", "Opstart", "BTW", "Korting", "Status"]],
     body: list.map(productRow),
     styles: { fontSize: 9 * s, cellPadding: 2 * s },
@@ -614,16 +645,7 @@ function buildAutoTableConfig(
       }
     },
     didDrawPage: () => {
-      const pageCount = doc.getNumberOfPages();
-      const pageSize = doc.internal.pageSize;
-      doc.setFontSize(8);
-      doc.setTextColor(150);
-      doc.text(
-        `Pagina ${doc.getCurrentPageInfo().pageNumber} / ${pageCount}`,
-        pageSize.getWidth() - m,
-        pageSize.getHeight() - Math.max(4, m / 2),
-        { align: "right" },
-      );
+      drawPdfChrome(doc, opts, orgName, list.length);
     },
   };
 }
@@ -636,7 +658,6 @@ async function computePdfPageGroups(list: Product[], opts: LayoutOpts): Promise<
   const { default: autoTable } = await import("jspdf-autotable");
   const doc = new jsPDF({ orientation: opts.orientation, unit: "mm", format: opts.format });
   const m = Math.max(5, Math.min(30, opts.marginMm));
-  drawPdfHeader(doc, "", opts);
   const rowPage = new Array<number>(list.length).fill(1);
   autoTable(doc, buildAutoTableConfig(list, opts, m, doc, (i, p) => { rowPage[i] = p; }));
   const totalPages = doc.getNumberOfPages();
