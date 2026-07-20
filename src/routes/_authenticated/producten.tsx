@@ -704,7 +704,7 @@ function PrintPreviewDialog({
       .then((pages) => { if (!cancelled) setPdfPages(pages.length ? pages : [[]]); })
       .catch(() => { if (!cancelled) setPdfPages([finalList]); });
     return () => { cancelled = true; };
-  }, [finalList, marginMm, scale]);
+  }, [finalList, marginMm, scale, format, orientation]);
 
 
   return (
