@@ -746,18 +746,20 @@ function PrintPreviewDialog({
               </tbody>
             </table>
             <div className="mt-6 text-right text-[10px] text-neutral-400">Alleen geselecteerde rijen worden geëxporteerd</div>
+            </div>
           </div>
         </div>
 
         <DialogFooter className="gap-2 sm:justify-between">
-          <div className="text-xs text-muted-foreground">Layout: A4 liggend · marges 12 mm</div>
+          <div className="text-xs text-muted-foreground">Layout: A4 liggend · marges {marginMm} mm · schaal {Math.round(scale * 100)}%</div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Sluiten</Button>
-            <Button variant="outline" disabled={finalList.length === 0} onClick={() => onPrint(finalList)}>
+            <Button variant="outline" disabled={finalList.length === 0} onClick={() => onPrint(finalList, opts)}>
               <Printer className="mr-2 h-4 w-4" /> Printen
             </Button>
-            <Button disabled={finalList.length === 0} onClick={() => onPdf(finalList)}>
+            <Button disabled={finalList.length === 0} onClick={() => onPdf(finalList, opts)}>
               <FileDown className="mr-2 h-4 w-4" /> Download PDF
+
             </Button>
           </div>
         </DialogFooter>
