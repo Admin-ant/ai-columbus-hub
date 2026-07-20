@@ -53,8 +53,7 @@ export const sendCampaignFlowEmail = createServerFn({ method: "POST" })
       process.env.VITE_PUBLIC_APP_URL ??
       "https://aiqloud.nl"
     ).replace(/\/$/, "");
-    const logoRel = logoEmailAsset.url;
-    const logoUrl = logoRel.startsWith("http") ? logoRel : `${publicBase}${logoRel}`;
+    const logoUrl = resolveCampaignLogoUrl(publicBase);
 
     const html = renderCampaignEmailHtml({
       bodyText: data.body ?? "",
