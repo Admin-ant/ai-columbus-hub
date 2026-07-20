@@ -82,6 +82,12 @@ export const Route = createFileRoute("/api/public/hooks/outreach-sequence")({
         }
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const nowIso = new Date().toISOString();
+        const { data: runRow } = await supabaseAdmin
+          .from("cron_job_runs")
+          .insert({ job_name: "outreach-sequence", status: "running" } as never)
+          .select("id")
+          .single();
+        const runId = (runRow as { id: string } | null)?.id ?? null;
 
         const { data: due, error } = await supabaseAdmin
           .from("outreach_targets")
@@ -93,6 +99,11 @@ export const Route = createFileRoute("/api/public/hooks/outreach-sequence")({
           .in("stage", ["nieuw", "aangeschreven", "reactie"])
           .limit(50);
         if (error) {
+          if (runId) {
+            await supabaseAdmin.from("cron_job_runs").update({
+              status: "error", finished_at: new Date().toISOString(), error: error.message,
+            } as never).eq("id", runId);
+          }
           return Response.json({ ok: false, error: error.message }, { status: 500 });
         }
         const targets = (due ?? []) as TargetRow[];
@@ -238,6 +249,13 @@ export const Route = createFileRoute("/api/public/hooks/outreach-sequence")({
           }
         }
 
+        if (runId) {
+          await supabaseAdmin.from("cron_job_runs").update({
+            status: failed > 0 && sent === 0 ? "error" : "ok",
+            finished_at: new Date().toISOString(),
+            processed: targets.length, sent, skipped, failed,
+          } as never).eq("id", runId);
+        }
         return Response.json({ ok: true, processed: targets.length, sent, skipped, failed });
       },
     },

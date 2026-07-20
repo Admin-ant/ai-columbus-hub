@@ -26,6 +26,7 @@ import { Route as AuthenticatedOpnameRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedNetqloudRouteImport } from './routes/_authenticated/netqloud'
 import { Route as AuthenticatedMailRouteImport } from './routes/_authenticated/mail'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
+import { Route as AuthenticatedJobsRouteImport } from './routes/_authenticated/jobs'
 import { Route as AuthenticatedInkoopfacturenRouteImport } from './routes/_authenticated/inkoopfacturen'
 import { Route as AuthenticatedGebruikersRouteImport } from './routes/_authenticated/gebruikers'
 import { Route as AuthenticatedEnterpriseRouteImport } from './routes/_authenticated/enterprise'
@@ -167,6 +168,11 @@ const AuthenticatedMailRoute = AuthenticatedMailRouteImport.update({
 const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
   id: '/leads',
   path: '/leads',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedJobsRoute = AuthenticatedJobsRouteImport.update({
+  id: '/jobs',
+  path: '/jobs',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedInkoopfacturenRoute =
@@ -513,6 +519,7 @@ export interface FileRoutesByFullPath {
   '/enterprise': typeof AuthenticatedEnterpriseRoute
   '/gebruikers': typeof AuthenticatedGebruikersRoute
   '/inkoopfacturen': typeof AuthenticatedInkoopfacturenRouteWithChildren
+  '/jobs': typeof AuthenticatedJobsRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/mail': typeof AuthenticatedMailRouteWithChildren
   '/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
@@ -586,6 +593,7 @@ export interface FileRoutesByTo {
   '/enterprise': typeof AuthenticatedEnterpriseRoute
   '/gebruikers': typeof AuthenticatedGebruikersRoute
   '/inkoopfacturen': typeof AuthenticatedInkoopfacturenRouteWithChildren
+  '/jobs': typeof AuthenticatedJobsRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/mail': typeof AuthenticatedMailRouteWithChildren
   '/opname': typeof AuthenticatedOpnameRouteWithChildren
@@ -662,6 +670,7 @@ export interface FileRoutesById {
   '/_authenticated/enterprise': typeof AuthenticatedEnterpriseRoute
   '/_authenticated/gebruikers': typeof AuthenticatedGebruikersRoute
   '/_authenticated/inkoopfacturen': typeof AuthenticatedInkoopfacturenRouteWithChildren
+  '/_authenticated/jobs': typeof AuthenticatedJobsRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/mail': typeof AuthenticatedMailRouteWithChildren
   '/_authenticated/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
@@ -740,6 +749,7 @@ export interface FileRouteTypes {
     | '/enterprise'
     | '/gebruikers'
     | '/inkoopfacturen'
+    | '/jobs'
     | '/leads'
     | '/mail'
     | '/netqloud'
@@ -813,6 +823,7 @@ export interface FileRouteTypes {
     | '/enterprise'
     | '/gebruikers'
     | '/inkoopfacturen'
+    | '/jobs'
     | '/leads'
     | '/mail'
     | '/opname'
@@ -888,6 +899,7 @@ export interface FileRouteTypes {
     | '/_authenticated/enterprise'
     | '/_authenticated/gebruikers'
     | '/_authenticated/inkoopfacturen'
+    | '/_authenticated/jobs'
     | '/_authenticated/leads'
     | '/_authenticated/mail'
     | '/_authenticated/netqloud'
@@ -1097,6 +1109,13 @@ declare module '@tanstack/react-router' {
       path: '/leads'
       fullPath: '/leads'
       preLoaderRoute: typeof AuthenticatedLeadsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/jobs': {
+      id: '/_authenticated/jobs'
+      path: '/jobs'
+      fullPath: '/jobs'
+      preLoaderRoute: typeof AuthenticatedJobsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/inkoopfacturen': {
@@ -1659,6 +1678,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEnterpriseRoute: typeof AuthenticatedEnterpriseRoute
   AuthenticatedGebruikersRoute: typeof AuthenticatedGebruikersRoute
   AuthenticatedInkoopfacturenRoute: typeof AuthenticatedInkoopfacturenRouteWithChildren
+  AuthenticatedJobsRoute: typeof AuthenticatedJobsRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedMailRoute: typeof AuthenticatedMailRouteWithChildren
   AuthenticatedNetqloudRoute: typeof AuthenticatedNetqloudRouteWithChildren
@@ -1690,6 +1710,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGebruikersRoute: AuthenticatedGebruikersRoute,
   AuthenticatedInkoopfacturenRoute:
     AuthenticatedInkoopfacturenRouteWithChildren,
+  AuthenticatedJobsRoute: AuthenticatedJobsRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedMailRoute: AuthenticatedMailRouteWithChildren,
   AuthenticatedNetqloudRoute: AuthenticatedNetqloudRouteWithChildren,

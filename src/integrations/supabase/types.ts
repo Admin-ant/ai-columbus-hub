@@ -1222,6 +1222,48 @@ export type Database = {
           },
         ]
       }
+      cron_job_runs: {
+        Row: {
+          error: string | null
+          failed: number
+          finished_at: string | null
+          id: string
+          job_name: string
+          metadata: Json | null
+          processed: number
+          sent: number
+          skipped: number
+          started_at: string
+          status: string
+        }
+        Insert: {
+          error?: string | null
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          job_name: string
+          metadata?: Json | null
+          processed?: number
+          sent?: number
+          skipped?: number
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          error?: string | null
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          job_name?: string
+          metadata?: Json | null
+          processed?: number
+          sent?: number
+          skipped?: number
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
       expense_attachment_audit: {
         Row: {
           action: string
