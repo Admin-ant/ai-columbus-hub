@@ -877,7 +877,7 @@ function escapeHtml(s: string) {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
 
-function buildPrintableHtml(orgName: string, products: Product[], opts: LayoutOpts = { marginMm: 12, scale: 1 }) {
+function buildPrintableHtml(orgName: string, products: Product[], opts: LayoutOpts = DEFAULT_LAYOUT) {
   const now = new Date().toLocaleDateString("nl-NL", { day: "2-digit", month: "long", year: "numeric" });
   const m = Math.max(5, Math.min(30, opts.marginMm));
   const s = Math.max(0.6, Math.min(1.4, opts.scale));
