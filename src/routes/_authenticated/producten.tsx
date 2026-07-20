@@ -671,6 +671,18 @@ function PrintPreviewDialog({
     });
   }
 
+  // Bereken paginagroepen via een headless jsPDF/autoTable-pass, zodat de
+  // preview exact dezelfde paginabreuken toont als de uiteindelijke PDF.
+  const [pdfPages, setPdfPages] = useState<Product[][]>([[]]);
+  useEffect(() => {
+    let cancelled = false;
+    computePdfPageGroups(finalList, opts)
+      .then((pages) => { if (!cancelled) setPdfPages(pages.length ? pages : [[]]); })
+      .catch(() => { if (!cancelled) setPdfPages([finalList]); });
+    return () => { cancelled = true; };
+  }, [finalList, marginMm, scale]);
+
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl">
