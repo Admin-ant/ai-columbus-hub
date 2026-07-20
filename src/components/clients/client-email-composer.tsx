@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Mail, Send, Eye, EyeOff, RefreshCcw, Save, Plus, Loader2, ExternalLink } from "lucide-react";
+import { Mail, Send, Eye, EyeOff, RefreshCcw, Save, Plus, Loader2, ExternalLink, AlertTriangle } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
@@ -88,10 +91,29 @@ export function ClientEmailComposer({
   const [addFirstName, setAddFirstName] = useState("");
   const [addLastName, setAddLastName] = useState("");
   const [addSaving, setAddSaving] = useState(false);
+  const [fromEmail, setFromEmail] = useState<string | null>(null);
+  const [fromLoading, setFromLoading] = useState(false);
 
   const sendMailFn = useServerFn(sendMail);
 
   useEffect(() => { setLocalCompanyEmail(companyEmail ?? null); }, [companyEmail]);
+
+  useEffect(() => {
+    if (!open) return;
+    let ok = true;
+    setFromLoading(true);
+    (async () => {
+      const { data } = await supabase
+        .from("mail_settings")
+        .select("from_email")
+        .eq("organization_id", organizationId)
+        .maybeSingle();
+      if (!ok) return;
+      setFromEmail((data?.from_email as string | null) ?? null);
+      setFromLoading(false);
+    })();
+    return () => { ok = false; };
+  }, [open, organizationId]);
 
   const loadContacts = async () => {
     const { data } = await supabase
@@ -265,7 +287,13 @@ export function ClientEmailComposer({
   }
 
   async function sendNow() {
+    if (!fromEmail || !EMAIL_RE.test(fromEmail)) {
+      return toast.error("Geen geldig 'Van'-adres ingesteld — stel dit eerst in bij Mail-instellingen");
+    }
     if (toList.length === 0) return toast.error("Kies minstens één ontvanger");
+    if (invalidRecipients.length > 0) {
+      return toast.error(`Ongeldig e-mailadres: ${invalidRecipients.join(", ")}`);
+    }
     if (!finalSubject.trim()) return toast.error("Onderwerp is verplicht");
     setSending(true);
     try {
@@ -301,7 +329,21 @@ export function ClientEmailComposer({
   }
 
   const hasRecipients = recipientOptions.length > 0;
-  const canSend = toList.length > 0 && !sending;
+  const invalidRecipients = useMemo(() => toList.filter((e) => !EMAIL_RE.test(e)), [toList]);
+  const fromValid = !!fromEmail && EMAIL_RE.test(fromEmail);
+  const canSend =
+    toList.length > 0 &&
+    invalidRecipients.length === 0 &&
+    fromValid &&
+    !sending &&
+    !fromLoading;
+  const blockReason = !fromValid
+    ? "Geen geldig 'Van'-adres ingesteld"
+    : invalidRecipients.length > 0
+      ? `Ongeldig ontvangeradres: ${invalidRecipients.join(", ")}`
+      : toList.length === 0
+        ? "Kies minstens één ontvanger"
+        : null;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -321,6 +363,27 @@ export function ClientEmailComposer({
         </DialogHeader>
 
         <div className="space-y-4">
+          {!fromLoading && !fromValid && (
+            <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div className="flex-1">
+                <div className="font-medium">Geen geldig 'Van'-adres ingesteld</div>
+                <div className="text-xs text-destructive/90">
+                  Verzenden is uitgeschakeld tot je een afzenderadres instelt bij{" "}
+                  <Link to="/mail/settings" className="underline underline-offset-2">Mail-instellingen</Link>.
+                </div>
+              </div>
+            </div>
+          )}
+          {fromValid && invalidRecipients.length > 0 && (
+            <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div className="flex-1">
+                <div className="font-medium">Ongeldig ontvangeradres</div>
+                <div className="text-xs text-destructive/90 break-all">{invalidRecipients.join(", ")}</div>
+              </div>
+            </div>
+          )}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <Label>Aan {toList.length > 0 && <span className="text-xs text-muted-foreground">({toList.length} geselecteerd)</span>}</Label>
@@ -502,6 +565,7 @@ export function ClientEmailComposer({
               type="button"
               onClick={sendNow}
               disabled={!canSend}
+              title={blockReason ?? undefined}
             >
               {sending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
               Verstuur direct
