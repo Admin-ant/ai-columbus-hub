@@ -599,7 +599,7 @@ async function computePdfPageGroups(list: Product[], opts: LayoutOpts): Promise<
   if (list.length === 0) return [[]];
   const { default: jsPDF } = await import("jspdf");
   const { default: autoTable } = await import("jspdf-autotable");
-  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const doc = new jsPDF({ orientation: opts.orientation, unit: "mm", format: opts.format });
   const m = Math.max(5, Math.min(30, opts.marginMm));
   drawPdfHeader(doc, "", opts);
   const rowPage = new Array<number>(list.length).fill(1);
