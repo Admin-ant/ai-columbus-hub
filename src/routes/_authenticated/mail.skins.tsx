@@ -382,7 +382,23 @@ function MailSkinsPage() {
     await reload();
   }
 
-  const previewBody = `<div style="padding:32px;font-family:system-ui,sans-serif;color:#111;font-size:14px;line-height:1.6">
+  // Live preview controls
+  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
+  const [sampleSubject, setSampleSubject] = useState("Voorstel voor onze samenwerking");
+  const [sampleContact, setSampleContact] = useState("Jan Jansen");
+  const [sampleSender, setSampleSender] = useState("Team Columbus");
+  const [previewNonce, setPreviewNonce] = useState(0);
+
+  const renderTokens = useCallback(
+    (s: string) =>
+      s
+        .replace(/\{\{\s*contact_name\s*\}\}/g, sampleContact || "")
+        .replace(/\{\{\s*sender_name\s*\}\}/g, sampleSender || "")
+        .replace(/\{\{\s*subject\s*\}\}/g, sampleSubject || ""),
+    [sampleContact, sampleSender, sampleSubject],
+  );
+
+  const previewBodyTemplate = `<div style="padding:32px;font-family:system-ui,sans-serif;color:#111;font-size:14px;line-height:1.6">
     <p>Beste {{contact_name}},</p>
     <p>Dit is een voorbeeldbericht dat toont hoe je e-mail eruitziet met deze skin — header en footer worden automatisch toegevoegd.</p>
     <p>Met vriendelijke groet,<br/>{{sender_name}}</p>
