@@ -249,6 +249,13 @@ export const Route = createFileRoute("/api/public/hooks/outreach-sequence")({
           }
         }
 
+        if (runId) {
+          await supabaseAdmin.from("cron_job_runs").update({
+            status: failed > 0 && sent === 0 ? "error" : "ok",
+            finished_at: new Date().toISOString(),
+            processed: targets.length, sent, skipped, failed,
+          } as never).eq("id", runId);
+        }
         return Response.json({ ok: true, processed: targets.length, sent, skipped, failed });
       },
     },
