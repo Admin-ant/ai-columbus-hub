@@ -1743,7 +1743,21 @@ export function CampaignFlowTab() {
                 />
               </div>
             )}
-            <div className="flex justify-end">
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setPreviewOpen(true)}
+                disabled={!previewBodyText}
+                title={
+                  previewBodyText
+                    ? "Bekijk hoe de mail eruitziet voor deze klant"
+                    : "Genereer eerst concepten of vul de scan in"
+                }
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                Preview mail
+              </Button>
               <Button
                 onClick={launchCampaign}
                 disabled={launching || selectedVariant === null}
