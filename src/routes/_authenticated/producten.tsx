@@ -901,16 +901,19 @@ function PrintPreviewDialog({
                   <div key={pageIdx} className="relative bg-white text-black shadow-md ring-1 ring-neutral-200"
                     style={{ width: `${pageWpx}px`, height: `${pageHpx}px`, padding: `${padPx}px` }}>
                     <div style={{ zoom: scale, height: "100%", display: "flex", flexDirection: "column" }}>
-                      {pageIdx === 0 && (
-                        <div className="flex items-end justify-between border-b pb-3">
-                          <div>
-                            <div className="text-2xl font-bold">Prijslijst</div>
-                            <div className="text-xs text-neutral-500">{orgName}{orgName ? " — " : ""}{now}</div>
+                      {hf.showHeader && (() => {
+                        const ctx = { page: pageIdx + 1, pages: pages.length, org: orgName, date: now, title: hf.title, count: finalList.length };
+                        return (
+                          <div className="flex items-end justify-between border-b pb-2">
+                            <div>
+                              <div className="text-xl font-bold">{resolveTemplate(hf.title, ctx)}</div>
+                              {hf.headerLeft && <div className="text-[11px] text-neutral-500">{resolveTemplate(hf.headerLeft, ctx)}</div>}
+                            </div>
+                            {hf.headerRight && <div className="text-[11px] text-neutral-400">{resolveTemplate(hf.headerRight, ctx)}</div>}
                           </div>
-                          <div className="text-xs text-neutral-400">{finalList.length} artikelen</div>
-                        </div>
-                      )}
-                      <table className={`${pageIdx === 0 ? "mt-4" : ""} w-full border-collapse text-[12px]`}>
+                        );
+                      })()}
+                      <table className={`${hf.showHeader ? "mt-3" : ""} w-full border-collapse text-[12px]`}>
                         <thead>
                           <tr className="bg-slate-800 text-white">
                             <th className="w-8 px-2 py-1.5"></th>
@@ -946,10 +949,15 @@ function PrintPreviewDialog({
                           })}
                         </tbody>
                       </table>
-                      <div className="mt-auto flex items-center justify-between pt-3 text-[10px] text-neutral-400">
-                        <span>{pageIdx === pages.length - 1 ? "Alleen geselecteerde rijen worden geëxporteerd" : ""}</span>
-                        <span>Pagina {pageIdx + 1} / {pages.length}</span>
-                      </div>
+                      {hf.showFooter && (() => {
+                        const ctx = { page: pageIdx + 1, pages: pages.length, org: orgName, date: now, title: hf.title, count: finalList.length };
+                        return (
+                          <div className="mt-auto flex items-center justify-between pt-2 text-[10px] text-neutral-400">
+                            <span>{resolveTemplate(hf.footerLeft, ctx)}</span>
+                            <span>{resolveTemplate(hf.footerRight, ctx)}</span>
+                          </div>
+                        );
+                      })()}
                     </div>
                     {/* page-break indicator */}
                     {pageIdx < pages.length - 1 && (
