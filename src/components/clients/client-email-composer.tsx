@@ -142,8 +142,15 @@ export function ClientEmailComposer({
     (async () => {
       const list = await loadContacts();
       if (!ok) return;
-      const primary = list.find((c) => c.is_primary) ?? list[0];
-      const initial = draft?.to ?? defaultTo ?? primary?.email ?? localCompanyEmail ?? "";
+      const withEmail = list.filter((c) => c.email);
+      const primary = withEmail.find((c) => c.is_primary) ?? withEmail[0];
+      // Bij meerdere contactpersonen wint het adres van de primaire
+      // contactpersoon van het (vaak generieke) bedrijfs-e-mailadres,
+      // ook wanneer de parent een defaultTo doorgeeft.
+      const preferContact = withEmail.length > 1 && !draft?.to;
+      const initial = draft?.to
+        ?? (preferContact ? primary?.email : (defaultTo ?? primary?.email ?? localCompanyEmail))
+        ?? "";
       setToList(initial ? [initial] : []);
     })();
     return () => { ok = false; };
