@@ -209,6 +209,8 @@ function AgendaPage() {
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+
 
   async function load() {
     if (!currentOrganizationId) {
