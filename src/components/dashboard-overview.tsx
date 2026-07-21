@@ -39,6 +39,15 @@ import {
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import {
   PERIODS,
   periodRange,
   type PeriodKey,
@@ -132,8 +141,39 @@ export function DashboardOverview({
 }) {
   const [k, setK] = useState<Kpis>(EMPTY);
   const [loading, setLoading] = useState(true);
+  const [apptOpen, setApptOpen] = useState(false);
+  const [apptList, setApptList] = useState<Array<{ id: string; title: string | null; starts_at: string; ends_at: string | null; location: string | null; status: string | null; client_name: string | null }>>([]);
+  const [apptLoading, setApptLoading] = useState(false);
 
   const range = useMemo(() => periodRange(period), [period]);
+
+  useEffect(() => {
+    if (!apptOpen || !organizationId) return;
+    setApptLoading(true);
+    (async () => {
+      const nowIso = new Date().toISOString();
+      const { data } = await supabase
+        .from("appointments")
+        .select("id,title,starts_at,ends_at,location,status,clients(name)")
+        .eq("organization_id", organizationId)
+        .neq("status", "cancelled")
+        .gte("starts_at", nowIso)
+        .order("starts_at", { ascending: true })
+        .limit(25);
+      setApptList(
+        (data ?? []).map((r: any) => ({
+          id: r.id,
+          title: r.title,
+          starts_at: r.starts_at,
+          ends_at: r.ends_at,
+          location: r.location,
+          status: r.status,
+          client_name: r.clients?.name ?? null,
+        })),
+      );
+      setApptLoading(false);
+    })();
+  }, [apptOpen, organizationId]);
 
 
   useEffect(() => {
@@ -489,9 +529,10 @@ export function DashboardOverview({
 
             {/* Afspraken */}
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <Link
-                to="/agenda"
-                className="group block rounded-lg border bg-card p-4 text-left transition hover:border-primary/50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 lg:col-span-2"
+              <button
+                type="button"
+                onClick={() => setApptOpen(true)}
+                className="group block w-full rounded-lg border bg-card p-4 text-left transition hover:border-primary/50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 lg:col-span-2"
               >
                 <div className="flex items-center justify-between">
                   <div className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -512,11 +553,11 @@ export function DashboardOverview({
                       <ArrowRight className="h-4 w-4 opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-60" />
                     </div>
                     <div className="mt-1 text-xs text-muted-foreground">
-                      {k.todayAppointments} vandaag · bekijk agenda
+                      {k.todayAppointments} vandaag · klik voor overzicht
                     </div>
                   </>
                 )}
-              </Link>
+              </button>
             </div>
 
 
@@ -611,6 +652,67 @@ export function DashboardOverview({
           </>
         )}
       </div>
+      <Dialog open={apptOpen} onOpenChange={setApptOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Aankomende afspraken</DialogTitle>
+            <DialogDescription>
+              Snel overzicht van de eerstvolgende afspraken.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto divide-y">
+            {apptLoading ? (
+              <div className="space-y-2 py-3">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            ) : apptList.length === 0 ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                Geen aankomende afspraken.
+              </div>
+            ) : (
+              apptList.map((a) => {
+                const start = new Date(a.starts_at);
+                const end = a.ends_at ? new Date(a.ends_at) : null;
+                const dateStr = start.toLocaleDateString("nl-NL", {
+                  weekday: "short",
+                  day: "2-digit",
+                  month: "short",
+                });
+                const timeStr = `${start.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}${end ? ` – ${end.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}` : ""}`;
+                return (
+                  <div key={a.id} className="flex items-start gap-3 py-3">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md bg-violet-500/10 text-violet-600 dark:text-violet-400">
+                      <CalendarDays className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">
+                        {a.title || "Afspraak"}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {dateStr} · {timeStr}
+                        {a.client_name ? ` · ${a.client_name}` : ""}
+                        {a.location ? ` · ${a.location}` : ""}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setApptOpen(false)}>
+              Sluiten
+            </Button>
+            <Button asChild>
+              <Link to="/agenda" onClick={() => setApptOpen(false)}>
+                Naar agenda
+              </Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </TooltipProvider>
   );
 }
