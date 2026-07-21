@@ -31,6 +31,9 @@ import { APPT_LOCALES, normalizeLocale } from "@/lib/appointment-i18n";
 
 export const Route = createFileRoute("/_authenticated/agenda")({
   head: () => ({ meta: [{ title: "Agenda" }] }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    view: s.view === "upcoming" ? ("upcoming" as const) : undefined,
+  }),
   component: AgendaPage,
 });
 
