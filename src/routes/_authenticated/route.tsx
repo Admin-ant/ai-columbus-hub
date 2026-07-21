@@ -5,6 +5,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { useAppointmentReminders } from "@/hooks/use-appointment-reminders";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthenticatedLayout() {
   const { user, loading } = useAuth();
   const { t } = useTranslation();
+  useAppointmentReminders();
 
   if (loading) {
     return (

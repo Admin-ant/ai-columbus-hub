@@ -1,0 +1,2 @@
+ALTER TABLE public.appointments ADD COLUMN IF NOT EXISTS reminder_minutes integer;
+ALTER TABLE public.appointments ADD CONSTRAINT appointments_reminder_minutes_check CHECK (reminder_minutes IS NULL OR (reminder_minutes >= 0 AND reminder_minutes <= 20160));

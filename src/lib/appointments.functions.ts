@@ -82,6 +82,7 @@ const AppointmentSchema = z.object({
   attendee_name: z.string().max(200).optional().nullable(),
   attendee_email: z.string().email().optional().nullable().or(z.literal("")),
   locale: z.enum(["nl", "en", "de"]).optional().default("nl"),
+  reminder_minutes: z.number().int().min(0).max(20160).nullable().optional(),
 });
 
 export const createAppointment = createServerFn({ method: "POST" })
@@ -100,6 +101,7 @@ export const createAppointment = createServerFn({ method: "POST" })
       attendee_name: data.attendee_name || null,
       attendee_email: data.attendee_email || null,
       locale: data.locale ?? "nl",
+      reminder_minutes: data.reminder_minutes ?? null,
       created_by: context.userId,
     };
     const { data: created, error } = await context.supabase
