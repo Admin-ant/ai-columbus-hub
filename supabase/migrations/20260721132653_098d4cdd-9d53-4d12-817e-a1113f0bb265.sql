@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Authenticated can read cron runs" ON public.cron_job_runs;
