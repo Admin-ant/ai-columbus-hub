@@ -12,6 +12,7 @@ import {
   Info,
   Inbox,
   ArrowRight,
+  CalendarDays,
 } from "lucide-react";
 import {
   ResponsiveContainer,
