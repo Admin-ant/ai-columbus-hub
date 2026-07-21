@@ -448,6 +448,40 @@ export const getRecordingAudioUrl = createServerFn({ method: "POST" })
     };
   });
 
+/* ============================================================ delete */
+
+export const deleteCallRecording = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: rec, error: readErr } = await supabase
+      .from("call_recordings" as never)
+      .select("id, audio_path")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (readErr) throw new Error(readErr.message);
+    if (!rec) throw new Error("Opname niet gevonden");
+    const r = rec as unknown as { id: string; audio_path: string | null };
+
+    const { error: delErr } = await supabase
+      .from("call_recordings" as never)
+      .delete()
+      .eq("id", data.id);
+    if (delErr) throw new Error(delErr.message);
+
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const paths: string[] = [];
+      if (r.audio_path) paths.push(r.audio_path);
+      const { data: listed } = await supabaseAdmin.storage.from("call-recordings").list(r.id);
+      if (Array.isArray(listed)) for (const f of listed) paths.push(`${r.id}/${f.name}`);
+      if (paths.length > 0) await supabaseAdmin.storage.from("call-recordings").remove(paths);
+    } catch { /* ignore storage cleanup errors */ }
+
+    return { ok: true as const };
+  });
+
 /* ============================================================ rules CRUD */
 
 export type CallRecorderRule = {
