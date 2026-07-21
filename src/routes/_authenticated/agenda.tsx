@@ -444,6 +444,30 @@ function AgendaPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[220px] max-w-md">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Zoek op klant, locatie, titel of deelnemer…"
+            className="h-8 w-full rounded-md border bg-background px-3 pr-8 text-xs outline-none focus:ring-2 focus:ring-brand/40"
+            aria-label="Zoek afspraken"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-muted"
+              aria-label="Wis zoekopdracht"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+
         {(
           [
             { k: "upcoming", label: "Komende" },
