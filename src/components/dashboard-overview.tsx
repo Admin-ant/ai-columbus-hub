@@ -141,8 +141,39 @@ export function DashboardOverview({
 }) {
   const [k, setK] = useState<Kpis>(EMPTY);
   const [loading, setLoading] = useState(true);
+  const [apptOpen, setApptOpen] = useState(false);
+  const [apptList, setApptList] = useState<Array<{ id: string; title: string | null; starts_at: string; ends_at: string | null; location: string | null; status: string | null; client_name: string | null }>>([]);
+  const [apptLoading, setApptLoading] = useState(false);
 
   const range = useMemo(() => periodRange(period), [period]);
+
+  useEffect(() => {
+    if (!apptOpen || !organizationId) return;
+    setApptLoading(true);
+    (async () => {
+      const nowIso = new Date().toISOString();
+      const { data } = await supabase
+        .from("appointments")
+        .select("id,title,starts_at,ends_at,location,status,clients(name)")
+        .eq("organization_id", organizationId)
+        .neq("status", "cancelled")
+        .gte("starts_at", nowIso)
+        .order("starts_at", { ascending: true })
+        .limit(25);
+      setApptList(
+        (data ?? []).map((r: any) => ({
+          id: r.id,
+          title: r.title,
+          starts_at: r.starts_at,
+          ends_at: r.ends_at,
+          location: r.location,
+          status: r.status,
+          client_name: r.clients?.name ?? null,
+        })),
+      );
+      setApptLoading(false);
+    })();
+  }, [apptOpen, organizationId]);
 
 
   useEffect(() => {
