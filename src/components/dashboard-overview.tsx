@@ -652,6 +652,67 @@ export function DashboardOverview({
           </>
         )}
       </div>
+      <Dialog open={apptOpen} onOpenChange={setApptOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Aankomende afspraken</DialogTitle>
+            <DialogDescription>
+              Snel overzicht van de eerstvolgende afspraken.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto divide-y">
+            {apptLoading ? (
+              <div className="space-y-2 py-3">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            ) : apptList.length === 0 ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                Geen aankomende afspraken.
+              </div>
+            ) : (
+              apptList.map((a) => {
+                const start = new Date(a.starts_at);
+                const end = a.ends_at ? new Date(a.ends_at) : null;
+                const dateStr = start.toLocaleDateString("nl-NL", {
+                  weekday: "short",
+                  day: "2-digit",
+                  month: "short",
+                });
+                const timeStr = `${start.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}${end ? ` – ${end.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}` : ""}`;
+                return (
+                  <div key={a.id} className="flex items-start gap-3 py-3">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md bg-violet-500/10 text-violet-600 dark:text-violet-400">
+                      <CalendarDays className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">
+                        {a.title || "Afspraak"}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {dateStr} · {timeStr}
+                        {a.client_name ? ` · ${a.client_name}` : ""}
+                        {a.location ? ` · ${a.location}` : ""}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setApptOpen(false)}>
+              Sluiten
+            </Button>
+            <Button asChild>
+              <Link to="/agenda" onClick={() => setApptOpen(false)}>
+                Naar agenda
+              </Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </TooltipProvider>
   );
 }
