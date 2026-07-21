@@ -49,6 +49,7 @@ import {
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { useLeadsFunnelVisible } from "@/hooks/use-leads-funnel-visible";
+import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 type NavItem = {
