@@ -487,6 +487,39 @@ export function DashboardOverview({
               />
             </div>
 
+            {/* Afspraken */}
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Link
+                to="/agenda"
+                className="group block rounded-lg border bg-card p-4 text-left transition hover:border-primary/50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 lg:col-span-2"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Aankomende afspraken
+                  </div>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-violet-500/10 text-violet-600 dark:text-violet-400">
+                    <CalendarDays className="h-4 w-4" />
+                  </div>
+                </div>
+                {loading ? (
+                  <Skeleton className="mt-2 h-7 w-24" />
+                ) : (
+                  <>
+                    <div className="mt-2 flex items-center justify-between">
+                      <div className="text-2xl font-bold tabular-nums">
+                        {k.upcomingAppointments}
+                      </div>
+                      <ArrowRight className="h-4 w-4 opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-60" />
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {k.todayAppointments} vandaag · bekijk agenda
+                    </div>
+                  </>
+                )}
+              </Link>
+            </div>
+
+
             {/* Charts */}
             <div className="grid gap-3 lg:grid-cols-3">
               <div className="rounded-lg border bg-card p-4 lg:col-span-2">
