@@ -152,8 +152,23 @@ export function DashboardOverview({
   const [k, setK] = useState<Kpis>(EMPTY);
   const [loading, setLoading] = useState(true);
   const [apptOpen, setApptOpen] = useState(false);
-  const [apptList, setApptList] = useState<Array<{ id: string; title: string | null; starts_at: string; ends_at: string | null; location: string | null; status: string | null; client_name: string | null }>>([]);
+  type ApptRow = {
+    id: string;
+    title: string | null;
+    description: string | null;
+    starts_at: string;
+    ends_at: string | null;
+    location: string | null;
+    status: string | null;
+    attendee_name: string | null;
+    attendee_email: string | null;
+    client_id: string | null;
+    client_name: string | null;
+    client_phone: string | null;
+  };
+  const [apptList, setApptList] = useState<ApptRow[]>([]);
   const [apptLoading, setApptLoading] = useState(false);
+  const [selectedAppt, setSelectedAppt] = useState<ApptRow | null>(null);
 
   const range = useMemo(() => periodRange(period), [period]);
 
