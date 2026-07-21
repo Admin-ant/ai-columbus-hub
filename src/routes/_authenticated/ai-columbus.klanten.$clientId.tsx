@@ -969,3 +969,76 @@ function Stat({ label, value, accent = "" }: { label: string; value: string; acc
     </Card>
   );
 }
+
+function ClientNotesCard({ client, onUpdated }: { client: ClientRow; onUpdated: (notes: string) => void }) {
+  const [value, setValue] = useState<string>(client.notes ?? "");
+  const [newNote, setNewNote] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { setValue(client.notes ?? ""); }, [client.id, client.notes]);
+
+  async function save(next: string) {
+    setSaving(true);
+    const { error } = await supabase.from("clients").update({ notes: next }).eq("id", client.id);
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    onUpdated(next);
+    toast.success("Notities opgeslagen");
+  }
+
+  async function appendNote() {
+    const t = newNote.trim();
+    if (!t) return;
+    const stamp = new Date().toLocaleString("nl-NL", { dateStyle: "short", timeStyle: "short" });
+    const entry = `[${stamp}] ${t}`;
+    const next = value ? `${value}\n\n${entry}` : entry;
+    setValue(next);
+    setNewNote("");
+    await save(next);
+  }
+
+  return (
+    <Card className="md:col-span-2">
+      <CardHeader>
+        <CardTitle className="text-base">Notities</CardTitle>
+        <CardDescription>Voeg snel een nieuwe notitie toe of bewerk het volledige veld.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <textarea
+            value={newNote}
+            onChange={(e) => setNewNote(e.target.value)}
+            placeholder="Nieuwe notitie…"
+            rows={3}
+            className="w-full rounded-md border border-input bg-background p-2 text-sm"
+          />
+          <div className="flex justify-end">
+            <Button size="sm" onClick={appendNote} disabled={saving || !newNote.trim()}>
+              <Plus className="mr-1 h-4 w-4" /> Toevoegen
+            </Button>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <div className="text-xs font-medium text-muted-foreground">Alle notities</div>
+          <textarea
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            rows={8}
+            className="w-full rounded-md border border-input bg-background p-2 text-sm whitespace-pre-wrap"
+            placeholder="Nog geen notities."
+          />
+          <div className="flex justify-end gap-2">
+            <Button size="sm" variant="outline" onClick={() => setValue(client.notes ?? "")} disabled={saving}>
+              Herstellen
+            </Button>
+            <Button size="sm" onClick={() => save(value)} disabled={saving || value === (client.notes ?? "")}>
+              {saving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
+              Opslaan
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
