@@ -297,7 +297,7 @@ function AgendaPage() {
       map.set(key, arr);
     }
     return Array.from(map.entries());
-  }, [items, scope, selectedDay, statusFilter]);
+  }, [items, clients, scope, selectedDay, statusFilter, query]);
 
   const monthGrid = useMemo(() => {
     const y = month.getFullYear();
