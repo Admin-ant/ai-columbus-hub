@@ -27,6 +27,7 @@ import { useWorkspace } from "@/hooks/use-workspace";
 import {
   createCallRecording, processCallRecording, finalizeCallRecording,
   listCallRecordings, quickCreateLead, quickCreateClient, getRecordingAudioUrl,
+  deleteCallRecording,
 } from "@/lib/call-recorder.functions";
 import { exportCallRecordingPdf, exportCallRecordingsBundle } from "@/lib/call-recording-pdf";
 import { splitAudioIntoChunks } from "@/lib/wav-encoder";
@@ -109,6 +110,8 @@ function OpnamePage() {
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [historyFilter, setHistoryFilter] = useState<"all" | "current">("all");
   const [detailOpen, setDetailOpen] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<HistoryRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -125,6 +128,7 @@ function OpnamePage() {
   const processRec = useServerFn(processCallRecording);
   const finalizeRec = useServerFn(finalizeCallRecording);
   const listRec = useServerFn(listCallRecordings);
+  const deleteRec = useServerFn(deleteCallRecording);
   const createLead = useServerFn(quickCreateLead);
   const createClient = useServerFn(quickCreateClient);
 
@@ -779,6 +783,14 @@ function OpnamePage() {
                           >
                             <Download className="mr-1 h-3 w-3" /> PDF
                           </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                            onClick={(e) => { e.stopPropagation(); setConfirmDelete(h); }}
+                          >
+                            <Trash2 className="mr-1 h-3 w-3" /> Verwijderen
+                          </Button>
                         </div>
                       </div>
                     )}
@@ -789,6 +801,42 @@ function OpnamePage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!confirmDelete} onOpenChange={(o) => { if (!o && !deleting) setConfirmDelete(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Opname verwijderen?</DialogTitle>
+          </DialogHeader>
+          <div className="text-sm text-muted-foreground">
+            Weet je zeker dat je "{confirmDelete?.title ?? "Gesprek"}" definitief wilt verwijderen? Het transcript, verslag en audiobestand worden verwijderd. Dit kan niet ongedaan worden gemaakt.
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDelete(null)} disabled={deleting}>Annuleren</Button>
+            <Button
+              variant="destructive"
+              disabled={deleting}
+              onClick={async () => {
+                if (!confirmDelete) return;
+                setDeleting(true);
+                try {
+                  await deleteRec({ data: { id: confirmDelete.id } });
+                  toast.success("Opname verwijderd");
+                  setHistory((prev) => prev.filter((r) => r.id !== confirmDelete.id));
+                  if (detailOpen === confirmDelete.id) setDetailOpen(null);
+                  setConfirmDelete(null);
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : "Verwijderen mislukt");
+                } finally {
+                  setDeleting(false);
+                }
+              }}
+            >
+              {deleting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verwijderen…</> : <><Trash2 className="mr-2 h-4 w-4" /> Verwijderen</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       <QuickLeadDialog
         open={newLeadOpen}
