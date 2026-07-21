@@ -110,6 +110,8 @@ function OpnamePage() {
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [historyFilter, setHistoryFilter] = useState<"all" | "current">("all");
   const [detailOpen, setDetailOpen] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<HistoryRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
