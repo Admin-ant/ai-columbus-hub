@@ -690,10 +690,11 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
                           value={l.description}
                           onChange={(e) => {
                             const val = e.target.value;
-                            const n = [...lines];
+                            let n = [...lines];
                             const match = products.find(
                               (p) => p.name.toLowerCase() === val.toLowerCase(),
                             );
+                            const prevDesc = l.description?.trim() ?? "";
                             n[i] = match
                               ? {
                                   ...l,
@@ -703,6 +704,16 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
                                   quantity: l.quantity || 1,
                                 }
                               : { ...l, description: val };
+                            // Verwijder een eventueel eerder auto-toegevoegde opstartkosten-regel
+                            // die bij het vorige product hoorde, zodat we niet stapelen.
+                            if (prevDesc) {
+                              const prevSetupDesc = `Eenmalige opstartkosten — ${prevDesc}`.toLowerCase();
+                              n = n.filter(
+                                (row, idx) =>
+                                  idx === i ||
+                                  row.description.trim().toLowerCase() !== prevSetupDesc,
+                              );
+                            }
                             // Voeg automatisch een regel toe met eenmalige opstartkosten
                             if (match && match.setup_fee_cents > 0) {
                               const setupDesc = `Eenmalige opstartkosten — ${match.name}`;
