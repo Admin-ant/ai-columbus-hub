@@ -48,6 +48,16 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { toast } from "sonner";
+import { MapPin, User, Mail, Phone, Clock, X as XIcon } from "lucide-react";
+import {
   PERIODS,
   periodRange,
   type PeriodKey,
