@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { sanitizeSkinHtml, sanitizeColor, sanitizeImageUrl } from "@/lib/skin-sanitize";
+// Note: skin-sanitize pulls in isomorphic-dompurify (jsdom) which is not
+// Worker-safe at module init. Import lazily inside handlers that need it.
 
 async function sendViaResend(opts: {
   from: string;
@@ -326,6 +327,9 @@ export const sendTemplateTestEmail = createServerFn({ method: "POST" })
     const subject = `[TEST] ${renderTokensServer(data.subject, sample)}`;
     const bodyRendered = renderTokensServer(data.body, sample);
 
+    const { sanitizeSkinHtml, sanitizeColor, sanitizeImageUrl } = await import(
+      "@/lib/skin-sanitize"
+    );
     const bgColor = sanitizeColor(data.background_color ?? null) ?? "#ffffff";
     const bgImg = sanitizeImageUrl(data.background_image_url ?? null) ?? "";
     const safeHeader = sanitizeSkinHtml(data.header_html ?? "");
