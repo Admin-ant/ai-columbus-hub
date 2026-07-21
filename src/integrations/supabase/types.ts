@@ -84,6 +84,7 @@ export type Database = {
           locale: string
           location: string | null
           organization_id: string
+          reminder_minutes: number | null
           reschedule_note: string | null
           reschedule_requested_at: string | null
           starts_at: string
@@ -109,6 +110,7 @@ export type Database = {
           locale?: string
           location?: string | null
           organization_id: string
+          reminder_minutes?: number | null
           reschedule_note?: string | null
           reschedule_requested_at?: string | null
           starts_at: string
@@ -134,6 +136,7 @@ export type Database = {
           locale?: string
           location?: string | null
           organization_id?: string
+          reminder_minutes?: number | null
           reschedule_note?: string | null
           reschedule_requested_at?: string | null
           starts_at?: string
