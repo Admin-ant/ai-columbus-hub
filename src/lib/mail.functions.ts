@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { sanitizeSkinHtml, sanitizeColor, sanitizeImageUrl } from "@/lib/skin-sanitize";
+// Note: skin-sanitize pulls in isomorphic-dompurify (jsdom) which is not
+// Worker-safe at module init. Import lazily inside handlers that need it.
 
 async function sendViaResend(opts: {
   from: string;
