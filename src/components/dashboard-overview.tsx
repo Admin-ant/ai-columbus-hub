@@ -48,6 +48,16 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { toast } from "sonner";
+import { MapPin, User, Mail, Phone, Clock, X as XIcon } from "lucide-react";
+import {
   PERIODS,
   periodRange,
   type PeriodKey,
@@ -142,8 +152,23 @@ export function DashboardOverview({
   const [k, setK] = useState<Kpis>(EMPTY);
   const [loading, setLoading] = useState(true);
   const [apptOpen, setApptOpen] = useState(false);
-  const [apptList, setApptList] = useState<Array<{ id: string; title: string | null; starts_at: string; ends_at: string | null; location: string | null; status: string | null; client_name: string | null }>>([]);
+  type ApptRow = {
+    id: string;
+    title: string | null;
+    description: string | null;
+    starts_at: string;
+    ends_at: string | null;
+    location: string | null;
+    status: string | null;
+    attendee_name: string | null;
+    attendee_email: string | null;
+    client_id: string | null;
+    client_name: string | null;
+    client_phone: string | null;
+  };
+  const [apptList, setApptList] = useState<ApptRow[]>([]);
   const [apptLoading, setApptLoading] = useState(false);
+  const [selectedAppt, setSelectedAppt] = useState<ApptRow | null>(null);
 
   const range = useMemo(() => periodRange(period), [period]);
 
@@ -154,7 +179,7 @@ export function DashboardOverview({
       const nowIso = new Date().toISOString();
       const { data } = await supabase
         .from("appointments")
-        .select("id,title,starts_at,ends_at,location,status,clients(name)")
+        .select("id,title,description,starts_at,ends_at,location,status,attendee_name,attendee_email,client_id,clients(name,phone)")
         .eq("organization_id", organizationId)
         .neq("status", "cancelled")
         .gte("starts_at", nowIso)
@@ -164,11 +189,16 @@ export function DashboardOverview({
         (data ?? []).map((r: any) => ({
           id: r.id,
           title: r.title,
+          description: r.description,
           starts_at: r.starts_at,
           ends_at: r.ends_at,
           location: r.location,
           status: r.status,
+          attendee_name: r.attendee_name,
+          attendee_email: r.attendee_email,
+          client_id: r.client_id,
           client_name: r.clients?.name ?? null,
+          client_phone: r.clients?.phone ?? null,
         })),
       );
       setApptLoading(false);
@@ -682,7 +712,12 @@ export function DashboardOverview({
                 });
                 const timeStr = `${start.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}${end ? ` – ${end.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}` : ""}`;
                 return (
-                  <div key={a.id} className="flex items-start gap-3 py-3">
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => setSelectedAppt(a)}
+                    className="flex w-full items-start gap-3 py-3 text-left transition hover:bg-muted/50 focus:outline-none focus:bg-muted/50 rounded-md px-2 -mx-2"
+                  >
                     <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md bg-violet-500/10 text-violet-600 dark:text-violet-400">
                       <CalendarDays className="h-4 w-4" />
                     </div>
@@ -696,7 +731,8 @@ export function DashboardOverview({
                         {a.location ? ` · ${a.location}` : ""}
                       </div>
                     </div>
-                  </div>
+                    <ArrowRight className="mt-3 h-4 w-4 text-muted-foreground/60" />
+                  </button>
                 );
               })
             )}
@@ -713,6 +749,166 @@ export function DashboardOverview({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <Sheet open={!!selectedAppt} onOpenChange={(o) => !o && setSelectedAppt(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+          {selectedAppt && (() => {
+            const a = selectedAppt;
+            const start = new Date(a.starts_at);
+            const end = a.ends_at ? new Date(a.ends_at) : null;
+            const dateStr = start.toLocaleDateString("nl-NL", {
+              weekday: "long",
+              day: "2-digit",
+              month: "long",
+              year: "numeric",
+            });
+            const timeStr = `${start.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}${end ? ` – ${end.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}` : ""}`;
+            const statusLabel: Record<string, string> = {
+              scheduled: "Gepland",
+              confirmed: "Bevestigd",
+              cancelled: "Geannuleerd",
+              completed: "Voltooid",
+            };
+            const mapsUrl = a.location
+              ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.location)}`
+              : null;
+            async function cancelAppt() {
+              if (!confirm("Weet je zeker dat je deze afspraak wilt annuleren?")) return;
+              const { error } = await supabase
+                .from("appointments")
+                .update({ status: "cancelled" })
+                .eq("id", a.id);
+              if (error) {
+                toast.error(error.message);
+                return;
+              }
+              toast.success("Afspraak geannuleerd");
+              setApptList((prev) => prev.filter((x) => x.id !== a.id));
+              setSelectedAppt(null);
+            }
+            return (
+              <>
+                <SheetHeader>
+                  <SheetTitle>{a.title || "Afspraak"}</SheetTitle>
+                  <SheetDescription>
+                    {dateStr} · {timeStr}
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="mt-4 space-y-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
+                      {statusLabel[a.status ?? ""] ?? a.status ?? "Onbekend"}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2">
+                      <Clock className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <div>{dateStr}</div>
+                        <div className="text-muted-foreground">{timeStr}</div>
+                      </div>
+                    </div>
+                    {a.location && (
+                      <div className="flex items-start gap-2">
+                        <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                        <a
+                          href={mapsUrl!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline"
+                        >
+                          {a.location}
+                        </a>
+                      </div>
+                    )}
+                    {a.client_name && (
+                      <div className="flex items-start gap-2">
+                        <User className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                        <div>
+                          {a.client_id ? (
+                            <Link
+                              to="/ai-columbus/klanten/$clientId"
+                              params={{ clientId: a.client_id }}
+                              onClick={() => {
+                                setSelectedAppt(null);
+                                setApptOpen(false);
+                              }}
+                              className="hover:underline"
+                            >
+                              {a.client_name}
+                            </Link>
+                          ) : (
+                            a.client_name
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {(a.attendee_name || a.attendee_email) && (
+                      <div className="flex items-start gap-2">
+                        <User className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <div>{a.attendee_name || a.attendee_email}</div>
+                          {a.attendee_name && a.attendee_email && (
+                            <div className="text-muted-foreground">{a.attendee_email}</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {a.description && (
+                    <div>
+                      <div className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Omschrijving
+                      </div>
+                      <p className="whitespace-pre-wrap text-sm">{a.description}</p>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-2 pt-2">
+                    {a.attendee_email && (
+                      <Button asChild variant="outline" size="sm">
+                        <a href={`mailto:${a.attendee_email}`}>
+                          <Mail className="mr-1.5 h-4 w-4" /> Mail
+                        </a>
+                      </Button>
+                    )}
+                    {a.client_phone && (
+                      <Button asChild variant="outline" size="sm">
+                        <a href={`tel:${a.client_phone}`}>
+                          <Phone className="mr-1.5 h-4 w-4" /> Bel
+                        </a>
+                      </Button>
+                    )}
+                    {mapsUrl && (
+                      <Button asChild variant="outline" size="sm">
+                        <a href={mapsUrl} target="_blank" rel="noopener noreferrer">
+                          <MapPin className="mr-1.5 h-4 w-4" /> Route
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <SheetFooter className="mt-6 flex-col gap-2 sm:flex-row">
+                  {a.status !== "cancelled" && (
+                    <Button variant="destructive" size="sm" onClick={cancelAppt}>
+                      <XIcon className="mr-1.5 h-4 w-4" /> Annuleren
+                    </Button>
+                  )}
+                  <Button asChild size="sm">
+                    <Link
+                      to="/agenda"
+                      onClick={() => {
+                        setSelectedAppt(null);
+                        setApptOpen(false);
+                      }}
+                    >
+                      Open in agenda
+                    </Link>
+                  </Button>
+                </SheetFooter>
+              </>
+            );
+          })()}
+        </SheetContent>
+      </Sheet>
     </TooltipProvider>
   );
 }
