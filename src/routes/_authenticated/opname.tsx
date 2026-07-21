@@ -287,12 +287,44 @@ function OpnamePage() {
     const up = await supabase.storage.from("call-recordings").upload(path, blob, { contentType: mime, upsert: true });
     if (up.error) throw new Error(`Upload mislukt: ${up.error.message}`);
 
-    setLastAudio({ path, mime, duration });
-    await runProcess(id, path, mime, duration);
+    let chunks: AudioChunk[] | undefined;
+
+    if (duration > CHUNK_SECONDS) {
+      setRecState("uploading");
+      setChunkProgress({ current: 1, total: Math.ceil(duration / CHUNK_SECONDS) });
+      const split = await splitAudioIntoChunks(blob, CHUNK_SECONDS);
+      if (split.error) {
+        throw new Error(`Opname kon niet worden opgesplitst: ${split.error}`);
+      }
+      const chunkPaths: AudioChunk[] = [];
+      for (let i = 0; i < split.chunks.length; i++) {
+        setChunkProgress({ current: i + 1, total: split.chunks.length });
+        const chunkPath = `${currentOrganizationId}/${id}_chunk_${i}.wav`;
+        const chunk = split.chunks[i];
+        const upChunk = await supabase.storage.from("call-recordings").upload(chunkPath, chunk, { contentType: "audio/wav", upsert: true });
+        if (upChunk.error) throw new Error(`Upload deel ${i + 1} mislukt: ${upChunk.error.message}`);
+        chunkPaths.push({ path: chunkPath, mime: "audio/wav" });
+      }
+      chunks = chunkPaths;
+      setChunkProgress(null);
+    }
+
+    setLastAudio({ path, mime, duration, chunks });
+    await runProcess(id, path, mime, duration, chunks);
   }
 
-  async function runProcess(id: string, path: string, mime: string, duration: number) {
+  function parseChunkProgress(stage: string | null) {
+    const match = stage?.match(/transcribing_chunk_(\d+)_(\d+)/);
+    if (match) {
+      setChunkProgress({ current: Number(match[1]), total: Number(match[2]) });
+    } else {
+      setChunkProgress(null);
+    }
+  }
+
+  async function runProcess(id: string, path: string, mime: string, duration: number, chunks?: AudioChunk[]) {
     setRecState("transcribing");
+    setChunkProgress(chunks && chunks.length > 1 ? { current: 1, total: chunks.length } : null);
     // Poll progress in background
     const poll = setInterval(async () => {
       const { data: rp } = await supabase
@@ -301,12 +333,22 @@ function OpnamePage() {
         .eq("id", id)
         .maybeSingle();
       const row = rp as unknown as { progress_stage: string | null; status: string } | null;
-      if (row?.progress_stage === "analyzing") setRecState((s) => (s === "transcribing" ? "analyzing" : s));
+      parseChunkProgress(row?.progress_stage ?? null);
+      if (row?.progress_stage?.startsWith("analyzing")) setRecState((s) => (s === "transcribing" ? "analyzing" : s));
     }, 1500);
 
     try {
-      await processRec({ data: { recording_id: id, audio_path: path, audio_mime: mime, duration_seconds: duration } });
+      await processRec({
+        data: {
+          recording_id: id,
+          audio_path: path,
+          audio_mime: mime,
+          duration_seconds: duration,
+          audio_chunks: chunks,
+        },
+      });
       clearInterval(poll);
+      setChunkProgress(null);
       // Load review data
       const { data: rd } = await supabase
         .from("call_recordings" as never)
@@ -326,14 +368,23 @@ function OpnamePage() {
     } catch (e) {
       clearInterval(poll);
       const msg = e instanceof Error ? e.message : String(e);
-      setErrorMsg(msg); setRecState("error"); toast.error(msg);
+      setErrorMsg(humanizeError(msg));
+      setRecState("error");
+      toast.error(humanizeError(msg));
     }
   }
 
   async function retryProcess() {
     if (!recordingId || !lastAudio) return;
     setErrorMsg(null);
-    await runProcess(recordingId, lastAudio.path, lastAudio.mime, lastAudio.duration);
+    await runProcess(recordingId, lastAudio.path, lastAudio.mime, lastAudio.duration, lastAudio.chunks);
+  }
+
+  function humanizeError(msg: string): string {
+    if (msg.includes("input_too_large") || msg.includes("too large") || msg.includes("te groot")) {
+      return "De opname is te lang om in één keer te transcriberen. We splitsen automatisch in delen. Probeer het opnieuw.";
+    }
+    return msg;
   }
 
   async function finalize() {
