@@ -27,6 +27,7 @@ import { useWorkspace } from "@/hooks/use-workspace";
 import {
   createCallRecording, processCallRecording, finalizeCallRecording,
   listCallRecordings, quickCreateLead, quickCreateClient, getRecordingAudioUrl,
+  deleteCallRecording,
 } from "@/lib/call-recorder.functions";
 import { exportCallRecordingPdf, exportCallRecordingsBundle } from "@/lib/call-recording-pdf";
 import { splitAudioIntoChunks } from "@/lib/wav-encoder";
