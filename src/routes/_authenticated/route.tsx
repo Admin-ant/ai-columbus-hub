@@ -15,6 +15,7 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthenticatedLayout() {
   const { user, loading } = useAuth();
   const { t } = useTranslation();
+  useAppointmentReminders();
 
   if (loading) {
     return (

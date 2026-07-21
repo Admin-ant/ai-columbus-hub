@@ -52,6 +52,7 @@ type Appointment = {
   reschedule_requested_at: string | null;
   reschedule_note: string | null;
   locale: string | null;
+  reminder_minutes: number | null;
   created_at: string;
 };
 
@@ -868,6 +869,7 @@ function AppointmentDialog({
   );
   const [sendNow, setSendNow] = useState(!initial);
   const [locale, setLocale] = useState<"nl" | "en" | "de">(normalizeLocale(initial?.locale));
+  const [reminderMinutes, setReminderMinutes] = useState<number | null>(initial?.reminder_minutes ?? 15);
   const [saving, setSaving] = useState(false);
 
   const selectedClient = clients.find((c) => c.id === clientId) ?? null;
@@ -928,6 +930,7 @@ function AppointmentDialog({
       attendee_name: attendeeName.trim() || null,
       attendee_email: attendeeEmail.trim() || null,
       locale,
+      reminder_minutes: reminderMinutes,
     };
     try {
       let id: string;
