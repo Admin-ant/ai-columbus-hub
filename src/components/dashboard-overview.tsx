@@ -154,6 +154,16 @@ export function DashboardOverview({
         .toISOString()
         .slice(0, 10);
 
+      const nowIso = now.toISOString();
+      const endOfTodayIso = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        23,
+        59,
+        59,
+      ).toISOString();
+
       const [
         leadsRes,
         invRes,
@@ -164,6 +174,8 @@ export function DashboardOverview({
         lostRes,
         newLeadsRes,
         stageRes,
+        upcomingApptRes,
+        todayApptRes,
       ] = await Promise.all([
         supabase
           .from("leads")
