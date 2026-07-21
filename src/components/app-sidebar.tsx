@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
@@ -39,6 +40,7 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
@@ -48,6 +50,7 @@ import {
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { useLeadsFunnelVisible } from "@/hooks/use-leads-funnel-visible";
+import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 type NavItem = {
@@ -178,12 +181,63 @@ const administratieSubItems: NavItem[] = [
   { title: "Producten & Prijzen", url: "/producten", icon: Package },
 ];
 
+function useUpcomingAppointmentsCount(organizationId: string | null) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!organizationId) {
+      setCount(0);
+      return;
+    }
+
+    const fetchCount = async () => {
+      const now = new Date().toISOString();
+      const { count: c, error } = await supabase
+        .from("appointments")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", organizationId)
+        .neq("status", "cancelled")
+        .gte("starts_at", now);
+
+      if (!error) {
+        setCount(c ?? 0);
+      }
+    };
+
+    fetchCount();
+
+    const channel = supabase
+      .channel("appointments-badge")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "appointments",
+          filter: `organization_id=eq.${organizationId}`,
+        },
+        fetchCount,
+      )
+      .subscribe();
+
+    const interval = setInterval(fetchCount, 60_000);
+
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
+  }, [organizationId]);
+
+  return count;
+}
+
 export function AppSidebar() {
   const { user, roles, hasRole, signOut } = useAuth();
   const { currentOrganization } = useWorkspace();
   const navigate = useNavigate();
   const currentPath = useRouterState({ select: (s) => s.location.pathname });
   const [leadsFunnelVisible] = useLeadsFunnelVisible();
+  const upcomingAppointments = useUpcomingAppointmentsCount(currentOrganization?.id ?? null);
 
   const visibleAdmin = adminItems.filter((i) => !i.requiredRole || hasRole(i.requiredRole));
   const initials = (user?.email ?? "?").slice(0, 2).toUpperCase();
@@ -274,29 +328,34 @@ export function AppSidebar() {
                 <CollapsibleContent>
                   <SidebarGroupContent>
                     <SidebarMenu className="gap-1.5">
-                      {group.items.map((item) => (
-                        <SidebarMenuItem key={item.url}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <SidebarMenuButton
-                                asChild
-                                isActive={isActive(item.url)}
-                                className={`h-auto py-2.5 rounded-lg border ${tint.btn} ${isActive(item.url) ? tint.active : ""}`}
-                              >
-                                <Link to={item.url} className="flex items-center gap-2.5">
-                                  <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${tint.icon} ${isActive(item.url) ? tint.activeIcon : ""}`}>
-                                    <item.icon className="h-4 w-4" />
-                                  </span>
-                                  <span className="truncate font-medium">{item.title}</span>
-                                </Link>
-                              </SidebarMenuButton>
-                            </TooltipTrigger>
-                            <TooltipContent side="right" className="max-w-xs">
-                              <p>{item.title}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </SidebarMenuItem>
-                      ))}
+                        {group.items.map((item) => (
+                          <SidebarMenuItem key={item.url}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <SidebarMenuButton
+                                  asChild
+                                  isActive={isActive(item.url)}
+                                  className={`h-auto py-2.5 rounded-lg border ${tint.btn} ${isActive(item.url) ? tint.active : ""}`}
+                                >
+                                  <Link to={item.url} className="flex items-center gap-2.5">
+                                    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${tint.icon} ${isActive(item.url) ? tint.activeIcon : ""}`}>
+                                      <item.icon className="h-4 w-4" />
+                                    </span>
+                                    <span className="truncate font-medium">{item.title}</span>
+                                  </Link>
+                                </SidebarMenuButton>
+                              </TooltipTrigger>
+                              <TooltipContent side="right" className="max-w-xs">
+                                <p>{item.title}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            {item.url === "/agenda" && upcomingAppointments > 0 && (
+                              <SidebarMenuBadge className="bg-primary text-primary-foreground rounded-full px-1.5 shadow-sm group-data-[collapsible=icon]:flex">
+                                {upcomingAppointments}
+                              </SidebarMenuBadge>
+                            )}
+                          </SidebarMenuItem>
+                        ))}
                     </SidebarMenu>
                   </SidebarGroupContent>
                 </CollapsibleContent>
