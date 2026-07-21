@@ -132,6 +132,11 @@ function MailPage() {
       ),
   });
   if (hasChildMatch) return <Outlet />;
+  return <MailInbox />;
+}
+
+function MailInbox() {
+
 
   const { currentOrganizationId, currentOrganization } = useWorkspace();
   const { clientId } = Route.useSearch();
