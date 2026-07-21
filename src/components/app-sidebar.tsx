@@ -237,6 +237,7 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const currentPath = useRouterState({ select: (s) => s.location.pathname });
   const [leadsFunnelVisible] = useLeadsFunnelVisible();
+  const upcomingAppointments = useUpcomingAppointmentsCount(currentOrganization?.id ?? null);
 
   const visibleAdmin = adminItems.filter((i) => !i.requiredRole || hasRole(i.requiredRole));
   const initials = (user?.email ?? "?").slice(0, 2).toUpperCase();
