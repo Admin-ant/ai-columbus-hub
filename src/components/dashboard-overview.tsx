@@ -168,14 +168,17 @@ export function DashboardOverview({
   };
   const [apptList, setApptList] = useState<ApptRow[]>([]);
   const [apptLoading, setApptLoading] = useState(false);
+  const [apptLoadingMore, setApptLoadingMore] = useState(false);
+  const [apptHasMore, setApptHasMore] = useState(true);
   const [selectedAppt, setSelectedAppt] = useState<ApptRow | null>(null);
+  const APPT_PAGE_SIZE = 25;
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const range = useMemo(() => periodRange(period), [period]);
 
-  useEffect(() => {
-    if (!apptOpen || !organizationId) return;
-    setApptLoading(true);
-    (async () => {
+  const fetchAppts = useCallback(
+    async (from: number): Promise<ApptRow[]> => {
+      if (!organizationId) return [];
       const nowIso = new Date().toISOString();
       const { data } = await supabase
         .from("appointments")
@@ -184,26 +187,62 @@ export function DashboardOverview({
         .neq("status", "cancelled")
         .gte("starts_at", nowIso)
         .order("starts_at", { ascending: true })
-        .limit(25);
-      setApptList(
-        (data ?? []).map((r: any) => ({
-          id: r.id,
-          title: r.title,
-          description: r.description,
-          starts_at: r.starts_at,
-          ends_at: r.ends_at,
-          location: r.location,
-          status: r.status,
-          attendee_name: r.attendee_name,
-          attendee_email: r.attendee_email,
-          client_id: r.client_id,
-          client_name: r.clients?.name ?? null,
-          client_phone: r.clients?.phone ?? null,
-        })),
-      );
+        .range(from, from + APPT_PAGE_SIZE - 1);
+      return (data ?? []).map((r: any) => ({
+        id: r.id,
+        title: r.title,
+        description: r.description,
+        starts_at: r.starts_at,
+        ends_at: r.ends_at,
+        location: r.location,
+        status: r.status,
+        attendee_name: r.attendee_name,
+        attendee_email: r.attendee_email,
+        client_id: r.client_id,
+        client_name: r.clients?.name ?? null,
+        client_phone: r.clients?.phone ?? null,
+      }));
+    },
+    [organizationId],
+  );
+
+  useEffect(() => {
+    if (!apptOpen || !organizationId) return;
+    setApptLoading(true);
+    setApptHasMore(true);
+    (async () => {
+      const rows = await fetchAppts(0);
+      setApptList(rows);
+      setApptHasMore(rows.length === APPT_PAGE_SIZE);
       setApptLoading(false);
     })();
-  }, [apptOpen, organizationId]);
+  }, [apptOpen, organizationId, fetchAppts]);
+
+  const loadMoreAppts = useCallback(async () => {
+    if (apptLoadingMore || apptLoading || !apptHasMore) return;
+    setApptLoadingMore(true);
+    const rows = await fetchAppts(apptList.length);
+    setApptList((prev) => {
+      const seen = new Set(prev.map((r) => r.id));
+      return [...prev, ...rows.filter((r) => !seen.has(r.id))];
+    });
+    setApptHasMore(rows.length === APPT_PAGE_SIZE);
+    setApptLoadingMore(false);
+  }, [apptHasMore, apptList.length, apptLoading, apptLoadingMore, fetchAppts]);
+
+  useEffect(() => {
+    if (!apptOpen || !sentinelRef.current) return;
+    const el = sentinelRef.current;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) void loadMoreAppts();
+      },
+      { root: el.parentElement, rootMargin: "100px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [apptOpen, loadMoreAppts, apptList.length]);
+
 
 
   useEffect(() => {
