@@ -69,6 +69,8 @@ type Kpis = {
   wonCount: number;
   lostCount: number;
   newLeads: number;
+  upcomingAppointments: number;
+  todayAppointments: number;
   stageCounts: Record<string, number>;
   monthly: { label: string; omzet: number }[];
 };
