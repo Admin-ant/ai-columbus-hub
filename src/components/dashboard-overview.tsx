@@ -498,9 +498,10 @@ export function DashboardOverview({
 
             {/* Afspraken */}
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <Link
-                to="/agenda"
-                className="group block rounded-lg border bg-card p-4 text-left transition hover:border-primary/50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 lg:col-span-2"
+              <button
+                type="button"
+                onClick={() => setApptOpen(true)}
+                className="group block w-full rounded-lg border bg-card p-4 text-left transition hover:border-primary/50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 lg:col-span-2"
               >
                 <div className="flex items-center justify-between">
                   <div className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -521,11 +522,11 @@ export function DashboardOverview({
                       <ArrowRight className="h-4 w-4 opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-60" />
                     </div>
                     <div className="mt-1 text-xs text-muted-foreground">
-                      {k.todayAppointments} vandaag · bekijk agenda
+                      {k.todayAppointments} vandaag · klik voor overzicht
                     </div>
                   </>
                 )}
-              </Link>
+              </button>
             </div>
 
 
