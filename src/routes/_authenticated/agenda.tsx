@@ -246,6 +246,17 @@ function AgendaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentOrganizationId, wsLoading]);
 
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  useEffect(() => {
+    if (search.view === "upcoming") {
+      setScope("upcoming");
+      setStatusFilter("all");
+      setSelectedDay(null);
+      navigate({ search: {}, replace: true });
+    }
+  }, [search.view, navigate]);
+
   const grouped = useMemo(() => {
     const now = Date.now();
     const filtered = items.filter((a) => {
