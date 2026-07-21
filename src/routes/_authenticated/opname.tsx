@@ -256,6 +256,7 @@ function OpnamePage() {
       mr.stop();
     });
     setRecState("uploading");
+    setChunkProgress(null);
     cleanupStream();
     try {
       const blob = await stopped;
@@ -263,7 +264,9 @@ function OpnamePage() {
       await uploadAndProcess(blob, finalDuration);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      setErrorMsg(msg); setRecState("error"); toast.error(msg);
+      setErrorMsg(humanizeError(msg));
+      setRecState("error");
+      toast.error(humanizeError(msg));
     }
   }
 
