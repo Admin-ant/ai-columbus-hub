@@ -418,7 +418,7 @@ function OpnamePage() {
   function reset() {
     setRecState("idle"); setDurationSec(0); setEditTranscript(""); setEditReport("");
     setEditTasks([]); setEditStage(null); setErrorMsg(null); setAudioLevel(0);
-    setRecordingId(null); setLastAudio(null);
+    setRecordingId(null); setLastAudio(null); setChunkProgress(null);
   }
 
   const isRecording = recState === "recording";
