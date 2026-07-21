@@ -209,6 +209,8 @@ function AgendaPage() {
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+
 
   async function load() {
     if (!currentOrganizationId) {
@@ -259,6 +261,8 @@ function AgendaPage() {
 
   const grouped = useMemo(() => {
     const now = Date.now();
+    const q = query.trim().toLowerCase();
+    const clientNameById = new Map(clients.map((c) => [c.id, c.name?.toLowerCase() ?? ""]));
     const filtered = items.filter((a) => {
       if (selectedDay) {
         if (localDateKey(a.starts_at) !== selectedDay) return false;
@@ -267,13 +271,19 @@ function AgendaPage() {
         if (scope === "upcoming" && t < now - 3600_000) return false;
         if (scope === "past" && t >= now - 3600_000) return false;
       }
-      if (statusFilter === "cancelled") return a.status === "cancelled";
-      if (statusFilter === "scheduled") return a.status !== "cancelled" && !a.invite_sent_at;
-      if (statusFilter === "sent") return a.status !== "cancelled" && !!a.invite_sent_at && !a.confirmed_at && !a.reschedule_requested_at;
-      if (statusFilter === "confirmed") return a.status !== "cancelled" && !!a.confirmed_at;
-      if (statusFilter === "reschedule") return a.status !== "cancelled" && !!a.reschedule_requested_at && !a.confirmed_at;
+      if (statusFilter === "cancelled" && a.status !== "cancelled") return false;
+      if (statusFilter === "scheduled" && !(a.status !== "cancelled" && !a.invite_sent_at)) return false;
+      if (statusFilter === "sent" && !(a.status !== "cancelled" && !!a.invite_sent_at && !a.confirmed_at && !a.reschedule_requested_at)) return false;
+      if (statusFilter === "confirmed" && !(a.status !== "cancelled" && !!a.confirmed_at)) return false;
+      if (statusFilter === "reschedule" && !(a.status !== "cancelled" && !!a.reschedule_requested_at && !a.confirmed_at)) return false;
+      if (q) {
+        const clientName = a.client_id ? clientNameById.get(a.client_id) ?? "" : "";
+        const hay = `${a.title ?? ""} ${a.location ?? ""} ${a.attendee_name ?? ""} ${a.attendee_email ?? ""} ${clientName}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
       return true;
     });
+
     const map = new Map<string, Appointment[]>();
     for (const a of filtered) {
       const key = new Date(a.starts_at).toLocaleDateString("nl-NL", {
@@ -287,7 +297,7 @@ function AgendaPage() {
       map.set(key, arr);
     }
     return Array.from(map.entries());
-  }, [items, scope, selectedDay, statusFilter]);
+  }, [items, clients, scope, selectedDay, statusFilter, query]);
 
   const monthGrid = useMemo(() => {
     const y = month.getFullYear();
@@ -434,6 +444,30 @@ function AgendaPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[220px] max-w-md">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Zoek op klant, locatie, titel of deelnemer…"
+            className="h-8 w-full rounded-md border bg-background px-3 pr-8 text-xs outline-none focus:ring-2 focus:ring-brand/40"
+            aria-label="Zoek afspraken"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-muted"
+              aria-label="Wis zoekopdracht"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+
         {(
           [
             { k: "upcoming", label: "Komende" },
