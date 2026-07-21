@@ -328,29 +328,34 @@ export function AppSidebar() {
                 <CollapsibleContent>
                   <SidebarGroupContent>
                     <SidebarMenu className="gap-1.5">
-                      {group.items.map((item) => (
-                        <SidebarMenuItem key={item.url}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <SidebarMenuButton
-                                asChild
-                                isActive={isActive(item.url)}
-                                className={`h-auto py-2.5 rounded-lg border ${tint.btn} ${isActive(item.url) ? tint.active : ""}`}
-                              >
-                                <Link to={item.url} className="flex items-center gap-2.5">
-                                  <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${tint.icon} ${isActive(item.url) ? tint.activeIcon : ""}`}>
-                                    <item.icon className="h-4 w-4" />
-                                  </span>
-                                  <span className="truncate font-medium">{item.title}</span>
-                                </Link>
-                              </SidebarMenuButton>
-                            </TooltipTrigger>
-                            <TooltipContent side="right" className="max-w-xs">
-                              <p>{item.title}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </SidebarMenuItem>
-                      ))}
+                        {group.items.map((item) => (
+                          <SidebarMenuItem key={item.url}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <SidebarMenuButton
+                                  asChild
+                                  isActive={isActive(item.url)}
+                                  className={`h-auto py-2.5 rounded-lg border ${tint.btn} ${isActive(item.url) ? tint.active : ""}`}
+                                >
+                                  <Link to={item.url} className="flex items-center gap-2.5">
+                                    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${tint.icon} ${isActive(item.url) ? tint.activeIcon : ""}`}>
+                                      <item.icon className="h-4 w-4" />
+                                    </span>
+                                    <span className="truncate font-medium">{item.title}</span>
+                                  </Link>
+                                </SidebarMenuButton>
+                              </TooltipTrigger>
+                              <TooltipContent side="right" className="max-w-xs">
+                                <p>{item.title}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            {item.url === "/agenda" && upcomingAppointments > 0 && (
+                              <SidebarMenuBadge className="bg-primary text-primary-foreground rounded-full px-1.5 shadow-sm group-data-[collapsible=icon]:flex">
+                                {upcomingAppointments}
+                              </SidebarMenuBadge>
+                            )}
+                          </SidebarMenuItem>
+                        ))}
                     </SidebarMenu>
                   </SidebarGroupContent>
                 </CollapsibleContent>
