@@ -181,6 +181,56 @@ const administratieSubItems: NavItem[] = [
   { title: "Producten & Prijzen", url: "/producten", icon: Package },
 ];
 
+function useUpcomingAppointmentsCount(organizationId: string | null) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!organizationId) {
+      setCount(0);
+      return;
+    }
+
+    const fetchCount = async () => {
+      const now = new Date().toISOString();
+      const { count: c, error } = await supabase
+        .from("appointments")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", organizationId)
+        .neq("status", "cancelled")
+        .gte("starts_at", now);
+
+      if (!error) {
+        setCount(c ?? 0);
+      }
+    };
+
+    fetchCount();
+
+    const channel = supabase
+      .channel("appointments-badge")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "appointments",
+          filter: `organization_id=eq.${organizationId}`,
+        },
+        fetchCount,
+      )
+      .subscribe();
+
+    const interval = setInterval(fetchCount, 60_000);
+
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
+  }, [organizationId]);
+
+  return count;
+}
+
 export function AppSidebar() {
   const { user, roles, hasRole, signOut } = useAuth();
   const { currentOrganization } = useWorkspace();
