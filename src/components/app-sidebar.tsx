@@ -350,8 +350,15 @@ export function AppSidebar() {
                               </TooltipContent>
                             </Tooltip>
                             {item.url === "/agenda" && upcomingAppointments > 0 && (
-                              <SidebarMenuBadge className="bg-primary text-primary-foreground rounded-full px-1.5 shadow-sm group-data-[collapsible=icon]:flex">
-                                {upcomingAppointments}
+                              <SidebarMenuBadge className="p-0 bg-transparent group-data-[collapsible=icon]:flex">
+                                <Link
+                                  to="/agenda"
+                                  search={{ view: "upcoming" }}
+                                  aria-label={`${upcomingAppointments} aankomende afspraken bekijken`}
+                                  className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-primary-foreground shadow-sm hover:bg-primary/90"
+                                >
+                                  {upcomingAppointments}
+                                </Link>
                               </SidebarMenuBadge>
                             )}
                           </SidebarMenuItem>

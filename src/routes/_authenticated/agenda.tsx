@@ -31,6 +31,9 @@ import { APPT_LOCALES, normalizeLocale } from "@/lib/appointment-i18n";
 
 export const Route = createFileRoute("/_authenticated/agenda")({
   head: () => ({ meta: [{ title: "Agenda" }] }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    view: s.view === "upcoming" ? ("upcoming" as const) : undefined,
+  }),
   component: AgendaPage,
 });
 
@@ -242,6 +245,17 @@ function AgendaPage() {
     if (!wsLoading) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentOrganizationId, wsLoading]);
+
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  useEffect(() => {
+    if (search.view === "upcoming") {
+      setScope("upcoming");
+      setStatusFilter("all");
+      setSelectedDay(null);
+      navigate({ search: {}, replace: true });
+    }
+  }, [search.view, navigate]);
 
   const grouped = useMemo(() => {
     const now = Date.now();
