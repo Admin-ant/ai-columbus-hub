@@ -1111,6 +1111,25 @@ function AppointmentDialog({
               Bepaalt de taal van de mail én de klantpagina (/afspraak/…). Wordt automatisch overgenomen uit klantvoorkeur.
             </p>
           </div>
+          <div className="space-y-1.5">
+            <Label>Herinnering (melding in de app)</Label>
+            <select
+              value={reminderMinutes ?? ""}
+              onChange={(e) => setReminderMinutes(e.target.value === "" ? null : Number(e.target.value))}
+              className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+            >
+              <option value="">Geen herinnering</option>
+              <option value="5">5 minuten van tevoren</option>
+              <option value="15">15 minuten van tevoren</option>
+              <option value="30">30 minuten van tevoren</option>
+              <option value="60">1 uur van tevoren</option>
+              <option value="120">2 uur van tevoren</option>
+              <option value="1440">1 dag van tevoren</option>
+            </select>
+            <p className="text-xs text-muted-foreground">
+              Je krijgt een pop-up in de app (en een browsermelding als je die toestaat) op het gekozen moment.
+            </p>
+          </div>
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
