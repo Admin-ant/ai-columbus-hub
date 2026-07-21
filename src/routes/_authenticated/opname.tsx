@@ -29,6 +29,9 @@ import {
   listCallRecordings, quickCreateLead, quickCreateClient, getRecordingAudioUrl,
 } from "@/lib/call-recorder.functions";
 import { exportCallRecordingPdf, exportCallRecordingsBundle } from "@/lib/call-recording-pdf";
+import { splitAudioIntoChunks } from "@/lib/wav-encoder";
+
+const CHUNK_SECONDS = 300; // 5 minutes per STT chunk
 
 export const Route = createFileRoute("/_authenticated/opname")({
   head: () => ({ meta: [{ title: "AI Gesprek Recorder" }] }),
