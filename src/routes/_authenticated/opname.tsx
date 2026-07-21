@@ -29,6 +29,9 @@ import {
   listCallRecordings, quickCreateLead, quickCreateClient, getRecordingAudioUrl,
 } from "@/lib/call-recorder.functions";
 import { exportCallRecordingPdf, exportCallRecordingsBundle } from "@/lib/call-recording-pdf";
+import { splitAudioIntoChunks } from "@/lib/wav-encoder";
+
+const CHUNK_SECONDS = 300; // 5 minutes per STT chunk
 
 export const Route = createFileRoute("/_authenticated/opname")({
   head: () => ({ meta: [{ title: "AI Gesprek Recorder" }] }),
@@ -39,6 +42,7 @@ type TargetKind = "lead" | "client";
 type Target = { kind: TargetKind; id: string; label: string; sublabel?: string };
 type RecState = "idle" | "recording" | "paused" | "uploading" | "transcribing" | "analyzing" | "review" | "finalizing" | "done" | "error";
 type Task = { title: string; body: string; due_in_days: number };
+type AudioChunk = { path: string; mime: string };
 type HistoryRow = Awaited<ReturnType<typeof listCallRecordings>>["rows"][number];
 
 const WORKFLOW_STAGES = [
@@ -99,7 +103,8 @@ function OpnamePage() {
   const [showPreview, setShowPreview] = useState(false);
 
   // Last processed context (for retry)
-  const [lastAudio, setLastAudio] = useState<{ path: string; mime: string; duration: number } | null>(null);
+  const [lastAudio, setLastAudio] = useState<{ path: string; mime: string; duration: number; chunks?: AudioChunk[] } | null>(null);
+  const [chunkProgress, setChunkProgress] = useState<{ current: number; total: number } | null>(null);
 
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [historyFilter, setHistoryFilter] = useState<"all" | "current">("all");
@@ -251,6 +256,7 @@ function OpnamePage() {
       mr.stop();
     });
     setRecState("uploading");
+    setChunkProgress(null);
     cleanupStream();
     try {
       const blob = await stopped;
@@ -258,7 +264,9 @@ function OpnamePage() {
       await uploadAndProcess(blob, finalDuration);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      setErrorMsg(msg); setRecState("error"); toast.error(msg);
+      setErrorMsg(humanizeError(msg));
+      setRecState("error");
+      toast.error(humanizeError(msg));
     }
   }
 
@@ -282,12 +290,44 @@ function OpnamePage() {
     const up = await supabase.storage.from("call-recordings").upload(path, blob, { contentType: mime, upsert: true });
     if (up.error) throw new Error(`Upload mislukt: ${up.error.message}`);
 
-    setLastAudio({ path, mime, duration });
-    await runProcess(id, path, mime, duration);
+    let chunks: AudioChunk[] | undefined;
+
+    if (duration > CHUNK_SECONDS) {
+      setRecState("uploading");
+      setChunkProgress({ current: 1, total: Math.ceil(duration / CHUNK_SECONDS) });
+      const split = await splitAudioIntoChunks(blob, CHUNK_SECONDS);
+      if (split.error) {
+        throw new Error(`Opname kon niet worden opgesplitst: ${split.error}`);
+      }
+      const chunkPaths: AudioChunk[] = [];
+      for (let i = 0; i < split.chunks.length; i++) {
+        setChunkProgress({ current: i + 1, total: split.chunks.length });
+        const chunkPath = `${currentOrganizationId}/${id}_chunk_${i}.wav`;
+        const chunk = split.chunks[i];
+        const upChunk = await supabase.storage.from("call-recordings").upload(chunkPath, chunk, { contentType: "audio/wav", upsert: true });
+        if (upChunk.error) throw new Error(`Upload deel ${i + 1} mislukt: ${upChunk.error.message}`);
+        chunkPaths.push({ path: chunkPath, mime: "audio/wav" });
+      }
+      chunks = chunkPaths;
+      setChunkProgress(null);
+    }
+
+    setLastAudio({ path, mime, duration, chunks });
+    await runProcess(id, path, mime, duration, chunks);
   }
 
-  async function runProcess(id: string, path: string, mime: string, duration: number) {
+  function parseChunkProgress(stage: string | null) {
+    const match = stage?.match(/transcribing_chunk_(\d+)_(\d+)/);
+    if (match) {
+      setChunkProgress({ current: Number(match[1]), total: Number(match[2]) });
+    } else {
+      setChunkProgress(null);
+    }
+  }
+
+  async function runProcess(id: string, path: string, mime: string, duration: number, chunks?: AudioChunk[]) {
     setRecState("transcribing");
+    setChunkProgress(chunks && chunks.length > 1 ? { current: 1, total: chunks.length } : null);
     // Poll progress in background
     const poll = setInterval(async () => {
       const { data: rp } = await supabase
@@ -296,12 +336,22 @@ function OpnamePage() {
         .eq("id", id)
         .maybeSingle();
       const row = rp as unknown as { progress_stage: string | null; status: string } | null;
-      if (row?.progress_stage === "analyzing") setRecState((s) => (s === "transcribing" ? "analyzing" : s));
+      parseChunkProgress(row?.progress_stage ?? null);
+      if (row?.progress_stage?.startsWith("analyzing")) setRecState((s) => (s === "transcribing" ? "analyzing" : s));
     }, 1500);
 
     try {
-      await processRec({ data: { recording_id: id, audio_path: path, audio_mime: mime, duration_seconds: duration } });
+      await processRec({
+        data: {
+          recording_id: id,
+          audio_path: path,
+          audio_mime: mime,
+          duration_seconds: duration,
+          audio_chunks: chunks,
+        },
+      });
       clearInterval(poll);
+      setChunkProgress(null);
       // Load review data
       const { data: rd } = await supabase
         .from("call_recordings" as never)
@@ -321,14 +371,23 @@ function OpnamePage() {
     } catch (e) {
       clearInterval(poll);
       const msg = e instanceof Error ? e.message : String(e);
-      setErrorMsg(msg); setRecState("error"); toast.error(msg);
+      setErrorMsg(humanizeError(msg));
+      setRecState("error");
+      toast.error(humanizeError(msg));
     }
   }
 
   async function retryProcess() {
     if (!recordingId || !lastAudio) return;
     setErrorMsg(null);
-    await runProcess(recordingId, lastAudio.path, lastAudio.mime, lastAudio.duration);
+    await runProcess(recordingId, lastAudio.path, lastAudio.mime, lastAudio.duration, lastAudio.chunks);
+  }
+
+  function humanizeError(msg: string): string {
+    if (msg.includes("input_too_large") || msg.includes("too large") || msg.includes("te groot")) {
+      return "De opname is te lang om in één keer te transcriberen. We splitsen automatisch in delen. Probeer het opnieuw.";
+    }
+    return msg;
   }
 
   async function finalize() {
@@ -359,7 +418,7 @@ function OpnamePage() {
   function reset() {
     setRecState("idle"); setDurationSec(0); setEditTranscript(""); setEditReport("");
     setEditTasks([]); setEditStage(null); setErrorMsg(null); setAudioLevel(0);
-    setRecordingId(null); setLastAudio(null);
+    setRecordingId(null); setLastAudio(null); setChunkProgress(null);
   }
 
   const isRecording = recState === "recording";
@@ -460,8 +519,8 @@ function OpnamePage() {
                     {recState === "idle" && "Klaar om op te nemen"}
                     {recState === "recording" && "Opnemen..."}
                     {recState === "paused" && "Gepauzeerd"}
-                    {recState === "uploading" && "Uploaden..."}
-                    {recState === "transcribing" && "Transcriberen..."}
+                    {recState === "uploading" && (chunkProgress ? `Uploaden deel ${chunkProgress.current} van ${chunkProgress.total}...` : "Uploaden...")}
+                    {recState === "transcribing" && (chunkProgress ? `Transcriberen deel ${chunkProgress.current} van ${chunkProgress.total}...` : "Transcriberen...")}
                     {recState === "analyzing" && "AI analyseert..."}
                     {recState === "review" && "Klaar voor review"}
                     {recState === "finalizing" && "Opslaan..."}

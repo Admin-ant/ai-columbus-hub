@@ -66,16 +66,51 @@ function extFromMime(mime: string): string {
   return "webm";
 }
 
+async function transcribeChunk(
+  blob: Blob,
+  apiKey: string,
+): Promise<string> {
+  const form = new FormData();
+  form.append("model", STT_MODEL);
+  form.append("language", "nl");
+  form.append("file", blob, "chunk.wav");
+  const sttRes = await fetch(LOVABLE_STT, {
+    method: "POST",
+    headers: { authorization: `Bearer ${apiKey}` },
+    body: form,
+  });
+  if (!sttRes.ok) {
+    const t = await sttRes.text();
+    throw new Error(`Transcriptie mislukt (${sttRes.status}): ${t.slice(0, 200)}`);
+  }
+  const json = (await sttRes.json()) as { text?: string };
+  return (json.text ?? "").trim();
+}
+
 export const processCallRecording = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z
       .object({
         recording_id: z.string().uuid(),
-        audio_path: z.string().min(1),
-        audio_mime: z.string().min(1),
+        audio_path: z.string().min(1).optional(),
+        audio_mime: z.string().min(1).optional(),
+        audio_chunks: z
+          .array(
+            z.object({
+              path: z.string().min(1),
+              mime: z.string().min(1),
+            }),
+          )
+          .optional(),
         duration_seconds: z.number().int().min(0).max(60 * 60 * 4),
       })
+      .refine(
+        (d) =>
+          d.audio_path ||
+          (d.audio_chunks && d.audio_chunks.length > 0),
+        { message: "Geen audio bestand of chunks opgegeven" },
+      )
       .parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -95,13 +130,20 @@ export const processCallRecording = createServerFn({ method: "POST" })
       workflow_stage: string | null; title: string | null;
     };
 
+    const chunks =
+      data.audio_chunks && data.audio_chunks.length > 0
+        ? data.audio_chunks
+        : data.audio_path
+          ? [{ path: data.audio_path, mime: data.audio_mime ?? "audio/webm" }]
+          : [];
+
     await supabase
       .from("call_recordings" as never)
       .update({
         status: "processing",
         progress_stage: "transcribing",
-        audio_path: data.audio_path,
-        audio_mime: data.audio_mime,
+        audio_path: data.audio_path ?? chunks[0]?.path,
+        audio_mime: data.audio_mime ?? chunks[0]?.mime,
         duration_seconds: data.duration_seconds,
         error: null,
       } as never)
@@ -109,26 +151,32 @@ export const processCallRecording = createServerFn({ method: "POST" })
 
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const dl = await supabaseAdmin.storage.from("call-recordings").download(data.audio_path);
-      if (dl.error || !dl.data) throw new Error(`Audio niet gevonden: ${dl.error?.message}`);
-      const blob = dl.data;
-      if (blob.size < 1024) throw new Error("Opname is leeg of te kort");
 
-      // 1. Transcribe
-      const form = new FormData();
-      form.append("model", STT_MODEL);
-      form.append("language", "nl");
-      form.append("file", blob, `opname.${extFromMime(data.audio_mime)}`);
-      const sttRes = await fetch(LOVABLE_STT, {
-        method: "POST",
-        headers: { authorization: `Bearer ${apiKey}` },
-        body: form,
-      });
-      if (!sttRes.ok) {
-        const t = await sttRes.text();
-        throw new Error(`Transcriptie mislukt (${sttRes.status}): ${t.slice(0, 200)}`);
+      let fullTranscript = "";
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        const dl = await supabaseAdmin.storage.from("call-recordings").download(chunk.path);
+        if (dl.error || !dl.data) {
+          throw new Error(`Audio-deel niet gevonden: ${dl.error?.message}`);
+        }
+        const blob = dl.data;
+        if (blob.size < 1024) {
+          throw new Error("Opname-deel is leeg of te kort");
+        }
+
+        const text = await transcribeChunk(blob, apiKey);
+        fullTranscript += (fullTranscript ? " " : "") + text;
+
+        await supabase
+          .from("call_recordings" as never)
+          .update({
+            progress_stage: `transcribing_chunk_${i + 1}_${chunks.length}`,
+            transcript: fullTranscript.trim(),
+          } as never)
+          .eq("id", rec.id);
       }
-      const transcript = (((await sttRes.json()) as { text?: string }).text ?? "").trim();
+
+      const transcript = fullTranscript.trim();
       if (!transcript) throw new Error("Geen tekst gedetecteerd in opname");
 
       await supabase
@@ -205,7 +253,7 @@ suggested_stage moet één van deze zijn: nieuwe, contact_opgenomen, op_afspraak
         } as never)
         .eq("id", rec.id);
 
-      return { ok: true, recording_id: rec.id };
+      return { ok: true, recording_id: rec.id, chunks: chunks.length };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       await supabase
