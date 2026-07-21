@@ -330,12 +330,8 @@ function ClientDetailPage() {
                 <div className="text-muted-foreground">{client.country || ""}</div>
               </CardContent>
             </Card>
-            {client.notes && (
-              <Card className="md:col-span-2">
-                <CardHeader><CardTitle className="text-base">Notities</CardTitle></CardHeader>
-                <CardContent className="whitespace-pre-wrap text-sm text-muted-foreground">{client.notes}</CardContent>
-              </Card>
-            )}
+            <ClientNotesCard client={client} onUpdated={(notes) => setClient({ ...client, notes })} />
+
           </div>
           <div className="mt-4 space-y-4">
             <ClientActivityHistory clientId={clientId} />
