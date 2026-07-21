@@ -775,7 +775,17 @@ export function DashboardOverview({
                 );
               })
             )}
+            {!apptLoading && apptList.length > 0 && (
+              <div ref={sentinelRef} className="py-3 text-center text-xs text-muted-foreground">
+                {apptLoadingMore
+                  ? "Meer laden…"
+                  : apptHasMore
+                    ? "Scroll voor meer"
+                    : "Alle afspraken geladen"}
+              </div>
+            )}
           </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setApptOpen(false)}>
               Sluiten
