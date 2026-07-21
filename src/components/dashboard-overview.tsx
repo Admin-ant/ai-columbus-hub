@@ -179,7 +179,7 @@ export function DashboardOverview({
       const nowIso = new Date().toISOString();
       const { data } = await supabase
         .from("appointments")
-        .select("id,title,starts_at,ends_at,location,status,clients(name)")
+        .select("id,title,description,starts_at,ends_at,location,status,attendee_name,attendee_email,client_id,clients(name,phone)")
         .eq("organization_id", organizationId)
         .neq("status", "cancelled")
         .gte("starts_at", nowIso)
@@ -189,11 +189,16 @@ export function DashboardOverview({
         (data ?? []).map((r: any) => ({
           id: r.id,
           title: r.title,
+          description: r.description,
           starts_at: r.starts_at,
           ends_at: r.ends_at,
           location: r.location,
           status: r.status,
+          attendee_name: r.attendee_name,
+          attendee_email: r.attendee_email,
+          client_id: r.client_id,
           client_name: r.clients?.name ?? null,
+          client_phone: r.clients?.phone ?? null,
         })),
       );
       setApptLoading(false);
