@@ -126,6 +126,7 @@ function OpnamePage() {
   const processRec = useServerFn(processCallRecording);
   const finalizeRec = useServerFn(finalizeCallRecording);
   const listRec = useServerFn(listCallRecordings);
+  const deleteRec = useServerFn(deleteCallRecording);
   const createLead = useServerFn(quickCreateLead);
   const createClient = useServerFn(quickCreateClient);
 
