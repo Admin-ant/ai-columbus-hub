@@ -802,6 +802,42 @@ function OpnamePage() {
         </CardContent>
       </Card>
 
+      <Dialog open={!!confirmDelete} onOpenChange={(o) => { if (!o && !deleting) setConfirmDelete(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Opname verwijderen?</DialogTitle>
+          </DialogHeader>
+          <div className="text-sm text-muted-foreground">
+            Weet je zeker dat je "{confirmDelete?.title ?? "Gesprek"}" definitief wilt verwijderen? Het transcript, verslag en audiobestand worden verwijderd. Dit kan niet ongedaan worden gemaakt.
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDelete(null)} disabled={deleting}>Annuleren</Button>
+            <Button
+              variant="destructive"
+              disabled={deleting}
+              onClick={async () => {
+                if (!confirmDelete) return;
+                setDeleting(true);
+                try {
+                  await deleteRec({ data: { id: confirmDelete.id } });
+                  toast.success("Opname verwijderd");
+                  setHistory((prev) => prev.filter((r) => r.id !== confirmDelete.id));
+                  if (detailOpen === confirmDelete.id) setDetailOpen(null);
+                  setConfirmDelete(null);
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : "Verwijderen mislukt");
+                } finally {
+                  setDeleting(false);
+                }
+              }}
+            >
+              {deleting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verwijderen…</> : <><Trash2 className="mr-2 h-4 w-4" /> Verwijderen</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
       <QuickLeadDialog
         open={newLeadOpen}
         onOpenChange={setNewLeadOpen}
