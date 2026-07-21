@@ -103,7 +103,8 @@ function OpnamePage() {
   const [showPreview, setShowPreview] = useState(false);
 
   // Last processed context (for retry)
-  const [lastAudio, setLastAudio] = useState<{ path: string; mime: string; duration: number } | null>(null);
+  const [lastAudio, setLastAudio] = useState<{ path: string; mime: string; duration: number; chunks?: AudioChunk[] } | null>(null);
+  const [chunkProgress, setChunkProgress] = useState<{ current: number; total: number } | null>(null);
 
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [historyFilter, setHistoryFilter] = useState<"all" | "current">("all");
