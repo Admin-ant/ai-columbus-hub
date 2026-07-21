@@ -335,6 +335,8 @@ export function DashboardOverview({
         wonCount,
         lostCount,
         newLeads: newLeadsRes.count ?? 0,
+        upcomingAppointments: upcomingApptRes.count ?? 0,
+        todayAppointments: todayApptRes.count ?? 0,
         stageCounts,
         monthly: monthly.map(({ label, omzet }) => ({ label, omzet })),
       });
