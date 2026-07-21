@@ -327,6 +327,9 @@ export const sendTemplateTestEmail = createServerFn({ method: "POST" })
     const subject = `[TEST] ${renderTokensServer(data.subject, sample)}`;
     const bodyRendered = renderTokensServer(data.body, sample);
 
+    const { sanitizeSkinHtml, sanitizeColor, sanitizeImageUrl } = await import(
+      "@/lib/skin-sanitize"
+    );
     const bgColor = sanitizeColor(data.background_color ?? null) ?? "#ffffff";
     const bgImg = sanitizeImageUrl(data.background_image_url ?? null) ?? "";
     const safeHeader = sanitizeSkinHtml(data.header_html ?? "");
