@@ -48,8 +48,8 @@ function formatWhen(iso: string) {
 }
 
 export function useAppointmentReminders() {
-  const { workspace } = useWorkspace();
-  const orgId = workspace?.organization_id ?? null;
+  const { currentOrganizationId } = useWorkspace();
+  const orgId = currentOrganizationId;
   const rowsRef = useRef<ReminderRow[]>([]);
   const permissionAsked = useRef(false);
 
