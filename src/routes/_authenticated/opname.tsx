@@ -783,6 +783,14 @@ function OpnamePage() {
                           >
                             <Download className="mr-1 h-3 w-3" /> PDF
                           </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                            onClick={(e) => { e.stopPropagation(); setConfirmDelete(h); }}
+                          >
+                            <Trash2 className="mr-1 h-3 w-3" /> Verwijderen
+                          </Button>
                         </div>
                       </div>
                     )}
