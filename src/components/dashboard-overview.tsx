@@ -12,6 +12,7 @@ import {
   Info,
   Inbox,
   ArrowRight,
+  CalendarDays,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -68,6 +69,8 @@ type Kpis = {
   wonCount: number;
   lostCount: number;
   newLeads: number;
+  upcomingAppointments: number;
+  todayAppointments: number;
   stageCounts: Record<string, number>;
   monthly: { label: string; omzet: number }[];
 };
@@ -86,6 +89,8 @@ const EMPTY: Kpis = {
   wonCount: 0,
   lostCount: 0,
   newLeads: 0,
+  upcomingAppointments: 0,
+  todayAppointments: 0,
   stageCounts: {},
   monthly: [],
 };
@@ -149,6 +154,16 @@ export function DashboardOverview({
         .toISOString()
         .slice(0, 10);
 
+      const nowIso = now.toISOString();
+      const endOfTodayIso = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        23,
+        59,
+        59,
+      ).toISOString();
+
       const [
         leadsRes,
         invRes,
@@ -159,6 +174,8 @@ export function DashboardOverview({
         lostRes,
         newLeadsRes,
         stageRes,
+        upcomingApptRes,
+        todayApptRes,
       ] = await Promise.all([
         supabase
           .from("leads")
@@ -223,6 +240,19 @@ export function DashboardOverview({
           .from("leads")
           .select("stage")
           .eq("organization_id", organizationId),
+        supabase
+          .from("appointments")
+          .select("id", { count: "exact", head: true })
+          .eq("organization_id", organizationId)
+          .neq("status", "cancelled")
+          .gte("starts_at", nowIso),
+        supabase
+          .from("appointments")
+          .select("id", { count: "exact", head: true })
+          .eq("organization_id", organizationId)
+          .neq("status", "cancelled")
+          .gte("starts_at", nowIso)
+          .lte("starts_at", endOfTodayIso),
       ]);
 
       let mrr = 0;
@@ -305,6 +335,8 @@ export function DashboardOverview({
         wonCount,
         lostCount,
         newLeads: newLeadsRes.count ?? 0,
+        upcomingAppointments: upcomingApptRes.count ?? 0,
+        todayAppointments: todayApptRes.count ?? 0,
         stageCounts,
         monthly: monthly.map(({ label, omzet }) => ({ label, omzet })),
       });
@@ -454,6 +486,39 @@ export function DashboardOverview({
                 info={`gewonnen / (gewonnen + verloren) × 100%. Gebaseerd op leads met stage 'gewonnen'/'klant' vs 'verloren', gewijzigd binnen '${range.label}'.`}
               />
             </div>
+
+            {/* Afspraken */}
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Link
+                to="/agenda"
+                className="group block rounded-lg border bg-card p-4 text-left transition hover:border-primary/50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 lg:col-span-2"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Aankomende afspraken
+                  </div>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-violet-500/10 text-violet-600 dark:text-violet-400">
+                    <CalendarDays className="h-4 w-4" />
+                  </div>
+                </div>
+                {loading ? (
+                  <Skeleton className="mt-2 h-7 w-24" />
+                ) : (
+                  <>
+                    <div className="mt-2 flex items-center justify-between">
+                      <div className="text-2xl font-bold tabular-nums">
+                        {k.upcomingAppointments}
+                      </div>
+                      <ArrowRight className="h-4 w-4 opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-60" />
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {k.todayAppointments} vandaag · bekijk agenda
+                    </div>
+                  </>
+                )}
+              </Link>
+            </div>
+
 
             {/* Charts */}
             <div className="grid gap-3 lg:grid-cols-3">
