@@ -519,8 +519,8 @@ function OpnamePage() {
                     {recState === "idle" && "Klaar om op te nemen"}
                     {recState === "recording" && "Opnemen..."}
                     {recState === "paused" && "Gepauzeerd"}
-                    {recState === "uploading" && "Uploaden..."}
-                    {recState === "transcribing" && "Transcriberen..."}
+                    {recState === "uploading" && (chunkProgress ? `Uploaden deel ${chunkProgress.current} van ${chunkProgress.total}...` : "Uploaden...")}
+                    {recState === "transcribing" && (chunkProgress ? `Transcriberen deel ${chunkProgress.current} van ${chunkProgress.total}...` : "Transcriberen...")}
                     {recState === "analyzing" && "AI analyseert..."}
                     {recState === "review" && "Klaar voor review"}
                     {recState === "finalizing" && "Opslaan..."}
