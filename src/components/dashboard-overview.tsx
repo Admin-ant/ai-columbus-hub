@@ -240,6 +240,19 @@ export function DashboardOverview({
           .from("leads")
           .select("stage")
           .eq("organization_id", organizationId),
+        supabase
+          .from("appointments")
+          .select("id", { count: "exact", head: true })
+          .eq("organization_id", organizationId)
+          .neq("status", "cancelled")
+          .gte("starts_at", nowIso),
+        supabase
+          .from("appointments")
+          .select("id", { count: "exact", head: true })
+          .eq("organization_id", organizationId)
+          .neq("status", "cancelled")
+          .gte("starts_at", nowIso)
+          .lte("starts_at", endOfTodayIso),
       ]);
 
       let mrr = 0;
