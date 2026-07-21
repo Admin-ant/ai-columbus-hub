@@ -42,6 +42,7 @@ type TargetKind = "lead" | "client";
 type Target = { kind: TargetKind; id: string; label: string; sublabel?: string };
 type RecState = "idle" | "recording" | "paused" | "uploading" | "transcribing" | "analyzing" | "review" | "finalizing" | "done" | "error";
 type Task = { title: string; body: string; due_in_days: number };
+type AudioChunk = { path: string; mime: string };
 type HistoryRow = Awaited<ReturnType<typeof listCallRecordings>>["rows"][number];
 
 const WORKFLOW_STAGES = [
