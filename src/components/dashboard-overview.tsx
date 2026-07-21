@@ -712,7 +712,12 @@ export function DashboardOverview({
                 });
                 const timeStr = `${start.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}${end ? ` – ${end.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}` : ""}`;
                 return (
-                  <div key={a.id} className="flex items-start gap-3 py-3">
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => setSelectedAppt(a)}
+                    className="flex w-full items-start gap-3 py-3 text-left transition hover:bg-muted/50 focus:outline-none focus:bg-muted/50 rounded-md px-2 -mx-2"
+                  >
                     <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md bg-violet-500/10 text-violet-600 dark:text-violet-400">
                       <CalendarDays className="h-4 w-4" />
                     </div>
@@ -726,7 +731,8 @@ export function DashboardOverview({
                         {a.location ? ` · ${a.location}` : ""}
                       </div>
                     </div>
-                  </div>
+                    <ArrowRight className="mt-3 h-4 w-4 text-muted-foreground/60" />
+                  </button>
                 );
               })
             )}
