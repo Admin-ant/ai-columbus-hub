@@ -89,6 +89,8 @@ const EMPTY: Kpis = {
   wonCount: 0,
   lostCount: 0,
   newLeads: 0,
+  upcomingAppointments: 0,
+  todayAppointments: 0,
   stageCounts: {},
   monthly: [],
 };
