@@ -1,51 +1,54 @@
-## Doel
+Probleem
+De AI Recorder in `/opname` stuurt de hele opname in één keer naar `https://ai.gateway.lovable.dev/v1/audio/transcriptions`. Bij een opname van 25:34 minuten krijgt de gebruiker een 400-fout:
 
-Automatische visual-regression test die controleert dat de PDF uit de preview-download en de PDF uit de e-mailflow **pixel-gelijk** zijn (of binnen een kleine tolerantie), zodat toekomstige wijzigingen aan één render-pad niet ongemerkt de andere laten afwijken.
+```
+Total number of tokens in instructions + audio is too large for this model
+```
 
-## Aanpak
+De STT-modellen hebben een maximum aan audio-tokens per request. De oplossing is de opname in korte, zelfstandige audiofragmenten te splitsen, elk fragment apart te transcriben en de resultaten aan elkaar te plakken.
 
-Playwright-test die in de app inlogt met de gemanagede Supabase-sessie, een bestaande factuur opent, beide PDF's genereert via de al bestaande renderers, elke pagina naar PNG rastert, en per pagina vergelijkt met `pixelmatch`. Baseline-snapshots worden opgeslagen; verschillen boven de drempel laten de test falen met een diff-afbeelding.
+Oplossing
 
-## Stappen
+1. Client-side: opname in WAV-fragmenten knippen
+   - Bewaar de hele opname zoals nu met `MediaRecorder`.
+   - Na `stop()` decodeer de blob met `AudioContext.decodeAudioData()`.
+   - Splits het gedecodeerde audio-buffer in fragmenten van maximaal 5 minuten (instelbaar, zie punt 4).
+   - Encodeer elk fragment naar een correct WAV-bestand (16-bit mono) via een zuivere JS-encoder, zodat we geen nieuwe native/wasm-afhankelijkheid nodig hebben.
+   - Upload elk fragment naar Supabase Storage onder `call-recordings/` met een suffix (`_chunk_0`, `_chunk_1`, etc.).
 
-1. **Test-fixture** — `tests/visual/invoice-pdf-parity.spec.ts`
-   - Start de dev server (al draaiend op :8080).
-   - Log in met de geïnjecteerde Supabase-sessie (localStorage + cookies zoals beschreven in browser-use).
-   - Navigeer naar een bekende factuur (via env `TEST_INVOICE_ID`, fallback: eerste factuur uit lijst).
-   - Voert twee `page.evaluate` calls uit die de bestaande renderers rechtstreeks aanroepen:
-     - Preview-download: `buildTemplatePdfBlob()` via een test-hook op `window` (zie stap 2).
-     - E-mail: dezelfde `renderInvoiceTemplatePdfBlob` — beide geven een `Blob` terug die als base64 naar Node wordt gestuurd.
-2. **Test-hook** — `src/routes/_authenticated/invoices.$invoiceId.tsx`
-   - Alleen in `import.meta.env.DEV`: `window.__invoicePdfTestHook = { renderPreview, renderEmail }`, beide teruggevend als `Blob`. Zo hoeft de test geen UI-knoppen te klikken en zit er geen productiecode-pad omheen.
-3. **PDF→PNG rasteriseren** — Node-kant met `pdfjs-dist` (`bun add -d pdfjs-dist pixelmatch pngjs`), elke pagina op 150 DPI, PNG buffers.
-4. **Vergelijken** — `pixelmatch` per pagina met `threshold: 0.1`. Metrieken: totaal-pixels, verschillende-pixels, ratio. Faalt als ratio > `0.5%` (aanpasbaar via env).
-5. **Artefacten** — bij falen wegschrijven onder `tests/visual/__artifacts__/invoice-pdf/`:
-   `preview-page-N.png`, `email-page-N.png`, `diff-page-N.png` — zodat je in de PR/log direct ziet waar het afwijkt.
-6. **Baseline-mode** — env `UPDATE_BASELINE=1` slaat de preview-PNG's op als baseline; standaard vergelijkt hij live preview vs. live email en heeft dus geen baseline nodig (beide worden per run gegenereerd).
-7. **Runner** — script `bun run test:visual:pdf` in `package.json` dat Playwright met alleen deze spec draait, zodat CI hem apart kan uitvoeren zonder de bestaande `tests/visual/theme.spec.ts` te raken.
+2. Server function: chunked transcription
+   - Wijzig `processCallRecording` in `src/lib/call-recorder.functions.ts` zodat het één of meer chunk-paths accepteert.
+   - Voor elke chunk:
+     - Download het fragment via `supabaseAdmin.storage`.
+     - POST naar `/v1/audio/transcriptions` met `model: openai/gpt-4o-mini-transcribe` en `language: nl`.
+     - Concateneer de resultaten met spaties/tussenruimte.
+   - Als één chunk faalt, sla de status op als error en toon een duidelijke melding; retry werkt op alle chunks.
+   - Analyseer vervolgens het samengevoegde transcript met de bestaande `google/gemini-2.5-flash` prompt.
 
-## Technische details
+3. UI/UX-aanpassingen in `src/routes/_authenticated/opname.tsx`
+   - Toon tijdens het uploaden/processor een voortgang: "Opname in delen verwerken (deel 2 van 5)".
+   - Bij een 400/input_too_large geen technische JSON meer tonen, maar een heldere melding: "Deze opname is te lang voor één transcriptie en wordt automatisch in delen verwerkt."
+   - Zorg dat retry een chunked retry doet, niet opnieuw de hele blob in één request stuurt.
 
-**Pagina-tellen mismatch**
-Als de twee PDF's een ander aantal pagina's hebben, faalt de test direct met een duidelijk bericht (verschillende pagina-tellen impliceren dat de rendering al afwijkt).
+4. Instelbare chunk-grootte
+   - Voeg een veld `call_recording_chunk_minutes` (default 5) toe aan de organisatie-instellingen of het regelscherm, zodat de gebruiker de chunkgrootte kan verhogen/verlagen indien nodig.
+   - De server valideert dat de waarde tussen 1 en 10 minuten ligt.
 
-**Dynamische inhoud**
-De renderers gebruiken `new Date()` alleen voor `issueStr` uit de factuur-data (niet uit `Date.now()`), dus twee runs zijn deterministisch. QR-codes / handtekeningen zijn deterministisch per factuur.
+5. Testen
+   - Voeg een unit-achtige check toe die controleert dat de WAV-encoder een geldig header produceert.
+   - Test in de preview met een opname van 10+ minuten (simuleren door een stil lang WAV-bestand of door de chunkgrootte tijdelijk te verkleinen).
 
-**Waarom `window.__invoicePdfTestHook`**
-De download- en e-mailrenderer zitten in verschillende componenten (`invoice-preview-dialog.tsx` clone-pad vs. `render-invoice-template-pdf.tsx`). Ze via de UI aanroepen zou dialogen en compose-flow openen; via de hook krijgen we allebei via één simpele call.
+Gewijzigde bestanden
+- `src/lib/call-recorder.functions.ts` (chunked transcription)
+- `src/routes/_authenticated/opname.tsx` (chunking, upload, progress UI)
+- `src/lib/wav-encoder.ts` (nieuw: pure JS WAV encoder)
+- `src/routes/_authenticated/opname.regels.tsx` (optioneel: chunk-minuten instelling)
 
-**Tolerantie**
-`0.5%` afwijking is genoeg om font-subpixel jitter tussen twee `html2canvas-pro` runs op te vangen zonder echte kleur/layout regressies te missen. Instelbaar via `PDF_DIFF_THRESHOLD`.
+Niet-gewijzigd
+- De analyse-prompt en taak/stage-logica blijft hetzelfde.
+- De opname-UI blijft functioneel hetzelfde, alleen wordt de progressie duidelijker.
 
-**Bestanden**
-- nieuw: `tests/visual/invoice-pdf-parity.spec.ts`
-- nieuw: `tests/visual/helpers/pdf-to-png.ts` (pdfjs-dist rasterizer)
-- gewijzigd: `src/routes/_authenticated/invoices.$invoiceId.tsx` (dev-only test-hook, ~10 regels achter `import.meta.env.DEV`)
-- gewijzigd: `package.json` (dev-deps + script)
-
-## Wat de test **niet** doet
-
-- Geen visuele check op de HTML-preview zelf — die is al gedekt door `tests/visual/theme.spec.ts`.
-- Geen semantische PDF-diff (tekstinhoud) — puur pixel-vergelijk, want kleuren + layout is de vraag.
-- Geen CI-integratie / GitHub Action — script is runbaar, wel/niet in CI hangen kan later.
+Risico's / aandacht
+- De Web Audio API `decodeAudioData` werkt alleen op de client; server-side decoding vermijden we.
+- Worker runtime (Cloudflare) kan geen ffmpeg gebruiken; daarom doen we alles in de browser.
+- Geen extra audio-bibliotheken toevoegen; we implementeren WAV-encoding zelf om bundelgrootte en compatibiliteit te sparen.
