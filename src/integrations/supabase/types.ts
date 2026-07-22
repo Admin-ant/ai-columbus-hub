@@ -869,6 +869,7 @@ export type Database = {
           organization_id: string
           size_bytes: number | null
           storage_path: string
+          tags: string[]
           updated_at: string
           uploaded_by: string | null
         }
@@ -882,6 +883,7 @@ export type Database = {
           organization_id: string
           size_bytes?: number | null
           storage_path: string
+          tags?: string[]
           updated_at?: string
           uploaded_by?: string | null
         }
@@ -895,6 +897,7 @@ export type Database = {
           organization_id?: string
           size_bytes?: number | null
           storage_path?: string
+          tags?: string[]
           updated_at?: string
           uploaded_by?: string | null
         }

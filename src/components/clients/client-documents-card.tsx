@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Download, Eye, FileText, History, Loader2, Trash2, Upload } from "lucide-react";
+import { Download, Eye, FileText, History, Loader2, Tag, Trash2, Upload, X } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,7 @@ type DocRow = {
   description: string | null;
   created_at: string;
   uploaded_by: string | null;
+  tags: string[];
 };
 
 type AuditRow = {
@@ -79,6 +80,9 @@ export function ClientDocumentsCard({
   const [uploading, setUploading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DocRow | null>(null);
   const [search, setSearch] = useState("");
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
+  const [tagInputFor, setTagInputFor] = useState<string | null>(null);
+  const [tagInputValue, setTagInputValue] = useState("");
   const [auditOpen, setAuditOpen] = useState(false);
   const [audit, setAudit] = useState<AuditRow[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
@@ -90,7 +94,7 @@ export function ClientDocumentsCard({
     setLoading(true);
     const { data, error } = await supabase
       .from("client_documents")
-      .select("id,name,storage_path,mime_type,size_bytes,description,created_at,uploaded_by")
+      .select("id,name,storage_path,mime_type,size_bytes,description,created_at,uploaded_by,tags")
       .eq("client_id", clientId)
       .order("created_at", { ascending: false });
     if (error) {
@@ -248,9 +252,42 @@ export function ClientDocumentsCard({
     await load();
   };
 
-  const filtered = docs.filter((d) =>
-    search.trim() ? d.name.toLowerCase().includes(search.toLowerCase()) : true,
-  );
+  const allTags = Array.from(new Set(docs.flatMap((d) => d.tags ?? []))).sort();
+
+  const filtered = docs.filter((d) => {
+    if (search.trim() && !d.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (tagFilter.length > 0 && !tagFilter.every((t) => (d.tags ?? []).includes(t))) return false;
+    return true;
+  });
+
+  const toggleTagFilter = (t: string) =>
+    setTagFilter((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
+
+  const saveTags = async (doc: DocRow, tags: string[]) => {
+    const cleaned = Array.from(
+      new Set(tags.map((t) => t.trim().toLowerCase()).filter((t) => t.length > 0 && t.length <= 32)),
+    );
+    setDocs((prev) => prev.map((d) => (d.id === doc.id ? { ...d, tags: cleaned } : d)));
+    const { error } = await supabase
+      .from("client_documents")
+      .update({ tags: cleaned })
+      .eq("id", doc.id);
+    if (error) {
+      toast.error("Tags opslaan mislukt", { description: error.message });
+      await load();
+    }
+  };
+
+  const addTag = async (doc: DocRow, value: string) => {
+    const v = value.trim().toLowerCase();
+    if (!v) return;
+    if ((doc.tags ?? []).includes(v)) return;
+    await saveTags(doc, [...(doc.tags ?? []), v]);
+  };
+
+  const removeTag = async (doc: DocRow, tag: string) => {
+    await saveTags(doc, (doc.tags ?? []).filter((t) => t !== tag));
+  };
 
   return (
     <Card>
@@ -296,6 +333,31 @@ export function ClientDocumentsCard({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        {allTags.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs text-muted-foreground">Filter op tag:</span>
+            {allTags.map((t) => {
+              const active = tagFilter.includes(t);
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => toggleTagFilter(t)}
+                  className="focus:outline-none"
+                >
+                  <Badge variant={active ? "default" : "outline"} className="cursor-pointer">
+                    {t}
+                  </Badge>
+                </button>
+              );
+            })}
+            {tagFilter.length > 0 && (
+              <Button size="sm" variant="ghost" onClick={() => setTagFilter([])}>
+                Wis
+              </Button>
+            )}
+          </div>
+        )}
         {loading ? (
           <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Laden…
@@ -315,12 +377,62 @@ export function ClientDocumentsCard({
         ) : (
           <ul className="divide-y rounded-md border">
             {filtered.map((d) => (
-              <li key={d.id} className="flex items-center gap-3 px-3 py-2">
+              <li key={d.id} className="flex flex-col gap-2 px-3 py-2 sm:flex-row sm:items-center">
                 <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium">{d.name}</div>
                   <div className="text-xs text-muted-foreground">
                     {formatBytes(d.size_bytes)} · {new Date(d.created_at).toLocaleString("nl-NL")}
+                  </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-1">
+                    {(d.tags ?? []).map((t) => (
+                      <Badge key={t} variant="secondary" className="gap-1 pl-2 pr-1">
+                        {t}
+                        <button
+                          type="button"
+                          onClick={() => void removeTag(d, t)}
+                          className="rounded hover:bg-background/60"
+                          aria-label={`Verwijder tag ${t}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                    {tagInputFor === d.id ? (
+                      <Input
+                        autoFocus
+                        value={tagInputValue}
+                        onChange={(e) => setTagInputValue(e.target.value)}
+                        onBlur={() => {
+                          if (tagInputValue.trim()) void addTag(d, tagInputValue);
+                          setTagInputFor(null);
+                          setTagInputValue("");
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            void addTag(d, tagInputValue);
+                            setTagInputValue("");
+                          } else if (e.key === "Escape") {
+                            setTagInputFor(null);
+                            setTagInputValue("");
+                          }
+                        }}
+                        placeholder="tag toevoegen"
+                        className="h-6 w-32 text-xs"
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTagInputFor(d.id);
+                          setTagInputValue("");
+                        }}
+                        className="inline-flex items-center gap-1 rounded border border-dashed px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted"
+                      >
+                        <Tag className="h-3 w-3" /> tag
+                      </button>
+                    )}
                   </div>
                 </div>
                 {isViewable(d) && (
