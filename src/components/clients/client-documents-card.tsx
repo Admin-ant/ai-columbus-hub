@@ -210,6 +210,25 @@ export function ClientDocumentsCard({
     window.open(data.signedUrl, "_blank", "noopener");
   };
 
+  const isViewable = (doc: DocRow) => {
+    const m = (doc.mime_type ?? "").toLowerCase();
+    return m === "application/pdf" || m.startsWith("image/");
+  };
+
+  const openViewer = async (doc: DocRow) => {
+    setViewerLoading(true);
+    const { data, error } = await supabase.storage
+      .from(BUCKET)
+      .createSignedUrl(doc.storage_path, 300);
+    setViewerLoading(false);
+    if (error || !data?.signedUrl) {
+      toast.error("Voorbeeld mislukt", { description: error?.message });
+      return;
+    }
+    await logAudit("download", { id: doc.id, name: doc.name });
+    setViewer({ doc, url: data.signedUrl });
+  };
+
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     const doc = deleteTarget;
