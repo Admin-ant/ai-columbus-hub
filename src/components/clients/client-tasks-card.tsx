@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Loader2, Trash2, ClipboardList, GripVertical, MessageSquare, Send, Users, X, Check } from "lucide-react";
+import { Plus, Loader2, Trash2, ClipboardList, GripVertical, MessageSquare, Send, Users, X, Check, Search } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
