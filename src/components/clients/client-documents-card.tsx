@@ -333,6 +333,31 @@ export function ClientDocumentsCard({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        {allTags.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs text-muted-foreground">Filter op tag:</span>
+            {allTags.map((t) => {
+              const active = tagFilter.includes(t);
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => toggleTagFilter(t)}
+                  className="focus:outline-none"
+                >
+                  <Badge variant={active ? "default" : "outline"} className="cursor-pointer">
+                    {t}
+                  </Badge>
+                </button>
+              );
+            })}
+            {tagFilter.length > 0 && (
+              <Button size="sm" variant="ghost" onClick={() => setTagFilter([])}>
+                Wis
+              </Button>
+            )}
+          </div>
+        )}
         {loading ? (
           <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Laden…
