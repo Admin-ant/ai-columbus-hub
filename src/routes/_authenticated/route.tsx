@@ -6,6 +6,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useAppointmentReminders } from "@/hooks/use-appointment-reminders";
+import { useTaskNotifications } from "@/hooks/use-task-notifications";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -16,6 +17,7 @@ function AuthenticatedLayout() {
   const { user, loading } = useAuth();
   const { t } = useTranslation();
   useAppointmentReminders();
+  useTaskNotifications();
 
   if (loading) {
     return (
