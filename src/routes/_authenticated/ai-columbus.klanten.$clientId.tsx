@@ -304,7 +304,7 @@ function ClientDetailPage() {
         </TabsList>
 
         <TabsContent value="taken" className="mt-4">
-          <ClientTasksCard clientId={clientId} organizationId={client.organization_id} />
+          <ClientTasksCard clientId={clientId} organizationId={client.organization_id ?? ""} />
         </TabsContent>
 
 
