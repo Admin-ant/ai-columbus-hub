@@ -299,24 +299,58 @@ export function ClientTasksCard({
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 space-y-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <ClipboardList className="h-4 w-4" /> Taken
           <Badge variant="secondary" className="ml-2">{tasks.length}</Badge>
-          <div className="ml-auto flex items-center gap-2">
-            <AssigneePicker
-              members={members}
-              selected={assigneeFilter}
-              onChange={setAssigneeFilter}
-              placeholder="Filter op toegewezen"
-            />
-            {assigneeFilter.length > 0 && (
-              <Button variant="ghost" size="sm" onClick={() => setAssigneeFilter([])} className="h-8 px-2 text-xs">
-                <X className="h-3 w-3 mr-1" />Wis
-              </Button>
-            )}
-          </div>
+          {filtersActive && (
+            <Badge variant="outline" className="ml-1">{filteredTasks.length} gefilterd</Badge>
+          )}
         </CardTitle>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Zoek op titel of omschrijving…"
+              className="h-8 pl-7"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+            <SelectTrigger className="h-8 w-[150px]"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Alle statussen</SelectItem>
+              {STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={dueFilter} onValueChange={(v) => setDueFilter(v as any)}>
+            <SelectTrigger className="h-8 w-[160px]"><SelectValue placeholder="Deadline" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Alle deadlines</SelectItem>
+              <SelectItem value="overdue">Overdue</SelectItem>
+              <SelectItem value="today">Vandaag</SelectItem>
+              <SelectItem value="week">Komende 7 dagen</SelectItem>
+              <SelectItem value="none">Geen deadline</SelectItem>
+            </SelectContent>
+          </Select>
+          <AssigneePicker
+            members={members}
+            selected={assigneeFilter}
+            onChange={setAssigneeFilter}
+            placeholder="Filter op toegewezen"
+          />
+          {filtersActive && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setSearch(""); setStatusFilter("all"); setDueFilter("all"); setAssigneeFilter([]); }}
+              className="h-8 px-2 text-xs"
+            >
+              <X className="h-3 w-3 mr-1" />Wis filters
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="rounded-md border bg-muted/30 p-3 space-y-2">
