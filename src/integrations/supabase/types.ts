@@ -1150,6 +1150,7 @@ export type Database = {
           organization_id: string
           quote_id: string | null
           target_id: string | null
+          task_status: string
           title: string | null
           updated_at: string
         }
@@ -1167,6 +1168,7 @@ export type Database = {
           organization_id: string
           quote_id?: string | null
           target_id?: string | null
+          task_status?: string
           title?: string | null
           updated_at?: string
         }
@@ -1184,6 +1186,7 @@ export type Database = {
           organization_id?: string
           quote_id?: string | null
           target_id?: string | null
+          task_status?: string
           title?: string | null
           updated_at?: string
         }
