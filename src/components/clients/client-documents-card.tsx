@@ -80,6 +80,9 @@ export function ClientDocumentsCard({
   const [uploading, setUploading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DocRow | null>(null);
   const [search, setSearch] = useState("");
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
+  const [tagInputFor, setTagInputFor] = useState<string | null>(null);
+  const [tagInputValue, setTagInputValue] = useState("");
   const [auditOpen, setAuditOpen] = useState(false);
   const [audit, setAudit] = useState<AuditRow[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
