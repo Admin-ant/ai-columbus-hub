@@ -1,0 +1,2 @@
+ALTER TABLE public.crm_activities ADD COLUMN IF NOT EXISTS assignee_ids uuid[] NOT NULL DEFAULT '{}'::uuid[];
+CREATE INDEX IF NOT EXISTS crm_activities_assignee_ids_idx ON public.crm_activities USING GIN (assignee_ids);
