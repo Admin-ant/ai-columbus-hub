@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Loader2, Mail, Phone, Globe, Building2, MapPin, FileText, Briefcase, CreditCard, Users, Plus, Link2, Unlink, Pencil, Trash2, Search, History, ChevronDown, ChevronRight, Sparkles, CalendarDays, Send, Ban, FileSignature, FileCheck2, Inbox, FileEdit } from "lucide-react";
+import { ArrowLeft, Loader2, Mail, Phone, Globe, Building2, MapPin, FileText, Briefcase, CreditCard, Users, Plus, Link2, Unlink, Pencil, Trash2, Search, History, ChevronDown, ChevronRight, Sparkles, CalendarDays, Send, Ban, FileSignature, FileCheck2, Inbox, FileEdit, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,7 @@ import { ClientAuditLog } from "@/components/clients/client-audit-log";
 import { ClientActivityHistory } from "@/components/clients/client-activity-history";
 import { ClientQuickActions } from "@/components/clients/client-quick-actions";
 import { ClientEmailComposer } from "@/components/clients/client-email-composer";
+import { ClientTasksCard } from "@/components/clients/client-tasks-card";
 
 export const Route = createFileRoute("/_authenticated/ai-columbus/klanten/$clientId")({
   head: () => ({ meta: [{ title: "Klant detail" }] }),
@@ -299,7 +300,13 @@ function ClientDetailPage() {
           <TabsTrigger value="betalingen"><CreditCard className="mr-2 h-4 w-4" /> Betalingen <Badge variant="secondary" className="ml-2">{invoices.length}</Badge></TabsTrigger>
           <TabsTrigger value="mails"><Inbox className="mr-2 h-4 w-4" /> E-mails <Badge variant="secondary" className="ml-2">{mails.length}</Badge></TabsTrigger>
           <TabsTrigger value="afspraken"><CalendarDays className="mr-2 h-4 w-4" /> Afspraken <Badge variant="secondary" className="ml-2">{appointments.length}</Badge></TabsTrigger>
+          <TabsTrigger value="taken"><ClipboardList className="mr-2 h-4 w-4" /> Taken</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="taken" className="mt-4">
+          <ClientTasksCard clientId={clientId} organizationId={client.organization_id ?? ""} />
+        </TabsContent>
+
 
         <TabsContent value="overzicht" className="mt-4">
           <div className="grid gap-4 md:grid-cols-2">

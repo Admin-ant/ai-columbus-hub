@@ -1,0 +1,2 @@
+ALTER TABLE public.crm_activities ADD COLUMN IF NOT EXISTS task_status text NOT NULL DEFAULT 'nieuw' CHECK (task_status IN ('nieuw','opgepakt','wachten','afgehandeld'));
+CREATE INDEX IF NOT EXISTS crm_activities_client_task_idx ON public.crm_activities (client_id, kind, task_status);
