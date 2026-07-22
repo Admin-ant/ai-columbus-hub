@@ -17,6 +17,7 @@ function AuthenticatedLayout() {
   const { user, loading } = useAuth();
   const { t } = useTranslation();
   useAppointmentReminders();
+  useTaskNotifications();
 
   if (loading) {
     return (
