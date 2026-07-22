@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Download, FileText, History, Loader2, Trash2, Upload } from "lucide-react";
+import { Download, Eye, FileText, History, Loader2, Trash2, Upload } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -82,6 +82,8 @@ export function ClientDocumentsCard({
   const [auditOpen, setAuditOpen] = useState(false);
   const [audit, setAudit] = useState<AuditRow[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
+  const [viewer, setViewer] = useState<{ doc: DocRow; url: string } | null>(null);
+  const [viewerLoading, setViewerLoading] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
@@ -208,6 +210,25 @@ export function ClientDocumentsCard({
     window.open(data.signedUrl, "_blank", "noopener");
   };
 
+  const isViewable = (doc: DocRow) => {
+    const m = (doc.mime_type ?? "").toLowerCase();
+    return m === "application/pdf" || m.startsWith("image/");
+  };
+
+  const openViewer = async (doc: DocRow) => {
+    setViewerLoading(true);
+    const { data, error } = await supabase.storage
+      .from(BUCKET)
+      .createSignedUrl(doc.storage_path, 300);
+    setViewerLoading(false);
+    if (error || !data?.signedUrl) {
+      toast.error("Voorbeeld mislukt", { description: error?.message });
+      return;
+    }
+    await logAudit("download", { id: doc.id, name: doc.name });
+    setViewer({ doc, url: data.signedUrl });
+  };
+
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     const doc = deleteTarget;
@@ -302,7 +323,18 @@ export function ClientDocumentsCard({
                     {formatBytes(d.size_bytes)} · {new Date(d.created_at).toLocaleString("nl-NL")}
                   </div>
                 </div>
-                <Button size="sm" variant="ghost" onClick={() => void download(d)}>
+                {isViewable(d) && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => void openViewer(d)}
+                    disabled={viewerLoading}
+                    title="Bekijk in browser"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button size="sm" variant="ghost" onClick={() => void download(d)} title="Download">
                   <Download className="h-4 w-4" />
                 </Button>
                 <Button
@@ -373,6 +405,44 @@ export function ClientDocumentsCard({
                 </li>
               ))}
             </ul>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!viewer} onOpenChange={(o) => !o && setViewer(null)}>
+        <DialogContent className="max-w-5xl">
+          <DialogHeader>
+            <DialogTitle className="truncate">{viewer?.doc.name}</DialogTitle>
+            <DialogDescription>
+              {viewer ? formatBytes(viewer.doc.size_bytes) : ""} · Voorbeeld — link is 5 minuten
+              geldig.
+            </DialogDescription>
+          </DialogHeader>
+          {viewer && (
+            <div className="h-[75vh] w-full overflow-hidden rounded-md border bg-muted/30">
+              {(viewer.doc.mime_type ?? "").toLowerCase().startsWith("image/") ? (
+                <div className="flex h-full w-full items-center justify-center overflow-auto">
+                  <img
+                    src={viewer.url}
+                    alt={viewer.doc.name}
+                    className="max-h-full max-w-full object-contain"
+                  />
+                </div>
+              ) : (
+                <iframe
+                  src={viewer.url}
+                  title={viewer.doc.name}
+                  className="h-full w-full"
+                />
+              )}
+            </div>
+          )}
+          {viewer && (
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => void download(viewer.doc)}>
+                <Download className="mr-2 h-4 w-4" /> Download
+              </Button>
+            </div>
           )}
         </DialogContent>
       </Dialog>
