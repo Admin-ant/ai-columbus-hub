@@ -1139,6 +1139,7 @@ export type Database = {
         Row: {
           body: string | null
           client_id: string | null
+          comments: Json
           contact_id: string | null
           created_at: string
           created_by: string | null
@@ -1157,6 +1158,7 @@ export type Database = {
         Insert: {
           body?: string | null
           client_id?: string | null
+          comments?: Json
           contact_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -1175,6 +1177,7 @@ export type Database = {
         Update: {
           body?: string | null
           client_id?: string | null
+          comments?: Json
           contact_id?: string | null
           created_at?: string
           created_by?: string | null
