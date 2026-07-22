@@ -323,7 +323,18 @@ export function ClientDocumentsCard({
                     {formatBytes(d.size_bytes)} · {new Date(d.created_at).toLocaleString("nl-NL")}
                   </div>
                 </div>
-                <Button size="sm" variant="ghost" onClick={() => void download(d)}>
+                {isViewable(d) && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => void openViewer(d)}
+                    disabled={viewerLoading}
+                    title="Bekijk in browser"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button size="sm" variant="ghost" onClick={() => void download(d)} title="Download">
                   <Download className="h-4 w-4" />
                 </Button>
                 <Button
