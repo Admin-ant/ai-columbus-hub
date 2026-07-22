@@ -408,6 +408,44 @@ export function ClientDocumentsCard({
           )}
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!viewer} onOpenChange={(o) => !o && setViewer(null)}>
+        <DialogContent className="max-w-5xl">
+          <DialogHeader>
+            <DialogTitle className="truncate">{viewer?.doc.name}</DialogTitle>
+            <DialogDescription>
+              {viewer ? formatBytes(viewer.doc.size_bytes) : ""} · Voorbeeld — link is 5 minuten
+              geldig.
+            </DialogDescription>
+          </DialogHeader>
+          {viewer && (
+            <div className="h-[75vh] w-full overflow-hidden rounded-md border bg-muted/30">
+              {(viewer.doc.mime_type ?? "").toLowerCase().startsWith("image/") ? (
+                <div className="flex h-full w-full items-center justify-center overflow-auto">
+                  <img
+                    src={viewer.url}
+                    alt={viewer.doc.name}
+                    className="max-h-full max-w-full object-contain"
+                  />
+                </div>
+              ) : (
+                <iframe
+                  src={viewer.url}
+                  title={viewer.doc.name}
+                  className="h-full w-full"
+                />
+              )}
+            </div>
+          )}
+          {viewer && (
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => void download(viewer.doc)}>
+                <Download className="mr-2 h-4 w-4" /> Download
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
