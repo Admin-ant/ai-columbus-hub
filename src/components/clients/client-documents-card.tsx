@@ -94,7 +94,7 @@ export function ClientDocumentsCard({
     setLoading(true);
     const { data, error } = await supabase
       .from("client_documents")
-      .select("id,name,storage_path,mime_type,size_bytes,description,created_at,uploaded_by")
+      .select("id,name,storage_path,mime_type,size_bytes,description,created_at,uploaded_by,tags")
       .eq("client_id", clientId)
       .order("created_at", { ascending: false });
     if (error) {
