@@ -252,9 +252,42 @@ export function ClientDocumentsCard({
     await load();
   };
 
-  const filtered = docs.filter((d) =>
-    search.trim() ? d.name.toLowerCase().includes(search.toLowerCase()) : true,
-  );
+  const allTags = Array.from(new Set(docs.flatMap((d) => d.tags ?? []))).sort();
+
+  const filtered = docs.filter((d) => {
+    if (search.trim() && !d.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (tagFilter.length > 0 && !tagFilter.every((t) => (d.tags ?? []).includes(t))) return false;
+    return true;
+  });
+
+  const toggleTagFilter = (t: string) =>
+    setTagFilter((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
+
+  const saveTags = async (doc: DocRow, tags: string[]) => {
+    const cleaned = Array.from(
+      new Set(tags.map((t) => t.trim().toLowerCase()).filter((t) => t.length > 0 && t.length <= 32)),
+    );
+    setDocs((prev) => prev.map((d) => (d.id === doc.id ? { ...d, tags: cleaned } : d)));
+    const { error } = await supabase
+      .from("client_documents")
+      .update({ tags: cleaned })
+      .eq("id", doc.id);
+    if (error) {
+      toast.error("Tags opslaan mislukt", { description: error.message });
+      await load();
+    }
+  };
+
+  const addTag = async (doc: DocRow, value: string) => {
+    const v = value.trim().toLowerCase();
+    if (!v) return;
+    if ((doc.tags ?? []).includes(v)) return;
+    await saveTags(doc, [...(doc.tags ?? []), v]);
+  };
+
+  const removeTag = async (doc: DocRow, tag: string) => {
+    await saveTags(doc, (doc.tags ?? []).filter((t) => t !== tag));
+  };
 
   return (
     <Card>
