@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Download, FileText, Loader2, Trash2, Upload } from "lucide-react";
+import { Download, FileText, History, Loader2, Trash2, Upload } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +36,15 @@ type DocRow = {
   uploaded_by: string | null;
 };
 
+type AuditRow = {
+  id: string;
+  document_id: string | null;
+  document_name: string;
+  action: "upload" | "download" | "delete";
+  actor_email: string | null;
+  created_at: string;
+};
+
 const MAX_MB = 25;
 const BUCKET = "client-documents";
 
@@ -37,6 +54,18 @@ function formatBytes(n: number | null): string {
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
   return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
+
+const ACTION_LABEL: Record<AuditRow["action"], string> = {
+  upload: "Geüpload",
+  download: "Gedownload",
+  delete: "Verwijderd",
+};
+
+const ACTION_VARIANT: Record<AuditRow["action"], "default" | "secondary" | "destructive"> = {
+  upload: "default",
+  download: "secondary",
+  delete: "destructive",
+};
 
 export function ClientDocumentsCard({
   clientId,
@@ -50,6 +79,9 @@ export function ClientDocumentsCard({
   const [uploading, setUploading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DocRow | null>(null);
   const [search, setSearch] = useState("");
+  const [auditOpen, setAuditOpen] = useState(false);
+  const [audit, setAudit] = useState<AuditRow[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
@@ -70,6 +102,47 @@ export function ClientDocumentsCard({
   useEffect(() => {
     void load();
   }, [load]);
+
+  const logAudit = async (
+    action: AuditRow["action"],
+    doc: { id: string | null; name: string },
+  ) => {
+    if (!organizationId) return;
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id ?? null;
+    const email = userData.user?.email ?? null;
+    if (!uid) return;
+    await supabase.from("client_document_audit_log").insert({
+      organization_id: organizationId,
+      client_id: clientId,
+      document_id: doc.id,
+      document_name: doc.name,
+      action,
+      actor_id: uid,
+      actor_email: email,
+    });
+  };
+
+  const loadAudit = useCallback(async () => {
+    setAuditLoading(true);
+    const { data, error } = await supabase
+      .from("client_document_audit_log")
+      .select("id,document_id,document_name,action,actor_email,created_at")
+      .eq("client_id", clientId)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) {
+      toast.error("Auditlog laden mislukt", { description: error.message });
+    } else {
+      setAudit((data ?? []) as AuditRow[]);
+    }
+    setAuditLoading(false);
+  }, [clientId]);
+
+  const openAudit = () => {
+    setAuditOpen(true);
+    void loadAudit();
+  };
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -96,20 +169,25 @@ export function ClientDocumentsCard({
         toast.error(`Upload mislukt: ${file.name}`, { description: up.error.message });
         continue;
       }
-      const ins = await supabase.from("client_documents").insert({
-        organization_id: organizationId,
-        client_id: clientId,
-        name: file.name,
-        storage_path: path,
-        mime_type: file.type || null,
-        size_bytes: file.size,
-        uploaded_by: uid,
-      });
+      const ins = await supabase
+        .from("client_documents")
+        .insert({
+          organization_id: organizationId,
+          client_id: clientId,
+          name: file.name,
+          storage_path: path,
+          mime_type: file.type || null,
+          size_bytes: file.size,
+          uploaded_by: uid,
+        })
+        .select("id")
+        .single();
       if (ins.error) {
         toast.error(`Opslaan mislukt: ${file.name}`, { description: ins.error.message });
         await supabase.storage.from(BUCKET).remove([path]);
         continue;
       }
+      await logAudit("upload", { id: ins.data?.id ?? null, name: file.name });
       ok++;
     }
     setUploading(false);
@@ -126,6 +204,7 @@ export function ClientDocumentsCard({
       toast.error("Downloadlink mislukt", { description: error?.message });
       return;
     }
+    await logAudit("download", { id: doc.id, name: doc.name });
     window.open(data.signedUrl, "_blank", "noopener");
   };
 
@@ -143,6 +222,7 @@ export function ClientDocumentsCard({
       toast.error("Record verwijderen mislukt", { description: del.error.message });
       return;
     }
+    await logAudit("delete", { id: doc.id, name: doc.name });
     toast.success("Document verwijderd");
     await load();
   };
@@ -164,6 +244,9 @@ export function ClientDocumentsCard({
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={openAudit}>
+              <History className="mr-2 h-4 w-4" /> Auditlog
+            </Button>
             <input
               ref={fileInput}
               type="file"
@@ -256,6 +339,43 @@ export function ClientDocumentsCard({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={auditOpen} onOpenChange={setAuditOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Auditlog documenten</DialogTitle>
+            <DialogDescription>
+              Overzicht van uploads, downloads en verwijderingen voor deze klant.
+            </DialogDescription>
+          </DialogHeader>
+          {auditLoading ? (
+            <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Laden…
+            </div>
+          ) : audit.length === 0 ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              Nog geen activiteit vastgelegd.
+            </div>
+          ) : (
+            <ul className="max-h-[60vh] divide-y overflow-y-auto rounded-md border">
+              {audit.map((row) => (
+                <li key={row.id} className="flex items-center gap-3 px-3 py-2 text-sm">
+                  <Badge variant={ACTION_VARIANT[row.action]} className="shrink-0">
+                    {ACTION_LABEL[row.action]}
+                  </Badge>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-medium">{row.document_name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {row.actor_email ?? "Onbekende gebruiker"} ·{" "}
+                      {new Date(row.created_at).toLocaleString("nl-NL")}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

@@ -822,6 +822,42 @@ export type Database = {
           },
         ]
       }
+      client_document_audit_log: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          client_id: string
+          created_at: string
+          document_id: string | null
+          document_name: string
+          id: string
+          organization_id: string
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          client_id: string
+          created_at?: string
+          document_id?: string | null
+          document_name: string
+          id?: string
+          organization_id: string
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          client_id?: string
+          created_at?: string
+          document_id?: string | null
+          document_name?: string
+          id?: string
+          organization_id?: string
+        }
+        Relationships: []
+      }
       client_documents: {
         Row: {
           client_id: string
