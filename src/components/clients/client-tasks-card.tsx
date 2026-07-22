@@ -176,6 +176,9 @@ export function ClientTasksCard({
 
   const [members, setMembers] = useState<Member[]>([]);
   const [assigneeFilter, setAssigneeFilter] = useState<string[]>([]);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | TaskStatus>("all");
+  const [dueFilter, setDueFilter] = useState<"all" | "overdue" | "today" | "week" | "none">("all");
 
   const membersMap = useMemo(() => new Map(members.map((m) => [m.user_id, m])), [members]);
 
