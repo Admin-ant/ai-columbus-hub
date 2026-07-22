@@ -19,6 +19,7 @@ import { ClientAuditLog } from "@/components/clients/client-audit-log";
 import { ClientActivityHistory } from "@/components/clients/client-activity-history";
 import { ClientQuickActions } from "@/components/clients/client-quick-actions";
 import { ClientEmailComposer } from "@/components/clients/client-email-composer";
+import { ClientTasksCard } from "@/components/clients/client-tasks-card";
 
 export const Route = createFileRoute("/_authenticated/ai-columbus/klanten/$clientId")({
   head: () => ({ meta: [{ title: "Klant detail" }] }),
