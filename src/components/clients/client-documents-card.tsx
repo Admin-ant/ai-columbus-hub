@@ -34,6 +34,7 @@ type DocRow = {
   description: string | null;
   created_at: string;
   uploaded_by: string | null;
+  tags: string[];
 };
 
 type AuditRow = {
