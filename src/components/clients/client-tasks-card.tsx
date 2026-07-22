@@ -389,7 +389,7 @@ export function ClientTasksCard({
                 <div className="space-y-2 mt-2">
                   {buckets[s.value].length === 0 ? (
                     <p className="text-xs text-muted-foreground px-1">
-                      {assigneeFilter.length > 0 ? "Geen taken voor filter." : "Sleep hier een taak heen."}
+                      {filtersActive ? "Geen taken voor filter." : "Sleep hier een taak heen."}
                     </p>
                   ) : buckets[s.value].map((t) => {
                     const due = t.due_at ? new Date(t.due_at) : null;
