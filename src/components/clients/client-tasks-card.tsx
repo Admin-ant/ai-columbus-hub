@@ -217,12 +217,36 @@ export function ClientTasksCard({
   useEffect(() => { loadMembers(); }, [loadMembers]);
 
   const filteredTasks = useMemo(() => {
-    if (assigneeFilter.length === 0) return tasks;
+    const needle = search.trim().toLowerCase();
+    const now = new Date();
+    const startOfToday = new Date(now); startOfToday.setHours(0, 0, 0, 0);
+    const endOfToday = new Date(startOfToday); endOfToday.setDate(endOfToday.getDate() + 1);
+    const endOfWeek = new Date(startOfToday); endOfWeek.setDate(endOfWeek.getDate() + 7);
     return tasks.filter((t) => {
-      const ids = t.assignee_ids ?? [];
-      return assigneeFilter.some((f) => ids.includes(f));
+      if (assigneeFilter.length > 0) {
+        const ids = t.assignee_ids ?? [];
+        if (!assigneeFilter.some((f) => ids.includes(f))) return false;
+      }
+      if (statusFilter !== "all" && t.task_status !== statusFilter) return false;
+      if (needle) {
+        const hay = `${t.title ?? ""} ${t.body ?? ""}`.toLowerCase();
+        if (!hay.includes(needle)) return false;
+      }
+      if (dueFilter !== "all") {
+        const due = t.due_at ? new Date(t.due_at) : null;
+        if (dueFilter === "none") { if (due) return false; }
+        else {
+          if (!due) return false;
+          if (dueFilter === "overdue" && !(due < now && t.task_status !== "afgehandeld")) return false;
+          if (dueFilter === "today" && !(due >= startOfToday && due < endOfToday)) return false;
+          if (dueFilter === "week" && !(due >= startOfToday && due < endOfWeek)) return false;
+        }
+      }
+      return true;
     });
-  }, [tasks, assigneeFilter]);
+  }, [tasks, assigneeFilter, statusFilter, search, dueFilter]);
+
+  const filtersActive = search.trim() !== "" || statusFilter !== "all" || dueFilter !== "all" || assigneeFilter.length > 0;
 
   const buckets = useMemo(() => {
     const map: Record<TaskStatus, TaskRow[]> = { nieuw: [], opgepakt: [], wachten: [], afgehandeld: [] };
