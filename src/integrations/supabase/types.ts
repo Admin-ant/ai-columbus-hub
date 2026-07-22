@@ -1137,6 +1137,7 @@ export type Database = {
       }
       crm_activities: {
         Row: {
+          assignee_ids: string[]
           body: string | null
           client_id: string | null
           comments: Json
@@ -1156,6 +1157,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assignee_ids?: string[]
           body?: string | null
           client_id?: string | null
           comments?: Json
@@ -1175,6 +1177,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assignee_ids?: string[]
           body?: string | null
           client_id?: string | null
           comments?: Json
