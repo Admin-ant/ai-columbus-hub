@@ -82,6 +82,8 @@ export function ClientDocumentsCard({
   const [auditOpen, setAuditOpen] = useState(false);
   const [audit, setAudit] = useState<AuditRow[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
+  const [viewer, setViewer] = useState<{ doc: DocRow; url: string } | null>(null);
+  const [viewerLoading, setViewerLoading] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
