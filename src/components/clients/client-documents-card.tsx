@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Download, Eye, FileText, History, Loader2, Trash2, Upload } from "lucide-react";
+import { Download, Eye, FileText, History, Loader2, Tag, Trash2, Upload, X } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
