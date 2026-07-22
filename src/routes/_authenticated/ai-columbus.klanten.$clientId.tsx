@@ -300,7 +300,13 @@ function ClientDetailPage() {
           <TabsTrigger value="betalingen"><CreditCard className="mr-2 h-4 w-4" /> Betalingen <Badge variant="secondary" className="ml-2">{invoices.length}</Badge></TabsTrigger>
           <TabsTrigger value="mails"><Inbox className="mr-2 h-4 w-4" /> E-mails <Badge variant="secondary" className="ml-2">{mails.length}</Badge></TabsTrigger>
           <TabsTrigger value="afspraken"><CalendarDays className="mr-2 h-4 w-4" /> Afspraken <Badge variant="secondary" className="ml-2">{appointments.length}</Badge></TabsTrigger>
+          <TabsTrigger value="taken"><ClipboardList className="mr-2 h-4 w-4" /> Taken</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="taken" className="mt-4">
+          <ClientTasksCard clientId={clientId} organizationId={client.organization_id} />
+        </TabsContent>
+
 
         <TabsContent value="overzicht" className="mt-4">
           <div className="grid gap-4 md:grid-cols-2">
