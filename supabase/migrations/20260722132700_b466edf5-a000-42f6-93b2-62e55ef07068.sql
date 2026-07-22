@@ -1,0 +1,1 @@
+ALTER TABLE public.crm_activities ADD COLUMN IF NOT EXISTS comments jsonb NOT NULL DEFAULT '[]'::jsonb;
