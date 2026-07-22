@@ -705,9 +705,13 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
                                 }
                               : { ...l, description: val };
                             // Verwijder een eventueel eerder auto-toegevoegde opstartkosten-regel
-                            // die bij het vorige product hoorde, zodat we niet stapelen.
-                            if (prevDesc) {
-                              const prevSetupDesc = `Eenmalige opstartkosten — ${prevDesc}`.toLowerCase();
+                            // die bij het vorige product hoorde — alleen als de vorige waarde
+                            // daadwerkelijk een product was en het nieuwe product anders is.
+                            const prevMatch = prevDesc
+                              ? products.find((p) => p.name.toLowerCase() === prevDesc.toLowerCase())
+                              : undefined;
+                            if (prevMatch && prevMatch.name !== match?.name) {
+                              const prevSetupDesc = `Eenmalige opstartkosten — ${prevMatch.name}`.toLowerCase();
                               n = n.filter(
                                 (row, idx) =>
                                   idx === i ||
