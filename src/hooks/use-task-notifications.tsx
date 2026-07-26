@@ -22,9 +22,10 @@ export function useTaskNotifications() {
 
     (async () => {
       const { data } = await supabase
-        .from("profiles")
+        .from("organization_members")
         .select("organization_id")
-        .eq("id", user.id)
+        .eq("user_id", user.id)
+        .limit(1)
         .maybeSingle();
       if (cancelled) return;
       orgIdRef.current = (data as any)?.organization_id ?? null;
