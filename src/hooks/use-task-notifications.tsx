@@ -39,6 +39,7 @@ export function useTaskNotifications() {
         (payload) => {
           const newRow: any = payload.new;
           const oldRow: any = payload.old;
+          if (newRow?.kind !== "task") return;
           if (!newRow?.task_status || newRow.task_status === oldRow?.task_status) return;
           if (orgIdRef.current && newRow.organization_id && newRow.organization_id !== orgIdRef.current) return;
 
