@@ -66,6 +66,7 @@ export function useTaskNotifications() {
         { event: "INSERT", schema: "public", table: "crm_activities" },
         (payload) => {
           const row: any = payload.new;
+          if (row?.kind !== "task") return;
           if (!row?.task_status) return;
           if (orgIdRef.current && row.organization_id && row.organization_id !== orgIdRef.current) return;
           const title = row.title || row.description || "Taak";
