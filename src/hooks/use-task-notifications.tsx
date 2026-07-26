@@ -22,9 +22,10 @@ export function useTaskNotifications() {
 
     (async () => {
       const { data } = await supabase
-        .from("profiles")
+        .from("organization_members")
         .select("organization_id")
-        .eq("id", user.id)
+        .eq("user_id", user.id)
+        .limit(1)
         .maybeSingle();
       if (cancelled) return;
       orgIdRef.current = (data as any)?.organization_id ?? null;
@@ -38,6 +39,7 @@ export function useTaskNotifications() {
         (payload) => {
           const newRow: any = payload.new;
           const oldRow: any = payload.old;
+          if (newRow?.kind !== "task") return;
           if (!newRow?.task_status || newRow.task_status === oldRow?.task_status) return;
           if (orgIdRef.current && newRow.organization_id && newRow.organization_id !== orgIdRef.current) return;
 
@@ -64,6 +66,7 @@ export function useTaskNotifications() {
         { event: "INSERT", schema: "public", table: "crm_activities" },
         (payload) => {
           const row: any = payload.new;
+          if (row?.kind !== "task") return;
           if (!row?.task_status) return;
           if (orgIdRef.current && row.organization_id && row.organization_id !== orgIdRef.current) return;
           const title = row.title || row.description || "Taak";
