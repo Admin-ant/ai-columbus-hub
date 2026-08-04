@@ -255,6 +255,19 @@ function TeamsPage() {
     } else {
       setMembers([]);
     }
+
+    const [actRes, meetRes] = await Promise.all([
+      supabase
+        .from("crm_activities")
+        .select("kind, done, created_by, assignee_ids")
+        .eq("organization_id", currentOrganizationId),
+      supabase
+        .from("appointments")
+        .select("created_by, starts_at, status")
+        .eq("organization_id", currentOrganizationId),
+    ]);
+    setActivities((actRes.data ?? []) as Activity[]);
+    setMeetings((meetRes.data ?? []) as Meeting[]);
     setLoading(false);
   }, [currentOrganizationId]);
 
