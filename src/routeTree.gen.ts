@@ -9,90 +9,84 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as VisualCheckRouteImport } from './routes/visual-check'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as VisualCheckRouteImport } from './routes/visual-check'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as TTokenRouteImport } from './routes/t.$token'
-import { Route as QTokenRouteImport } from './routes/q.$token'
-import { Route as ApiChatRouteImport } from './routes/api/chat'
-import { Route as AfspraakTokenRouteImport } from './routes/afspraak.$token'
-import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated/teams'
-import { Route as AuthenticatedSalesWorkflowRouteImport } from './routes/_authenticated/sales-workflow'
-import { Route as AuthenticatedQuotesRouteImport } from './routes/_authenticated/quotes'
-import { Route as AuthenticatedProductenRouteImport } from './routes/_authenticated/producten'
-import { Route as AuthenticatedOpnameRouteImport } from './routes/_authenticated/opname'
-import { Route as AuthenticatedNetqloudRouteImport } from './routes/_authenticated/netqloud'
-import { Route as AuthenticatedMailRouteImport } from './routes/_authenticated/mail'
-import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
-import { Route as AuthenticatedJobsRouteImport } from './routes/_authenticated/jobs'
-import { Route as AuthenticatedInkoopfacturenRouteImport } from './routes/_authenticated/inkoopfacturen'
-import { Route as AuthenticatedGebruikersRouteImport } from './routes/_authenticated/gebruikers'
-import { Route as AuthenticatedEnterpriseRouteImport } from './routes/_authenticated/enterprise'
-import { Route as AuthenticatedContractenRouteImport } from './routes/_authenticated/contracten'
-import { Route as AuthenticatedBoekhoudingRouteImport } from './routes/_authenticated/boekhouding'
-import { Route as AuthenticatedAiColumbusRouteImport } from './routes/_authenticated/ai-columbus'
-import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
 import { Route as AuthenticatedAdministratieRouteImport } from './routes/_authenticated/administratie'
-import { Route as AuthenticatedOutreachIndexRouteImport } from './routes/_authenticated/outreach.index'
-import { Route as AuthenticatedOfferteStudioIndexRouteImport } from './routes/_authenticated/offerte-studio.index'
-import { Route as AuthenticatedNetqloudIndexRouteImport } from './routes/_authenticated/netqloud.index'
-import { Route as AuthenticatedInvoicesIndexRouteImport } from './routes/_authenticated/invoices.index'
-import { Route as AuthenticatedAnalyticsIndexRouteImport } from './routes/_authenticated/analytics.index'
+import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
+import { Route as AuthenticatedAiColumbusRouteImport } from './routes/_authenticated/ai-columbus'
+import { Route as AuthenticatedBoekhoudingRouteImport } from './routes/_authenticated/boekhouding'
+import { Route as AuthenticatedContractenRouteImport } from './routes/_authenticated/contracten'
+import { Route as AuthenticatedEnterpriseRouteImport } from './routes/_authenticated/enterprise'
+import { Route as AuthenticatedGebruikersRouteImport } from './routes/_authenticated/gebruikers'
+import { Route as AuthenticatedInkoopfacturenRouteImport } from './routes/_authenticated/inkoopfacturen'
+import { Route as AuthenticatedJobsRouteImport } from './routes/_authenticated/jobs'
+import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
+import { Route as AuthenticatedMailRouteImport } from './routes/_authenticated/mail'
+import { Route as AuthenticatedNetqloudRouteImport } from './routes/_authenticated/netqloud'
+import { Route as AuthenticatedOpnameRouteImport } from './routes/_authenticated/opname'
+import { Route as AuthenticatedProductenRouteImport } from './routes/_authenticated/producten'
+import { Route as AuthenticatedQuotesRouteImport } from './routes/_authenticated/quotes'
+import { Route as AuthenticatedSalesWorkflowRouteImport } from './routes/_authenticated/sales-workflow'
+import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated/teams'
+import { Route as AfspraakTokenRouteImport } from './routes/afspraak.$token'
+import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as QTokenRouteImport } from './routes/q.$token'
+import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as AuthenticatedAiColumbusIndexRouteImport } from './routes/_authenticated/ai-columbus.index'
-import { Route as QuoteTokenPdfRouteImport } from './routes/quote.$token.pdf'
-import { Route as AcceptQuoteTokenRouteImport } from './routes/accept.quote.$token'
-import { Route as AuthenticatedOutreachTemplatesRouteImport } from './routes/_authenticated/outreach.templates'
-import { Route as AuthenticatedOpnameRegelsRouteImport } from './routes/_authenticated/opname.regels'
-import { Route as AuthenticatedNetqloudServersRouteImport } from './routes/_authenticated/netqloud.servers'
-import { Route as AuthenticatedNetqloudKlantenRouteImport } from './routes/_authenticated/netqloud.klanten'
-import { Route as AuthenticatedNetqloudInstellingenRouteImport } from './routes/_authenticated/netqloud.instellingen'
-import { Route as AuthenticatedMailTemplatesRouteImport } from './routes/_authenticated/mail.templates'
-import { Route as AuthenticatedMailSkinsRouteImport } from './routes/_authenticated/mail.skins'
-import { Route as AuthenticatedMailSettingsRouteImport } from './routes/_authenticated/mail.settings'
-import { Route as AuthenticatedMailFlowRouteImport } from './routes/_authenticated/mail.flow'
-import { Route as AuthenticatedMailAppointmentPreviewRouteImport } from './routes/_authenticated/mail.appointment-preview'
-import { Route as AuthenticatedKpiMetricRouteImport } from './routes/_authenticated/kpi.$metric'
-import { Route as AuthenticatedInvoicesInvoiceIdRouteImport } from './routes/_authenticated/invoices.$invoiceId'
-import { Route as AuthenticatedInkoopfacturenExpenseIdRouteImport } from './routes/_authenticated/inkoopfacturen.$expenseId'
-import { Route as AuthenticatedCrmActivitiesRouteImport } from './routes/_authenticated/crm.activities'
-import { Route as AuthenticatedContractenContractIdRouteImport } from './routes/_authenticated/contracten.$contractId'
-import { Route as AuthenticatedAiColumbusRapportagesRouteImport } from './routes/_authenticated/ai-columbus.rapportages'
-import { Route as AuthenticatedAiColumbusProjectenRouteImport } from './routes/_authenticated/ai-columbus.projecten'
-import { Route as AuthenticatedAiColumbusModellenRouteImport } from './routes/_authenticated/ai-columbus.modellen'
-import { Route as AuthenticatedAiColumbusLogsRouteImport } from './routes/_authenticated/ai-columbus.logs'
-import { Route as AuthenticatedAiColumbusLeadsRouteImport } from './routes/_authenticated/ai-columbus.leads'
-import { Route as AuthenticatedAiColumbusKoppelingenRouteImport } from './routes/_authenticated/ai-columbus.koppelingen'
 import { Route as AuthenticatedAiColumbusInstellingenRouteImport } from './routes/_authenticated/ai-columbus.instellingen'
+import { Route as AuthenticatedAiColumbusKoppelingenRouteImport } from './routes/_authenticated/ai-columbus.koppelingen'
+import { Route as AuthenticatedAiColumbusLeadsRouteImport } from './routes/_authenticated/ai-columbus.leads'
+import { Route as AuthenticatedAiColumbusLogsRouteImport } from './routes/_authenticated/ai-columbus.logs'
+import { Route as AuthenticatedAiColumbusModellenRouteImport } from './routes/_authenticated/ai-columbus.modellen'
+import { Route as AuthenticatedAiColumbusProjectenRouteImport } from './routes/_authenticated/ai-columbus.projecten'
+import { Route as AuthenticatedAiColumbusRapportagesRouteImport } from './routes/_authenticated/ai-columbus.rapportages'
+import { Route as AuthenticatedAnalyticsIndexRouteImport } from './routes/_authenticated/analytics.index'
+import { Route as AuthenticatedContractenContractIdRouteImport } from './routes/_authenticated/contracten.$contractId'
+import { Route as AuthenticatedCrmActivitiesRouteImport } from './routes/_authenticated/crm.activities'
+import { Route as AuthenticatedInkoopfacturenExpenseIdRouteImport } from './routes/_authenticated/inkoopfacturen.$expenseId'
+import { Route as AuthenticatedInvoicesIndexRouteImport } from './routes/_authenticated/invoices.index'
+import { Route as AuthenticatedInvoicesInvoiceIdRouteImport } from './routes/_authenticated/invoices.$invoiceId'
+import { Route as AuthenticatedKpiMetricRouteImport } from './routes/_authenticated/kpi.$metric'
+import { Route as AuthenticatedMailAppointmentPreviewRouteImport } from './routes/_authenticated/mail.appointment-preview'
+import { Route as AuthenticatedMailFlowRouteImport } from './routes/_authenticated/mail.flow'
+import { Route as AuthenticatedMailSettingsRouteImport } from './routes/_authenticated/mail.settings'
+import { Route as AuthenticatedMailSkinsRouteImport } from './routes/_authenticated/mail.skins'
+import { Route as AuthenticatedMailTemplatesRouteImport } from './routes/_authenticated/mail.templates'
+import { Route as AuthenticatedNetqloudIndexRouteImport } from './routes/_authenticated/netqloud.index'
+import { Route as AuthenticatedNetqloudInstellingenRouteImport } from './routes/_authenticated/netqloud.instellingen'
+import { Route as AuthenticatedNetqloudKlantenRouteImport } from './routes/_authenticated/netqloud.klanten'
+import { Route as AuthenticatedNetqloudServersRouteImport } from './routes/_authenticated/netqloud.servers'
+import { Route as AuthenticatedOfferteStudioIndexRouteImport } from './routes/_authenticated/offerte-studio.index'
+import { Route as AuthenticatedOpnameRegelsRouteImport } from './routes/_authenticated/opname.regels'
+import { Route as AuthenticatedOutreachIndexRouteImport } from './routes/_authenticated/outreach.index'
+import { Route as AuthenticatedOutreachTemplatesRouteImport } from './routes/_authenticated/outreach.templates'
+import { Route as AcceptQuoteTokenRouteImport } from './routes/accept.quote.$token'
+import { Route as QuoteTokenPdfRouteImport } from './routes/quote.$token.pdf'
 import { Route as AuthenticatedAiColumbusKlantenIndexRouteImport } from './routes/_authenticated/ai-columbus.klanten.index'
-import { Route as ApiPublicLTokenRouteImport } from './routes/api/public/l.$token'
-import { Route as ApiPublicHooksStudioFollowupsRouteImport } from './routes/api/public/hooks/studio-followups'
-import { Route as ApiPublicHooksResendEventsRouteImport } from './routes/api/public/hooks/resend-events'
-import { Route as ApiPublicHooksRecurringInvoicesRouteImport } from './routes/api/public/hooks/recurring-invoices'
-import { Route as ApiPublicHooksQuoteFollowupsRouteImport } from './routes/api/public/hooks/quote-followups'
-import { Route as ApiPublicHooksPortaalBillableRouteImport } from './routes/api/public/hooks/portaal-billable'
-import { Route as ApiPublicHooksOutreachTrackRouteImport } from './routes/api/public/hooks/outreach-track'
-import { Route as ApiPublicHooksOutreachSequenceRouteImport } from './routes/api/public/hooks/outreach-sequence'
-import { Route as ApiPublicHooksOutreachReplyRouteImport } from './routes/api/public/hooks/outreach-reply'
-import { Route as ApiPublicHooksMollieRouteImport } from './routes/api/public/hooks/mollie'
-import { Route as ApiPublicHooksMailInboundRouteImport } from './routes/api/public/hooks/mail-inbound'
-import { Route as ApiPublicHooksLeadIntakeRouteImport } from './routes/api/public/hooks/lead-intake'
-import { Route as ApiPublicHooksCampaignFlowTickRouteImport } from './routes/api/public/hooks/campaign-flow-tick'
-import { Route as AuthenticatedOfferteStudioTIdRouteImport } from './routes/_authenticated/offerte-studio.t.$id'
-import { Route as AuthenticatedOfferteStudioQIdRouteImport } from './routes/_authenticated/offerte-studio.q.$id'
-import { Route as AuthenticatedBoekhoudingJournalEntryIdRouteImport } from './routes/_authenticated/boekhouding.journal.$entryId'
-import { Route as AuthenticatedAiColumbusProjectenProjectIdRouteImport } from './routes/_authenticated/ai-columbus.projecten.$projectId'
 import { Route as AuthenticatedAiColumbusKlantenClientIdRouteImport } from './routes/_authenticated/ai-columbus.klanten.$clientId'
+import { Route as AuthenticatedAiColumbusProjectenProjectIdRouteImport } from './routes/_authenticated/ai-columbus.projecten.$projectId'
+import { Route as AuthenticatedBoekhoudingJournalEntryIdRouteImport } from './routes/_authenticated/boekhouding.journal.$entryId'
+import { Route as AuthenticatedOfferteStudioQIdRouteImport } from './routes/_authenticated/offerte-studio.q.$id'
+import { Route as AuthenticatedOfferteStudioTIdRouteImport } from './routes/_authenticated/offerte-studio.t.$id'
+import { Route as ApiPublicHooksCampaignFlowTickRouteImport } from './routes/api/public/hooks/campaign-flow-tick'
+import { Route as ApiPublicHooksLeadIntakeRouteImport } from './routes/api/public/hooks/lead-intake'
+import { Route as ApiPublicHooksMailInboundRouteImport } from './routes/api/public/hooks/mail-inbound'
+import { Route as ApiPublicHooksMollieRouteImport } from './routes/api/public/hooks/mollie'
+import { Route as ApiPublicHooksOutreachReplyRouteImport } from './routes/api/public/hooks/outreach-reply'
+import { Route as ApiPublicHooksOutreachSequenceRouteImport } from './routes/api/public/hooks/outreach-sequence'
+import { Route as ApiPublicHooksOutreachTrackRouteImport } from './routes/api/public/hooks/outreach-track'
+import { Route as ApiPublicHooksPortaalBillableRouteImport } from './routes/api/public/hooks/portaal-billable'
+import { Route as ApiPublicHooksQuoteFollowupsRouteImport } from './routes/api/public/hooks/quote-followups'
+import { Route as ApiPublicHooksRecurringInvoicesRouteImport } from './routes/api/public/hooks/recurring-invoices'
+import { Route as ApiPublicHooksResendEventsRouteImport } from './routes/api/public/hooks/resend-events'
+import { Route as ApiPublicHooksStudioFollowupsRouteImport } from './routes/api/public/hooks/studio-followups'
+import { Route as ApiPublicLTokenRouteImport } from './routes/api/public/l.$token'
 
-const VisualCheckRoute = VisualCheckRouteImport.update({
-  id: '/visual-check',
-  path: '/visual-check',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -100,116 +94,19 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VisualCheckRoute = VisualCheckRouteImport.update({
+  id: '/visual-check',
+  path: '/visual-check',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const TTokenRoute = TTokenRouteImport.update({
-  id: '/t/$token',
-  path: '/t/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const QTokenRoute = QTokenRouteImport.update({
-  id: '/q/$token',
-  path: '/q/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiChatRoute = ApiChatRouteImport.update({
-  id: '/api/chat',
-  path: '/api/chat',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AfspraakTokenRoute = AfspraakTokenRouteImport.update({
-  id: '/afspraak/$token',
-  path: '/afspraak/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedTeamsRoute = AuthenticatedTeamsRouteImport.update({
-  id: '/teams',
-  path: '/teams',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedSalesWorkflowRoute =
-  AuthenticatedSalesWorkflowRouteImport.update({
-    id: '/sales-workflow',
-    path: '/sales-workflow',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedQuotesRoute = AuthenticatedQuotesRouteImport.update({
-  id: '/quotes',
-  path: '/quotes',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedProductenRoute = AuthenticatedProductenRouteImport.update({
-  id: '/producten',
-  path: '/producten',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedOpnameRoute = AuthenticatedOpnameRouteImport.update({
-  id: '/opname',
-  path: '/opname',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedNetqloudRoute = AuthenticatedNetqloudRouteImport.update({
-  id: '/netqloud',
-  path: '/netqloud',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedMailRoute = AuthenticatedMailRouteImport.update({
-  id: '/mail',
-  path: '/mail',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
-  id: '/leads',
-  path: '/leads',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedJobsRoute = AuthenticatedJobsRouteImport.update({
-  id: '/jobs',
-  path: '/jobs',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedInkoopfacturenRoute =
-  AuthenticatedInkoopfacturenRouteImport.update({
-    id: '/inkoopfacturen',
-    path: '/inkoopfacturen',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedGebruikersRoute = AuthenticatedGebruikersRouteImport.update({
-  id: '/gebruikers',
-  path: '/gebruikers',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedEnterpriseRoute = AuthenticatedEnterpriseRouteImport.update({
-  id: '/enterprise',
-  path: '/enterprise',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedContractenRoute = AuthenticatedContractenRouteImport.update({
-  id: '/contracten',
-  path: '/contracten',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedBoekhoudingRoute =
-  AuthenticatedBoekhoudingRouteImport.update({
-    id: '/boekhouding',
-    path: '/boekhouding',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAiColumbusRoute = AuthenticatedAiColumbusRouteImport.update({
-  id: '/ai-columbus',
-  path: '/ai-columbus',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedAgendaRoute = AuthenticatedAgendaRouteImport.update({
-  id: '/agenda',
-  path: '/agenda',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdministratieRoute =
@@ -218,173 +115,113 @@ const AuthenticatedAdministratieRoute =
     path: '/administratie',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedOutreachIndexRoute =
-  AuthenticatedOutreachIndexRouteImport.update({
-    id: '/outreach/',
-    path: '/outreach/',
+const AuthenticatedAgendaRoute = AuthenticatedAgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAiColumbusRoute = AuthenticatedAiColumbusRouteImport.update({
+  id: '/ai-columbus',
+  path: '/ai-columbus',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBoekhoudingRoute =
+  AuthenticatedBoekhoudingRouteImport.update({
+    id: '/boekhouding',
+    path: '/boekhouding',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedOfferteStudioIndexRoute =
-  AuthenticatedOfferteStudioIndexRouteImport.update({
-    id: '/offerte-studio/',
-    path: '/offerte-studio/',
+const AuthenticatedContractenRoute = AuthenticatedContractenRouteImport.update({
+  id: '/contracten',
+  path: '/contracten',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEnterpriseRoute = AuthenticatedEnterpriseRouteImport.update({
+  id: '/enterprise',
+  path: '/enterprise',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedGebruikersRoute = AuthenticatedGebruikersRouteImport.update({
+  id: '/gebruikers',
+  path: '/gebruikers',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedInkoopfacturenRoute =
+  AuthenticatedInkoopfacturenRouteImport.update({
+    id: '/inkoopfacturen',
+    path: '/inkoopfacturen',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedNetqloudIndexRoute =
-  AuthenticatedNetqloudIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedNetqloudRoute,
-  } as any)
-const AuthenticatedInvoicesIndexRoute =
-  AuthenticatedInvoicesIndexRouteImport.update({
-    id: '/invoices/',
-    path: '/invoices/',
+const AuthenticatedJobsRoute = AuthenticatedJobsRouteImport.update({
+  id: '/jobs',
+  path: '/jobs',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMailRoute = AuthenticatedMailRouteImport.update({
+  id: '/mail',
+  path: '/mail',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedNetqloudRoute = AuthenticatedNetqloudRouteImport.update({
+  id: '/netqloud',
+  path: '/netqloud',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOpnameRoute = AuthenticatedOpnameRouteImport.update({
+  id: '/opname',
+  path: '/opname',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProductenRoute = AuthenticatedProductenRouteImport.update({
+  id: '/producten',
+  path: '/producten',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedQuotesRoute = AuthenticatedQuotesRouteImport.update({
+  id: '/quotes',
+  path: '/quotes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSalesWorkflowRoute =
+  AuthenticatedSalesWorkflowRouteImport.update({
+    id: '/sales-workflow',
+    path: '/sales-workflow',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAnalyticsIndexRoute =
-  AuthenticatedAnalyticsIndexRouteImport.update({
-    id: '/analytics/',
-    path: '/analytics/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
+const AuthenticatedTeamsRoute = AuthenticatedTeamsRouteImport.update({
+  id: '/teams',
+  path: '/teams',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AfspraakTokenRoute = AfspraakTokenRouteImport.update({
+  id: '/afspraak/$token',
+  path: '/afspraak/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QTokenRoute = QTokenRouteImport.update({
+  id: '/q/$token',
+  path: '/q/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TTokenRoute = TTokenRouteImport.update({
+  id: '/t/$token',
+  path: '/t/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAiColumbusIndexRoute =
   AuthenticatedAiColumbusIndexRouteImport.update({
     id: '/',
     path: '/',
-    getParentRoute: () => AuthenticatedAiColumbusRoute,
-  } as any)
-const QuoteTokenPdfRoute = QuoteTokenPdfRouteImport.update({
-  id: '/quote/$token/pdf',
-  path: '/quote/$token/pdf',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AcceptQuoteTokenRoute = AcceptQuoteTokenRouteImport.update({
-  id: '/accept/quote/$token',
-  path: '/accept/quote/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedOutreachTemplatesRoute =
-  AuthenticatedOutreachTemplatesRouteImport.update({
-    id: '/outreach/templates',
-    path: '/outreach/templates',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedOpnameRegelsRoute =
-  AuthenticatedOpnameRegelsRouteImport.update({
-    id: '/regels',
-    path: '/regels',
-    getParentRoute: () => AuthenticatedOpnameRoute,
-  } as any)
-const AuthenticatedNetqloudServersRoute =
-  AuthenticatedNetqloudServersRouteImport.update({
-    id: '/servers',
-    path: '/servers',
-    getParentRoute: () => AuthenticatedNetqloudRoute,
-  } as any)
-const AuthenticatedNetqloudKlantenRoute =
-  AuthenticatedNetqloudKlantenRouteImport.update({
-    id: '/klanten',
-    path: '/klanten',
-    getParentRoute: () => AuthenticatedNetqloudRoute,
-  } as any)
-const AuthenticatedNetqloudInstellingenRoute =
-  AuthenticatedNetqloudInstellingenRouteImport.update({
-    id: '/instellingen',
-    path: '/instellingen',
-    getParentRoute: () => AuthenticatedNetqloudRoute,
-  } as any)
-const AuthenticatedMailTemplatesRoute =
-  AuthenticatedMailTemplatesRouteImport.update({
-    id: '/templates',
-    path: '/templates',
-    getParentRoute: () => AuthenticatedMailRoute,
-  } as any)
-const AuthenticatedMailSkinsRoute = AuthenticatedMailSkinsRouteImport.update({
-  id: '/skins',
-  path: '/skins',
-  getParentRoute: () => AuthenticatedMailRoute,
-} as any)
-const AuthenticatedMailSettingsRoute =
-  AuthenticatedMailSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AuthenticatedMailRoute,
-  } as any)
-const AuthenticatedMailFlowRoute = AuthenticatedMailFlowRouteImport.update({
-  id: '/flow',
-  path: '/flow',
-  getParentRoute: () => AuthenticatedMailRoute,
-} as any)
-const AuthenticatedMailAppointmentPreviewRoute =
-  AuthenticatedMailAppointmentPreviewRouteImport.update({
-    id: '/appointment-preview',
-    path: '/appointment-preview',
-    getParentRoute: () => AuthenticatedMailRoute,
-  } as any)
-const AuthenticatedKpiMetricRoute = AuthenticatedKpiMetricRouteImport.update({
-  id: '/kpi/$metric',
-  path: '/kpi/$metric',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedInvoicesInvoiceIdRoute =
-  AuthenticatedInvoicesInvoiceIdRouteImport.update({
-    id: '/invoices/$invoiceId',
-    path: '/invoices/$invoiceId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedInkoopfacturenExpenseIdRoute =
-  AuthenticatedInkoopfacturenExpenseIdRouteImport.update({
-    id: '/$expenseId',
-    path: '/$expenseId',
-    getParentRoute: () => AuthenticatedInkoopfacturenRoute,
-  } as any)
-const AuthenticatedCrmActivitiesRoute =
-  AuthenticatedCrmActivitiesRouteImport.update({
-    id: '/crm/activities',
-    path: '/crm/activities',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedContractenContractIdRoute =
-  AuthenticatedContractenContractIdRouteImport.update({
-    id: '/$contractId',
-    path: '/$contractId',
-    getParentRoute: () => AuthenticatedContractenRoute,
-  } as any)
-const AuthenticatedAiColumbusRapportagesRoute =
-  AuthenticatedAiColumbusRapportagesRouteImport.update({
-    id: '/rapportages',
-    path: '/rapportages',
-    getParentRoute: () => AuthenticatedAiColumbusRoute,
-  } as any)
-const AuthenticatedAiColumbusProjectenRoute =
-  AuthenticatedAiColumbusProjectenRouteImport.update({
-    id: '/projecten',
-    path: '/projecten',
-    getParentRoute: () => AuthenticatedAiColumbusRoute,
-  } as any)
-const AuthenticatedAiColumbusModellenRoute =
-  AuthenticatedAiColumbusModellenRouteImport.update({
-    id: '/modellen',
-    path: '/modellen',
-    getParentRoute: () => AuthenticatedAiColumbusRoute,
-  } as any)
-const AuthenticatedAiColumbusLogsRoute =
-  AuthenticatedAiColumbusLogsRouteImport.update({
-    id: '/logs',
-    path: '/logs',
-    getParentRoute: () => AuthenticatedAiColumbusRoute,
-  } as any)
-const AuthenticatedAiColumbusLeadsRoute =
-  AuthenticatedAiColumbusLeadsRouteImport.update({
-    id: '/leads',
-    path: '/leads',
-    getParentRoute: () => AuthenticatedAiColumbusRoute,
-  } as any)
-const AuthenticatedAiColumbusKoppelingenRoute =
-  AuthenticatedAiColumbusKoppelingenRouteImport.update({
-    id: '/koppelingen',
-    path: '/koppelingen',
     getParentRoute: () => AuthenticatedAiColumbusRoute,
   } as any)
 const AuthenticatedAiColumbusInstellingenRoute =
@@ -393,74 +230,209 @@ const AuthenticatedAiColumbusInstellingenRoute =
     path: '/instellingen',
     getParentRoute: () => AuthenticatedAiColumbusRoute,
   } as any)
+const AuthenticatedAiColumbusKoppelingenRoute =
+  AuthenticatedAiColumbusKoppelingenRouteImport.update({
+    id: '/koppelingen',
+    path: '/koppelingen',
+    getParentRoute: () => AuthenticatedAiColumbusRoute,
+  } as any)
+const AuthenticatedAiColumbusLeadsRoute =
+  AuthenticatedAiColumbusLeadsRouteImport.update({
+    id: '/leads',
+    path: '/leads',
+    getParentRoute: () => AuthenticatedAiColumbusRoute,
+  } as any)
+const AuthenticatedAiColumbusLogsRoute =
+  AuthenticatedAiColumbusLogsRouteImport.update({
+    id: '/logs',
+    path: '/logs',
+    getParentRoute: () => AuthenticatedAiColumbusRoute,
+  } as any)
+const AuthenticatedAiColumbusModellenRoute =
+  AuthenticatedAiColumbusModellenRouteImport.update({
+    id: '/modellen',
+    path: '/modellen',
+    getParentRoute: () => AuthenticatedAiColumbusRoute,
+  } as any)
+const AuthenticatedAiColumbusProjectenRoute =
+  AuthenticatedAiColumbusProjectenRouteImport.update({
+    id: '/projecten',
+    path: '/projecten',
+    getParentRoute: () => AuthenticatedAiColumbusRoute,
+  } as any)
+const AuthenticatedAiColumbusRapportagesRoute =
+  AuthenticatedAiColumbusRapportagesRouteImport.update({
+    id: '/rapportages',
+    path: '/rapportages',
+    getParentRoute: () => AuthenticatedAiColumbusRoute,
+  } as any)
+const AuthenticatedAnalyticsIndexRoute =
+  AuthenticatedAnalyticsIndexRouteImport.update({
+    id: '/analytics/',
+    path: '/analytics/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedContractenContractIdRoute =
+  AuthenticatedContractenContractIdRouteImport.update({
+    id: '/$contractId',
+    path: '/$contractId',
+    getParentRoute: () => AuthenticatedContractenRoute,
+  } as any)
+const AuthenticatedCrmActivitiesRoute =
+  AuthenticatedCrmActivitiesRouteImport.update({
+    id: '/crm/activities',
+    path: '/crm/activities',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInkoopfacturenExpenseIdRoute =
+  AuthenticatedInkoopfacturenExpenseIdRouteImport.update({
+    id: '/$expenseId',
+    path: '/$expenseId',
+    getParentRoute: () => AuthenticatedInkoopfacturenRoute,
+  } as any)
+const AuthenticatedInvoicesIndexRoute =
+  AuthenticatedInvoicesIndexRouteImport.update({
+    id: '/invoices/',
+    path: '/invoices/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInvoicesInvoiceIdRoute =
+  AuthenticatedInvoicesInvoiceIdRouteImport.update({
+    id: '/invoices/$invoiceId',
+    path: '/invoices/$invoiceId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedKpiMetricRoute = AuthenticatedKpiMetricRouteImport.update({
+  id: '/kpi/$metric',
+  path: '/kpi/$metric',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMailAppointmentPreviewRoute =
+  AuthenticatedMailAppointmentPreviewRouteImport.update({
+    id: '/appointment-preview',
+    path: '/appointment-preview',
+    getParentRoute: () => AuthenticatedMailRoute,
+  } as any)
+const AuthenticatedMailFlowRoute = AuthenticatedMailFlowRouteImport.update({
+  id: '/flow',
+  path: '/flow',
+  getParentRoute: () => AuthenticatedMailRoute,
+} as any)
+const AuthenticatedMailSettingsRoute =
+  AuthenticatedMailSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedMailRoute,
+  } as any)
+const AuthenticatedMailSkinsRoute = AuthenticatedMailSkinsRouteImport.update({
+  id: '/skins',
+  path: '/skins',
+  getParentRoute: () => AuthenticatedMailRoute,
+} as any)
+const AuthenticatedMailTemplatesRoute =
+  AuthenticatedMailTemplatesRouteImport.update({
+    id: '/templates',
+    path: '/templates',
+    getParentRoute: () => AuthenticatedMailRoute,
+  } as any)
+const AuthenticatedNetqloudIndexRoute =
+  AuthenticatedNetqloudIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedNetqloudRoute,
+  } as any)
+const AuthenticatedNetqloudInstellingenRoute =
+  AuthenticatedNetqloudInstellingenRouteImport.update({
+    id: '/instellingen',
+    path: '/instellingen',
+    getParentRoute: () => AuthenticatedNetqloudRoute,
+  } as any)
+const AuthenticatedNetqloudKlantenRoute =
+  AuthenticatedNetqloudKlantenRouteImport.update({
+    id: '/klanten',
+    path: '/klanten',
+    getParentRoute: () => AuthenticatedNetqloudRoute,
+  } as any)
+const AuthenticatedNetqloudServersRoute =
+  AuthenticatedNetqloudServersRouteImport.update({
+    id: '/servers',
+    path: '/servers',
+    getParentRoute: () => AuthenticatedNetqloudRoute,
+  } as any)
+const AuthenticatedOfferteStudioIndexRoute =
+  AuthenticatedOfferteStudioIndexRouteImport.update({
+    id: '/offerte-studio/',
+    path: '/offerte-studio/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOpnameRegelsRoute =
+  AuthenticatedOpnameRegelsRouteImport.update({
+    id: '/regels',
+    path: '/regels',
+    getParentRoute: () => AuthenticatedOpnameRoute,
+  } as any)
+const AuthenticatedOutreachIndexRoute =
+  AuthenticatedOutreachIndexRouteImport.update({
+    id: '/outreach/',
+    path: '/outreach/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOutreachTemplatesRoute =
+  AuthenticatedOutreachTemplatesRouteImport.update({
+    id: '/outreach/templates',
+    path: '/outreach/templates',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AcceptQuoteTokenRoute = AcceptQuoteTokenRouteImport.update({
+  id: '/accept/quote/$token',
+  path: '/accept/quote/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QuoteTokenPdfRoute = QuoteTokenPdfRouteImport.update({
+  id: '/quote/$token/pdf',
+  path: '/quote/$token/pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAiColumbusKlantenIndexRoute =
   AuthenticatedAiColumbusKlantenIndexRouteImport.update({
     id: '/klanten/',
     path: '/klanten/',
     getParentRoute: () => AuthenticatedAiColumbusRoute,
   } as any)
-const ApiPublicLTokenRoute = ApiPublicLTokenRouteImport.update({
-  id: '/api/public/l/$token',
-  path: '/api/public/l/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicHooksStudioFollowupsRoute =
-  ApiPublicHooksStudioFollowupsRouteImport.update({
-    id: '/api/public/hooks/studio-followups',
-    path: '/api/public/hooks/studio-followups',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedAiColumbusKlantenClientIdRoute =
+  AuthenticatedAiColumbusKlantenClientIdRouteImport.update({
+    id: '/klanten/$clientId',
+    path: '/klanten/$clientId',
+    getParentRoute: () => AuthenticatedAiColumbusRoute,
   } as any)
-const ApiPublicHooksResendEventsRoute =
-  ApiPublicHooksResendEventsRouteImport.update({
-    id: '/api/public/hooks/resend-events',
-    path: '/api/public/hooks/resend-events',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedAiColumbusProjectenProjectIdRoute =
+  AuthenticatedAiColumbusProjectenProjectIdRouteImport.update({
+    id: '/$projectId',
+    path: '/$projectId',
+    getParentRoute: () => AuthenticatedAiColumbusProjectenRoute,
   } as any)
-const ApiPublicHooksRecurringInvoicesRoute =
-  ApiPublicHooksRecurringInvoicesRouteImport.update({
-    id: '/api/public/hooks/recurring-invoices',
-    path: '/api/public/hooks/recurring-invoices',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedBoekhoudingJournalEntryIdRoute =
+  AuthenticatedBoekhoudingJournalEntryIdRouteImport.update({
+    id: '/journal/$entryId',
+    path: '/journal/$entryId',
+    getParentRoute: () => AuthenticatedBoekhoudingRoute,
   } as any)
-const ApiPublicHooksQuoteFollowupsRoute =
-  ApiPublicHooksQuoteFollowupsRouteImport.update({
-    id: '/api/public/hooks/quote-followups',
-    path: '/api/public/hooks/quote-followups',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedOfferteStudioQIdRoute =
+  AuthenticatedOfferteStudioQIdRouteImport.update({
+    id: '/offerte-studio/q/$id',
+    path: '/offerte-studio/q/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const ApiPublicHooksPortaalBillableRoute =
-  ApiPublicHooksPortaalBillableRouteImport.update({
-    id: '/api/public/hooks/portaal-billable',
-    path: '/api/public/hooks/portaal-billable',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedOfferteStudioTIdRoute =
+  AuthenticatedOfferteStudioTIdRouteImport.update({
+    id: '/offerte-studio/t/$id',
+    path: '/offerte-studio/t/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const ApiPublicHooksOutreachTrackRoute =
-  ApiPublicHooksOutreachTrackRouteImport.update({
-    id: '/api/public/hooks/outreach-track',
-    path: '/api/public/hooks/outreach-track',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksOutreachSequenceRoute =
-  ApiPublicHooksOutreachSequenceRouteImport.update({
-    id: '/api/public/hooks/outreach-sequence',
-    path: '/api/public/hooks/outreach-sequence',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksOutreachReplyRoute =
-  ApiPublicHooksOutreachReplyRouteImport.update({
-    id: '/api/public/hooks/outreach-reply',
-    path: '/api/public/hooks/outreach-reply',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksMollieRoute = ApiPublicHooksMollieRouteImport.update({
-  id: '/api/public/hooks/mollie',
-  path: '/api/public/hooks/mollie',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicHooksMailInboundRoute =
-  ApiPublicHooksMailInboundRouteImport.update({
-    id: '/api/public/hooks/mail-inbound',
-    path: '/api/public/hooks/mail-inbound',
+const ApiPublicHooksCampaignFlowTickRoute =
+  ApiPublicHooksCampaignFlowTickRouteImport.update({
+    id: '/api/public/hooks/campaign-flow-tick',
+    path: '/api/public/hooks/campaign-flow-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksLeadIntakeRoute =
@@ -469,42 +441,70 @@ const ApiPublicHooksLeadIntakeRoute =
     path: '/api/public/hooks/lead-intake',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksCampaignFlowTickRoute =
-  ApiPublicHooksCampaignFlowTickRouteImport.update({
-    id: '/api/public/hooks/campaign-flow-tick',
-    path: '/api/public/hooks/campaign-flow-tick',
+const ApiPublicHooksMailInboundRoute =
+  ApiPublicHooksMailInboundRouteImport.update({
+    id: '/api/public/hooks/mail-inbound',
+    path: '/api/public/hooks/mail-inbound',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AuthenticatedOfferteStudioTIdRoute =
-  AuthenticatedOfferteStudioTIdRouteImport.update({
-    id: '/offerte-studio/t/$id',
-    path: '/offerte-studio/t/$id',
-    getParentRoute: () => AuthenticatedRouteRoute,
+const ApiPublicHooksMollieRoute = ApiPublicHooksMollieRouteImport.update({
+  id: '/api/public/hooks/mollie',
+  path: '/api/public/hooks/mollie',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHooksOutreachReplyRoute =
+  ApiPublicHooksOutreachReplyRouteImport.update({
+    id: '/api/public/hooks/outreach-reply',
+    path: '/api/public/hooks/outreach-reply',
+    getParentRoute: () => rootRouteImport,
   } as any)
-const AuthenticatedOfferteStudioQIdRoute =
-  AuthenticatedOfferteStudioQIdRouteImport.update({
-    id: '/offerte-studio/q/$id',
-    path: '/offerte-studio/q/$id',
-    getParentRoute: () => AuthenticatedRouteRoute,
+const ApiPublicHooksOutreachSequenceRoute =
+  ApiPublicHooksOutreachSequenceRouteImport.update({
+    id: '/api/public/hooks/outreach-sequence',
+    path: '/api/public/hooks/outreach-sequence',
+    getParentRoute: () => rootRouteImport,
   } as any)
-const AuthenticatedBoekhoudingJournalEntryIdRoute =
-  AuthenticatedBoekhoudingJournalEntryIdRouteImport.update({
-    id: '/journal/$entryId',
-    path: '/journal/$entryId',
-    getParentRoute: () => AuthenticatedBoekhoudingRoute,
+const ApiPublicHooksOutreachTrackRoute =
+  ApiPublicHooksOutreachTrackRouteImport.update({
+    id: '/api/public/hooks/outreach-track',
+    path: '/api/public/hooks/outreach-track',
+    getParentRoute: () => rootRouteImport,
   } as any)
-const AuthenticatedAiColumbusProjectenProjectIdRoute =
-  AuthenticatedAiColumbusProjectenProjectIdRouteImport.update({
-    id: '/$projectId',
-    path: '/$projectId',
-    getParentRoute: () => AuthenticatedAiColumbusProjectenRoute,
+const ApiPublicHooksPortaalBillableRoute =
+  ApiPublicHooksPortaalBillableRouteImport.update({
+    id: '/api/public/hooks/portaal-billable',
+    path: '/api/public/hooks/portaal-billable',
+    getParentRoute: () => rootRouteImport,
   } as any)
-const AuthenticatedAiColumbusKlantenClientIdRoute =
-  AuthenticatedAiColumbusKlantenClientIdRouteImport.update({
-    id: '/klanten/$clientId',
-    path: '/klanten/$clientId',
-    getParentRoute: () => AuthenticatedAiColumbusRoute,
+const ApiPublicHooksQuoteFollowupsRoute =
+  ApiPublicHooksQuoteFollowupsRouteImport.update({
+    id: '/api/public/hooks/quote-followups',
+    path: '/api/public/hooks/quote-followups',
+    getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksRecurringInvoicesRoute =
+  ApiPublicHooksRecurringInvoicesRouteImport.update({
+    id: '/api/public/hooks/recurring-invoices',
+    path: '/api/public/hooks/recurring-invoices',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksResendEventsRoute =
+  ApiPublicHooksResendEventsRouteImport.update({
+    id: '/api/public/hooks/resend-events',
+    path: '/api/public/hooks/resend-events',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksStudioFollowupsRoute =
+  ApiPublicHooksStudioFollowupsRouteImport.update({
+    id: '/api/public/hooks/studio-followups',
+    path: '/api/public/hooks/studio-followups',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicLTokenRoute = ApiPublicLTokenRouteImport.update({
+  id: '/api/public/l/$token',
+  path: '/api/public/l/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -992,18 +992,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/visual-check': {
-      id: '/visual-check'
-      path: '/visual-check'
-      fullPath: '/visual-check'
-      preLoaderRoute: typeof VisualCheckRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -1013,11 +1006,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/visual-check': {
+      id: '/visual-check'
+      path: '/visual-check'
+      fullPath: '/visual-check'
+      preLoaderRoute: typeof VisualCheckRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/': {
@@ -1027,137 +1027,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/t/$token': {
-      id: '/t/$token'
-      path: '/t/$token'
-      fullPath: '/t/$token'
-      preLoaderRoute: typeof TTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/q/$token': {
-      id: '/q/$token'
-      path: '/q/$token'
-      fullPath: '/q/$token'
-      preLoaderRoute: typeof QTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/chat': {
-      id: '/api/chat'
-      path: '/api/chat'
-      fullPath: '/api/chat'
-      preLoaderRoute: typeof ApiChatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/afspraak/$token': {
-      id: '/afspraak/$token'
-      path: '/afspraak/$token'
-      fullPath: '/afspraak/$token'
-      preLoaderRoute: typeof AfspraakTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/teams': {
-      id: '/_authenticated/teams'
-      path: '/teams'
-      fullPath: '/teams'
-      preLoaderRoute: typeof AuthenticatedTeamsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/sales-workflow': {
-      id: '/_authenticated/sales-workflow'
-      path: '/sales-workflow'
-      fullPath: '/sales-workflow'
-      preLoaderRoute: typeof AuthenticatedSalesWorkflowRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/quotes': {
-      id: '/_authenticated/quotes'
-      path: '/quotes'
-      fullPath: '/quotes'
-      preLoaderRoute: typeof AuthenticatedQuotesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/producten': {
-      id: '/_authenticated/producten'
-      path: '/producten'
-      fullPath: '/producten'
-      preLoaderRoute: typeof AuthenticatedProductenRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/opname': {
-      id: '/_authenticated/opname'
-      path: '/opname'
-      fullPath: '/opname'
-      preLoaderRoute: typeof AuthenticatedOpnameRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/netqloud': {
-      id: '/_authenticated/netqloud'
-      path: '/netqloud'
-      fullPath: '/netqloud'
-      preLoaderRoute: typeof AuthenticatedNetqloudRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/mail': {
-      id: '/_authenticated/mail'
-      path: '/mail'
-      fullPath: '/mail'
-      preLoaderRoute: typeof AuthenticatedMailRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/leads': {
-      id: '/_authenticated/leads'
-      path: '/leads'
-      fullPath: '/leads'
-      preLoaderRoute: typeof AuthenticatedLeadsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/jobs': {
-      id: '/_authenticated/jobs'
-      path: '/jobs'
-      fullPath: '/jobs'
-      preLoaderRoute: typeof AuthenticatedJobsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/inkoopfacturen': {
-      id: '/_authenticated/inkoopfacturen'
-      path: '/inkoopfacturen'
-      fullPath: '/inkoopfacturen'
-      preLoaderRoute: typeof AuthenticatedInkoopfacturenRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/gebruikers': {
-      id: '/_authenticated/gebruikers'
-      path: '/gebruikers'
-      fullPath: '/gebruikers'
-      preLoaderRoute: typeof AuthenticatedGebruikersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/enterprise': {
-      id: '/_authenticated/enterprise'
-      path: '/enterprise'
-      fullPath: '/enterprise'
-      preLoaderRoute: typeof AuthenticatedEnterpriseRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/contracten': {
-      id: '/_authenticated/contracten'
-      path: '/contracten'
-      fullPath: '/contracten'
-      preLoaderRoute: typeof AuthenticatedContractenRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/boekhouding': {
-      id: '/_authenticated/boekhouding'
-      path: '/boekhouding'
-      fullPath: '/boekhouding'
-      preLoaderRoute: typeof AuthenticatedBoekhoudingRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/ai-columbus': {
-      id: '/_authenticated/ai-columbus'
-      path: '/ai-columbus'
-      fullPath: '/ai-columbus'
-      preLoaderRoute: typeof AuthenticatedAiColumbusRouteImport
+    '/_authenticated/administratie': {
+      id: '/_authenticated/administratie'
+      path: '/administratie'
+      fullPath: '/administratie'
+      preLoaderRoute: typeof AuthenticatedAdministratieRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/agenda': {
@@ -1167,214 +1041,144 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAgendaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/administratie': {
-      id: '/_authenticated/administratie'
-      path: '/administratie'
-      fullPath: '/administratie'
-      preLoaderRoute: typeof AuthenticatedAdministratieRouteImport
+    '/_authenticated/ai-columbus': {
+      id: '/_authenticated/ai-columbus'
+      path: '/ai-columbus'
+      fullPath: '/ai-columbus'
+      preLoaderRoute: typeof AuthenticatedAiColumbusRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/outreach/': {
-      id: '/_authenticated/outreach/'
-      path: '/outreach'
-      fullPath: '/outreach/'
-      preLoaderRoute: typeof AuthenticatedOutreachIndexRouteImport
+    '/_authenticated/boekhouding': {
+      id: '/_authenticated/boekhouding'
+      path: '/boekhouding'
+      fullPath: '/boekhouding'
+      preLoaderRoute: typeof AuthenticatedBoekhoudingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/offerte-studio/': {
-      id: '/_authenticated/offerte-studio/'
-      path: '/offerte-studio'
-      fullPath: '/offerte-studio/'
-      preLoaderRoute: typeof AuthenticatedOfferteStudioIndexRouteImport
+    '/_authenticated/contracten': {
+      id: '/_authenticated/contracten'
+      path: '/contracten'
+      fullPath: '/contracten'
+      preLoaderRoute: typeof AuthenticatedContractenRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/netqloud/': {
-      id: '/_authenticated/netqloud/'
-      path: '/'
-      fullPath: '/netqloud/'
-      preLoaderRoute: typeof AuthenticatedNetqloudIndexRouteImport
-      parentRoute: typeof AuthenticatedNetqloudRoute
-    }
-    '/_authenticated/invoices/': {
-      id: '/_authenticated/invoices/'
-      path: '/invoices'
-      fullPath: '/invoices/'
-      preLoaderRoute: typeof AuthenticatedInvoicesIndexRouteImport
+    '/_authenticated/enterprise': {
+      id: '/_authenticated/enterprise'
+      path: '/enterprise'
+      fullPath: '/enterprise'
+      preLoaderRoute: typeof AuthenticatedEnterpriseRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/analytics/': {
-      id: '/_authenticated/analytics/'
-      path: '/analytics'
-      fullPath: '/analytics/'
-      preLoaderRoute: typeof AuthenticatedAnalyticsIndexRouteImport
+    '/_authenticated/gebruikers': {
+      id: '/_authenticated/gebruikers'
+      path: '/gebruikers'
+      fullPath: '/gebruikers'
+      preLoaderRoute: typeof AuthenticatedGebruikersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/inkoopfacturen': {
+      id: '/_authenticated/inkoopfacturen'
+      path: '/inkoopfacturen'
+      fullPath: '/inkoopfacturen'
+      preLoaderRoute: typeof AuthenticatedInkoopfacturenRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/jobs': {
+      id: '/_authenticated/jobs'
+      path: '/jobs'
+      fullPath: '/jobs'
+      preLoaderRoute: typeof AuthenticatedJobsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/leads': {
+      id: '/_authenticated/leads'
+      path: '/leads'
+      fullPath: '/leads'
+      preLoaderRoute: typeof AuthenticatedLeadsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mail': {
+      id: '/_authenticated/mail'
+      path: '/mail'
+      fullPath: '/mail'
+      preLoaderRoute: typeof AuthenticatedMailRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/netqloud': {
+      id: '/_authenticated/netqloud'
+      path: '/netqloud'
+      fullPath: '/netqloud'
+      preLoaderRoute: typeof AuthenticatedNetqloudRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/opname': {
+      id: '/_authenticated/opname'
+      path: '/opname'
+      fullPath: '/opname'
+      preLoaderRoute: typeof AuthenticatedOpnameRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/producten': {
+      id: '/_authenticated/producten'
+      path: '/producten'
+      fullPath: '/producten'
+      preLoaderRoute: typeof AuthenticatedProductenRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/quotes': {
+      id: '/_authenticated/quotes'
+      path: '/quotes'
+      fullPath: '/quotes'
+      preLoaderRoute: typeof AuthenticatedQuotesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/sales-workflow': {
+      id: '/_authenticated/sales-workflow'
+      path: '/sales-workflow'
+      fullPath: '/sales-workflow'
+      preLoaderRoute: typeof AuthenticatedSalesWorkflowRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/teams': {
+      id: '/_authenticated/teams'
+      path: '/teams'
+      fullPath: '/teams'
+      preLoaderRoute: typeof AuthenticatedTeamsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/afspraak/$token': {
+      id: '/afspraak/$token'
+      path: '/afspraak/$token'
+      fullPath: '/afspraak/$token'
+      preLoaderRoute: typeof AfspraakTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/q/$token': {
+      id: '/q/$token'
+      path: '/q/$token'
+      fullPath: '/q/$token'
+      preLoaderRoute: typeof QTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/t/$token': {
+      id: '/t/$token'
+      path: '/t/$token'
+      fullPath: '/t/$token'
+      preLoaderRoute: typeof TTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/ai-columbus/': {
       id: '/_authenticated/ai-columbus/'
       path: '/'
       fullPath: '/ai-columbus/'
       preLoaderRoute: typeof AuthenticatedAiColumbusIndexRouteImport
-      parentRoute: typeof AuthenticatedAiColumbusRoute
-    }
-    '/quote/$token/pdf': {
-      id: '/quote/$token/pdf'
-      path: '/quote/$token/pdf'
-      fullPath: '/quote/$token/pdf'
-      preLoaderRoute: typeof QuoteTokenPdfRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/accept/quote/$token': {
-      id: '/accept/quote/$token'
-      path: '/accept/quote/$token'
-      fullPath: '/accept/quote/$token'
-      preLoaderRoute: typeof AcceptQuoteTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/outreach/templates': {
-      id: '/_authenticated/outreach/templates'
-      path: '/outreach/templates'
-      fullPath: '/outreach/templates'
-      preLoaderRoute: typeof AuthenticatedOutreachTemplatesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/opname/regels': {
-      id: '/_authenticated/opname/regels'
-      path: '/regels'
-      fullPath: '/opname/regels'
-      preLoaderRoute: typeof AuthenticatedOpnameRegelsRouteImport
-      parentRoute: typeof AuthenticatedOpnameRoute
-    }
-    '/_authenticated/netqloud/servers': {
-      id: '/_authenticated/netqloud/servers'
-      path: '/servers'
-      fullPath: '/netqloud/servers'
-      preLoaderRoute: typeof AuthenticatedNetqloudServersRouteImport
-      parentRoute: typeof AuthenticatedNetqloudRoute
-    }
-    '/_authenticated/netqloud/klanten': {
-      id: '/_authenticated/netqloud/klanten'
-      path: '/klanten'
-      fullPath: '/netqloud/klanten'
-      preLoaderRoute: typeof AuthenticatedNetqloudKlantenRouteImport
-      parentRoute: typeof AuthenticatedNetqloudRoute
-    }
-    '/_authenticated/netqloud/instellingen': {
-      id: '/_authenticated/netqloud/instellingen'
-      path: '/instellingen'
-      fullPath: '/netqloud/instellingen'
-      preLoaderRoute: typeof AuthenticatedNetqloudInstellingenRouteImport
-      parentRoute: typeof AuthenticatedNetqloudRoute
-    }
-    '/_authenticated/mail/templates': {
-      id: '/_authenticated/mail/templates'
-      path: '/templates'
-      fullPath: '/mail/templates'
-      preLoaderRoute: typeof AuthenticatedMailTemplatesRouteImport
-      parentRoute: typeof AuthenticatedMailRoute
-    }
-    '/_authenticated/mail/skins': {
-      id: '/_authenticated/mail/skins'
-      path: '/skins'
-      fullPath: '/mail/skins'
-      preLoaderRoute: typeof AuthenticatedMailSkinsRouteImport
-      parentRoute: typeof AuthenticatedMailRoute
-    }
-    '/_authenticated/mail/settings': {
-      id: '/_authenticated/mail/settings'
-      path: '/settings'
-      fullPath: '/mail/settings'
-      preLoaderRoute: typeof AuthenticatedMailSettingsRouteImport
-      parentRoute: typeof AuthenticatedMailRoute
-    }
-    '/_authenticated/mail/flow': {
-      id: '/_authenticated/mail/flow'
-      path: '/flow'
-      fullPath: '/mail/flow'
-      preLoaderRoute: typeof AuthenticatedMailFlowRouteImport
-      parentRoute: typeof AuthenticatedMailRoute
-    }
-    '/_authenticated/mail/appointment-preview': {
-      id: '/_authenticated/mail/appointment-preview'
-      path: '/appointment-preview'
-      fullPath: '/mail/appointment-preview'
-      preLoaderRoute: typeof AuthenticatedMailAppointmentPreviewRouteImport
-      parentRoute: typeof AuthenticatedMailRoute
-    }
-    '/_authenticated/kpi/$metric': {
-      id: '/_authenticated/kpi/$metric'
-      path: '/kpi/$metric'
-      fullPath: '/kpi/$metric'
-      preLoaderRoute: typeof AuthenticatedKpiMetricRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/invoices/$invoiceId': {
-      id: '/_authenticated/invoices/$invoiceId'
-      path: '/invoices/$invoiceId'
-      fullPath: '/invoices/$invoiceId'
-      preLoaderRoute: typeof AuthenticatedInvoicesInvoiceIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/inkoopfacturen/$expenseId': {
-      id: '/_authenticated/inkoopfacturen/$expenseId'
-      path: '/$expenseId'
-      fullPath: '/inkoopfacturen/$expenseId'
-      preLoaderRoute: typeof AuthenticatedInkoopfacturenExpenseIdRouteImport
-      parentRoute: typeof AuthenticatedInkoopfacturenRoute
-    }
-    '/_authenticated/crm/activities': {
-      id: '/_authenticated/crm/activities'
-      path: '/crm/activities'
-      fullPath: '/crm/activities'
-      preLoaderRoute: typeof AuthenticatedCrmActivitiesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/contracten/$contractId': {
-      id: '/_authenticated/contracten/$contractId'
-      path: '/$contractId'
-      fullPath: '/contracten/$contractId'
-      preLoaderRoute: typeof AuthenticatedContractenContractIdRouteImport
-      parentRoute: typeof AuthenticatedContractenRoute
-    }
-    '/_authenticated/ai-columbus/rapportages': {
-      id: '/_authenticated/ai-columbus/rapportages'
-      path: '/rapportages'
-      fullPath: '/ai-columbus/rapportages'
-      preLoaderRoute: typeof AuthenticatedAiColumbusRapportagesRouteImport
-      parentRoute: typeof AuthenticatedAiColumbusRoute
-    }
-    '/_authenticated/ai-columbus/projecten': {
-      id: '/_authenticated/ai-columbus/projecten'
-      path: '/projecten'
-      fullPath: '/ai-columbus/projecten'
-      preLoaderRoute: typeof AuthenticatedAiColumbusProjectenRouteImport
-      parentRoute: typeof AuthenticatedAiColumbusRoute
-    }
-    '/_authenticated/ai-columbus/modellen': {
-      id: '/_authenticated/ai-columbus/modellen'
-      path: '/modellen'
-      fullPath: '/ai-columbus/modellen'
-      preLoaderRoute: typeof AuthenticatedAiColumbusModellenRouteImport
-      parentRoute: typeof AuthenticatedAiColumbusRoute
-    }
-    '/_authenticated/ai-columbus/logs': {
-      id: '/_authenticated/ai-columbus/logs'
-      path: '/logs'
-      fullPath: '/ai-columbus/logs'
-      preLoaderRoute: typeof AuthenticatedAiColumbusLogsRouteImport
-      parentRoute: typeof AuthenticatedAiColumbusRoute
-    }
-    '/_authenticated/ai-columbus/leads': {
-      id: '/_authenticated/ai-columbus/leads'
-      path: '/leads'
-      fullPath: '/ai-columbus/leads'
-      preLoaderRoute: typeof AuthenticatedAiColumbusLeadsRouteImport
-      parentRoute: typeof AuthenticatedAiColumbusRoute
-    }
-    '/_authenticated/ai-columbus/koppelingen': {
-      id: '/_authenticated/ai-columbus/koppelingen'
-      path: '/koppelingen'
-      fullPath: '/ai-columbus/koppelingen'
-      preLoaderRoute: typeof AuthenticatedAiColumbusKoppelingenRouteImport
       parentRoute: typeof AuthenticatedAiColumbusRoute
     }
     '/_authenticated/ai-columbus/instellingen': {
@@ -1384,6 +1188,202 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAiColumbusInstellingenRouteImport
       parentRoute: typeof AuthenticatedAiColumbusRoute
     }
+    '/_authenticated/ai-columbus/koppelingen': {
+      id: '/_authenticated/ai-columbus/koppelingen'
+      path: '/koppelingen'
+      fullPath: '/ai-columbus/koppelingen'
+      preLoaderRoute: typeof AuthenticatedAiColumbusKoppelingenRouteImport
+      parentRoute: typeof AuthenticatedAiColumbusRoute
+    }
+    '/_authenticated/ai-columbus/leads': {
+      id: '/_authenticated/ai-columbus/leads'
+      path: '/leads'
+      fullPath: '/ai-columbus/leads'
+      preLoaderRoute: typeof AuthenticatedAiColumbusLeadsRouteImport
+      parentRoute: typeof AuthenticatedAiColumbusRoute
+    }
+    '/_authenticated/ai-columbus/logs': {
+      id: '/_authenticated/ai-columbus/logs'
+      path: '/logs'
+      fullPath: '/ai-columbus/logs'
+      preLoaderRoute: typeof AuthenticatedAiColumbusLogsRouteImport
+      parentRoute: typeof AuthenticatedAiColumbusRoute
+    }
+    '/_authenticated/ai-columbus/modellen': {
+      id: '/_authenticated/ai-columbus/modellen'
+      path: '/modellen'
+      fullPath: '/ai-columbus/modellen'
+      preLoaderRoute: typeof AuthenticatedAiColumbusModellenRouteImport
+      parentRoute: typeof AuthenticatedAiColumbusRoute
+    }
+    '/_authenticated/ai-columbus/projecten': {
+      id: '/_authenticated/ai-columbus/projecten'
+      path: '/projecten'
+      fullPath: '/ai-columbus/projecten'
+      preLoaderRoute: typeof AuthenticatedAiColumbusProjectenRouteImport
+      parentRoute: typeof AuthenticatedAiColumbusRoute
+    }
+    '/_authenticated/ai-columbus/rapportages': {
+      id: '/_authenticated/ai-columbus/rapportages'
+      path: '/rapportages'
+      fullPath: '/ai-columbus/rapportages'
+      preLoaderRoute: typeof AuthenticatedAiColumbusRapportagesRouteImport
+      parentRoute: typeof AuthenticatedAiColumbusRoute
+    }
+    '/_authenticated/analytics/': {
+      id: '/_authenticated/analytics/'
+      path: '/analytics'
+      fullPath: '/analytics/'
+      preLoaderRoute: typeof AuthenticatedAnalyticsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/contracten/$contractId': {
+      id: '/_authenticated/contracten/$contractId'
+      path: '/$contractId'
+      fullPath: '/contracten/$contractId'
+      preLoaderRoute: typeof AuthenticatedContractenContractIdRouteImport
+      parentRoute: typeof AuthenticatedContractenRoute
+    }
+    '/_authenticated/crm/activities': {
+      id: '/_authenticated/crm/activities'
+      path: '/crm/activities'
+      fullPath: '/crm/activities'
+      preLoaderRoute: typeof AuthenticatedCrmActivitiesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/inkoopfacturen/$expenseId': {
+      id: '/_authenticated/inkoopfacturen/$expenseId'
+      path: '/$expenseId'
+      fullPath: '/inkoopfacturen/$expenseId'
+      preLoaderRoute: typeof AuthenticatedInkoopfacturenExpenseIdRouteImport
+      parentRoute: typeof AuthenticatedInkoopfacturenRoute
+    }
+    '/_authenticated/invoices/': {
+      id: '/_authenticated/invoices/'
+      path: '/invoices'
+      fullPath: '/invoices/'
+      preLoaderRoute: typeof AuthenticatedInvoicesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/invoices/$invoiceId': {
+      id: '/_authenticated/invoices/$invoiceId'
+      path: '/invoices/$invoiceId'
+      fullPath: '/invoices/$invoiceId'
+      preLoaderRoute: typeof AuthenticatedInvoicesInvoiceIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/kpi/$metric': {
+      id: '/_authenticated/kpi/$metric'
+      path: '/kpi/$metric'
+      fullPath: '/kpi/$metric'
+      preLoaderRoute: typeof AuthenticatedKpiMetricRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mail/appointment-preview': {
+      id: '/_authenticated/mail/appointment-preview'
+      path: '/appointment-preview'
+      fullPath: '/mail/appointment-preview'
+      preLoaderRoute: typeof AuthenticatedMailAppointmentPreviewRouteImport
+      parentRoute: typeof AuthenticatedMailRoute
+    }
+    '/_authenticated/mail/flow': {
+      id: '/_authenticated/mail/flow'
+      path: '/flow'
+      fullPath: '/mail/flow'
+      preLoaderRoute: typeof AuthenticatedMailFlowRouteImport
+      parentRoute: typeof AuthenticatedMailRoute
+    }
+    '/_authenticated/mail/settings': {
+      id: '/_authenticated/mail/settings'
+      path: '/settings'
+      fullPath: '/mail/settings'
+      preLoaderRoute: typeof AuthenticatedMailSettingsRouteImport
+      parentRoute: typeof AuthenticatedMailRoute
+    }
+    '/_authenticated/mail/skins': {
+      id: '/_authenticated/mail/skins'
+      path: '/skins'
+      fullPath: '/mail/skins'
+      preLoaderRoute: typeof AuthenticatedMailSkinsRouteImport
+      parentRoute: typeof AuthenticatedMailRoute
+    }
+    '/_authenticated/mail/templates': {
+      id: '/_authenticated/mail/templates'
+      path: '/templates'
+      fullPath: '/mail/templates'
+      preLoaderRoute: typeof AuthenticatedMailTemplatesRouteImport
+      parentRoute: typeof AuthenticatedMailRoute
+    }
+    '/_authenticated/netqloud/': {
+      id: '/_authenticated/netqloud/'
+      path: '/'
+      fullPath: '/netqloud/'
+      preLoaderRoute: typeof AuthenticatedNetqloudIndexRouteImport
+      parentRoute: typeof AuthenticatedNetqloudRoute
+    }
+    '/_authenticated/netqloud/instellingen': {
+      id: '/_authenticated/netqloud/instellingen'
+      path: '/instellingen'
+      fullPath: '/netqloud/instellingen'
+      preLoaderRoute: typeof AuthenticatedNetqloudInstellingenRouteImport
+      parentRoute: typeof AuthenticatedNetqloudRoute
+    }
+    '/_authenticated/netqloud/klanten': {
+      id: '/_authenticated/netqloud/klanten'
+      path: '/klanten'
+      fullPath: '/netqloud/klanten'
+      preLoaderRoute: typeof AuthenticatedNetqloudKlantenRouteImport
+      parentRoute: typeof AuthenticatedNetqloudRoute
+    }
+    '/_authenticated/netqloud/servers': {
+      id: '/_authenticated/netqloud/servers'
+      path: '/servers'
+      fullPath: '/netqloud/servers'
+      preLoaderRoute: typeof AuthenticatedNetqloudServersRouteImport
+      parentRoute: typeof AuthenticatedNetqloudRoute
+    }
+    '/_authenticated/offerte-studio/': {
+      id: '/_authenticated/offerte-studio/'
+      path: '/offerte-studio'
+      fullPath: '/offerte-studio/'
+      preLoaderRoute: typeof AuthenticatedOfferteStudioIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/opname/regels': {
+      id: '/_authenticated/opname/regels'
+      path: '/regels'
+      fullPath: '/opname/regels'
+      preLoaderRoute: typeof AuthenticatedOpnameRegelsRouteImport
+      parentRoute: typeof AuthenticatedOpnameRoute
+    }
+    '/_authenticated/outreach/': {
+      id: '/_authenticated/outreach/'
+      path: '/outreach'
+      fullPath: '/outreach/'
+      preLoaderRoute: typeof AuthenticatedOutreachIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/outreach/templates': {
+      id: '/_authenticated/outreach/templates'
+      path: '/outreach/templates'
+      fullPath: '/outreach/templates'
+      preLoaderRoute: typeof AuthenticatedOutreachTemplatesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/accept/quote/$token': {
+      id: '/accept/quote/$token'
+      path: '/accept/quote/$token'
+      fullPath: '/accept/quote/$token'
+      preLoaderRoute: typeof AcceptQuoteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/quote/$token/pdf': {
+      id: '/quote/$token/pdf'
+      path: '/quote/$token/pdf'
+      fullPath: '/quote/$token/pdf'
+      preLoaderRoute: typeof QuoteTokenPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/ai-columbus/klanten/': {
       id: '/_authenticated/ai-columbus/klanten/'
       path: '/klanten'
@@ -1391,81 +1391,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAiColumbusKlantenIndexRouteImport
       parentRoute: typeof AuthenticatedAiColumbusRoute
     }
-    '/api/public/l/$token': {
-      id: '/api/public/l/$token'
-      path: '/api/public/l/$token'
-      fullPath: '/api/public/l/$token'
-      preLoaderRoute: typeof ApiPublicLTokenRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/ai-columbus/klanten/$clientId': {
+      id: '/_authenticated/ai-columbus/klanten/$clientId'
+      path: '/klanten/$clientId'
+      fullPath: '/ai-columbus/klanten/$clientId'
+      preLoaderRoute: typeof AuthenticatedAiColumbusKlantenClientIdRouteImport
+      parentRoute: typeof AuthenticatedAiColumbusRoute
     }
-    '/api/public/hooks/studio-followups': {
-      id: '/api/public/hooks/studio-followups'
-      path: '/api/public/hooks/studio-followups'
-      fullPath: '/api/public/hooks/studio-followups'
-      preLoaderRoute: typeof ApiPublicHooksStudioFollowupsRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/ai-columbus/projecten/$projectId': {
+      id: '/_authenticated/ai-columbus/projecten/$projectId'
+      path: '/$projectId'
+      fullPath: '/ai-columbus/projecten/$projectId'
+      preLoaderRoute: typeof AuthenticatedAiColumbusProjectenProjectIdRouteImport
+      parentRoute: typeof AuthenticatedAiColumbusProjectenRoute
     }
-    '/api/public/hooks/resend-events': {
-      id: '/api/public/hooks/resend-events'
-      path: '/api/public/hooks/resend-events'
-      fullPath: '/api/public/hooks/resend-events'
-      preLoaderRoute: typeof ApiPublicHooksResendEventsRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/boekhouding/journal/$entryId': {
+      id: '/_authenticated/boekhouding/journal/$entryId'
+      path: '/journal/$entryId'
+      fullPath: '/boekhouding/journal/$entryId'
+      preLoaderRoute: typeof AuthenticatedBoekhoudingJournalEntryIdRouteImport
+      parentRoute: typeof AuthenticatedBoekhoudingRoute
     }
-    '/api/public/hooks/recurring-invoices': {
-      id: '/api/public/hooks/recurring-invoices'
-      path: '/api/public/hooks/recurring-invoices'
-      fullPath: '/api/public/hooks/recurring-invoices'
-      preLoaderRoute: typeof ApiPublicHooksRecurringInvoicesRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/offerte-studio/q/$id': {
+      id: '/_authenticated/offerte-studio/q/$id'
+      path: '/offerte-studio/q/$id'
+      fullPath: '/offerte-studio/q/$id'
+      preLoaderRoute: typeof AuthenticatedOfferteStudioQIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/public/hooks/quote-followups': {
-      id: '/api/public/hooks/quote-followups'
-      path: '/api/public/hooks/quote-followups'
-      fullPath: '/api/public/hooks/quote-followups'
-      preLoaderRoute: typeof ApiPublicHooksQuoteFollowupsRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/offerte-studio/t/$id': {
+      id: '/_authenticated/offerte-studio/t/$id'
+      path: '/offerte-studio/t/$id'
+      fullPath: '/offerte-studio/t/$id'
+      preLoaderRoute: typeof AuthenticatedOfferteStudioTIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/public/hooks/portaal-billable': {
-      id: '/api/public/hooks/portaal-billable'
-      path: '/api/public/hooks/portaal-billable'
-      fullPath: '/api/public/hooks/portaal-billable'
-      preLoaderRoute: typeof ApiPublicHooksPortaalBillableRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/outreach-track': {
-      id: '/api/public/hooks/outreach-track'
-      path: '/api/public/hooks/outreach-track'
-      fullPath: '/api/public/hooks/outreach-track'
-      preLoaderRoute: typeof ApiPublicHooksOutreachTrackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/outreach-sequence': {
-      id: '/api/public/hooks/outreach-sequence'
-      path: '/api/public/hooks/outreach-sequence'
-      fullPath: '/api/public/hooks/outreach-sequence'
-      preLoaderRoute: typeof ApiPublicHooksOutreachSequenceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/outreach-reply': {
-      id: '/api/public/hooks/outreach-reply'
-      path: '/api/public/hooks/outreach-reply'
-      fullPath: '/api/public/hooks/outreach-reply'
-      preLoaderRoute: typeof ApiPublicHooksOutreachReplyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/mollie': {
-      id: '/api/public/hooks/mollie'
-      path: '/api/public/hooks/mollie'
-      fullPath: '/api/public/hooks/mollie'
-      preLoaderRoute: typeof ApiPublicHooksMollieRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/mail-inbound': {
-      id: '/api/public/hooks/mail-inbound'
-      path: '/api/public/hooks/mail-inbound'
-      fullPath: '/api/public/hooks/mail-inbound'
-      preLoaderRoute: typeof ApiPublicHooksMailInboundRouteImport
+    '/api/public/hooks/campaign-flow-tick': {
+      id: '/api/public/hooks/campaign-flow-tick'
+      path: '/api/public/hooks/campaign-flow-tick'
+      fullPath: '/api/public/hooks/campaign-flow-tick'
+      preLoaderRoute: typeof ApiPublicHooksCampaignFlowTickRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/lead-intake': {
@@ -1475,47 +1440,82 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksLeadIntakeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/campaign-flow-tick': {
-      id: '/api/public/hooks/campaign-flow-tick'
-      path: '/api/public/hooks/campaign-flow-tick'
-      fullPath: '/api/public/hooks/campaign-flow-tick'
-      preLoaderRoute: typeof ApiPublicHooksCampaignFlowTickRouteImport
+    '/api/public/hooks/mail-inbound': {
+      id: '/api/public/hooks/mail-inbound'
+      path: '/api/public/hooks/mail-inbound'
+      fullPath: '/api/public/hooks/mail-inbound'
+      preLoaderRoute: typeof ApiPublicHooksMailInboundRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/offerte-studio/t/$id': {
-      id: '/_authenticated/offerte-studio/t/$id'
-      path: '/offerte-studio/t/$id'
-      fullPath: '/offerte-studio/t/$id'
-      preLoaderRoute: typeof AuthenticatedOfferteStudioTIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/api/public/hooks/mollie': {
+      id: '/api/public/hooks/mollie'
+      path: '/api/public/hooks/mollie'
+      fullPath: '/api/public/hooks/mollie'
+      preLoaderRoute: typeof ApiPublicHooksMollieRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/offerte-studio/q/$id': {
-      id: '/_authenticated/offerte-studio/q/$id'
-      path: '/offerte-studio/q/$id'
-      fullPath: '/offerte-studio/q/$id'
-      preLoaderRoute: typeof AuthenticatedOfferteStudioQIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/api/public/hooks/outreach-reply': {
+      id: '/api/public/hooks/outreach-reply'
+      path: '/api/public/hooks/outreach-reply'
+      fullPath: '/api/public/hooks/outreach-reply'
+      preLoaderRoute: typeof ApiPublicHooksOutreachReplyRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/boekhouding/journal/$entryId': {
-      id: '/_authenticated/boekhouding/journal/$entryId'
-      path: '/journal/$entryId'
-      fullPath: '/boekhouding/journal/$entryId'
-      preLoaderRoute: typeof AuthenticatedBoekhoudingJournalEntryIdRouteImport
-      parentRoute: typeof AuthenticatedBoekhoudingRoute
+    '/api/public/hooks/outreach-sequence': {
+      id: '/api/public/hooks/outreach-sequence'
+      path: '/api/public/hooks/outreach-sequence'
+      fullPath: '/api/public/hooks/outreach-sequence'
+      preLoaderRoute: typeof ApiPublicHooksOutreachSequenceRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/ai-columbus/projecten/$projectId': {
-      id: '/_authenticated/ai-columbus/projecten/$projectId'
-      path: '/$projectId'
-      fullPath: '/ai-columbus/projecten/$projectId'
-      preLoaderRoute: typeof AuthenticatedAiColumbusProjectenProjectIdRouteImport
-      parentRoute: typeof AuthenticatedAiColumbusProjectenRoute
+    '/api/public/hooks/outreach-track': {
+      id: '/api/public/hooks/outreach-track'
+      path: '/api/public/hooks/outreach-track'
+      fullPath: '/api/public/hooks/outreach-track'
+      preLoaderRoute: typeof ApiPublicHooksOutreachTrackRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/ai-columbus/klanten/$clientId': {
-      id: '/_authenticated/ai-columbus/klanten/$clientId'
-      path: '/klanten/$clientId'
-      fullPath: '/ai-columbus/klanten/$clientId'
-      preLoaderRoute: typeof AuthenticatedAiColumbusKlantenClientIdRouteImport
-      parentRoute: typeof AuthenticatedAiColumbusRoute
+    '/api/public/hooks/portaal-billable': {
+      id: '/api/public/hooks/portaal-billable'
+      path: '/api/public/hooks/portaal-billable'
+      fullPath: '/api/public/hooks/portaal-billable'
+      preLoaderRoute: typeof ApiPublicHooksPortaalBillableRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/quote-followups': {
+      id: '/api/public/hooks/quote-followups'
+      path: '/api/public/hooks/quote-followups'
+      fullPath: '/api/public/hooks/quote-followups'
+      preLoaderRoute: typeof ApiPublicHooksQuoteFollowupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/recurring-invoices': {
+      id: '/api/public/hooks/recurring-invoices'
+      path: '/api/public/hooks/recurring-invoices'
+      fullPath: '/api/public/hooks/recurring-invoices'
+      preLoaderRoute: typeof ApiPublicHooksRecurringInvoicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/resend-events': {
+      id: '/api/public/hooks/resend-events'
+      path: '/api/public/hooks/resend-events'
+      fullPath: '/api/public/hooks/resend-events'
+      preLoaderRoute: typeof ApiPublicHooksResendEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/studio-followups': {
+      id: '/api/public/hooks/studio-followups'
+      path: '/api/public/hooks/studio-followups'
+      fullPath: '/api/public/hooks/studio-followups'
+      preLoaderRoute: typeof ApiPublicHooksStudioFollowupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/l/$token': {
+      id: '/api/public/l/$token'
+      path: '/api/public/l/$token'
+      fullPath: '/api/public/l/$token'
+      preLoaderRoute: typeof ApiPublicLTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
