@@ -577,7 +577,8 @@ function TeamsPage() {
               </Card>
             );
           })}
-        </div>
+          </div>
+        </>
       )}
 
       {/* Team aanmaken / bewerken */}
