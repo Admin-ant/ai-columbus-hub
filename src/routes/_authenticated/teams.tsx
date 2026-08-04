@@ -2,7 +2,18 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Users, Plus, Trash2, UserPlus, Pencil, Crown, Mail } from "lucide-react";
+import {
+  Loader2,
+  Users,
+  Plus,
+  Trash2,
+  UserPlus,
+  Pencil,
+  Crown,
+  Mail,
+  CheckSquare,
+  CalendarDays,
+} from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -71,6 +82,85 @@ type Team = {
 type Member = { id: string; team_id: string; user_id: string; role: string };
 type Person = { id: string; display_name: string | null; email: string | null };
 
+type Activity = {
+  kind: string;
+  done: boolean | null;
+  created_by: string | null;
+  assignee_ids: string[] | null;
+};
+type Meeting = { created_by: string | null; starts_at: string; status: string | null };
+type TeamStats = {
+  tasksOpen: number;
+  tasksTotal: number;
+  emails: number;
+  meetingsUpcoming: number;
+  meetingsTotal: number;
+};
+
+const EMPTY_STATS: TeamStats = {
+  tasksOpen: 0,
+  tasksTotal: 0,
+  emails: 0,
+  meetingsUpcoming: 0,
+  meetingsTotal: 0,
+};
+
+function StatTile({
+  icon: Icon,
+  label,
+  value,
+  hint,
+  tone,
+}: {
+  icon: typeof Users;
+  label: string;
+  value: number;
+  hint: string;
+  tone: string;
+}) {
+  return (
+    <div className="rounded-lg border bg-card p-3">
+      <div className="flex items-center gap-2">
+        <span className={`flex h-7 w-7 items-center justify-center rounded-md ${tone}`}>
+          <Icon className="h-4 w-4" />
+        </span>
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      </div>
+      <p className="mt-2 text-2xl font-semibold leading-none tabular-nums">{value}</p>
+      <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p>
+    </div>
+  );
+}
+
+function StatsGrid({ stats }: { stats: TeamStats }) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-3">
+      <StatTile
+        icon={CheckSquare}
+        label="Taken"
+        value={stats.tasksOpen}
+        hint={`${stats.tasksTotal} totaal`}
+        tone="bg-sky-100 text-sky-700"
+      />
+      <StatTile
+        icon={Mail}
+        label="E-mails"
+        value={stats.emails}
+        hint="verstuurd/gelogd"
+        tone="bg-violet-100 text-violet-700"
+      />
+      <StatTile
+        icon={CalendarDays}
+        label="Meetings"
+        value={stats.meetingsUpcoming}
+        hint={`${stats.meetingsTotal} totaal`}
+        tone="bg-emerald-100 text-emerald-700"
+      />
+    </div>
+  );
+}
+
+
 function initials(p?: Person | null): string {
   const src = p?.display_name || p?.email || "?";
   return src
@@ -100,6 +190,8 @@ function TeamsPage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
 
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<Team | null>(null);
@@ -163,6 +255,19 @@ function TeamsPage() {
     } else {
       setMembers([]);
     }
+
+    const [actRes, meetRes] = await Promise.all([
+      supabase
+        .from("crm_activities")
+        .select("kind, done, created_by, assignee_ids")
+        .eq("organization_id", currentOrganizationId),
+      supabase
+        .from("appointments")
+        .select("created_by, starts_at, status")
+        .eq("organization_id", currentOrganizationId),
+    ]);
+    setActivities((actRes.data ?? []) as Activity[]);
+    setMeetings((meetRes.data ?? []) as Meeting[]);
     setLoading(false);
   }, [currentOrganizationId]);
 
@@ -276,6 +381,48 @@ function TeamsPage() {
 
   const teamMembers = (teamId: string) => members.filter((m) => m.team_id === teamId);
 
+  const statsByTeam = useMemo(() => {
+    const now = Date.now();
+    const map = new Map<string, TeamStats>();
+    for (const t of teams) {
+      const ids = new Set(members.filter((m) => m.team_id === t.id).map((m) => m.user_id));
+      if (t.lead_user_id) ids.add(t.lead_user_id);
+      const s: TeamStats = { ...EMPTY_STATS };
+      for (const a of activities) {
+        const owned =
+          (a.created_by && ids.has(a.created_by)) ||
+          (a.assignee_ids ?? []).some((u) => ids.has(u));
+        if (!owned) continue;
+        if (a.kind === "task") {
+          s.tasksTotal += 1;
+          if (!a.done) s.tasksOpen += 1;
+        } else if (a.kind === "email") {
+          s.emails += 1;
+        }
+      }
+      for (const m of meetings) {
+        if (!m.created_by || !ids.has(m.created_by)) continue;
+        if (m.status === "cancelled") continue;
+        s.meetingsTotal += 1;
+        if (new Date(m.starts_at).getTime() >= now) s.meetingsUpcoming += 1;
+      }
+      map.set(t.id, s);
+    }
+    return map;
+  }, [teams, members, activities, meetings]);
+
+  const totals = useMemo(() => {
+    const t: TeamStats = { ...EMPTY_STATS };
+    for (const s of statsByTeam.values()) {
+      t.tasksOpen += s.tasksOpen;
+      t.tasksTotal += s.tasksTotal;
+      t.emails += s.emails;
+      t.meetingsUpcoming += s.meetingsUpcoming;
+      t.meetingsTotal += s.meetingsTotal;
+    }
+    return t;
+  }, [statsByTeam]);
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -328,9 +475,23 @@ function TeamsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Overzicht alle teams</CardTitle>
+              <CardDescription>
+                Openstaande taken, gelogde e-mails en geplande meetings van alle teamleden.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <StatsGrid stats={totals} />
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-4 md:grid-cols-2">
           {teams.map((t) => {
             const list = teamMembers(t.id);
+            const stats = statsByTeam.get(t.id) ?? EMPTY_STATS;
             const lead = t.lead_user_id ? peopleById.get(t.lead_user_id) : null;
             return (
               <Card key={t.id}>
@@ -367,6 +528,7 @@ function TeamsPage() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {t.description && <p className="text-sm text-muted-foreground">{t.description}</p>}
+                  <StatsGrid stats={stats} />
                   <div className="space-y-1.5">
                     {list.length === 0 && (
                       <p className="text-sm text-muted-foreground">Nog geen teamleden.</p>
@@ -416,7 +578,8 @@ function TeamsPage() {
               </Card>
             );
           })}
-        </div>
+          </div>
+        </>
       )}
 
       {/* Team aanmaken / bewerken */}
