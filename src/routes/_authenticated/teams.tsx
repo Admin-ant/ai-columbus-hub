@@ -82,6 +82,85 @@ type Team = {
 type Member = { id: string; team_id: string; user_id: string; role: string };
 type Person = { id: string; display_name: string | null; email: string | null };
 
+type Activity = {
+  kind: string;
+  done: boolean | null;
+  created_by: string | null;
+  assignee_ids: string[] | null;
+};
+type Meeting = { created_by: string | null; starts_at: string; status: string | null };
+type TeamStats = {
+  tasksOpen: number;
+  tasksTotal: number;
+  emails: number;
+  meetingsUpcoming: number;
+  meetingsTotal: number;
+};
+
+const EMPTY_STATS: TeamStats = {
+  tasksOpen: 0,
+  tasksTotal: 0,
+  emails: 0,
+  meetingsUpcoming: 0,
+  meetingsTotal: 0,
+};
+
+function StatTile({
+  icon: Icon,
+  label,
+  value,
+  hint,
+  tone,
+}: {
+  icon: typeof Users;
+  label: string;
+  value: number;
+  hint: string;
+  tone: string;
+}) {
+  return (
+    <div className="rounded-lg border bg-card p-3">
+      <div className="flex items-center gap-2">
+        <span className={`flex h-7 w-7 items-center justify-center rounded-md ${tone}`}>
+          <Icon className="h-4 w-4" />
+        </span>
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      </div>
+      <p className="mt-2 text-2xl font-semibold leading-none tabular-nums">{value}</p>
+      <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p>
+    </div>
+  );
+}
+
+function StatsGrid({ stats }: { stats: TeamStats }) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-3">
+      <StatTile
+        icon={CheckSquare}
+        label="Taken"
+        value={stats.tasksOpen}
+        hint={`${stats.tasksTotal} totaal`}
+        tone="bg-sky-100 text-sky-700"
+      />
+      <StatTile
+        icon={Mail}
+        label="E-mails"
+        value={stats.emails}
+        hint="verstuurd/gelogd"
+        tone="bg-violet-100 text-violet-700"
+      />
+      <StatTile
+        icon={CalendarDays}
+        label="Meetings"
+        value={stats.meetingsUpcoming}
+        hint={`${stats.meetingsTotal} totaal`}
+        tone="bg-emerald-100 text-emerald-700"
+      />
+    </div>
+  );
+}
+
+
 function initials(p?: Person | null): string {
   const src = p?.display_name || p?.email || "?";
   return src
