@@ -528,6 +528,7 @@ function TeamsPage() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {t.description && <p className="text-sm text-muted-foreground">{t.description}</p>}
+                  <StatsGrid stats={stats} />
                   <div className="space-y-1.5">
                     {list.length === 0 && (
                       <p className="text-sm text-muted-foreground">Nog geen teamleden.</p>
