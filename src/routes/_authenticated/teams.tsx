@@ -190,6 +190,8 @@ function TeamsPage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
 
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<Team | null>(null);
