@@ -118,10 +118,27 @@
     "summarize_lead": "Summarize this lead"
   },
   "accept": {
-    "title": "Accept quote",
-    "sign_and_pay": "Sign & pay",
-    "clear_signature": "Clear signature",
-    "thanks": "Thank you! The quote has been signed and the down-payment has been initiated."
+    "subtitle": "Sign & pay your quote",
+    "issued_on": "Issued on",
+    "no_lines": "No line items on this quote.",
+    "signature": "Digital signature",
+    "sign_hint": "Sign in the box below",
+    "clear": "Clear",
+    "sign_button": "Sign quote",
+    "signed_ok": "Thanks! Quote signed.",
+    "signed_on": "Signed on",
+    "payment": "Payment",
+    "payment_desc": "An invoice will be created automatically and posted in the bookkeeping after payment.",
+    "pay_button": "Pay {{amount}} (iDEAL)",
+    "mock_note": "Demo environment — no real payment is made.",
+    "paid_title": "Payment received",
+    "paid_subtitle": "Mollie reference: {{id}}",
+    "paid_ok": "Paid — invoice {{number}} created",
+    "not_found": "Quote not found",
+    "invalid_link": "This link is invalid or expired.",
+    "secured": "Secured by Lovable",
+    "copy_link": "Copy public link",
+    "link_copied": "Link copied"
   },
   "acc": {
     "title": "Accounting",
@@ -129,6 +146,7 @@
     "tabs": {
       "dashboard": "Dashboard",
       "invoices": "Invoices",
+      "expenses": "Expenses",
       "ledger": "Chart of accounts",
       "journal": "Journal entries",
       "sync": "Accountant Sync"
@@ -178,28 +196,5 @@
       "failed": "Push failed",
       "empty": "No sync events yet"
     }
-  },
-  "accept": {
-    "subtitle": "Sign & pay your quote",
-    "issued_on": "Issued on",
-    "no_lines": "No line items on this quote.",
-    "signature": "Digital signature",
-    "sign_hint": "Sign in the box below",
-    "clear": "Clear",
-    "sign_button": "Sign quote",
-    "signed_ok": "Thanks! Quote signed.",
-    "signed_on": "Signed on",
-    "payment": "Payment",
-    "payment_desc": "An invoice will be created automatically and posted in the bookkeeping after payment.",
-    "pay_button": "Pay {{amount}} (iDEAL)",
-    "mock_note": "Demo environment — no real payment is made.",
-    "paid_title": "Payment received",
-    "paid_subtitle": "Mollie reference: {{id}}",
-    "paid_ok": "Paid — invoice {{number}} created",
-    "not_found": "Quote not found",
-    "invalid_link": "This link is invalid or expired.",
-    "secured": "Secured by Lovable",
-    "copy_link": "Copy public link",
-    "link_copied": "Link copied"
   }
 }

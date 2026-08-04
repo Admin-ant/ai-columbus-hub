@@ -18,7 +18,7 @@ if (!i18n.isInitialized) {
       supportedLngs: ["nl", "en"],
       interpolation: { escapeValue: false },
       detection: {
-        order: ["localStorage", "navigator"],
+        order: ["localStorage"],
         caches: ["localStorage"],
         lookupLocalStorage: "portal.lang",
       },
