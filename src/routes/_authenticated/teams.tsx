@@ -381,6 +381,48 @@ function TeamsPage() {
 
   const teamMembers = (teamId: string) => members.filter((m) => m.team_id === teamId);
 
+  const statsByTeam = useMemo(() => {
+    const now = Date.now();
+    const map = new Map<string, TeamStats>();
+    for (const t of teams) {
+      const ids = new Set(members.filter((m) => m.team_id === t.id).map((m) => m.user_id));
+      if (t.lead_user_id) ids.add(t.lead_user_id);
+      const s: TeamStats = { ...EMPTY_STATS };
+      for (const a of activities) {
+        const owned =
+          (a.created_by && ids.has(a.created_by)) ||
+          (a.assignee_ids ?? []).some((u) => ids.has(u));
+        if (!owned) continue;
+        if (a.kind === "task") {
+          s.tasksTotal += 1;
+          if (!a.done) s.tasksOpen += 1;
+        } else if (a.kind === "email") {
+          s.emails += 1;
+        }
+      }
+      for (const m of meetings) {
+        if (!m.created_by || !ids.has(m.created_by)) continue;
+        if (m.status === "cancelled") continue;
+        s.meetingsTotal += 1;
+        if (new Date(m.starts_at).getTime() >= now) s.meetingsUpcoming += 1;
+      }
+      map.set(t.id, s);
+    }
+    return map;
+  }, [teams, members, activities, meetings]);
+
+  const totals = useMemo(() => {
+    const t: TeamStats = { ...EMPTY_STATS };
+    for (const s of statsByTeam.values()) {
+      t.tasksOpen += s.tasksOpen;
+      t.tasksTotal += s.tasksTotal;
+      t.emails += s.emails;
+      t.meetingsUpcoming += s.meetingsUpcoming;
+      t.meetingsTotal += s.meetingsTotal;
+    }
+    return t;
+  }, [statsByTeam]);
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
