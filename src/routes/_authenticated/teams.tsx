@@ -475,9 +475,23 @@ function TeamsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Overzicht alle teams</CardTitle>
+              <CardDescription>
+                Openstaande taken, gelogde e-mails en geplande meetings van alle teamleden.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <StatsGrid stats={totals} />
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-4 md:grid-cols-2">
           {teams.map((t) => {
             const list = teamMembers(t.id);
+            const stats = statsByTeam.get(t.id) ?? EMPTY_STATS;
             const lead = t.lead_user_id ? peopleById.get(t.lead_user_id) : null;
             return (
               <Card key={t.id}>
