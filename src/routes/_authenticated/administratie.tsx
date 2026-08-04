@@ -189,7 +189,10 @@ function UsersPanel() {
   async function changeRole(userId: string, role: "admin" | "medewerker") {
     setSavingId(userId);
     try {
-      await fnRole({ data: { userId, role } });
+      await fnRole({ data: { userId, role, enabled: true } });
+      if (role === "medewerker") {
+        await fnRole({ data: { userId, role: "admin", enabled: false } });
+      }
       setRows((prev) =>
         prev.map((r) => (r.id === userId ? { ...r, roles: [role] } : r)),
       );
