@@ -18,6 +18,7 @@ import {
   Package,
   Wand2,
   Megaphone,
+  BellRing,
   Rocket,
   ClipboardList,
   Mail,
