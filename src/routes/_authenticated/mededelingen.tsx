@@ -265,6 +265,7 @@ function NotificationPreferencesCard({
   userId: string | null;
 }) {
   const [emailEnabled, setEmailEnabled] = useState(true);
+  const [frequency, setFrequency] = useState<string>("direct");
   const [categories, setCategories] = useState<string[]>([...ANNOUNCEMENT_CATEGORIES]);
   const [saving, setSaving] = useState(false);
   const ready = !!organizationId && !!userId;
@@ -275,12 +276,16 @@ function NotificationPreferencesCard({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("notification_preferences")
-        .select("email_enabled, categories")
+        .select("email_enabled, categories, email_frequency")
         .eq("organization_id", organizationId!)
         .eq("user_id", userId!)
         .maybeSingle();
       if (error) throw error;
-      return data as { email_enabled: boolean; categories: string[] } | null;
+      return data as {
+        email_enabled: boolean;
+        categories: string[];
+        email_frequency: string | null;
+      } | null;
     },
   });
 
@@ -288,6 +293,7 @@ function NotificationPreferencesCard({
     if (prefs.data) {
       setEmailEnabled(prefs.data.email_enabled);
       setCategories(prefs.data.categories ?? []);
+      setFrequency(prefs.data.email_frequency ?? "direct");
     }
   }, [prefs.data]);
 
@@ -295,12 +301,14 @@ function NotificationPreferencesCard({
     const base = prefs.data ?? {
       email_enabled: true,
       categories: [...ANNOUNCEMENT_CATEGORIES] as string[],
+      email_frequency: "direct" as string | null,
     };
     return (
       base.email_enabled !== emailEnabled ||
+      (base.email_frequency ?? "direct") !== frequency ||
       [...(base.categories ?? [])].sort().join(",") !== [...categories].sort().join(",")
     );
-  }, [prefs.data, emailEnabled, categories]);
+  }, [prefs.data, emailEnabled, categories, frequency]);
 
   async function save() {
     if (!ready) return;
@@ -310,6 +318,7 @@ function NotificationPreferencesCard({
         user_id: userId!,
         organization_id: organizationId!,
         email_enabled: emailEnabled,
+        email_frequency: frequency,
         categories,
       } as never,
       { onConflict: "user_id,organization_id" },
