@@ -2803,6 +2803,8 @@ export type Database = {
           categories: string[]
           created_at: string
           email_enabled: boolean
+          email_frequency: string
+          last_digest_sent_at: string | null
           organization_id: string
           updated_at: string
           user_id: string
@@ -2811,6 +2813,8 @@ export type Database = {
           categories?: string[]
           created_at?: string
           email_enabled?: boolean
+          email_frequency?: string
+          last_digest_sent_at?: string | null
           organization_id: string
           updated_at?: string
           user_id: string
@@ -2819,6 +2823,8 @@ export type Database = {
           categories?: string[]
           created_at?: string
           email_enabled?: boolean
+          email_frequency?: string
+          last_digest_sent_at?: string | null
           organization_id?: string
           updated_at?: string
           user_id?: string

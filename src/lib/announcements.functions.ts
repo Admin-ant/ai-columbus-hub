@@ -55,18 +55,23 @@ export const createAnnouncement = createServerFn({ method: "POST" })
 
     const { data: prefs } = await supabaseAdmin
       .from("notification_preferences")
-      .select("user_id, email_enabled, categories")
+      .select("user_id, email_enabled, categories, email_frequency")
       .eq("organization_id", data.organization_id);
     const prefByUser = new Map(
       (prefs ?? []).map((p) => [
         (p as { user_id: string }).user_id,
-        p as unknown as { email_enabled: boolean; categories: string[] },
+        p as unknown as {
+          email_enabled: boolean;
+          categories: string[];
+          email_frequency: string | null;
+        },
       ]),
     );
 
     const wanted = memberIds.filter((uid) => {
       const p = prefByUser.get(uid);
-      if (!p) return true; // default: aan
+      if (!p) return true; // default: direct aan
+      if ((p.email_frequency ?? "direct") !== "direct") return false; // digest volgt later
       return p.email_enabled && (p.categories ?? []).includes(data.category);
     });
     if (!wanted.length) return { id, notified: 0 };

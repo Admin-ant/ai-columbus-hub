@@ -73,6 +73,7 @@ import { Route as AuthenticatedAiColumbusProjectenProjectIdRouteImport } from '.
 import { Route as AuthenticatedBoekhoudingJournalEntryIdRouteImport } from './routes/_authenticated/boekhouding.journal.$entryId'
 import { Route as AuthenticatedOfferteStudioQIdRouteImport } from './routes/_authenticated/offerte-studio.q.$id'
 import { Route as AuthenticatedOfferteStudioTIdRouteImport } from './routes/_authenticated/offerte-studio.t.$id'
+import { Route as ApiPublicHooksAnnouncementDigestRouteImport } from './routes/api/public/hooks/announcement-digest'
 import { Route as ApiPublicHooksCampaignFlowTickRouteImport } from './routes/api/public/hooks/campaign-flow-tick'
 import { Route as ApiPublicHooksLeadIntakeRouteImport } from './routes/api/public/hooks/lead-intake'
 import { Route as ApiPublicHooksMailInboundRouteImport } from './routes/api/public/hooks/mail-inbound'
@@ -442,6 +443,12 @@ const AuthenticatedOfferteStudioTIdRoute =
     path: '/offerte-studio/t/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicHooksAnnouncementDigestRoute =
+  ApiPublicHooksAnnouncementDigestRouteImport.update({
+    id: '/api/public/hooks/announcement-digest',
+    path: '/api/public/hooks/announcement-digest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksCampaignFlowTickRoute =
   ApiPublicHooksCampaignFlowTickRouteImport.update({
     id: '/api/public/hooks/campaign-flow-tick',
@@ -582,6 +589,7 @@ export interface FileRoutesByFullPath {
   '/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
   '/offerte-studio/q/$id': typeof AuthenticatedOfferteStudioQIdRoute
   '/offerte-studio/t/$id': typeof AuthenticatedOfferteStudioTIdRoute
+  '/api/public/hooks/announcement-digest': typeof ApiPublicHooksAnnouncementDigestRoute
   '/api/public/hooks/campaign-flow-tick': typeof ApiPublicHooksCampaignFlowTickRoute
   '/api/public/hooks/lead-intake': typeof ApiPublicHooksLeadIntakeRoute
   '/api/public/hooks/mail-inbound': typeof ApiPublicHooksMailInboundRoute
@@ -658,6 +666,7 @@ export interface FileRoutesByTo {
   '/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
   '/offerte-studio/q/$id': typeof AuthenticatedOfferteStudioQIdRoute
   '/offerte-studio/t/$id': typeof AuthenticatedOfferteStudioTIdRoute
+  '/api/public/hooks/announcement-digest': typeof ApiPublicHooksAnnouncementDigestRoute
   '/api/public/hooks/campaign-flow-tick': typeof ApiPublicHooksCampaignFlowTickRoute
   '/api/public/hooks/lead-intake': typeof ApiPublicHooksLeadIntakeRoute
   '/api/public/hooks/mail-inbound': typeof ApiPublicHooksMailInboundRoute
@@ -738,6 +747,7 @@ export interface FileRoutesById {
   '/_authenticated/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
   '/_authenticated/offerte-studio/q/$id': typeof AuthenticatedOfferteStudioQIdRoute
   '/_authenticated/offerte-studio/t/$id': typeof AuthenticatedOfferteStudioTIdRoute
+  '/api/public/hooks/announcement-digest': typeof ApiPublicHooksAnnouncementDigestRoute
   '/api/public/hooks/campaign-flow-tick': typeof ApiPublicHooksCampaignFlowTickRoute
   '/api/public/hooks/lead-intake': typeof ApiPublicHooksLeadIntakeRoute
   '/api/public/hooks/mail-inbound': typeof ApiPublicHooksMailInboundRoute
@@ -818,6 +828,7 @@ export interface FileRouteTypes {
     | '/boekhouding/journal/$entryId'
     | '/offerte-studio/q/$id'
     | '/offerte-studio/t/$id'
+    | '/api/public/hooks/announcement-digest'
     | '/api/public/hooks/campaign-flow-tick'
     | '/api/public/hooks/lead-intake'
     | '/api/public/hooks/mail-inbound'
@@ -894,6 +905,7 @@ export interface FileRouteTypes {
     | '/boekhouding/journal/$entryId'
     | '/offerte-studio/q/$id'
     | '/offerte-studio/t/$id'
+    | '/api/public/hooks/announcement-digest'
     | '/api/public/hooks/campaign-flow-tick'
     | '/api/public/hooks/lead-intake'
     | '/api/public/hooks/mail-inbound'
@@ -973,6 +985,7 @@ export interface FileRouteTypes {
     | '/_authenticated/boekhouding/journal/$entryId'
     | '/_authenticated/offerte-studio/q/$id'
     | '/_authenticated/offerte-studio/t/$id'
+    | '/api/public/hooks/announcement-digest'
     | '/api/public/hooks/campaign-flow-tick'
     | '/api/public/hooks/lead-intake'
     | '/api/public/hooks/mail-inbound'
@@ -1000,6 +1013,7 @@ export interface RootRouteChildren {
   TTokenRoute: typeof TTokenRoute
   AcceptQuoteTokenRoute: typeof AcceptQuoteTokenRoute
   QuoteTokenPdfRoute: typeof QuoteTokenPdfRoute
+  ApiPublicHooksAnnouncementDigestRoute: typeof ApiPublicHooksAnnouncementDigestRoute
   ApiPublicHooksCampaignFlowTickRoute: typeof ApiPublicHooksCampaignFlowTickRoute
   ApiPublicHooksLeadIntakeRoute: typeof ApiPublicHooksLeadIntakeRoute
   ApiPublicHooksMailInboundRoute: typeof ApiPublicHooksMailInboundRoute
@@ -1465,6 +1479,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOfferteStudioTIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/hooks/announcement-digest': {
+      id: '/api/public/hooks/announcement-digest'
+      path: '/api/public/hooks/announcement-digest'
+      fullPath: '/api/public/hooks/announcement-digest'
+      preLoaderRoute: typeof ApiPublicHooksAnnouncementDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/campaign-flow-tick': {
       id: '/api/public/hooks/campaign-flow-tick'
       path: '/api/public/hooks/campaign-flow-tick'
@@ -1789,6 +1810,7 @@ const rootRouteChildren: RootRouteChildren = {
   TTokenRoute: TTokenRoute,
   AcceptQuoteTokenRoute: AcceptQuoteTokenRoute,
   QuoteTokenPdfRoute: QuoteTokenPdfRoute,
+  ApiPublicHooksAnnouncementDigestRoute: ApiPublicHooksAnnouncementDigestRoute,
   ApiPublicHooksCampaignFlowTickRoute: ApiPublicHooksCampaignFlowTickRoute,
   ApiPublicHooksLeadIntakeRoute: ApiPublicHooksLeadIntakeRoute,
   ApiPublicHooksMailInboundRoute: ApiPublicHooksMailInboundRoute,
