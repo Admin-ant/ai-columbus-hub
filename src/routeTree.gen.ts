@@ -25,6 +25,7 @@ import { Route as AuthenticatedInkoopfacturenRouteImport } from './routes/_authe
 import { Route as AuthenticatedJobsRouteImport } from './routes/_authenticated/jobs'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedMailRouteImport } from './routes/_authenticated/mail'
+import { Route as AuthenticatedMededelingenRouteImport } from './routes/_authenticated/mededelingen'
 import { Route as AuthenticatedNetqloudRouteImport } from './routes/_authenticated/netqloud'
 import { Route as AuthenticatedOpnameRouteImport } from './routes/_authenticated/opname'
 import { Route as AuthenticatedProductenRouteImport } from './routes/_authenticated/producten'
@@ -167,6 +168,12 @@ const AuthenticatedMailRoute = AuthenticatedMailRouteImport.update({
   path: '/mail',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMededelingenRoute =
+  AuthenticatedMededelingenRouteImport.update({
+    id: '/mededelingen',
+    path: '/mededelingen',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedNetqloudRoute = AuthenticatedNetqloudRouteImport.update({
   id: '/netqloud',
   path: '/netqloud',
@@ -522,6 +529,7 @@ export interface FileRoutesByFullPath {
   '/jobs': typeof AuthenticatedJobsRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/mail': typeof AuthenticatedMailRouteWithChildren
+  '/mededelingen': typeof AuthenticatedMededelingenRoute
   '/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
   '/opname': typeof AuthenticatedOpnameRouteWithChildren
   '/producten': typeof AuthenticatedProductenRoute
@@ -596,6 +604,7 @@ export interface FileRoutesByTo {
   '/jobs': typeof AuthenticatedJobsRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/mail': typeof AuthenticatedMailRouteWithChildren
+  '/mededelingen': typeof AuthenticatedMededelingenRoute
   '/opname': typeof AuthenticatedOpnameRouteWithChildren
   '/producten': typeof AuthenticatedProductenRoute
   '/quotes': typeof AuthenticatedQuotesRoute
@@ -673,6 +682,7 @@ export interface FileRoutesById {
   '/_authenticated/jobs': typeof AuthenticatedJobsRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/mail': typeof AuthenticatedMailRouteWithChildren
+  '/_authenticated/mededelingen': typeof AuthenticatedMededelingenRoute
   '/_authenticated/netqloud': typeof AuthenticatedNetqloudRouteWithChildren
   '/_authenticated/opname': typeof AuthenticatedOpnameRouteWithChildren
   '/_authenticated/producten': typeof AuthenticatedProductenRoute
@@ -752,6 +762,7 @@ export interface FileRouteTypes {
     | '/jobs'
     | '/leads'
     | '/mail'
+    | '/mededelingen'
     | '/netqloud'
     | '/opname'
     | '/producten'
@@ -826,6 +837,7 @@ export interface FileRouteTypes {
     | '/jobs'
     | '/leads'
     | '/mail'
+    | '/mededelingen'
     | '/opname'
     | '/producten'
     | '/quotes'
@@ -902,6 +914,7 @@ export interface FileRouteTypes {
     | '/_authenticated/jobs'
     | '/_authenticated/leads'
     | '/_authenticated/mail'
+    | '/_authenticated/mededelingen'
     | '/_authenticated/netqloud'
     | '/_authenticated/opname'
     | '/_authenticated/producten'
@@ -1102,6 +1115,13 @@ declare module '@tanstack/react-router' {
       path: '/mail'
       fullPath: '/mail'
       preLoaderRoute: typeof AuthenticatedMailRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mededelingen': {
+      id: '/_authenticated/mededelingen'
+      path: '/mededelingen'
+      fullPath: '/mededelingen'
+      preLoaderRoute: typeof AuthenticatedMededelingenRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/netqloud': {
@@ -1681,6 +1701,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedJobsRoute: typeof AuthenticatedJobsRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedMailRoute: typeof AuthenticatedMailRouteWithChildren
+  AuthenticatedMededelingenRoute: typeof AuthenticatedMededelingenRoute
   AuthenticatedNetqloudRoute: typeof AuthenticatedNetqloudRouteWithChildren
   AuthenticatedOpnameRoute: typeof AuthenticatedOpnameRouteWithChildren
   AuthenticatedProductenRoute: typeof AuthenticatedProductenRoute
@@ -1713,6 +1734,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedJobsRoute: AuthenticatedJobsRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedMailRoute: AuthenticatedMailRouteWithChildren,
+  AuthenticatedMededelingenRoute: AuthenticatedMededelingenRoute,
   AuthenticatedNetqloudRoute: AuthenticatedNetqloudRouteWithChildren,
   AuthenticatedOpnameRoute: AuthenticatedOpnameRouteWithChildren,
   AuthenticatedProductenRoute: AuthenticatedProductenRoute,
