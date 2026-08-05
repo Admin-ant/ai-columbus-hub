@@ -349,6 +349,23 @@ function NotificationPreferencesCard({
           <Switch id="pref-email" checked={emailEnabled} onCheckedChange={setEmailEnabled} />
         </div>
         <div className="space-y-2 rounded-md border p-3">
+          <p className="text-sm font-medium">Hoe vaak?</p>
+          <Select value={frequency} onValueChange={setFrequency} disabled={!emailEnabled}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="direct">Direct bij elke mededeling</SelectItem>
+              <SelectItem value="daily">Dagelijkse samenvatting</SelectItem>
+              <SelectItem value="weekly">Wekelijkse samenvatting</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Bij een samenvatting krijg je één mail met alle nieuwe mededelingen uit de gekozen
+            categorieën.
+          </p>
+        </div>
+        <div className="space-y-2 rounded-md border p-3">
           <p className="text-sm font-medium">Categorieën</p>
           {ANNOUNCEMENT_CATEGORIES.map((c) => (
             <div key={c} className="flex items-center gap-2">
