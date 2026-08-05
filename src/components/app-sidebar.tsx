@@ -51,6 +51,7 @@ import {
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { useLeadsFunnelVisible } from "@/hooks/use-leads-funnel-visible";
+import { useAnnouncementRealtime } from "@/hooks/use-announcement-realtime";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -241,6 +242,7 @@ export function AppSidebar() {
   const currentPath = useRouterState({ select: (s) => s.location.pathname });
   const [leadsFunnelVisible] = useLeadsFunnelVisible();
   const upcomingAppointments = useUpcomingAppointmentsCount(currentOrganization?.id ?? null);
+  const unreadAnnouncements = useAnnouncementRealtime({ notify: true });
 
   const visibleAdmin = adminItems.filter((i) => !i.requiredRole || hasRole(i.requiredRole));
   const initials = (user?.email ?? "?").slice(0, 2).toUpperCase();
@@ -352,6 +354,17 @@ export function AppSidebar() {
                                 <p>{item.title}</p>
                               </TooltipContent>
                             </Tooltip>
+                            {item.url === "/meldingen" && unreadAnnouncements > 0 && (
+                              <SidebarMenuBadge className="p-0 bg-transparent group-data-[collapsible=icon]:flex">
+                                <Link
+                                  to="/meldingen"
+                                  aria-label={`${unreadAnnouncements} ongelezen mededelingen bekijken`}
+                                  className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-primary-foreground shadow-sm hover:bg-primary/90"
+                                >
+                                  {unreadAnnouncements}
+                                </Link>
+                              </SidebarMenuBadge>
+                            )}
                             {item.url === "/agenda" && upcomingAppointments > 0 && (
                               <SidebarMenuBadge className="p-0 bg-transparent group-data-[collapsible=icon]:flex">
                                 <Link
