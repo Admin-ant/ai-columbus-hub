@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { useAnnouncementRealtime } from "@/hooks/use-announcement-realtime";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -62,6 +63,8 @@ function NotificationsPage() {
 
   const [filter, setFilter] = useState<Filter>("alle");
   const [search, setSearch] = useState("");
+
+  useAnnouncementRealtime();
 
   const key = ["my-notifications", orgId, userId] as const;
 

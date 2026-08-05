@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { useAnnouncementRealtime } from "@/hooks/use-announcement-realtime";
 import { createAnnouncement, ANNOUNCEMENT_CATEGORIES } from "@/lib/announcements.functions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -72,6 +73,8 @@ function AnnouncementsPage() {
   const [category, setCategory] = useState<string>("algemeen");
   const [pinned, setPinned] = useState(false);
   const [notify, setNotify] = useState(true);
+
+  useAnnouncementRealtime();
 
   const announcements = useQuery({
     queryKey: ["announcements", orgId],
