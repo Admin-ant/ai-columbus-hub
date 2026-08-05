@@ -69,16 +69,19 @@ export type Database = {
         Row: {
           announcement_id: string
           read_at: string
+          starred: boolean
           user_id: string
         }
         Insert: {
           announcement_id: string
           read_at?: string
+          starred?: boolean
           user_id: string
         }
         Update: {
           announcement_id?: string
           read_at?: string
+          starred?: boolean
           user_id?: string
         }
         Relationships: [
