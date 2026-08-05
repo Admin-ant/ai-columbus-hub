@@ -125,12 +125,13 @@ async function runDigest(frequency: "daily" | "weekly" | "all") {
 }
 
 function checkAuth(request: Request): Response | null {
-  const cronSecret = process.env.CRON_SECRET;
+  const anonKey = process.env['SUPABASE_PUBLISHABLE_KEY'] ?? process.env['SUPABASE_ANON_KEY'];
+  const cronSecret = process.env['CRON_SECRET'];
+  const apikey = request.headers.get("apikey");
   const secret = request.headers.get("x-cron-secret");
-  if (!cronSecret || secret !== cronSecret) {
-    return new Response("Unauthorized", { status: 401 });
-  }
-  return null;
+  if (anonKey && apikey === anonKey) return null;
+  if (cronSecret && secret === cronSecret) return null;
+  return new Response("Unauthorized", { status: 401 });
 }
 
 function parseFreq(request: Request): "daily" | "weekly" | "all" {
