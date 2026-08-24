@@ -899,6 +899,8 @@ function RowActions({ invoice, onChanged }: { invoice: Invoice; onChanged: () =>
       const r = await deleteFn({ data: { invoice_id: invoice.id } });
       toast.success(r.action === "deleted" ? t("invoices.deleted") : t("invoices.cancelled_ok"));
       if (r.credit_note_id) toast.success(t("invoices.credit_note_created"));
+      if (r.credit_emailed) toast.success("Creditnota per e-mail naar de klant verstuurd");
+
 
       await onChanged();
     } catch (e) {
