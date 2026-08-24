@@ -108,7 +108,20 @@
       "paid": "Paid",
       "overdue": "Overdue",
       "cancelled": "Cancelled"
-    }
+    },
+    "actions": "Actions",
+    "cancel_confirm": "Cancel this invoice? A credit note will be created automatically.",
+    "cancel_invoice": "Cancel invoice",
+    "cancelled_ok": "Invoice cancelled",
+    "delete": "Delete",
+    "delete_confirm": "Permanently delete this draft?",
+    "deleted": "Invoice deleted",
+    "view": "View",
+    "edit": "Edit",
+    "email": "Email",
+    "download_pdf": "Download PDF",
+    "credit_note_created": "Credit note created for the full invoice amount",
+    "status_label": "Status"
   },
   "ai_assistant": {
     "title": "AI Assistant",
