@@ -9,6 +9,7 @@ import { deleteInvoice } from "@/lib/invoice-actions.functions";
 import { downloadCreditNotePdf } from "@/lib/credit-note-pdf";
 import { useAuth } from "@/hooks/use-auth";
 import { InvoicePartialCreditDialog } from "@/components/invoice-partial-credit-dialog";
+import { CreditNotePdfPreviewDialog } from "@/components/credit-note-pdf-preview-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
