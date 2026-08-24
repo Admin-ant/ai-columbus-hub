@@ -98,6 +98,21 @@ function AnnouncementsPage() {
     },
   });
 
+  const q = search.trim().toLowerCase();
+  const fromTs = dateFrom ? new Date(`${dateFrom}T00:00:00`).getTime() : null;
+  const toTs = dateTo ? new Date(`${dateTo}T23:59:59.999`).getTime() : null;
+  const filtered = (announcements.data ?? []).filter((a) => {
+    if (filterCategory !== "alle" && a.category !== filterCategory) return false;
+    if (q && !`${a.title} ${a.body}`.toLowerCase().includes(q)) return false;
+    const ts = new Date(a.created_at).getTime();
+    if (fromTs !== null && ts < fromTs) return false;
+    if (toTs !== null && ts > toTs) return false;
+    return true;
+  });
+  const hasFilters = !!q || filterCategory !== "alle" || !!dateFrom || !!dateTo;
+
+
+
   const publish = useMutation({
     mutationFn: async () =>
       createAnnouncement({
