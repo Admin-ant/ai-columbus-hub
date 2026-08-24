@@ -100,9 +100,11 @@ export type Database = {
           category: string
           created_at: string
           created_by: string | null
+          emailed_at: string | null
           id: string
           organization_id: string
           pinned: boolean
+          source: string
           title: string
           updated_at: string
         }
@@ -111,9 +113,11 @@ export type Database = {
           category?: string
           created_at?: string
           created_by?: string | null
+          emailed_at?: string | null
           id?: string
           organization_id: string
           pinned?: boolean
+          source?: string
           title: string
           updated_at?: string
         }
@@ -122,9 +126,11 @@ export type Database = {
           category?: string
           created_at?: string
           created_by?: string | null
+          emailed_at?: string | null
           id?: string
           organization_id?: string
           pinned?: boolean
+          source?: string
           title?: string
           updated_at?: string
         }

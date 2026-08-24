@@ -54,9 +54,8 @@ import { CheckCheck, EyeOff, FolderInput } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/mail")({
   head: () => ({ meta: [{ title: "Mail" }] }),
-  validateSearch: (search: Record<string, unknown>) => ({
-    clientId: typeof search.clientId === "string" ? search.clientId : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { clientId?: string } =>
+    typeof search.clientId === "string" ? { clientId: search.clientId } : {},
   component: MailPage,
 });
 
