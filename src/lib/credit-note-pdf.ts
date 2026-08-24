@@ -350,6 +350,17 @@ export async function prepareCreditNotePdf(opts: {
   const tpl = loadTemplate(orgId, userId ?? null);
   const doc = buildCreditNotePdf(data, tpl, lang);
   const filename = suggestCreditNoteFilename(creditNumber, data.client_name);
+  return { doc, filename, dataUrl: doc.output("dataurlstring") };
+}
+
+/** Haalt de creditnota op en start direct de download. */
+export async function downloadCreditNotePdf(opts: {
+  creditNoteId: string;
+  userId?: string | null;
+  lang?: string;
+}): Promise<string> {
+  const { doc, filename } = await prepareCreditNotePdf(opts);
   doc.save(filename);
   return filename;
 }
+
