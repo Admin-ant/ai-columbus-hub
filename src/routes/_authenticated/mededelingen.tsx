@@ -74,7 +74,13 @@ function AnnouncementsPage() {
   const [pinned, setPinned] = useState(false);
   const [notify, setNotify] = useState(true);
 
+  const [search, setSearch] = useState("");
+  const [filterCategory, setFilterCategory] = useState("alle");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
   useAnnouncementRealtime();
+
 
   const announcements = useQuery({
     queryKey: ["announcements", orgId],
