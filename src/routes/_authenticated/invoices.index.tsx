@@ -3,9 +3,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Eye, Loader2, MoreHorizontal, Plus, Scissors, Trash2 } from "lucide-react";
+import { Eye, FileDown, Loader2, MoreHorizontal, Plus, Scissors, Trash2 } from "lucide-react";
 
 import { deleteInvoice } from "@/lib/invoice-actions.functions";
+import { downloadCreditNotePdf } from "@/lib/credit-note-pdf";
+import { useAuth } from "@/hooks/use-auth";
 import { InvoicePartialCreditDialog } from "@/components/invoice-partial-credit-dialog";
 import {
   DropdownMenu,
