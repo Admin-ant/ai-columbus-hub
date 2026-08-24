@@ -3,9 +3,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Eye, Loader2, MoreHorizontal, Plus, Trash2 } from "lucide-react";
+import { Eye, Loader2, MoreHorizontal, Plus, Scissors, Trash2 } from "lucide-react";
 
 import { deleteInvoice } from "@/lib/invoice-actions.functions";
+import { InvoicePartialCreditDialog } from "@/components/invoice-partial-credit-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -891,6 +892,7 @@ function RowActions({ invoice, onChanged }: { invoice: Invoice; onChanged: () =>
   const navigate = useNavigate();
   const deleteFn = useServerFn(deleteInvoice);
   const isDraft = invoice.status === "draft";
+  const [creditOpen, setCreditOpen] = useState(false);
 
   async function handleDelete() {
     const msg = isDraft ? t("invoices.delete_confirm") : t("invoices.cancel_confirm");
@@ -909,6 +911,7 @@ function RowActions({ invoice, onChanged }: { invoice: Invoice; onChanged: () =>
   }
 
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -921,11 +924,23 @@ function RowActions({ invoice, onChanged }: { invoice: Invoice; onChanged: () =>
         >
           <Eye className="mr-2 h-4 w-4" /> {t("invoices.view")}
         </DropdownMenuItem>
+        {!isDraft && invoice.status !== "cancelled" && (
+          <DropdownMenuItem onClick={() => setCreditOpen(true)}>
+            <Scissors className="mr-2 h-4 w-4" /> Gedeeltelijk crediteren
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem className="text-red-600" onClick={handleDelete}>
           <Trash2 className="mr-2 h-4 w-4" />
           {isDraft ? t("invoices.delete") : t("invoices.cancel_invoice")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+    <InvoicePartialCreditDialog
+      invoiceId={invoice.id}
+      open={creditOpen}
+      onOpenChange={setCreditOpen}
+      onDone={onChanged}
+    />
+    </>
   );
 }

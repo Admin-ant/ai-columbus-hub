@@ -556,3 +556,278 @@ export const getInvoiceAttachmentUrl = createServerFn({ method: "POST" })
     if (error || !signed) throw new Error(error?.message ?? "URL mislukt");
     return { url: signed.signedUrl };
   });
+
+/**
+ * Info voor gedeeltelijk crediteren: factuurregels + wat er al gecrediteerd is.
+ */
+export const getInvoiceCreditInfo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ invoice_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: inv, error } = await context.supabase
+      .from("invoices")
+      .select("id, invoice_number, status, currency, subtotal_cents, vat_cents, total_cents")
+      .eq("id", data.invoice_id)
+      .maybeSingle();
+    if (error || !inv) throw new Error(error?.message ?? "Factuur niet gevonden");
+    const i = inv as unknown as Record<string, unknown>;
+
+    const { data: lines } = await context.supabase
+      .from("invoice_lines")
+      .select("id, position, description, quantity, unit_price_cents, vat_rate, subtotal_cents, vat_cents, total_cents")
+      .eq("invoice_id", data.invoice_id)
+      .order("position", { ascending: true });
+
+    const { data: credits } = await context.supabase
+      .from("invoices")
+      .select("id, invoice_number, total_cents, issue_date")
+      .eq("credit_of_invoice_id", data.invoice_id);
+
+    const creditRows = (credits ?? []) as unknown as Array<Record<string, unknown>>;
+    const creditedCents = creditRows.reduce(
+      (s, c) => s + Math.abs(Number(c["total_cents"] ?? 0)),
+      0,
+    );
+    const totalCents = Number(i["total_cents"] ?? 0);
+
+    return {
+      invoice: {
+        id: String(i["id"]),
+        invoice_number: (i["invoice_number"] as string | null) ?? null,
+        status: String(i["status"] ?? ""),
+        currency: (i["currency"] as string) ?? "EUR",
+        total_cents: totalCents,
+      },
+      lines: ((lines ?? []) as unknown as Array<Record<string, unknown>>).map((l) => ({
+        id: String(l["id"]),
+        description: String(l["description"] ?? ""),
+        quantity: Number(l["quantity"] ?? 1),
+        unit_price_cents: Number(l["unit_price_cents"] ?? 0),
+        vat_rate: Number(l["vat_rate"] ?? 21),
+        subtotal_cents: Number(l["subtotal_cents"] ?? 0),
+        vat_cents: Number(l["vat_cents"] ?? 0),
+        total_cents: Number(l["total_cents"] ?? 0),
+      })),
+      credits: creditRows.map((c) => ({
+        id: String(c["id"]),
+        invoice_number: (c["invoice_number"] as string | null) ?? null,
+        total_cents: Number(c["total_cents"] ?? 0),
+        issue_date: (c["issue_date"] as string | null) ?? null,
+      })),
+      credited_cents: creditedCents,
+      remaining_cents: Math.max(0, totalCents - creditedCents),
+    };
+  });
+
+const PartialCreditSchema = z
+  .object({
+    invoice_id: z.string().uuid(),
+    mode: z.enum(["lines", "amount"]),
+    lines: z
+      .array(
+        z.object({
+          line_id: z.string().uuid(),
+          quantity: z.number().positive(),
+        }),
+      )
+      .max(200)
+      .optional(),
+    amount_cents: z.number().int().positive().optional(),
+    vat_rate: z.number().min(0).max(30).optional(),
+    description: z.string().trim().max(1000).optional(),
+    send_email: z.boolean().optional(),
+  })
+  .refine((v) => (v.mode === "lines" ? (v.lines?.length ?? 0) > 0 : !!v.amount_cents), {
+    message: "Kies regels of vul een bedrag in",
+  });
+
+/**
+ * Crediteert een deel van een factuur met een eigen creditnota.
+ * De originele factuur blijft staan; pas bij volledige creditering wordt die geannuleerd.
+ */
+export const creditInvoicePartial = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => PartialCreditSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: inv, error } = await context.supabase
+      .from("invoices")
+      .select(
+        "id, organization_id, status, invoice_number, client_id, client_name, currency, project_id, contract_id, total_cents",
+      )
+      .eq("id", data.invoice_id)
+      .maybeSingle();
+    if (error || !inv) throw new Error(error?.message ?? "Factuur niet gevonden");
+    const src = inv as unknown as Record<string, unknown>;
+    if (String(src["status"]) === "draft") {
+      throw new Error("Een concept kan niet gecrediteerd worden");
+    }
+
+    const orgId = String(src["organization_id"]);
+    const invoiceTotal = Number(src["total_cents"] ?? 0);
+
+    const { data: credits } = await context.supabase
+      .from("invoices")
+      .select("total_cents")
+      .eq("credit_of_invoice_id", data.invoice_id);
+    const alreadyCredited = ((credits ?? []) as unknown as Array<Record<string, unknown>>).reduce(
+      (s, c) => s + Math.abs(Number(c["total_cents"] ?? 0)),
+      0,
+    );
+    const remaining = invoiceTotal - alreadyCredited;
+    if (remaining <= 0) throw new Error("Deze factuur is al volledig gecrediteerd");
+
+    // Bouw de creditregels (positieve bedragen; worden hieronder negatief opgeslagen)
+    type Built = {
+      description: string;
+      quantity: number;
+      unit_price_cents: number;
+      vat_rate: number;
+      subtotal_cents: number;
+      vat_cents: number;
+      total_cents: number;
+    };
+    const built: Built[] = [];
+
+    if (data.mode === "lines") {
+      const ids = (data.lines ?? []).map((l) => l.line_id);
+      const { data: srcLines, error: lErr } = await context.supabase
+        .from("invoice_lines")
+        .select("id, description, quantity, unit_price_cents, vat_rate")
+        .eq("invoice_id", data.invoice_id)
+        .in("id", ids);
+      if (lErr) throw new Error(lErr.message);
+      const byId = new Map(
+        ((srcLines ?? []) as unknown as Array<Record<string, unknown>>).map((l) => [
+          String(l["id"]),
+          l,
+        ]),
+      );
+      for (const sel of data.lines ?? []) {
+        const l = byId.get(sel.line_id);
+        if (!l) throw new Error("Regel hoort niet bij deze factuur");
+        const maxQty = Number(l["quantity"] ?? 1);
+        if (sel.quantity > maxQty + 1e-9) {
+          throw new Error(`Aantal hoger dan op de factuur (max ${maxQty})`);
+        }
+        const unit = Number(l["unit_price_cents"] ?? 0);
+        const rate = Number(l["vat_rate"] ?? 21);
+        const sub = Math.round(sel.quantity * unit);
+        const vat = Math.round((sub * rate) / 100);
+        built.push({
+          description: `Creditering ${String(src["invoice_number"] ?? "")}: ${String(l["description"] ?? "")}`.slice(0, 1000),
+          quantity: sel.quantity,
+          unit_price_cents: unit,
+          vat_rate: rate,
+          subtotal_cents: sub,
+          vat_cents: vat,
+          total_cents: sub + vat,
+        });
+      }
+    } else {
+      const rate = data.vat_rate ?? 21;
+      // amount_cents is inclusief btw ingevoerd bedrag
+      const gross = data.amount_cents!;
+      const sub = Math.round(gross / (1 + rate / 100));
+      const vat = gross - sub;
+      built.push({
+        description:
+          data.description?.trim() ||
+          `Gedeeltelijke creditering factuur ${String(src["invoice_number"] ?? "")}`,
+        quantity: 1,
+        unit_price_cents: sub,
+        vat_rate: rate,
+        subtotal_cents: sub,
+        vat_cents: vat,
+        total_cents: gross,
+      });
+    }
+
+    const subtotal = built.reduce((s, l) => s + l.subtotal_cents, 0);
+    const vatTotal = built.reduce((s, l) => s + l.vat_cents, 0);
+    const total = subtotal + vatTotal;
+    if (total <= 0) throw new Error("Creditbedrag moet groter dan nul zijn");
+    if (total > remaining + 1) {
+      throw new Error(
+        `Creditbedrag is hoger dan het openstaande te crediteren bedrag (${(remaining / 100).toFixed(2)})`,
+      );
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: num } = await (supabaseAdmin.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: string | null }>)("next_invoice_number", { _org_id: orgId });
+    const creditNumber = `C-${num ?? `${Date.now()}`}`;
+    const today = new Date().toISOString().slice(0, 10);
+
+    const { data: created, error: cErr } = await supabaseAdmin
+      .from("invoices")
+      .insert({
+        organization_id: orgId,
+        invoice_number: creditNumber,
+        status: "sent",
+        issue_date: today,
+        due_date: today,
+        client_id: (src["client_id"] as string | null) ?? null,
+        client_name: (src["client_name"] as string | null) ?? null,
+        currency: (src["currency"] as string) ?? "EUR",
+        project_id: (src["project_id"] as string | null) ?? null,
+        contract_id: (src["contract_id"] as string | null) ?? null,
+        credit_of_invoice_id: data.invoice_id,
+        subtotal_cents: -subtotal,
+        vat_cents: -vatTotal,
+        total_cents: -total,
+        amount: -total / 100,
+      } as never)
+      .select("id")
+      .single();
+    if (cErr || !created) throw new Error(cErr?.message ?? "Creditnota aanmaken mislukt");
+    const creditNoteId = (created as { id: string }).id;
+
+    const { error: linesErr } = await supabaseAdmin.from("invoice_lines").insert(
+      built.map((l, i) => ({
+        invoice_id: creditNoteId,
+        position: i,
+        description: l.description,
+        quantity: l.quantity,
+        unit_price_cents: -l.unit_price_cents,
+        vat_rate: l.vat_rate,
+        subtotal_cents: -l.subtotal_cents,
+        vat_cents: -l.vat_cents,
+        total_cents: -l.total_cents,
+        line_type: "item",
+      })) as never,
+    );
+    if (linesErr) throw new Error(linesErr.message);
+
+    // Volledig gecrediteerd? Dan de originele factuur annuleren en koppelen.
+    const fullyCredited = alreadyCredited + total >= invoiceTotal - 1;
+    if (fullyCredited) {
+      await supabaseAdmin
+        .from("invoices")
+        .update({ status: "cancelled", credit_note_id: creditNoteId } as never)
+        .eq("id", data.invoice_id);
+    }
+
+    let emailed = false;
+    if (data.send_email !== false) {
+      const { emailCreditNoteIfWanted } = await import("@/lib/credit-note.server");
+      emailed = await emailCreditNoteIfWanted({
+        supabase: supabaseAdmin as never,
+        organizationId: orgId,
+        creditNoteId,
+        userId: context.userId,
+        originalNumber: (src["invoice_number"] as string | null) ?? null,
+      });
+    }
+
+    return {
+      ok: true,
+      credit_note_id: creditNoteId,
+      credit_note_number: creditNumber,
+      credited_cents: total,
+      remaining_cents: Math.max(0, remaining - total),
+      fully_credited: fullyCredited,
+      credit_emailed: emailed,
+    };
+  });
