@@ -1063,6 +1063,7 @@ export type Database = {
           country: string | null
           created_at: string
           created_by: string | null
+          credit_note_email: boolean
           email: string | null
           external_id: string | null
           external_source: string | null
@@ -1089,6 +1090,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           created_by?: string | null
+          credit_note_email?: boolean
           email?: string | null
           external_id?: string | null
           external_source?: string | null
@@ -1115,6 +1117,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           created_by?: string | null
+          credit_note_email?: boolean
           email?: string | null
           external_id?: string | null
           external_source?: string | null
