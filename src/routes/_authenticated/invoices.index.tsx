@@ -956,20 +956,25 @@ function RowActions({ invoice, onChanged }: { invoice: Invoice; onChanged: () =>
           </DropdownMenuItem>
         )}
         {creditNoteIdForPdf && (
-          <DropdownMenuItem
-            onSelect={(e) => {
-              e.preventDefault();
-              void handleCreditPdf();
-            }}
-            disabled={pdfBusy}
-          >
-            {pdfBusy ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <FileDown className="mr-2 h-4 w-4" />
-            )}
-            Creditnota-PDF downloaden
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuItem onClick={() => setPreviewOpen(true)}>
+              <Eye className="mr-2 h-4 w-4" /> Creditnota-PDF bekijken
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault();
+                void handleCreditPdf();
+              }}
+              disabled={pdfBusy}
+            >
+              {pdfBusy ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <FileDown className="mr-2 h-4 w-4" />
+              )}
+              Creditnota-PDF downloaden
+            </DropdownMenuItem>
+          </>
         )}
         <DropdownMenuItem className="text-red-600" onClick={handleDelete}>
           <Trash2 className="mr-2 h-4 w-4" />
