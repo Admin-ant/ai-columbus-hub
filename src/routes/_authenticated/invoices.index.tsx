@@ -989,6 +989,14 @@ function RowActions({ invoice, onChanged }: { invoice: Invoice; onChanged: () =>
       onOpenChange={setCreditOpen}
       onDone={onChanged}
     />
+    {creditNoteIdForPdf && (
+      <CreditNotePdfPreviewDialog
+        creditNoteId={creditNoteIdForPdf}
+        userId={user?.id ?? null}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+      />
+    )}
     </>
   );
 }
