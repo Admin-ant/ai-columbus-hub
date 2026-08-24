@@ -888,11 +888,34 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
 }
 
 function RowActions({ invoice, onChanged }: { invoice: Invoice; onChanged: () => void | Promise<void> }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const deleteFn = useServerFn(deleteInvoice);
   const isDraft = invoice.status === "draft";
   const [creditOpen, setCreditOpen] = useState(false);
+  const [pdfBusy, setPdfBusy] = useState(false);
+
+  const creditNoteIdForPdf = invoice.credit_of_invoice_id
+    ? invoice.id
+    : (invoice.credit_note_id ?? null);
+
+  async function handleCreditPdf() {
+    if (!creditNoteIdForPdf) return;
+    setPdfBusy(true);
+    try {
+      const name = await downloadCreditNotePdf({
+        creditNoteId: creditNoteIdForPdf,
+        userId: user?.id ?? null,
+        lang: i18n.resolvedLanguage ?? "nl",
+      });
+      toast.success(`Creditnota-PDF gedownload (${name})`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "PDF maken mislukt");
+    } finally {
+      setPdfBusy(false);
+    }
+  }
 
   async function handleDelete() {
     const msg = isDraft ? t("invoices.delete_confirm") : t("invoices.cancel_confirm");
@@ -909,6 +932,7 @@ function RowActions({ invoice, onChanged }: { invoice: Invoice; onChanged: () =>
       toast.error(e instanceof Error ? e.message : "Fout");
     }
   }
+
 
   return (
     <>
