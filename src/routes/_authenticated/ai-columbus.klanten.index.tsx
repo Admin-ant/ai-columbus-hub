@@ -43,6 +43,7 @@ const EMPTY = {
   country: "Nederland",
   monthly_value: "0",
   notes: "",
+  credit_note_email: true,
 };
 type FormState = typeof EMPTY;
 
@@ -103,6 +104,7 @@ function ClientsPage() {
       country: r.country ?? "Nederland",
       monthly_value: r.monthly_value != null ? String(r.monthly_value) : "0",
       notes: r.notes ?? "",
+      credit_note_email: (r as unknown as { credit_note_email?: boolean | null }).credit_note_email !== false,
     });
     setOpen(true);
   }
@@ -127,6 +129,7 @@ function ClientsPage() {
       country: form.country.trim() || null,
       monthly_value: form.monthly_value ? Number(form.monthly_value) : 0,
       notes: form.notes.trim() || null,
+      credit_note_email: form.credit_note_email,
     };
     let error;
     if (editId) {
@@ -283,6 +286,18 @@ function ClientsPage() {
             <div>
               <Label>Telefoon</Label>
               <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            </div>
+            <div className="md:col-span-2 flex items-center gap-2 rounded-md border p-3">
+              <input
+                id="credit_note_email"
+                type="checkbox"
+                className="h-4 w-4"
+                checked={form.credit_note_email}
+                onChange={(e) => setForm({ ...form, credit_note_email: e.target.checked })}
+              />
+              <Label htmlFor="credit_note_email" className="cursor-pointer font-normal">
+                Automatisch een e-mail met de creditnota sturen bij annuleren van een factuur
+              </Label>
             </div>
             <div>
               <Label>Website</Label>
