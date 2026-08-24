@@ -93,7 +93,7 @@ export const deleteInvoice = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: inv, error } = await context.supabase
       .from("invoices")
-      .select("id, status, organization_id")
+      .select("id, status, organization_id, credit_note_id")
       .eq("id", data.invoice_id)
       .maybeSingle();
     if (error || !inv) throw new Error(error?.message ?? "Factuur niet gevonden");
@@ -117,9 +117,15 @@ export const deleteInvoice = createServerFn({ method: "POST" })
       return { ok: true, action: "deleted" as const, credit_note_id: null as string | null };
     }
 
-    if (inv.status === "cancelled") {
-      return { ok: true, action: "cancelled" as const, credit_note_id: null as string | null };
+    // Al geannuleerd óf er bestaat al een creditnota: nooit een tweede aanmaken
+    if (inv.status === "cancelled" || inv.credit_note_id) {
+      return {
+        ok: true,
+        action: "cancelled" as const,
+        credit_note_id: (inv.credit_note_id as string | null) ?? null,
+      };
     }
+
 
     const { error: upErr } = await context.supabase
       .from("invoices")
