@@ -214,7 +214,18 @@ export const deleteInvoice = createServerFn({ method: "POST" })
           .from("invoice_lines")
           .insert(creditLines as never);
         if (lErr) throw new Error(lErr.message);
+
+        // Koppel origineel <-> creditnota zodat we dit in het overzicht kunnen tonen
+        await supabaseAdmin
+          .from("invoices")
+          .update({ credit_note_id: creditNoteId } as never)
+          .eq("id", data.invoice_id);
+        await supabaseAdmin
+          .from("invoices")
+          .update({ credit_of_invoice_id: data.invoice_id } as never)
+          .eq("id", creditNoteId);
       }
+
     } catch (e) {
       console.warn("[deleteInvoice] creditnota aanmaken mislukt", e);
     }

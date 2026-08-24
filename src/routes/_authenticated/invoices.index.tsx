@@ -182,7 +182,14 @@ function InvoicesPage() {
     return t;
   }, [invoices]);
 
+  const numberById = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const i of invoices) if (i.invoice_number) m[i.id] = i.invoice_number;
+    return m;
+  }, [invoices]);
+
   const filteredInvoices = useMemo(() => {
+
     const now = Date.now();
     const q = query.trim().toLowerCase();
     return invoices.filter((i) => {
@@ -302,14 +309,43 @@ function InvoicesPage() {
               {filteredInvoices.map((inv) => (
                 <TableRow key={inv.id}>
                   <TableCell className="font-mono text-sm">
-                    <Link
-                      to="/invoices/$invoiceId"
-                      params={{ invoiceId: inv.id }}
-                      className="text-brand hover:underline"
-                    >
-                      {inv.invoice_number}
-                    </Link>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Link
+                        to="/invoices/$invoiceId"
+                        params={{ invoiceId: inv.id }}
+                        className="text-brand hover:underline"
+                      >
+                        {inv.invoice_number}
+                      </Link>
+                      {inv.credit_of_invoice_id ? (
+                        <Badge
+                          variant="outline"
+                          className="bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                          title={
+                            numberById[inv.credit_of_invoice_id]
+                              ? `Creditnota van ${numberById[inv.credit_of_invoice_id]}`
+                              : undefined
+                          }
+                        >
+                          Creditnota
+                        </Badge>
+                      ) : null}
+                      {inv.credit_note_id ? (
+                        <Badge
+                          variant="outline"
+                          className="bg-purple-500/15 text-purple-700 dark:text-purple-300"
+                          title={
+                            numberById[inv.credit_note_id]
+                              ? `Gecrediteerd met ${numberById[inv.credit_note_id]}`
+                              : undefined
+                          }
+                        >
+                          Gecrediteerd
+                        </Badge>
+                      ) : null}
+                    </div>
                   </TableCell>
+
                   <TableCell className="text-sm">
                     {inv.client_id ? (
                       <Link to="/ai-columbus/klanten/$clientId" params={{ clientId: inv.client_id }} className="text-brand hover:underline">
