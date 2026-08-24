@@ -4428,6 +4428,7 @@ export type Database = {
           status: string
         }[]
       }
+      is_app_admin: { Args: { _user_id: string }; Returns: boolean }
       next_invoice_number: { Args: { _org_id: string }; Returns: string }
       post_expense_journal:
         | { Args: { _expense_id: string }; Returns: string }
