@@ -897,6 +897,7 @@ function RowActions({ invoice, onChanged }: { invoice: Invoice; onChanged: () =>
   const isDraft = invoice.status === "draft";
   const [creditOpen, setCreditOpen] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const creditNoteIdForPdf = invoice.credit_of_invoice_id
     ? invoice.id
