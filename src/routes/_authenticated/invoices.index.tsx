@@ -9,6 +9,7 @@ import { deleteInvoice } from "@/lib/invoice-actions.functions";
 import { downloadCreditNotePdf } from "@/lib/credit-note-pdf";
 import { useAuth } from "@/hooks/use-auth";
 import { InvoicePartialCreditDialog } from "@/components/invoice-partial-credit-dialog";
+import { CreditNotePdfPreviewDialog } from "@/components/credit-note-pdf-preview-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -897,6 +898,7 @@ function RowActions({ invoice, onChanged }: { invoice: Invoice; onChanged: () =>
   const isDraft = invoice.status === "draft";
   const [creditOpen, setCreditOpen] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const creditNoteIdForPdf = invoice.credit_of_invoice_id
     ? invoice.id
@@ -956,20 +958,25 @@ function RowActions({ invoice, onChanged }: { invoice: Invoice; onChanged: () =>
           </DropdownMenuItem>
         )}
         {creditNoteIdForPdf && (
-          <DropdownMenuItem
-            onSelect={(e) => {
-              e.preventDefault();
-              void handleCreditPdf();
-            }}
-            disabled={pdfBusy}
-          >
-            {pdfBusy ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <FileDown className="mr-2 h-4 w-4" />
-            )}
-            Creditnota-PDF downloaden
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuItem onClick={() => setPreviewOpen(true)}>
+              <Eye className="mr-2 h-4 w-4" /> Creditnota-PDF bekijken
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault();
+                void handleCreditPdf();
+              }}
+              disabled={pdfBusy}
+            >
+              {pdfBusy ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <FileDown className="mr-2 h-4 w-4" />
+              )}
+              Creditnota-PDF downloaden
+            </DropdownMenuItem>
+          </>
         )}
         <DropdownMenuItem className="text-red-600" onClick={handleDelete}>
           <Trash2 className="mr-2 h-4 w-4" />
@@ -983,6 +990,14 @@ function RowActions({ invoice, onChanged }: { invoice: Invoice; onChanged: () =>
       onOpenChange={setCreditOpen}
       onDone={onChanged}
     />
+    {creditNoteIdForPdf && (
+      <CreditNotePdfPreviewDialog
+        creditNoteId={creditNoteIdForPdf}
+        userId={user?.id ?? null}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+      />
+    )}
     </>
   );
 }

@@ -248,13 +248,14 @@ type OrgRow = {
   iban: string | null;
 };
 
-/** Haalt de creditnota met regels op en start de download. */
-export async function downloadCreditNotePdf(opts: {
+/** Haalt de creditnota met regels op en bouwt het PDF-document (zonder te downloaden). */
+export async function prepareCreditNotePdf(opts: {
   creditNoteId: string;
   userId?: string | null;
   lang?: string;
-}): Promise<string> {
+}): Promise<{ doc: jsPDF; filename: string; dataUrl: string }> {
   const { creditNoteId, userId, lang = "nl" } = opts;
+
 
   const { data: cnRow, error } = await supabase
     .from("invoices")
@@ -349,6 +350,17 @@ export async function downloadCreditNotePdf(opts: {
   const tpl = loadTemplate(orgId, userId ?? null);
   const doc = buildCreditNotePdf(data, tpl, lang);
   const filename = suggestCreditNoteFilename(creditNumber, data.client_name);
+  return { doc, filename, dataUrl: doc.output("dataurlstring") };
+}
+
+/** Haalt de creditnota op en start direct de download. */
+export async function downloadCreditNotePdf(opts: {
+  creditNoteId: string;
+  userId?: string | null;
+  lang?: string;
+}): Promise<string> {
+  const { doc, filename } = await prepareCreditNotePdf(opts);
   doc.save(filename);
   return filename;
 }
+
