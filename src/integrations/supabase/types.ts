@@ -2115,6 +2115,8 @@ export type Database = {
           client_name: string | null
           contract_id: string | null
           created_at: string
+          credit_note_id: string | null
+          credit_of_invoice_id: string | null
           currency: string
           due_date: string
           external_id: string | null
@@ -2146,6 +2148,8 @@ export type Database = {
           client_name?: string | null
           contract_id?: string | null
           created_at?: string
+          credit_note_id?: string | null
+          credit_of_invoice_id?: string | null
           currency?: string
           due_date?: string
           external_id?: string | null
@@ -2177,6 +2181,8 @@ export type Database = {
           client_name?: string | null
           contract_id?: string | null
           created_at?: string
+          credit_note_id?: string | null
+          credit_of_invoice_id?: string | null
           currency?: string
           due_date?: string
           external_id?: string | null
@@ -2208,6 +2214,20 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_credit_note_id_fkey"
+            columns: ["credit_note_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_credit_of_invoice_id_fkey"
+            columns: ["credit_of_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
             referencedColumns: ["id"]
           },
           {
