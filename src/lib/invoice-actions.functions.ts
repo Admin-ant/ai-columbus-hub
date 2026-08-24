@@ -117,13 +117,111 @@ export const deleteInvoice = createServerFn({ method: "POST" })
       return { ok: true, action: "deleted" as const };
     }
 
+    if (inv.status === "cancelled") {
+      return { ok: true, action: "cancelled" as const, credit_note_id: null as string | null };
+    }
+
     const { error: upErr } = await context.supabase
       .from("invoices")
       .update({ status: "cancelled" } as never)
       .eq("id", data.invoice_id);
     if (upErr) throw new Error(upErr.message);
-    return { ok: true, action: "cancelled" as const };
+
+    // Maak automatisch een creditnota voor het volledige factuurbedrag
+    let creditNoteId: string | null = null;
+    try {
+      const { data: full } = await context.supabase
+        .from("invoices")
+        .select(
+          "invoice_number, organization_id, client_id, client_name, currency, project_id, contract_id, subtotal_cents, vat_cents, total_cents, amount",
+        )
+        .eq("id", data.invoice_id)
+        .maybeSingle();
+
+      const { data: lines } = await context.supabase
+        .from("invoice_lines")
+        .select("position, description, quantity, unit_price_cents, vat_rate, subtotal_cents, vat_cents, total_cents, line_type, product_id, revenue_account_id")
+        .eq("invoice_id", data.invoice_id)
+        .order("position", { ascending: true });
+
+      if (full) {
+        const src = full as unknown as Record<string, unknown>;
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { data: num } = await (supabaseAdmin.rpc as unknown as (
+          fn: string,
+          args: Record<string, unknown>,
+        ) => Promise<{ data: string | null }>)("next_invoice_number", {
+          _org_id: inv.organization_id,
+        });
+        const creditNumber = `C-${num ?? `${Date.now()}`}`;
+        const today = new Date().toISOString().slice(0, 10);
+
+        const { data: created, error: cErr } = await supabaseAdmin
+          .from("invoices")
+          .insert({
+            organization_id: inv.organization_id,
+            invoice_number: creditNumber,
+            status: "sent",
+            issue_date: today,
+            due_date: today,
+            client_id: (src["client_id"] as string | null) ?? null,
+            client_name: (src["client_name"] as string | null) ?? null,
+            currency: (src["currency"] as string) ?? "EUR",
+            project_id: (src["project_id"] as string | null) ?? null,
+            contract_id: (src["contract_id"] as string | null) ?? null,
+            subtotal_cents: -Number(src["subtotal_cents"] ?? 0),
+            vat_cents: -Number(src["vat_cents"] ?? 0),
+            total_cents: -Number(src["total_cents"] ?? 0),
+            amount: -Number(src["amount"] ?? 0),
+          } as never)
+          .select("id")
+          .single();
+        if (cErr) throw new Error(cErr.message);
+        creditNoteId = (created as { id: string }).id;
+
+        const srcLines = (lines ?? []) as unknown as Array<Record<string, unknown>>;
+        const creditLines = srcLines.length
+          ? srcLines.map((l, i) => ({
+              invoice_id: creditNoteId,
+              position: i,
+              description: `Creditering ${String(src["invoice_number"] ?? "")}: ${String(l["description"] ?? "")}`.slice(0, 1000),
+              quantity: Number(l["quantity"] ?? 1),
+              unit_price_cents: -Number(l["unit_price_cents"] ?? 0),
+              vat_rate: Number(l["vat_rate"] ?? 21),
+              subtotal_cents: -Number(l["subtotal_cents"] ?? 0),
+              vat_cents: -Number(l["vat_cents"] ?? 0),
+              total_cents: -Number(l["total_cents"] ?? 0),
+              line_type: l["line_type"] ?? "item",
+              product_id: (l["product_id"] as string | null) ?? null,
+              revenue_account_id: (l["revenue_account_id"] as string | null) ?? null,
+            }))
+          : [
+              {
+                invoice_id: creditNoteId,
+                position: 0,
+                description: `Creditnota voor factuur ${String(src["invoice_number"] ?? "")}`,
+                quantity: 1,
+                unit_price_cents: -Number(src["subtotal_cents"] ?? 0),
+                vat_rate: 21,
+                subtotal_cents: -Number(src["subtotal_cents"] ?? 0),
+                vat_cents: -Number(src["vat_cents"] ?? 0),
+                total_cents: -Number(src["total_cents"] ?? 0),
+                line_type: "item",
+              },
+            ];
+
+        const { error: lErr } = await supabaseAdmin
+          .from("invoice_lines")
+          .insert(creditLines as never);
+        if (lErr) throw new Error(lErr.message);
+      }
+    } catch (e) {
+      console.warn("[deleteInvoice] creditnota aanmaken mislukt", e);
+    }
+
+    return { ok: true, action: "cancelled" as const, credit_note_id: creditNoteId };
   });
+
 
 const EmailSchema = z.object({
   invoice_id: z.string().uuid(),
