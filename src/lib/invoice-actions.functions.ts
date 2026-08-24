@@ -114,7 +114,7 @@ export const deleteInvoice = createServerFn({ method: "POST" })
         .delete()
         .eq("id", data.invoice_id);
       if (delErr) throw new Error(delErr.message);
-      return { ok: true, action: "deleted" as const, credit_note_id: null as string | null };
+      return { ok: true, action: "deleted" as const, credit_note_id: null as string | null, credit_emailed: false };
     }
 
     // Al geannuleerd óf er bestaat al een creditnota: nooit een tweede aanmaken
@@ -123,6 +123,7 @@ export const deleteInvoice = createServerFn({ method: "POST" })
         ok: true,
         action: "cancelled" as const,
         credit_note_id: (inv.credit_note_id as string | null) ?? null,
+        credit_emailed: false,
       };
     }
 
