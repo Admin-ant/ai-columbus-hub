@@ -955,6 +955,22 @@ function RowActions({ invoice, onChanged }: { invoice: Invoice; onChanged: () =>
             <Scissors className="mr-2 h-4 w-4" /> Gedeeltelijk crediteren
           </DropdownMenuItem>
         )}
+        {creditNoteIdForPdf && (
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault();
+              void handleCreditPdf();
+            }}
+            disabled={pdfBusy}
+          >
+            {pdfBusy ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <FileDown className="mr-2 h-4 w-4" />
+            )}
+            Creditnota-PDF downloaden
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem className="text-red-600" onClick={handleDelete}>
           <Trash2 className="mr-2 h-4 w-4" />
           {isDraft ? t("invoices.delete") : t("invoices.cancel_invoice")}
