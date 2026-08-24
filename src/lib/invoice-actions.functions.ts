@@ -114,7 +114,7 @@ export const deleteInvoice = createServerFn({ method: "POST" })
         .delete()
         .eq("id", data.invoice_id);
       if (delErr) throw new Error(delErr.message);
-      return { ok: true, action: "deleted" as const };
+      return { ok: true, action: "deleted" as const, credit_note_id: null as string | null };
     }
 
     if (inv.status === "cancelled") {
