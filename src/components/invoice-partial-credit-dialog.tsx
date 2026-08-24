@@ -110,7 +110,7 @@ export function InvoicePartialCreditDialog({
                 label: "PDF downloaden",
                 onClick: () => {
                   void downloadCreditNotePdf({ creditNoteId: r.credit_note_id as string }).catch(
-                    (e) => toast.error(e instanceof Error ? e.message : "PDF maken mislukt"),
+                    (e: unknown) => toast.error(e instanceof Error ? e.message : "PDF maken mislukt"),
                   );
                 },
               },
