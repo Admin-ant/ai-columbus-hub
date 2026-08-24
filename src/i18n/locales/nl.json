@@ -140,7 +140,8 @@
       "paid": "Betaald",
       "overdue": "Achterstallig",
       "cancelled": "Geannuleerd"
-    }
+    },
+    "credit_note_created": "Creditnota aangemaakt voor het volledige factuurbedrag"
   },
   "ai_assistant": {
     "title": "AI Assistent",
