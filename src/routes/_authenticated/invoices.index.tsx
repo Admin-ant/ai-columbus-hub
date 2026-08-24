@@ -182,7 +182,14 @@ function InvoicesPage() {
     return t;
   }, [invoices]);
 
+  const numberById = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const i of invoices) if (i.invoice_number) m[i.id] = i.invoice_number;
+    return m;
+  }, [invoices]);
+
   const filteredInvoices = useMemo(() => {
+
     const now = Date.now();
     const q = query.trim().toLowerCase();
     return invoices.filter((i) => {
