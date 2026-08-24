@@ -103,9 +103,22 @@ export function InvoicePartialCreditDialog({
       const r = await creditFn({ data: payload });
       toast.success(
         `Creditnota ${r.credit_note_number} aangemaakt voor ${eur.format(r.credited_cents / 100)}`,
+        r.credit_note_id
+          ? {
+              action: {
+                label: "PDF downloaden",
+                onClick: () => {
+                  void downloadCreditNotePdf({ creditNoteId: r.credit_note_id as string }).catch(
+                    (e) => toast.error(e instanceof Error ? e.message : "PDF maken mislukt"),
+                  );
+                },
+              },
+            }
+          : undefined,
       );
       if (r.fully_credited) toast.success("Factuur is nu volledig gecrediteerd en geannuleerd");
       if (r.credit_emailed) toast.success("Creditnota per e-mail naar de klant verstuurd");
+
       onOpenChange(false);
       await onDone();
     } catch (e) {
