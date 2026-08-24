@@ -476,7 +476,9 @@ function InvoiceDetailPage() {
         navigate({ to: "/invoices" });
       } else {
         toast.success(t("invoices.cancelled_ok"));
+        if (r.credit_note_id) toast.success(t("invoices.credit_note_created"));
         void load();
+
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Fout");
