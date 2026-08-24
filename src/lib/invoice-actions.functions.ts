@@ -114,7 +114,7 @@ export const deleteInvoice = createServerFn({ method: "POST" })
         .delete()
         .eq("id", data.invoice_id);
       if (delErr) throw new Error(delErr.message);
-      return { ok: true, action: "deleted" as const, credit_note_id: null as string | null };
+      return { ok: true, action: "deleted" as const, credit_note_id: null as string | null, credit_emailed: false };
     }
 
     // Al geannuleerd óf er bestaat al een creditnota: nooit een tweede aanmaken
@@ -123,6 +123,7 @@ export const deleteInvoice = createServerFn({ method: "POST" })
         ok: true,
         action: "cancelled" as const,
         credit_note_id: (inv.credit_note_id as string | null) ?? null,
+        credit_emailed: false,
       };
     }
 
@@ -236,7 +237,124 @@ export const deleteInvoice = createServerFn({ method: "POST" })
       console.warn("[deleteInvoice] creditnota aanmaken mislukt", e);
     }
 
-    return { ok: true, action: "cancelled" as const, credit_note_id: creditNoteId };
+    // Stuur automatisch een e-mail met de creditnota, mits de klant dat wil
+    let creditEmailed = false;
+    if (creditNoteId) {
+      try {
+        const { data: cn } = await context.supabase
+          .from("invoices")
+          .select("invoice_number, client_id, client_name, total_cents, currency, issue_date")
+          .eq("id", creditNoteId)
+          .maybeSingle();
+        const c = (cn ?? null) as unknown as Record<string, unknown> | null;
+        const clientId = (c?.["client_id"] as string | null) ?? null;
+        if (c && clientId) {
+          const { data: cl } = await context.supabase
+            .from("clients")
+            .select("email, credit_note_email, name")
+            .eq("id", clientId)
+            .maybeSingle();
+          const client = (cl ?? null) as unknown as
+            | { email: string | null; credit_note_email: boolean | null; name: string | null }
+            | null;
+          if (client?.email && client.credit_note_email !== false) {
+            const { data: settings } = await context.supabase
+              .from("mail_settings")
+              .select("from_email, from_name, reply_to, signature")
+              .eq("organization_id", inv.organization_id)
+              .maybeSingle();
+            const s = (settings ?? null) as {
+              from_email: string | null;
+              from_name: string | null;
+              reply_to: string | null;
+              signature: string | null;
+            } | null;
+            const fromEmail =
+              s?.from_email || process.env.OUTREACH_FROM_EMAIL || "outreach@resend.dev";
+            const from = s?.from_name ? `${s.from_name} <${fromEmail}>` : fromEmail;
+
+            const creditNumber = String(c["invoice_number"] ?? "");
+            const amount = Math.abs(Number(c["total_cents"] ?? 0)) / 100;
+            const currency = (c["currency"] as string) ?? "EUR";
+            const amountText = new Intl.NumberFormat("nl-NL", {
+              style: "currency",
+              currency,
+            }).format(amount);
+            const subject = `Creditnota ${creditNumber}`;
+            const text = [
+              `Beste ${client.name ?? "relatie"},`,
+              "",
+              `Hierbij bevestigen wij dat factuur is geannuleerd en dat wij creditnota ${creditNumber} hebben aangemaakt voor ${amountText}.`,
+              "",
+              "U hoeft verder niets te doen; het bedrag wordt met u verrekend.",
+              s?.signature ? `\n${s.signature}` : "",
+            ].join("\n");
+            const html = `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111;white-space:pre-wrap">${text.replace(
+              /[&<>]/g,
+              (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[ch]!),
+            )}</div>`;
+
+            const { data: logIns } = await context.supabase
+              .from("invoice_email_log")
+              .insert({
+                organization_id: inv.organization_id,
+                invoice_id: creditNoteId,
+                to_email: client.email,
+                cc_emails: [],
+                subject,
+                body: text,
+                status: "sending",
+                sent_by: context.userId,
+              } as never)
+              .select("id")
+              .single();
+            const logId = (logIns as { id: string } | null)?.id ?? null;
+
+            try {
+              const r = await sendViaResend({
+                from,
+                to: [client.email],
+                subject,
+                html,
+                text,
+                replyTo: s?.reply_to || undefined,
+                attachments: [],
+              });
+              creditEmailed = true;
+              if (logId) {
+                await context.supabase
+                  .from("invoice_email_log")
+                  .update({ status: "sent", provider_message_id: r.id } as never)
+                  .eq("id", logId);
+              }
+              await context.supabase
+                .from("invoices")
+                .update({ last_emailed_at: new Date().toISOString() } as never)
+                .eq("id", creditNoteId);
+            } catch (sendErr) {
+              const msg = sendErr instanceof Error ? sendErr.message : String(sendErr);
+              if (logId) {
+                await context.supabase
+                  .from("invoice_email_log")
+                  .update({ status: "failed", error: msg } as never)
+                  .eq("id", logId);
+              }
+              console.warn("[deleteInvoice] creditnota mailen mislukt", msg);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("[deleteInvoice] creditnota mail-flow mislukt", e);
+      }
+    }
+
+    return {
+      ok: true,
+      action: "cancelled" as const,
+      credit_note_id: creditNoteId,
+      credit_emailed: creditEmailed,
+    };
+
   });
 
 

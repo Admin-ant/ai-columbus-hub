@@ -1,0 +1,1 @@
+ALTER TABLE public.clients ADD COLUMN IF NOT EXISTS credit_note_email boolean NOT NULL DEFAULT true;
