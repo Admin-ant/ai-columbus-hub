@@ -74,7 +74,13 @@ function AnnouncementsPage() {
   const [pinned, setPinned] = useState(false);
   const [notify, setNotify] = useState(true);
 
+  const [search, setSearch] = useState("");
+  const [filterCategory, setFilterCategory] = useState("alle");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
   useAnnouncementRealtime();
+
 
   const announcements = useQuery({
     queryKey: ["announcements", orgId],
@@ -91,6 +97,21 @@ function AnnouncementsPage() {
       return (data ?? []) as AnnouncementRow[];
     },
   });
+
+  const q = search.trim().toLowerCase();
+  const fromTs = dateFrom ? new Date(`${dateFrom}T00:00:00`).getTime() : null;
+  const toTs = dateTo ? new Date(`${dateTo}T23:59:59.999`).getTime() : null;
+  const filtered = (announcements.data ?? []).filter((a) => {
+    if (filterCategory !== "alle" && a.category !== filterCategory) return false;
+    if (q && !`${a.title} ${a.body}`.toLowerCase().includes(q)) return false;
+    const ts = new Date(a.created_at).getTime();
+    if (fromTs !== null && ts < fromTs) return false;
+    if (toTs !== null && ts > toTs) return false;
+    return true;
+  });
+  const hasFilters = !!q || filterCategory !== "alle" || !!dateFrom || !!dateTo;
+
+
 
   const publish = useMutation({
     mutationFn: async () =>
@@ -219,13 +240,72 @@ function AnnouncementsPage() {
           <CardDescription>De laatste 100 berichten in deze organisatie.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="lg:col-span-2">
+              <Input
+                placeholder="Zoek op titel of tekst…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                aria-label="Zoek mededelingen"
+              />
+            </div>
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger aria-label="Filter op categorie">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="alle">Alle categorieën</SelectItem>
+                {ANNOUNCEMENT_CATEGORIES.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {CATEGORY_LABELS[c] ?? c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              aria-label="Vanaf datum"
+            />
+            <Input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              aria-label="Tot datum"
+            />
+          </div>
+          {hasFilters && (
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>
+                {filtered.length} van {announcements.data?.length ?? 0} mededelingen
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearch("");
+                  setFilterCategory("alle");
+                  setDateFrom("");
+                  setDateTo("");
+                }}
+              >
+                Filters wissen
+              </Button>
+            </div>
+          )}
           {announcements.isLoading && (
             <p className="text-sm text-muted-foreground">Laden…</p>
           )}
-          {announcements.data?.length === 0 && (
-            <p className="text-sm text-muted-foreground">Nog geen mededelingen geplaatst.</p>
+          {!announcements.isLoading && filtered.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              {hasFilters
+                ? "Geen mededelingen gevonden met deze filters."
+                : "Nog geen mededelingen geplaatst."}
+            </p>
           )}
-          {(announcements.data ?? []).map((a) => (
+          {filtered.map((a) => (
+
             <div key={a.id} className="rounded-md border p-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1">
