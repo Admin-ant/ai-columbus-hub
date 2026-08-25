@@ -1,33 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-
-const CHANNEL = z.enum(["sms", "whatsapp"]);
-
-const SEND_SCHEMA = z.object({
-  organization_id: z.string().uuid(),
-  channel: CHANNEL,
-  to: z.string().min(5).max(30),
-  body: z.string().min(1).max(2000),
-  client_id: z.string().uuid().nullable().optional(),
-  lead_id: z.string().uuid().nullable().optional(),
-});
-
-const SETTINGS_SCHEMA = z.object({
-  organization_id: z.string().uuid(),
-  messaging_profile_id: z.string().max(120).nullable().optional(),
-  sms_from_number: z.string().max(30).nullable().optional(),
-  whatsapp_from_number: z.string().max(30).nullable().optional(),
-  enabled: z.boolean().optional(),
-});
-
-function normalizeNumber(raw: string): string {
-  const trimmed = raw.trim().replace(/[\s().-]/g, "");
-  if (trimmed.startsWith("+")) return trimmed;
-  if (trimmed.startsWith("00")) return `+${trimmed.slice(2)}`;
-  if (trimmed.startsWith("0")) return `+31${trimmed.slice(1)}`;
-  return `+${trimmed}`;
-}
+import {
+  messageChannelSchema,
+  messagingSettingsSchema,
+  normalizePhoneNumber,
+  sendMessageSchema,
+} from "@/lib/ai-columbus-messaging.server";
 
 export const getTelnyxSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -49,14 +28,14 @@ export const getTelnyxSettings = createServerFn({ method: "POST" })
 
 export const saveTelnyxSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => SETTINGS_SCHEMA.parse(d))
+  .inputValidator((d: unknown) => messagingSettingsSchema.parse(d))
   .handler(async ({ data, context }) => {
     const payload = {
       organization_id: data.organization_id,
       messaging_profile_id: data.messaging_profile_id?.trim() || null,
-      sms_from_number: data.sms_from_number ? normalizeNumber(data.sms_from_number) : null,
+      sms_from_number: data.sms_from_number ? normalizePhoneNumber(data.sms_from_number) : null,
       whatsapp_from_number: data.whatsapp_from_number
-        ? normalizeNumber(data.whatsapp_from_number)
+        ? normalizePhoneNumber(data.whatsapp_from_number)
         : null,
       enabled: data.enabled ?? true,
     };
@@ -70,7 +49,7 @@ export const saveTelnyxSettings = createServerFn({ method: "POST" })
 export const listTelnyxMessages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { organization_id: string; channel: "sms" | "whatsapp" }) =>
-    z.object({ organization_id: z.string().uuid(), channel: CHANNEL }).parse(d),
+    z.object({ organization_id: z.string().uuid(), channel: messageChannelSchema }).parse(d),
   )
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
@@ -86,10 +65,10 @@ export const listTelnyxMessages = createServerFn({ method: "POST" })
 
 export const sendTelnyxMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => SEND_SCHEMA.parse(d))
+  .inputValidator((d: unknown) => sendMessageSchema.parse(d))
   .handler(async ({ data, context }) => {
     const apiKey = process.env.TELNYX_API_KEY;
-    if (!apiKey) throw new Error("TELNYX_API_KEY ontbreekt");
+    if (!apiKey) throw new Error("De API-sleutel voor AI van Columbus ontbreekt");
 
     // Membership is enforced by RLS on this read.
     const { data: settings, error: sErr } = await context.supabase
@@ -98,8 +77,8 @@ export const sendTelnyxMessage = createServerFn({ method: "POST" })
       .eq("organization_id", data.organization_id)
       .maybeSingle();
     if (sErr) throw new Error(sErr.message);
-    if (!settings) throw new Error("Telnyx is nog niet ingesteld voor dit bedrijf");
-    if (settings.enabled === false) throw new Error("Telnyx-verzending staat uit");
+    if (!settings) throw new Error("AI van Columbus is nog niet ingesteld voor dit bedrijf");
+    if (settings.enabled === false) throw new Error("Berichten verzenden via AI van Columbus staat uit");
 
     const from =
       data.channel === "sms" ? settings.sms_from_number : settings.whatsapp_from_number;
@@ -110,7 +89,7 @@ export const sendTelnyxMessage = createServerFn({ method: "POST" })
           : "Geen WhatsApp-afzendernummer ingesteld",
       );
     }
-    const to = normalizeNumber(data.to);
+    const to = normalizePhoneNumber(data.to);
 
     const { data: inserted, error: iErr } = await context.supabase
       .from("telnyx_messages")
@@ -153,7 +132,7 @@ export const sendTelnyxMessage = createServerFn({ method: "POST" })
       const text = await res.text();
       if (!res.ok) {
         status = "failed";
-        errText = `Telnyx ${res.status}: ${text.slice(0, 300)}`;
+        errText = `Berichtendienst ${res.status}: ${text.slice(0, 300)}`;
       } else {
         const json = JSON.parse(text) as { data?: { id?: string } };
         providerId = json.data?.id ?? null;

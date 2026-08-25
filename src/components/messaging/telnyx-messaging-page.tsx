@@ -164,19 +164,19 @@ export function TelnyxMessagingPage({
               <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Vernieuwen
             </Button>
             <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
-              <Settings2 className="mr-1.5 h-3.5 w-3.5" /> Telnyx-instellingen
+              <Settings2 className="mr-1.5 h-3.5 w-3.5" /> AI van Columbus-instellingen
             </Button>
           </div>
         </div>
 
         {!apiKeyOk && (
           <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-            De Telnyx API-sleutel ontbreekt. Voeg deze toe om berichten te kunnen versturen.
+            De API-sleutel voor AI van Columbus ontbreekt. Voeg deze toe om berichten te kunnen versturen.
           </div>
         )}
         {apiKeyOk && !loading && !fromNumber && (
           <div className="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-            Stel eerst een afzendernummer in via Telnyx-instellingen.
+            Stel eerst een afzendernummer in via AI van Columbus-instellingen.
           </div>
         )}
 
@@ -255,7 +255,7 @@ export function TelnyxMessagingPage({
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
         <DialogContent className="border-border bg-background text-foreground">
           <DialogHeader>
-            <DialogTitle>Telnyx-instellingen</DialogTitle>
+            <DialogTitle>AI van Columbus-instellingen</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
@@ -288,7 +288,7 @@ export function TelnyxMessagingPage({
               />
             </div>
             <p className="text-[11px] text-muted-foreground">
-              Webhook-URL voor Telnyx: <code>/api/public/hooks/telnyx</code> met header
+              Webhook-URL voor AI van Columbus: <code>/api/public/hooks/telnyx</code> met header
               <code> x-webhook-secret</code>.
             </p>
           </div>
