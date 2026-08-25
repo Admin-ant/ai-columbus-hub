@@ -90,11 +90,11 @@ export const saveMessagingWebhookSecret = createServerFn({ method: "POST" })
     const secretHash = await hashWebhookSecret(data.secret);
     const { error } = await context.supabase
       .from("telnyx_settings")
-      .update({
+      .upsert({
+        organization_id: data.organization_id,
         webhook_secret_hash: secretHash,
         webhook_secret_configured_at: new Date().toISOString(),
-      } as never)
-      .eq("organization_id", data.organization_id);
+      } as never, { onConflict: "organization_id" });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
