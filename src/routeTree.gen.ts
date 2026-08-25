@@ -33,6 +33,7 @@ import { Route as AuthenticatedProductenRouteImport } from './routes/_authentica
 import { Route as AuthenticatedQuotesRouteImport } from './routes/_authenticated/quotes'
 import { Route as AuthenticatedSalesWorkflowRouteImport } from './routes/_authenticated/sales-workflow'
 import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated/teams'
+import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
 import { Route as AfspraakTokenRouteImport } from './routes/afspraak.$token'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as QTokenRouteImport } from './routes/q.$token'
@@ -212,6 +213,11 @@ const AuthenticatedSalesWorkflowRoute =
 const AuthenticatedTeamsRoute = AuthenticatedTeamsRouteImport.update({
   id: '/teams',
   path: '/teams',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedWhatsappRoute = AuthenticatedWhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AfspraakTokenRoute = AfspraakTokenRouteImport.update({
@@ -563,6 +569,7 @@ export interface FileRoutesByFullPath {
   '/quotes': typeof AuthenticatedQuotesRoute
   '/sales-workflow': typeof AuthenticatedSalesWorkflowRoute
   '/teams': typeof AuthenticatedTeamsRoute
+  '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/afspraak/$token': typeof AfspraakTokenRoute
   '/api/chat': typeof ApiChatRoute
   '/q/$token': typeof QTokenRoute
@@ -641,6 +648,7 @@ export interface FileRoutesByTo {
   '/quotes': typeof AuthenticatedQuotesRoute
   '/sales-workflow': typeof AuthenticatedSalesWorkflowRoute
   '/teams': typeof AuthenticatedTeamsRoute
+  '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/afspraak/$token': typeof AfspraakTokenRoute
   '/api/chat': typeof ApiChatRoute
   '/q/$token': typeof QTokenRoute
@@ -724,6 +732,7 @@ export interface FileRoutesById {
   '/_authenticated/quotes': typeof AuthenticatedQuotesRoute
   '/_authenticated/sales-workflow': typeof AuthenticatedSalesWorkflowRoute
   '/_authenticated/teams': typeof AuthenticatedTeamsRoute
+  '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
   '/afspraak/$token': typeof AfspraakTokenRoute
   '/api/chat': typeof ApiChatRoute
   '/q/$token': typeof QTokenRoute
@@ -808,6 +817,7 @@ export interface FileRouteTypes {
     | '/quotes'
     | '/sales-workflow'
     | '/teams'
+    | '/whatsapp'
     | '/afspraak/$token'
     | '/api/chat'
     | '/q/$token'
@@ -886,6 +896,7 @@ export interface FileRouteTypes {
     | '/quotes'
     | '/sales-workflow'
     | '/teams'
+    | '/whatsapp'
     | '/afspraak/$token'
     | '/api/chat'
     | '/q/$token'
@@ -968,6 +979,7 @@ export interface FileRouteTypes {
     | '/_authenticated/quotes'
     | '/_authenticated/sales-workflow'
     | '/_authenticated/teams'
+    | '/_authenticated/whatsapp'
     | '/afspraak/$token'
     | '/api/chat'
     | '/q/$token'
@@ -1224,6 +1236,13 @@ declare module '@tanstack/react-router' {
       path: '/teams'
       fullPath: '/teams'
       preLoaderRoute: typeof AuthenticatedTeamsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/whatsapp': {
+      id: '/_authenticated/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/whatsapp'
+      preLoaderRoute: typeof AuthenticatedWhatsappRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/afspraak/$token': {
@@ -1790,6 +1809,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedQuotesRoute: typeof AuthenticatedQuotesRoute
   AuthenticatedSalesWorkflowRoute: typeof AuthenticatedSalesWorkflowRoute
   AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
+  AuthenticatedWhatsappRoute: typeof AuthenticatedWhatsappRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedCrmActivitiesRoute: typeof AuthenticatedCrmActivitiesRoute
   AuthenticatedInvoicesInvoiceIdRoute: typeof AuthenticatedInvoicesInvoiceIdRoute
@@ -1824,6 +1844,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedQuotesRoute: AuthenticatedQuotesRoute,
   AuthenticatedSalesWorkflowRoute: AuthenticatedSalesWorkflowRoute,
   AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
+  AuthenticatedWhatsappRoute: AuthenticatedWhatsappRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedCrmActivitiesRoute: AuthenticatedCrmActivitiesRoute,
   AuthenticatedInvoicesInvoiceIdRoute: AuthenticatedInvoicesInvoiceIdRoute,
