@@ -132,7 +132,7 @@ export const sendTelnyxMessage = createServerFn({ method: "POST" })
       const text = await res.text();
       if (!res.ok) {
         status = "failed";
-        errText = `Berichtendienst ${res.status}: ${text.slice(0, 300)}`;
+        errText = `Bericht verzenden mislukt (status ${res.status})`;
       } else {
         const json = JSON.parse(text) as { data?: { id?: string } };
         providerId = json.data?.id ?? null;
