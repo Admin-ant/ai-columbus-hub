@@ -127,6 +127,14 @@ export const deleteInvoice = createServerFn({ method: "POST" })
       };
     }
 
+    // Bestaande (gedeeltelijke) creditnota's meetellen: nooit dubbel crediteren
+    const { data: existingCredits } = await context.supabase
+      .from("invoices")
+      .select("id, total_cents")
+      .eq("credit_of_invoice_id", data.invoice_id);
+    const alreadyCreditedCents = ((existingCredits ?? []) as unknown as Array<
+      Record<string, unknown>
+    >).reduce((s, c) => s + Math.abs(Number(c["total_cents"] ?? 0)), 0);
 
     const { error: upErr } = await context.supabase
       .from("invoices")
@@ -134,7 +142,7 @@ export const deleteInvoice = createServerFn({ method: "POST" })
       .eq("id", data.invoice_id);
     if (upErr) throw new Error(upErr.message);
 
-    // Maak automatisch een creditnota voor het volledige factuurbedrag
+    // Maak automatisch een creditnota voor het nog niet gecrediteerde bedrag
     let creditNoteId: string | null = null;
     try {
       const { data: full } = await context.supabase
@@ -151,8 +159,15 @@ export const deleteInvoice = createServerFn({ method: "POST" })
         .eq("invoice_id", data.invoice_id)
         .order("position", { ascending: true });
 
-      if (full) {
+      const invoiceTotalCents = Math.abs(
+        Number((full as unknown as Record<string, unknown> | null)?.["total_cents"] ?? 0),
+      );
+      const remainingCents = invoiceTotalCents - alreadyCreditedCents;
+
+      if (full && remainingCents > 1) {
+        const partial = alreadyCreditedCents > 0;
         const src = full as unknown as Record<string, unknown>;
+
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: num } = await (supabaseAdmin.rpc as unknown as (
           fn: string,
