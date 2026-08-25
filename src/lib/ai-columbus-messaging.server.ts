@@ -19,6 +19,30 @@ export const messagingSettingsSchema = z.object({
   enabled: z.boolean().optional(),
 });
 
+export const webhookSecretSchema = z.object({
+  organization_id: z.string().uuid(),
+  secret: z.string().min(16, "Gebruik minimaal 16 tekens").max(200),
+});
+
+export const messageTemplateSchema = z.object({
+  id: z.string().uuid().optional(),
+  organization_id: z.string().uuid(),
+  channel: messageChannelSchema,
+  name: z.string().trim().min(1).max(120),
+  body: z.string().trim().min(1).max(2000),
+});
+
+export const messageTemplateDeleteSchema = z.object({
+  id: z.string().uuid(),
+  organization_id: z.string().uuid(),
+});
+
+export async function hashWebhookSecret(secret: string): Promise<string> {
+  const bytes = new TextEncoder().encode(secret);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 export function normalizePhoneNumber(raw: string): string {
   const trimmed = raw.trim().replace(/[\s().-]/g, "");
   if (trimmed.startsWith("+")) return trimmed;
