@@ -187,6 +187,7 @@ const administratieSubItems: NavItem[] = [
   { title: "Boekhouding", url: "/boekhouding", icon: Receipt },
   { title: "Inkoopfacturen", url: "/inkoopfacturen", icon: Receipt },
   { title: "Producten & Prijzen", url: "/producten", icon: Package },
+  { title: "Klant-auditlog", url: "/auditlog", icon: History },
 ];
 
 function useUpcomingAppointmentsCount(organizationId: string | null) {
