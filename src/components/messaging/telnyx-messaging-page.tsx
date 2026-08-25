@@ -287,10 +287,6 @@ export function TelnyxMessagingPage({
                 className="border-input bg-background"
               />
             </div>
-            <p className="text-[11px] text-muted-foreground">
-              Webhook-URL voor AI van Columbus: <code>/api/public/hooks/telnyx</code> met header
-              <code> x-webhook-secret</code>.
-            </p>
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setSettingsOpen(false)}>
