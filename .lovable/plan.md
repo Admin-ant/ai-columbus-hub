@@ -1,54 +1,42 @@
-Probleem
-De AI Recorder in `/opname` stuurt de hele opname in één keer naar `https://ai.gateway.lovable.dev/v1/audio/transcriptions`. Bij een opname van 25:34 minuten krijgt de gebruiker een 400-fout:
+# Berichten testen, filteren en templaten
 
-```
-Total number of tokens in instructions + audio is too large for this model
-```
+## Doel
+Breid de bestaande SMS- en WhatsApp-schermen uit met testverzending, directe statuscontrole, veilige webhookconfiguratie, filters/CSV-export en herbruikbare berichttemplates.
 
-De STT-modellen hebben een maximum aan audio-tokens per request. De oplossing is de opname in korte, zelfstandige audiofragmenten te splitsen, elk fragment apart te transcriben en de resultaten aan elkaar te plakken.
+## Uitwerking
 
-Oplossing
+### 1. Testbericht en directe status
+- Voeg op zowel SMS als WhatsApp een aparte **Testbericht versturen**-actie toe.
+- Laat de gebruiker een telefoonnummer en testtekst kiezen en toon na verzending direct de status (`in wachtrij`, `verzonden`, `afgeleverd` of `mislukt`).
+- Werk de status kort automatisch bij zodat webhook-updates zichtbaar worden zonder handmatig verversen.
+- Toon begrijpelijke foutmeldingen zonder technische providerdetails.
 
-1. Client-side: opname in WAV-fragmenten knippen
-   - Bewaar de hele opname zoals nu met `MediaRecorder`.
-   - Na `stop()` decodeer de blob met `AudioContext.decodeAudioData()`.
-   - Splits het gedecodeerde audio-buffer in fragmenten van maximaal 5 minuten (instelbaar, zie punt 4).
-   - Encodeer elk fragment naar een correct WAV-bestand (16-bit mono) via een zuivere JS-encoder, zodat we geen nieuwe native/wasm-afhankelijkheid nodig hebben.
-   - Upload elk fragment naar Supabase Storage onder `call-recordings/` met een suffix (`_chunk_0`, `_chunk_1`, etc.).
+### 2. Veilige webhook-instellingen
+- Voeg binnen **AI van Columbus-instellingen** een webhookgedeelte toe met de volledige webhook-URL, een kopieerknop en een invoerveld voor het webhook-geheim.
+- Sla uitsluitend een SHA-256-hash van het geheim per organisatie op; het oorspronkelijke geheim wordt nooit teruggelezen of in gewone tekst opgeslagen.
+- Laat de webhook het ontvangen geheim veilig vergelijken met de opgeslagen hash en daarna pas berichten/statusupdates verwerken.
+- Toon alleen of een geheim is ingesteld, plus een actie om het te vervangen.
 
-2. Server function: chunked transcription
-   - Wijzig `processCallRecording` in `src/lib/call-recorder.functions.ts` zodat het één of meer chunk-paths accepteert.
-   - Voor elke chunk:
-     - Download het fragment via `supabaseAdmin.storage`.
-     - POST naar `/v1/audio/transcriptions` met `model: openai/gpt-4o-mini-transcribe` en `language: nl`.
-     - Concateneer de resultaten met spaties/tussenruimte.
-   - Als één chunk faalt, sla de status op als error en toon een duidelijke melding; retry werkt op alle chunks.
-   - Analyseer vervolgens het samengevoegde transcript met de bestaande `google/gemini-2.5-flash` prompt.
+### 3. Verzendhistorie filteren en exporteren
+- Voeg filters toe voor begindatum, einddatum en status.
+- Pas filters server-side toe op de bestaande berichtgeschiedenis.
+- Voeg **CSV downloaden** toe met datum, richting, afzender, ontvanger, status en berichttekst van de huidige gefilterde selectie.
+- Zorg voor correcte CSV-escaping en een herkenbare bestandsnaam per kanaal en datum.
 
-3. UI/UX-aanpassingen in `src/routes/_authenticated/opname.tsx`
-   - Toon tijdens het uploaden/processor een voortgang: "Opname in delen verwerken (deel 2 van 5)".
-   - Bij een 400/input_too_large geen technische JSON meer tonen, maar een heldere melding: "Deze opname is te lang voor één transcriptie en wordt automatisch in delen verwerkt."
-   - Zorg dat retry een chunked retry doet, niet opnieuw de hele blob in één request stuurt.
+### 4. Berichttemplates
+- Voeg een organisatiegebonden templatebibliotheek toe voor SMS en WhatsApp met naam, kanaal en berichttekst.
+- Ondersteun variabelen in de vorm `{{naam}}`, `{{bedrijf}}` en `{{telefoon}}`.
+- Voeg maken, wijzigen en verwijderen toe in de berichtenpagina.
+- Laat een template selecteren bij het opstellen en bied invoervelden voor gevonden variabelen; vul de preview/berichttekst direct in.
 
-4. Instelbare chunk-grootte
-   - Voeg een veld `call_recording_chunk_minutes` (default 5) toe aan de organisatie-instellingen of het regelscherm, zodat de gebruiker de chunkgrootte kan verhogen/verlagen indien nodig.
-   - De server valideert dat de waarde tussen 1 en 10 minuten ligt.
+### 5. Database en beveiliging
+- Breid de organisatie-instellingen uit met de webhook-secret-hash.
+- Voeg een tabel voor berichttemplates toe met expliciete grants, RLS en organisatiegebonden policies.
+- Beperk webhookmatching tot de organisatie die bij het ontvangende afzendernummer hoort.
+- Houd provider- en tabelnamen intern; in de interface blijft uitsluitend **AI van Columbus** zichtbaar.
 
-5. Testen
-   - Voeg een unit-achtige check toe die controleert dat de WAV-encoder een geldig header produceert.
-   - Test in de preview met een opname van 10+ minuten (simuleren door een stil lang WAV-bestand of door de chunkgrootte tijdelijk te verkleinen).
-
-Gewijzigde bestanden
-- `src/lib/call-recorder.functions.ts` (chunked transcription)
-- `src/routes/_authenticated/opname.tsx` (chunking, upload, progress UI)
-- `src/lib/wav-encoder.ts` (nieuw: pure JS WAV encoder)
-- `src/routes/_authenticated/opname.regels.tsx` (optioneel: chunk-minuten instelling)
-
-Niet-gewijzigd
-- De analyse-prompt en taak/stage-logica blijft hetzelfde.
-- De opname-UI blijft functioneel hetzelfde, alleen wordt de progressie duidelijker.
-
-Risico's / aandacht
-- De Web Audio API `decodeAudioData` werkt alleen op de client; server-side decoding vermijden we.
-- Worker runtime (Cloudflare) kan geen ffmpeg gebruiken; daarom doen we alles in de browser.
-- Geen extra audio-bibliotheken toevoegen; we implementeren WAV-encoding zelf om bundelgrootte en compatibiliteit te sparen.
+## Technische details
+- Bestaande TanStack server functions blijven de grens voor app-acties; de webhook blijft een beveiligde publieke serverroute.
+- Server-functionbestanden blijven dun: schema’s/helpers staan in aparte modules.
+- De bestaande SMS- en WhatsApp-route hergebruiken één gedeelde berichtencomponent.
+- Na implementatie worden beide routes in de preview gecontroleerd, inclusief filters, template-invulling en statusweergave.
