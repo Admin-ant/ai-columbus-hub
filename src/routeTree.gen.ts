@@ -32,7 +32,9 @@ import { Route as AuthenticatedOpnameRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedProductenRouteImport } from './routes/_authenticated/producten'
 import { Route as AuthenticatedQuotesRouteImport } from './routes/_authenticated/quotes'
 import { Route as AuthenticatedSalesWorkflowRouteImport } from './routes/_authenticated/sales-workflow'
+import { Route as AuthenticatedSmsRouteImport } from './routes/_authenticated/sms'
 import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated/teams'
+import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
 import { Route as AfspraakTokenRouteImport } from './routes/afspraak.$token'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as QTokenRouteImport } from './routes/q.$token'
@@ -87,6 +89,7 @@ import { Route as ApiPublicHooksQuoteFollowupsRouteImport } from './routes/api/p
 import { Route as ApiPublicHooksRecurringInvoicesRouteImport } from './routes/api/public/hooks/recurring-invoices'
 import { Route as ApiPublicHooksResendEventsRouteImport } from './routes/api/public/hooks/resend-events'
 import { Route as ApiPublicHooksStudioFollowupsRouteImport } from './routes/api/public/hooks/studio-followups'
+import { Route as ApiPublicHooksTelnyxRouteImport } from './routes/api/public/hooks/telnyx'
 import { Route as ApiPublicLTokenRouteImport } from './routes/api/public/l.$token'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -208,9 +211,19 @@ const AuthenticatedSalesWorkflowRoute =
     path: '/sales-workflow',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSmsRoute = AuthenticatedSmsRouteImport.update({
+  id: '/sms',
+  path: '/sms',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedTeamsRoute = AuthenticatedTeamsRouteImport.update({
   id: '/teams',
   path: '/teams',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedWhatsappRoute = AuthenticatedWhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AfspraakTokenRoute = AfspraakTokenRouteImport.update({
@@ -527,6 +540,11 @@ const ApiPublicHooksStudioFollowupsRoute =
     path: '/api/public/hooks/studio-followups',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksTelnyxRoute = ApiPublicHooksTelnyxRouteImport.update({
+  id: '/api/public/hooks/telnyx',
+  path: '/api/public/hooks/telnyx',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicLTokenRoute = ApiPublicLTokenRouteImport.update({
   id: '/api/public/l/$token',
   path: '/api/public/l/$token',
@@ -556,7 +574,9 @@ export interface FileRoutesByFullPath {
   '/producten': typeof AuthenticatedProductenRoute
   '/quotes': typeof AuthenticatedQuotesRoute
   '/sales-workflow': typeof AuthenticatedSalesWorkflowRoute
+  '/sms': typeof AuthenticatedSmsRoute
   '/teams': typeof AuthenticatedTeamsRoute
+  '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/afspraak/$token': typeof AfspraakTokenRoute
   '/api/chat': typeof ApiChatRoute
   '/q/$token': typeof QTokenRoute
@@ -610,6 +630,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/recurring-invoices': typeof ApiPublicHooksRecurringInvoicesRoute
   '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
+  '/api/public/hooks/telnyx': typeof ApiPublicHooksTelnyxRoute
   '/api/public/l/$token': typeof ApiPublicLTokenRoute
   '/ai-columbus/klanten/': typeof AuthenticatedAiColumbusKlantenIndexRoute
 }
@@ -633,7 +654,9 @@ export interface FileRoutesByTo {
   '/producten': typeof AuthenticatedProductenRoute
   '/quotes': typeof AuthenticatedQuotesRoute
   '/sales-workflow': typeof AuthenticatedSalesWorkflowRoute
+  '/sms': typeof AuthenticatedSmsRoute
   '/teams': typeof AuthenticatedTeamsRoute
+  '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/afspraak/$token': typeof AfspraakTokenRoute
   '/api/chat': typeof ApiChatRoute
   '/q/$token': typeof QTokenRoute
@@ -688,6 +711,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/recurring-invoices': typeof ApiPublicHooksRecurringInvoicesRoute
   '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
+  '/api/public/hooks/telnyx': typeof ApiPublicHooksTelnyxRoute
   '/api/public/l/$token': typeof ApiPublicLTokenRoute
   '/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenIndexRoute
 }
@@ -715,7 +739,9 @@ export interface FileRoutesById {
   '/_authenticated/producten': typeof AuthenticatedProductenRoute
   '/_authenticated/quotes': typeof AuthenticatedQuotesRoute
   '/_authenticated/sales-workflow': typeof AuthenticatedSalesWorkflowRoute
+  '/_authenticated/sms': typeof AuthenticatedSmsRoute
   '/_authenticated/teams': typeof AuthenticatedTeamsRoute
+  '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
   '/afspraak/$token': typeof AfspraakTokenRoute
   '/api/chat': typeof ApiChatRoute
   '/q/$token': typeof QTokenRoute
@@ -770,6 +796,7 @@ export interface FileRoutesById {
   '/api/public/hooks/recurring-invoices': typeof ApiPublicHooksRecurringInvoicesRoute
   '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
+  '/api/public/hooks/telnyx': typeof ApiPublicHooksTelnyxRoute
   '/api/public/l/$token': typeof ApiPublicLTokenRoute
   '/_authenticated/ai-columbus/klanten/': typeof AuthenticatedAiColumbusKlantenIndexRoute
 }
@@ -798,7 +825,9 @@ export interface FileRouteTypes {
     | '/producten'
     | '/quotes'
     | '/sales-workflow'
+    | '/sms'
     | '/teams'
+    | '/whatsapp'
     | '/afspraak/$token'
     | '/api/chat'
     | '/q/$token'
@@ -852,6 +881,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/recurring-invoices'
     | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
+    | '/api/public/hooks/telnyx'
     | '/api/public/l/$token'
     | '/ai-columbus/klanten/'
   fileRoutesByTo: FileRoutesByTo
@@ -875,7 +905,9 @@ export interface FileRouteTypes {
     | '/producten'
     | '/quotes'
     | '/sales-workflow'
+    | '/sms'
     | '/teams'
+    | '/whatsapp'
     | '/afspraak/$token'
     | '/api/chat'
     | '/q/$token'
@@ -930,6 +962,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/recurring-invoices'
     | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
+    | '/api/public/hooks/telnyx'
     | '/api/public/l/$token'
     | '/ai-columbus/klanten'
   id:
@@ -956,7 +989,9 @@ export interface FileRouteTypes {
     | '/_authenticated/producten'
     | '/_authenticated/quotes'
     | '/_authenticated/sales-workflow'
+    | '/_authenticated/sms'
     | '/_authenticated/teams'
+    | '/_authenticated/whatsapp'
     | '/afspraak/$token'
     | '/api/chat'
     | '/q/$token'
@@ -1011,6 +1046,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/recurring-invoices'
     | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
+    | '/api/public/hooks/telnyx'
     | '/api/public/l/$token'
     | '/_authenticated/ai-columbus/klanten/'
   fileRoutesById: FileRoutesById
@@ -1040,6 +1076,7 @@ export interface RootRouteChildren {
   ApiPublicHooksRecurringInvoicesRoute: typeof ApiPublicHooksRecurringInvoicesRoute
   ApiPublicHooksResendEventsRoute: typeof ApiPublicHooksResendEventsRoute
   ApiPublicHooksStudioFollowupsRoute: typeof ApiPublicHooksStudioFollowupsRoute
+  ApiPublicHooksTelnyxRoute: typeof ApiPublicHooksTelnyxRoute
   ApiPublicLTokenRoute: typeof ApiPublicLTokenRoute
 }
 
@@ -1206,11 +1243,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSalesWorkflowRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sms': {
+      id: '/_authenticated/sms'
+      path: '/sms'
+      fullPath: '/sms'
+      preLoaderRoute: typeof AuthenticatedSmsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/teams': {
       id: '/_authenticated/teams'
       path: '/teams'
       fullPath: '/teams'
       preLoaderRoute: typeof AuthenticatedTeamsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/whatsapp': {
+      id: '/_authenticated/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/whatsapp'
+      preLoaderRoute: typeof AuthenticatedWhatsappRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/afspraak/$token': {
@@ -1591,6 +1642,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksStudioFollowupsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/telnyx': {
+      id: '/api/public/hooks/telnyx'
+      path: '/api/public/hooks/telnyx'
+      fullPath: '/api/public/hooks/telnyx'
+      preLoaderRoute: typeof ApiPublicHooksTelnyxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/l/$token': {
       id: '/api/public/l/$token'
       path: '/api/public/l/$token'
@@ -1769,7 +1827,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProductenRoute: typeof AuthenticatedProductenRoute
   AuthenticatedQuotesRoute: typeof AuthenticatedQuotesRoute
   AuthenticatedSalesWorkflowRoute: typeof AuthenticatedSalesWorkflowRoute
+  AuthenticatedSmsRoute: typeof AuthenticatedSmsRoute
   AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
+  AuthenticatedWhatsappRoute: typeof AuthenticatedWhatsappRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedCrmActivitiesRoute: typeof AuthenticatedCrmActivitiesRoute
   AuthenticatedInvoicesInvoiceIdRoute: typeof AuthenticatedInvoicesInvoiceIdRoute
@@ -1803,7 +1863,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProductenRoute: AuthenticatedProductenRoute,
   AuthenticatedQuotesRoute: AuthenticatedQuotesRoute,
   AuthenticatedSalesWorkflowRoute: AuthenticatedSalesWorkflowRoute,
+  AuthenticatedSmsRoute: AuthenticatedSmsRoute,
   AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
+  AuthenticatedWhatsappRoute: AuthenticatedWhatsappRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedCrmActivitiesRoute: AuthenticatedCrmActivitiesRoute,
   AuthenticatedInvoicesInvoiceIdRoute: AuthenticatedInvoicesInvoiceIdRoute,
@@ -1845,6 +1907,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksRecurringInvoicesRoute: ApiPublicHooksRecurringInvoicesRoute,
   ApiPublicHooksResendEventsRoute: ApiPublicHooksResendEventsRoute,
   ApiPublicHooksStudioFollowupsRoute: ApiPublicHooksStudioFollowupsRoute,
+  ApiPublicHooksTelnyxRoute: ApiPublicHooksTelnyxRoute,
   ApiPublicLTokenRoute: ApiPublicLTokenRoute,
 }
 export const routeTree = rootRouteImport

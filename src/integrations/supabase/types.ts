@@ -4348,6 +4348,126 @@ export type Database = {
           },
         ]
       }
+      telnyx_messages: {
+        Row: {
+          body: string
+          channel: string
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          delivered_at: string | null
+          direction: string
+          error: string | null
+          from_number: string | null
+          id: string
+          lead_id: string | null
+          organization_id: string
+          provider_message_id: string | null
+          sent_at: string | null
+          status: string
+          to_number: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          channel: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivered_at?: string | null
+          direction?: string
+          error?: string | null
+          from_number?: string | null
+          id?: string
+          lead_id?: string | null
+          organization_id: string
+          provider_message_id?: string | null
+          sent_at?: string | null
+          status?: string
+          to_number: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          channel?: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivered_at?: string | null
+          direction?: string
+          error?: string | null
+          from_number?: string | null
+          id?: string
+          lead_id?: string | null
+          organization_id?: string
+          provider_message_id?: string | null
+          sent_at?: string | null
+          status?: string
+          to_number?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telnyx_messages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "telnyx_messages_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "telnyx_messages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      telnyx_settings: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          messaging_profile_id: string | null
+          organization_id: string
+          sms_from_number: string | null
+          updated_at: string
+          whatsapp_from_number: string | null
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          messaging_profile_id?: string | null
+          organization_id: string
+          sms_from_number?: string | null
+          updated_at?: string
+          whatsapp_from_number?: string | null
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          messaging_profile_id?: string | null
+          organization_id?: string
+          sms_from_number?: string | null
+          updated_at?: string
+          whatsapp_from_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telnyx_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
