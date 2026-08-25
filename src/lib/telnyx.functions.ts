@@ -3,10 +3,14 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   messageChannelSchema,
+  messageTemplateDeleteSchema,
+  messageTemplateSchema,
   messagingSettingsSchema,
   normalizePhoneNumber,
   sendMessageSchema,
-} from "@/lib/ai-columbus-messaging.server";
+  webhookSecretSchema,
+  hashWebhookSecret,
+} from "@/lib/ai-columbus-messaging";
 
 export const getTelnyxSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -16,7 +20,7 @@ export const getTelnyxSettings = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("telnyx_settings")
-      .select("*")
+      .select("organization_id, messaging_profile_id, sms_from_number, whatsapp_from_number, enabled, webhook_secret_configured_at")
       .eq("organization_id", data.organization_id)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -61,6 +65,90 @@ export const listTelnyxMessages = createServerFn({ method: "POST" })
       .limit(200);
     if (error) throw new Error(error.message);
     return rows ?? [];
+  });
+
+export const getTelnyxMessageStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { organization_id: string; id: string }) =>
+    z.object({ organization_id: z.string().uuid(), id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase
+      .from("telnyx_messages")
+      .select("id, status, error, sent_at, delivered_at")
+      .eq("organization_id", data.organization_id)
+      .eq("id", data.id)
+      .single();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
+export const saveMessagingWebhookSecret = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => webhookSecretSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const secretHash = await hashWebhookSecret(data.secret);
+    const { error } = await context.supabase
+      .from("telnyx_settings")
+      .update({
+        webhook_secret_hash: secretHash,
+        webhook_secret_configured_at: new Date().toISOString(),
+      } as never)
+      .eq("organization_id", data.organization_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const listMessageTemplates = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { organization_id: string; channel: "sms" | "whatsapp" }) =>
+    z.object({ organization_id: z.string().uuid(), channel: messageChannelSchema }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("message_templates")
+      .select("id, name, body, channel, created_at, updated_at")
+      .eq("organization_id", data.organization_id)
+      .eq("channel", data.channel)
+      .order("name");
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+export const saveMessageTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => messageTemplateSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const payload = {
+      organization_id: data.organization_id,
+      channel: data.channel,
+      name: data.name,
+      body: data.body,
+      created_by: context.userId,
+    };
+    const query = data.id
+      ? context.supabase
+          .from("message_templates")
+          .update({ name: data.name, body: data.body } as never)
+          .eq("id", data.id)
+          .eq("organization_id", data.organization_id)
+      : context.supabase.from("message_templates").insert(payload as never);
+    const { error } = await query;
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteMessageTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => messageTemplateDeleteSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("message_templates")
+      .delete()
+      .eq("id", data.id)
+      .eq("organization_id", data.organization_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 export const sendTelnyxMessage = createServerFn({ method: "POST" })
@@ -154,5 +242,5 @@ export const sendTelnyxMessage = createServerFn({ method: "POST" })
       .eq("id", messageId);
 
     if (status === "failed") throw new Error(errText ?? "Versturen mislukt");
-    return { id: messageId, provider_message_id: providerId };
+    return { id: messageId, provider_message_id: providerId, status };
   });

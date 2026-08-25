@@ -1,20 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { hashWebhookSecret } from "@/lib/ai-columbus-messaging";
 
 /**
- * Telnyx webhook: inbound SMS/WhatsApp messages and delivery status updates.
- * Configure in Telnyx with header `x-webhook-secret: $TELNYX_WEBHOOK_SECRET`
- * (or `?secret=` query param).
+ * Messaging webhook: inbound SMS/WhatsApp messages and delivery status updates.
  */
 export const Route = createFileRoute("/api/public/hooks/telnyx")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const secret = process.env.TELNYX_WEBHOOK_SECRET;
-        if (!secret) return new Response("Not configured", { status: 503 });
         const url = new URL(request.url);
         const provided =
           request.headers.get("x-webhook-secret") ?? url.searchParams.get("secret");
-        if (provided !== secret) return new Response("Unauthorized", { status: 401 });
+        if (!provided) return new Response("Unauthorized", { status: 401 });
 
         let payload: unknown;
         try {
@@ -43,18 +40,38 @@ export const Route = createFileRoute("/api/public/hooks/telnyx")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const now = new Date().toISOString();
         const strip = (n?: string | null) => (n ?? "").replace(/^whatsapp:/i, "");
+        const targetNumber =
+          type === "message.received" || p.direction === "inbound"
+            ? strip(p.to?.[0]?.phone_number)
+            : strip(p.from?.phone_number);
+        let settingsQuery = supabaseAdmin
+          .from("telnyx_settings")
+          .select("organization_id, webhook_secret_hash")
+          .or(`sms_from_number.eq.${targetNumber},whatsapp_from_number.eq.${targetNumber}`);
+        if (p.id && !targetNumber) {
+          const { data: message } = await supabaseAdmin
+            .from("telnyx_messages")
+            .select("organization_id")
+            .eq("provider_message_id", p.id)
+            .maybeSingle();
+          if (!message) return Response.json({ ok: true, unmatched: true });
+          settingsQuery = supabaseAdmin
+            .from("telnyx_settings")
+            .select("organization_id, webhook_secret_hash")
+            .eq("organization_id", (message as { organization_id: string }).organization_id);
+        }
+        const { data: setting } = await settingsQuery.maybeSingle();
+        const configuredHash = (setting as { webhook_secret_hash?: string | null } | null)
+          ?.webhook_secret_hash;
+        if (!setting || !configuredHash || (await hashWebhookSecret(provided)) !== configuredHash) {
+          return new Response("Unauthorized", { status: 401 });
+        }
 
         if (type === "message.received" || p.direction === "inbound") {
           const to = strip(p.to?.[0]?.phone_number);
           const channel = (p.type ?? "").toLowerCase().includes("whatsapp")
             ? "whatsapp"
             : "sms";
-          const { data: setting } = await supabaseAdmin
-            .from("telnyx_settings")
-            .select("organization_id")
-            .or(`sms_from_number.eq.${to},whatsapp_from_number.eq.${to}`)
-            .maybeSingle();
-          if (!setting) return Response.json({ ok: true, unmatched: true });
           await supabaseAdmin.from("telnyx_messages").insert({
             organization_id: (setting as { organization_id: string }).organization_id,
             channel,

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Send, Settings2, RefreshCw } from "lucide-react";
+import { Download, FlaskConical, Loader2, Plus, RefreshCw, Save, Send, Settings2, Trash2 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -17,8 +18,13 @@ import {
 } from "@/components/ui/dialog";
 import {
   getTelnyxSettings,
+  getTelnyxMessageStatus,
   saveTelnyxSettings,
+  saveMessagingWebhookSecret,
   listTelnyxMessages,
+  listMessageTemplates,
+  saveMessageTemplate,
+  deleteMessageTemplate,
   sendTelnyxMessage,
 } from "@/lib/telnyx.functions";
 
@@ -41,7 +47,10 @@ type Settings = {
   sms_from_number: string | null;
   whatsapp_from_number: string | null;
   enabled: boolean;
+  webhook_secret_configured_at?: string | null;
 };
+
+type MessageTemplate = { id: string; name: string; body: string; channel: string };
 
 const emptySettings: Settings = {
   messaging_profile_id: "",
@@ -66,6 +75,11 @@ export function TelnyxMessagingPage({
   const persistSettings = useServerFn(saveTelnyxSettings);
   const fetchMessages = useServerFn(listTelnyxMessages);
   const send = useServerFn(sendTelnyxMessage);
+  const fetchStatus = useServerFn(getTelnyxMessageStatus);
+  const persistWebhookSecret = useServerFn(saveMessagingWebhookSecret);
+  const fetchTemplates = useServerFn(listMessageTemplates);
+  const persistTemplate = useServerFn(saveMessageTemplate);
+  const removeTemplate = useServerFn(deleteMessageTemplate);
 
   const [settings, setSettings] = useState<Settings>(emptySettings);
   const [apiKeyOk, setApiKeyOk] = useState(true);
@@ -76,24 +90,36 @@ export function TelnyxMessagingPage({
   const [sending, setSending] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [templates, setTemplates] = useState<MessageTemplate[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState("");
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [templateBody, setTemplateBody] = useState("");
+  const [webhookSecret, setWebhookSecret] = useState("");
+  const [testStatus, setTestStatus] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const load = useCallback(async () => {
     if (!currentOrganizationId) return;
     setLoading(true);
     try {
-      const [s, m] = await Promise.all([
+      const [s, m, t] = await Promise.all([
         fetchSettings({ data: { organization_id: currentOrganizationId } }),
         fetchMessages({ data: { organization_id: currentOrganizationId, channel } }),
+        fetchTemplates({ data: { organization_id: currentOrganizationId, channel } }),
       ]);
       setApiKeyOk(s.api_key_configured);
       setSettings(s.settings ? { ...emptySettings, ...(s.settings as Settings) } : emptySettings);
       setMessages(m as Message[]);
+      setTemplates(t as MessageTemplate[]);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Laden mislukt");
     } finally {
       setLoading(false);
     }
-  }, [currentOrganizationId, channel, fetchSettings, fetchMessages]);
+  }, [currentOrganizationId, channel, fetchSettings, fetchMessages, fetchTemplates]);
 
   useEffect(() => {
     void load();
@@ -120,6 +146,107 @@ export function TelnyxMessagingPage({
     } finally {
       setSending(false);
     }
+  }
+
+  function renderTemplate(value: string) {
+    return value
+      .replaceAll("{{name}}", "Naam")
+      .replaceAll("{{company}}", currentOrganization?.name ?? "Bedrijf")
+      .replaceAll("{{phone}}", to.trim() || "+316…");
+  }
+
+  async function handleTestSend() {
+    if (!currentOrganizationId || !to.trim() || !body.trim()) {
+      toast.error("Vul een nummer en bericht in");
+      return;
+    }
+    setSending(true);
+    setTestStatus("queued");
+    try {
+      const sent = await send({
+        data: { organization_id: currentOrganizationId, channel, to: to.trim(), body: renderTemplate(body) },
+      });
+      setTestStatus(sent.status);
+      for (let attempt = 0; attempt < 6; attempt += 1) {
+        await new Promise((resolve) => window.setTimeout(resolve, 2000));
+        const latest = await fetchStatus({ data: { organization_id: currentOrganizationId, id: sent.id } });
+        setTestStatus(latest.status);
+        if (["delivered", "failed", "undelivered"].includes(latest.status)) break;
+      }
+      await load();
+    } catch (e) {
+      setTestStatus("failed");
+      toast.error(e instanceof Error ? e.message : "Testbericht mislukt");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function handleSaveSecret() {
+    if (!currentOrganizationId) return;
+    setSaving(true);
+    try {
+      await persistWebhookSecret({ data: { organization_id: currentOrganizationId, secret: webhookSecret } });
+      setWebhookSecret("");
+      toast.success("Webhook-secret veilig opgeslagen");
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Opslaan mislukt");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSaveTemplate() {
+    if (!currentOrganizationId) return;
+    try {
+      await persistTemplate({
+        data: { organization_id: currentOrganizationId, channel, name: templateName, body: templateBody },
+      });
+      setTemplateOpen(false);
+      setTemplateName("");
+      setTemplateBody("");
+      toast.success("Template opgeslagen");
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Template opslaan mislukt");
+    }
+  }
+
+  async function handleDeleteTemplate(id: string) {
+    if (!currentOrganizationId) return;
+    try {
+      await removeTemplate({ data: { organization_id: currentOrganizationId, id } });
+      setSelectedTemplate("");
+      toast.success("Template verwijderd");
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Verwijderen mislukt");
+    }
+  }
+
+  const filteredMessages = messages.filter((message) => {
+    if (statusFilter !== "all" && message.status !== statusFilter) return false;
+    const created = new Date(message.created_at).getTime();
+    if (dateFrom && created < new Date(`${dateFrom}T00:00:00`).getTime()) return false;
+    if (dateTo && created > new Date(`${dateTo}T23:59:59`).getTime()) return false;
+    return true;
+  });
+
+  function exportCsv() {
+    const escape = (value: string | null) => `"${(value ?? "").replaceAll('"', '""')}"`;
+    const rows = filteredMessages.map((message) =>
+      [message.created_at, message.direction, message.status, message.from_number, message.to_number, message.body, message.error]
+        .map(escape)
+        .join(","),
+    );
+    const csv = ["datum,richting,status,van,naar,bericht,fout", ...rows].join("\n");
+    const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${channel}-berichten-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   async function handleSaveSettings() {
@@ -197,6 +324,24 @@ export function TelnyxMessagingPage({
             </div>
           </div>
           <div className="space-y-1.5">
+            <div className="flex items-end gap-2">
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <Label className="text-[11px] uppercase tracking-wider">Berichttemplate</Label>
+                <Select value={selectedTemplate} onValueChange={(id) => {
+                  setSelectedTemplate(id);
+                  const template = templates.find((item) => item.id === id);
+                  if (template) setBody(template.body);
+                }}>
+                  <SelectTrigger><SelectValue placeholder="Kies een template" /></SelectTrigger>
+                  <SelectContent>{templates.map((template) => <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <Button variant="outline" size="icon" title="Nieuwe template" onClick={() => setTemplateOpen(true)}><Plus className="h-4 w-4" /></Button>
+              {selectedTemplate && <Button variant="ghost" size="icon" title="Template verwijderen" onClick={() => void handleDeleteTemplate(selectedTemplate)}><Trash2 className="h-4 w-4" /></Button>}
+            </div>
+            <p className="text-[11px] text-muted-foreground">Variabelen: {"{{name}}"}, {"{{company}}"}, {"{{phone}}"}</p>
+          </div>
+          <div className="space-y-1.5">
             <Label className="text-[11px] uppercase tracking-wider">Bericht</Label>
             <Textarea
               rows={5}
@@ -207,7 +352,11 @@ export function TelnyxMessagingPage({
             />
             <p className="text-[11px] text-muted-foreground">{body.length} tekens</p>
           </div>
-          <div className="flex justify-end">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {testStatus && <Badge variant={testStatus === "failed" ? "destructive" : "secondary"}>Teststatus: {testStatus}</Badge>}
+            <Button variant="outline" onClick={() => void handleTestSend()} disabled={sending || !fromNumber}>
+              <FlaskConical className="mr-2 h-4 w-4" /> Test versturen
+            </Button>
             <Button onClick={() => void handleSend()} disabled={sending || !fromNumber}>
               {sending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -220,16 +369,31 @@ export function TelnyxMessagingPage({
         </div>
 
         <div className="rounded-lg border border-border bg-card text-card-foreground shadow-sm">
-          <div className="border-b border-border px-4 py-3 text-sm font-semibold">Berichten</div>
+          <div className="flex flex-wrap items-end gap-2 border-b border-border px-4 py-3">
+            <div className="mr-auto text-sm font-semibold">Berichten</div>
+            <Input type="date" aria-label="Vanaf datum" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} className="w-auto" />
+            <Input type="date" aria-label="Tot datum" value={dateTo} onChange={(event) => setDateTo(event.target.value)} className="w-auto" />
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle statussen</SelectItem>
+                <SelectItem value="queued">In wachtrij</SelectItem>
+                <SelectItem value="sent">Verstuurd</SelectItem>
+                <SelectItem value="delivered">Afgeleverd</SelectItem>
+                <SelectItem value="failed">Mislukt</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="sm" onClick={exportCsv} disabled={filteredMessages.length === 0}><Download className="mr-1.5 h-3.5 w-3.5" /> CSV</Button>
+          </div>
           {loading ? (
             <div className="p-5">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
-          ) : messages.length === 0 ? (
+          ) : filteredMessages.length === 0 ? (
             <div className="p-5 text-sm text-muted-foreground">Nog geen berichten.</div>
           ) : (
             <ul className="divide-y divide-border">
-              {messages.map((m) => (
+              {filteredMessages.map((m) => (
                 <li key={m.id} className="flex flex-wrap items-start gap-3 px-4 py-3">
                   <Badge variant={m.direction === "inbound" ? "secondary" : "outline"}>
                     {m.direction === "inbound" ? "Inkomend" : "Uitgaand"}
@@ -267,6 +431,15 @@ export function TelnyxMessagingPage({
                 className="border-input bg-background"
               />
             </div>
+            <div className="space-y-1.5 border-t border-border pt-3">
+              <Label className="text-[11px] uppercase tracking-wider">Webhook-secret</Label>
+              <Input type="password" value={webhookSecret} onChange={(event) => setWebhookSecret(event.target.value)} placeholder="Minimaal 16 tekens" autoComplete="new-password" />
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                <span>{settings.webhook_secret_configured_at ? `Ingesteld op ${new Date(settings.webhook_secret_configured_at).toLocaleDateString("nl-NL")}` : "Nog niet ingesteld"}</span>
+                <Button type="button" variant="outline" size="sm" disabled={saving || webhookSecret.length < 16} onClick={() => void handleSaveSecret()}><Save className="mr-1.5 h-3.5 w-3.5" /> Secret opslaan</Button>
+              </div>
+              <p className="text-xs text-muted-foreground">Webhook-URL: {typeof window === "undefined" ? "/api/public/hooks/telnyx" : `${window.location.origin}/api/public/hooks/telnyx`}</p>
+            </div>
             <div className="space-y-1.5">
               <Label className="text-[11px] uppercase tracking-wider">SMS-afzendernummer</Label>
               <Input
@@ -297,6 +470,17 @@ export function TelnyxMessagingPage({
               Opslaan
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={templateOpen} onOpenChange={setTemplateOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Nieuw berichttemplate</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5"><Label>Naam</Label><Input value={templateName} onChange={(event) => setTemplateName(event.target.value)} /></div>
+            <div className="space-y-1.5"><Label>Bericht</Label><Textarea rows={7} value={templateBody} onChange={(event) => setTemplateBody(event.target.value)} placeholder="Hallo {{name}}, …" /></div>
+          </div>
+          <DialogFooter><Button variant="ghost" onClick={() => setTemplateOpen(false)}>Annuleren</Button><Button disabled={!templateName.trim() || !templateBody.trim()} onClick={() => void handleSaveTemplate()}>Opslaan</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

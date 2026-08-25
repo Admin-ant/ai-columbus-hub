@@ -2827,6 +2827,47 @@ export type Database = {
           },
         ]
       }
+      message_templates: {
+        Row: {
+          body: string
+          channel: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          channel: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_preferences: {
         Row: {
           categories: string[]
@@ -4438,6 +4479,8 @@ export type Database = {
           organization_id: string
           sms_from_number: string | null
           updated_at: string
+          webhook_secret_configured_at: string | null
+          webhook_secret_hash: string | null
           whatsapp_from_number: string | null
         }
         Insert: {
@@ -4447,6 +4490,8 @@ export type Database = {
           organization_id: string
           sms_from_number?: string | null
           updated_at?: string
+          webhook_secret_configured_at?: string | null
+          webhook_secret_hash?: string | null
           whatsapp_from_number?: string | null
         }
         Update: {
@@ -4456,6 +4501,8 @@ export type Database = {
           organization_id?: string
           sms_from_number?: string | null
           updated_at?: string
+          webhook_secret_configured_at?: string | null
+          webhook_secret_hash?: string | null
           whatsapp_from_number?: string | null
         }
         Relationships: [
