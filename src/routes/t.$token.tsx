@@ -1,32 +1,6 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
-import { getPublicTemplatePreview } from "@/lib/studio-public.functions";
-import type {
-  StudioPackage,
-  StudioSection,
-  StudioTheme,
-} from "@/lib/offerte-studio";
-
-type TemplateData = {
-  template: {
-    id: string;
-    name: string;
-    description: string | null;
-    cover_image_url: string | null;
-    theme: StudioTheme;
-    sections: StudioSection[];
-    packages: StudioPackage[];
-    preview_token_expires_at: string | null;
-  };
-  organization: { name: string; logo_url: string | null; brand_color: string | null } | null;
-};
-
-const previewQuery = (token: string) =>
-  queryOptions({
-    queryKey: ["template-preview", token],
-    queryFn: () => getPublicTemplatePreview({ data: { token } }) as unknown as Promise<TemplateData>,
-    staleTime: 60_000,
-  });
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { templatePreviewQuery } from "@/lib/template-preview-query";
 
 export const Route = createFileRoute("/t/$token")({
   head: () => ({
@@ -37,7 +11,7 @@ export const Route = createFileRoute("/t/$token")({
   }),
   loader: async ({ context, params }) => {
     try {
-      await context.queryClient.ensureQueryData(previewQuery(params.token));
+      await context.queryClient.ensureQueryData(templatePreviewQuery(params.token));
     } catch {
       throw notFound();
     }
@@ -63,7 +37,7 @@ export const Route = createFileRoute("/t/$token")({
 
 function TemplatePreviewPage() {
   const { token } = Route.useParams();
-  const { data } = useSuspenseQuery(previewQuery(token));
+  const { data } = useSuspenseQuery(templatePreviewQuery(token));
   const { template: t, organization: org } = data;
   const accent = t.theme.accent;
   const expires = t.preview_token_expires_at ? new Date(t.preview_token_expires_at) : null;

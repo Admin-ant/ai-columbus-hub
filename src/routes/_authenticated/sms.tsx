@@ -5,15 +5,15 @@ import { TelnyxMessagingPage } from "@/components/messaging/telnyx-messaging-pag
 export const Route = createFileRoute("/_authenticated/sms")({
   head: () => ({
     meta: [
-      { title: "SMS — tekstberichten versturen via Telnyx" },
+      { title: "SMS — tekstberichten versturen via AI van Columbus" },
       {
         name: "description",
-        content: "Verstuur en bekijk SMS-berichten van je organisatie, gekoppeld aan Telnyx.",
+        content: "Verstuur en bekijk SMS-berichten van je organisatie met AI van Columbus.",
       },
-      { property: "og:title", content: "SMS — tekstberichten versturen via Telnyx" },
+      { property: "og:title", content: "SMS — tekstberichten versturen via AI van Columbus" },
       {
         property: "og:description",
-        content: "Verstuur en bekijk SMS-berichten van je organisatie via Telnyx.",
+        content: "Verstuur en bekijk SMS-berichten van je organisatie via AI van Columbus.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -27,7 +27,7 @@ function SmsPage() {
     <TelnyxMessagingPage
       channel="sms"
       title="SMS"
-      description="verstuur en ontvang SMS-berichten via Telnyx"
+      description="verstuur en ontvang SMS-berichten via AI van Columbus"
       icon={<MessageSquare className="h-6 w-6 text-brand" />}
     />
   );
