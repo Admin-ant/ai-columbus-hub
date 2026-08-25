@@ -10,7 +10,7 @@ import {
   sendMessageSchema,
   webhookSecretSchema,
   hashWebhookSecret,
-} from "@/lib/ai-columbus-messaging.server";
+} from "@/lib/ai-columbus-messaging";
 
 export const getTelnyxSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

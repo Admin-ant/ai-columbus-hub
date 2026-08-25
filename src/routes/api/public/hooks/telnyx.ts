@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { hashWebhookSecret } from "@/lib/ai-columbus-messaging.server";
+import { hashWebhookSecret } from "@/lib/ai-columbus-messaging";
 
 /**
  * Messaging webhook: inbound SMS/WhatsApp messages and delivery status updates.
