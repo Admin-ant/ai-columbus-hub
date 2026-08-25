@@ -87,6 +87,7 @@ import { Route as ApiPublicHooksQuoteFollowupsRouteImport } from './routes/api/p
 import { Route as ApiPublicHooksRecurringInvoicesRouteImport } from './routes/api/public/hooks/recurring-invoices'
 import { Route as ApiPublicHooksResendEventsRouteImport } from './routes/api/public/hooks/resend-events'
 import { Route as ApiPublicHooksStudioFollowupsRouteImport } from './routes/api/public/hooks/studio-followups'
+import { Route as ApiPublicHooksTelnyxRouteImport } from './routes/api/public/hooks/telnyx'
 import { Route as ApiPublicLTokenRouteImport } from './routes/api/public/l.$token'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -527,6 +528,11 @@ const ApiPublicHooksStudioFollowupsRoute =
     path: '/api/public/hooks/studio-followups',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksTelnyxRoute = ApiPublicHooksTelnyxRouteImport.update({
+  id: '/api/public/hooks/telnyx',
+  path: '/api/public/hooks/telnyx',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicLTokenRoute = ApiPublicLTokenRouteImport.update({
   id: '/api/public/l/$token',
   path: '/api/public/l/$token',
@@ -610,6 +616,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/recurring-invoices': typeof ApiPublicHooksRecurringInvoicesRoute
   '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
+  '/api/public/hooks/telnyx': typeof ApiPublicHooksTelnyxRoute
   '/api/public/l/$token': typeof ApiPublicLTokenRoute
   '/ai-columbus/klanten/': typeof AuthenticatedAiColumbusKlantenIndexRoute
 }
@@ -688,6 +695,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/recurring-invoices': typeof ApiPublicHooksRecurringInvoicesRoute
   '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
+  '/api/public/hooks/telnyx': typeof ApiPublicHooksTelnyxRoute
   '/api/public/l/$token': typeof ApiPublicLTokenRoute
   '/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenIndexRoute
 }
@@ -770,6 +778,7 @@ export interface FileRoutesById {
   '/api/public/hooks/recurring-invoices': typeof ApiPublicHooksRecurringInvoicesRoute
   '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
+  '/api/public/hooks/telnyx': typeof ApiPublicHooksTelnyxRoute
   '/api/public/l/$token': typeof ApiPublicLTokenRoute
   '/_authenticated/ai-columbus/klanten/': typeof AuthenticatedAiColumbusKlantenIndexRoute
 }
@@ -852,6 +861,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/recurring-invoices'
     | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
+    | '/api/public/hooks/telnyx'
     | '/api/public/l/$token'
     | '/ai-columbus/klanten/'
   fileRoutesByTo: FileRoutesByTo
@@ -930,6 +940,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/recurring-invoices'
     | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
+    | '/api/public/hooks/telnyx'
     | '/api/public/l/$token'
     | '/ai-columbus/klanten'
   id:
@@ -1011,6 +1022,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/recurring-invoices'
     | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
+    | '/api/public/hooks/telnyx'
     | '/api/public/l/$token'
     | '/_authenticated/ai-columbus/klanten/'
   fileRoutesById: FileRoutesById
@@ -1040,6 +1052,7 @@ export interface RootRouteChildren {
   ApiPublicHooksRecurringInvoicesRoute: typeof ApiPublicHooksRecurringInvoicesRoute
   ApiPublicHooksResendEventsRoute: typeof ApiPublicHooksResendEventsRoute
   ApiPublicHooksStudioFollowupsRoute: typeof ApiPublicHooksStudioFollowupsRoute
+  ApiPublicHooksTelnyxRoute: typeof ApiPublicHooksTelnyxRoute
   ApiPublicLTokenRoute: typeof ApiPublicLTokenRoute
 }
 
@@ -1591,6 +1604,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksStudioFollowupsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/telnyx': {
+      id: '/api/public/hooks/telnyx'
+      path: '/api/public/hooks/telnyx'
+      fullPath: '/api/public/hooks/telnyx'
+      preLoaderRoute: typeof ApiPublicHooksTelnyxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/l/$token': {
       id: '/api/public/l/$token'
       path: '/api/public/l/$token'
@@ -1845,6 +1865,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksRecurringInvoicesRoute: ApiPublicHooksRecurringInvoicesRoute,
   ApiPublicHooksResendEventsRoute: ApiPublicHooksResendEventsRoute,
   ApiPublicHooksStudioFollowupsRoute: ApiPublicHooksStudioFollowupsRoute,
+  ApiPublicHooksTelnyxRoute: ApiPublicHooksTelnyxRoute,
   ApiPublicLTokenRoute: ApiPublicLTokenRoute,
 }
 export const routeTree = rootRouteImport
