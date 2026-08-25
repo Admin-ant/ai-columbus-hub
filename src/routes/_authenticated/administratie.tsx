@@ -84,6 +84,12 @@ const tiles = [
     to: "/producten",
     icon: Package,
   },
+  {
+    title: "Klant-auditlog",
+    description: "Wie wijzigde welk klantveld, met filters op periode, gebruiker en actie.",
+    to: "/auditlog",
+    icon: History,
+  },
 ];
 
 type UserRow = {
