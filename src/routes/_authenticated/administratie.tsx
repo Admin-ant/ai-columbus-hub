@@ -12,6 +12,7 @@ import {
   Save,
   Users,
   Building2,
+  History,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -83,6 +84,12 @@ const tiles = [
     description: "Beheer producten, abonnementen en tarieven.",
     to: "/producten",
     icon: Package,
+  },
+  {
+    title: "Klant-auditlog",
+    description: "Wie wijzigde welk klantveld, met filters op periode, gebruiker en actie.",
+    to: "/auditlog",
+    icon: History,
   },
 ];
 
