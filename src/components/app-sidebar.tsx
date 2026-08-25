@@ -30,6 +30,7 @@ import {
   CalendarDays,
   Palette,
   ChevronDown,
+  History,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
