@@ -127,6 +127,14 @@ export const deleteInvoice = createServerFn({ method: "POST" })
       };
     }
 
+    // Bestaande (gedeeltelijke) creditnota's meetellen: nooit dubbel crediteren
+    const { data: existingCredits } = await context.supabase
+      .from("invoices")
+      .select("id, total_cents")
+      .eq("credit_of_invoice_id", data.invoice_id);
+    const alreadyCreditedCents = ((existingCredits ?? []) as unknown as Array<
+      Record<string, unknown>
+    >).reduce((s, c) => s + Math.abs(Number(c["total_cents"] ?? 0)), 0);
 
     const { error: upErr } = await context.supabase
       .from("invoices")
@@ -134,7 +142,7 @@ export const deleteInvoice = createServerFn({ method: "POST" })
       .eq("id", data.invoice_id);
     if (upErr) throw new Error(upErr.message);
 
-    // Maak automatisch een creditnota voor het volledige factuurbedrag
+    // Maak automatisch een creditnota voor het nog niet gecrediteerde bedrag
     let creditNoteId: string | null = null;
     try {
       const { data: full } = await context.supabase
@@ -151,8 +159,15 @@ export const deleteInvoice = createServerFn({ method: "POST" })
         .eq("invoice_id", data.invoice_id)
         .order("position", { ascending: true });
 
-      if (full) {
+      const invoiceTotalCents = Math.abs(
+        Number((full as unknown as Record<string, unknown> | null)?.["total_cents"] ?? 0),
+      );
+      const remainingCents = invoiceTotalCents - alreadyCreditedCents;
+
+      if (full && remainingCents > 1) {
+        const partial = alreadyCreditedCents > 0;
         const src = full as unknown as Record<string, unknown>;
+
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: num } = await (supabaseAdmin.rpc as unknown as (
           fn: string,
@@ -162,6 +177,15 @@ export const deleteInvoice = createServerFn({ method: "POST" })
         });
         const creditNumber = `C-${num ?? `${Date.now()}`}`;
         const today = new Date().toISOString().slice(0, 10);
+
+        // Bij een gedeeltelijk gecrediteerde factuur crediteren we alleen het restant
+        const srcSubtotal = Number(src["subtotal_cents"] ?? 0);
+        const srcVat = Number(src["vat_cents"] ?? 0);
+        const srcTotal = Number(src["total_cents"] ?? 0);
+        const ratio = srcTotal !== 0 ? remainingCents / Math.abs(srcTotal) : 1;
+        const outSubtotal = partial ? Math.round(srcSubtotal * ratio) : srcSubtotal;
+        const outVat = partial ? remainingCents - outSubtotal : srcVat;
+        const outTotal = partial ? remainingCents : srcTotal;
 
         const { data: created, error: cErr } = await supabaseAdmin
           .from("invoices")
@@ -176,10 +200,10 @@ export const deleteInvoice = createServerFn({ method: "POST" })
             currency: (src["currency"] as string) ?? "EUR",
             project_id: (src["project_id"] as string | null) ?? null,
             contract_id: (src["contract_id"] as string | null) ?? null,
-            subtotal_cents: -Number(src["subtotal_cents"] ?? 0),
-            vat_cents: -Number(src["vat_cents"] ?? 0),
-            total_cents: -Number(src["total_cents"] ?? 0),
-            amount: -Number(src["amount"] ?? 0),
+            subtotal_cents: -outSubtotal,
+            vat_cents: -outVat,
+            total_cents: -outTotal,
+            amount: partial ? -outTotal : -Number(src["amount"] ?? 0),
           } as never)
           .select("id")
           .single();
@@ -187,35 +211,39 @@ export const deleteInvoice = createServerFn({ method: "POST" })
         creditNoteId = (created as { id: string }).id;
 
         const srcLines = (lines ?? []) as unknown as Array<Record<string, unknown>>;
-        const creditLines = srcLines.length
-          ? srcLines.map((l, i) => ({
-              invoice_id: creditNoteId,
-              position: i,
-              description: `Creditering ${String(src["invoice_number"] ?? "")}: ${String(l["description"] ?? "")}`.slice(0, 1000),
-              quantity: Number(l["quantity"] ?? 1),
-              unit_price_cents: -Number(l["unit_price_cents"] ?? 0),
-              vat_rate: Number(l["vat_rate"] ?? 21),
-              subtotal_cents: -Number(l["subtotal_cents"] ?? 0),
-              vat_cents: -Number(l["vat_cents"] ?? 0),
-              total_cents: -Number(l["total_cents"] ?? 0),
-              line_type: l["line_type"] ?? "item",
-              product_id: (l["product_id"] as string | null) ?? null,
-              revenue_account_id: (l["revenue_account_id"] as string | null) ?? null,
-            }))
-          : [
-              {
+        const creditLines =
+          !partial && srcLines.length
+            ? srcLines.map((l, i) => ({
                 invoice_id: creditNoteId,
-                position: 0,
-                description: `Creditnota voor factuur ${String(src["invoice_number"] ?? "")}`,
-                quantity: 1,
-                unit_price_cents: -Number(src["subtotal_cents"] ?? 0),
-                vat_rate: 21,
-                subtotal_cents: -Number(src["subtotal_cents"] ?? 0),
-                vat_cents: -Number(src["vat_cents"] ?? 0),
-                total_cents: -Number(src["total_cents"] ?? 0),
-                line_type: "item",
-              },
-            ];
+                position: i,
+                description: `Creditering ${String(src["invoice_number"] ?? "")}: ${String(l["description"] ?? "")}`.slice(0, 1000),
+                quantity: Number(l["quantity"] ?? 1),
+                unit_price_cents: -Number(l["unit_price_cents"] ?? 0),
+                vat_rate: Number(l["vat_rate"] ?? 21),
+                subtotal_cents: -Number(l["subtotal_cents"] ?? 0),
+                vat_cents: -Number(l["vat_cents"] ?? 0),
+                total_cents: -Number(l["total_cents"] ?? 0),
+                line_type: l["line_type"] ?? "item",
+                product_id: (l["product_id"] as string | null) ?? null,
+                revenue_account_id: (l["revenue_account_id"] as string | null) ?? null,
+              }))
+            : [
+                {
+                  invoice_id: creditNoteId,
+                  position: 0,
+                  description: partial
+                    ? `Creditering restant factuur ${String(src["invoice_number"] ?? "")}`
+                    : `Creditnota voor factuur ${String(src["invoice_number"] ?? "")}`,
+                  quantity: 1,
+                  unit_price_cents: -outSubtotal,
+                  vat_rate: outSubtotal !== 0 ? Math.round((outVat / outSubtotal) * 100) : 21,
+                  subtotal_cents: -outSubtotal,
+                  vat_cents: -outVat,
+                  total_cents: -outTotal,
+                  line_type: "item",
+                },
+              ];
+
 
         const { error: lErr } = await supabaseAdmin
           .from("invoice_lines")
