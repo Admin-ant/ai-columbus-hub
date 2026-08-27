@@ -176,7 +176,7 @@ function BetalingenPage() {
       [
         p.invoice_number,
         p.client_name ?? "",
-        formatCents(p.total_cents ?? 0, p.currency ?? "EUR"),
+        formatCents(p.total_cents ?? 0, "nl", p.currency ?? "EUR"),
         statusMeta(effectiveStatus(p)).label,
         p.last_method ?? p.preferred_payment_method ?? "",
         new Date(p.created_at).toLocaleString("nl-NL"),
@@ -334,7 +334,7 @@ function BetalingenPage() {
                     </TableCell>
                     <TableCell>{p.client_name ?? "—"}</TableCell>
                     <TableCell className="text-right">
-                      {formatCents(p.total_cents ?? 0, p.currency ?? "EUR")}
+                      {formatCents(p.total_cents ?? 0, "nl", p.currency ?? "EUR")}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={meta.className}>
