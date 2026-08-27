@@ -31,6 +31,7 @@ import {
   Palette,
   ChevronDown,
   History,
+  CreditCard,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -169,6 +170,7 @@ const netqloudGroups: NavGroup[] = [
       { title: "Offertes", url: "/quotes", icon: FileSignature },
       { title: "Facturen", url: "/invoices", icon: Receipt },
       { title: "Inkoopfacturen", url: "/inkoopfacturen", icon: Receipt },
+      { title: "Betalingen", url: "/betalingen", icon: CreditCard },
     ],
   },
   {
