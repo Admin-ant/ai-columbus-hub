@@ -215,6 +215,69 @@ export const listInvoicePaymentEvents = createServerFn({ method: "GET" })
     }> };
   });
 
+/**
+ * Overzicht van alle facturen met een Mollie-betaallink, plus de laatst
+ * bekende betalingsstatus uit de event-log. Drijft de Betalingen-pagina.
+ */
+export const listMolliePayments = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: invoices, error } = await context.supabase
+      .from("invoices")
+      .select(
+        "id, organization_id, invoice_number, client_name, total_cents, currency, status, paid_at, mollie_payment_id, mollie_checkout_url, preferred_payment_method, created_at",
+      )
+      .not("mollie_payment_id", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (error) throw new Error(error.message);
+    const invs = (invoices ?? []) as Array<{
+      id: string;
+      organization_id: string;
+      invoice_number: string;
+      client_name: string | null;
+      total_cents: number | null;
+      currency: string | null;
+      status: string;
+      paid_at: string | null;
+      mollie_payment_id: string | null;
+      mollie_checkout_url: string | null;
+      preferred_payment_method: string | null;
+      created_at: string;
+    }>;
+    if (invs.length === 0) return { payments: [] };
+
+    const ids = invs.map((i) => i.id);
+    const { data: events, error: evErr } = await context.supabase
+      .from("invoice_payment_events")
+      .select("invoice_id, status, method, event_type, created_at")
+      .in("invoice_id", ids)
+      .order("created_at", { ascending: false });
+    if (evErr) throw new Error(evErr.message);
+
+    const latest = new Map<string, { status: string | null; method: string | null; at: string }>();
+    for (const e of (events ?? []) as Array<{
+      invoice_id: string;
+      status: string | null;
+      method: string | null;
+      event_type: string;
+      created_at: string;
+    }>) {
+      if (!latest.has(e.invoice_id)) {
+        latest.set(e.invoice_id, { status: e.status, method: e.method, at: e.created_at });
+      }
+    }
+
+    return {
+      payments: invs.map((i) => ({
+        ...i,
+        last_status: latest.get(i.id)?.status ?? null,
+        last_method: latest.get(i.id)?.method ?? null,
+        last_event_at: latest.get(i.id)?.at ?? null,
+      })),
+    };
+  });
+
 /** Refresh: haalt actuele status uit Mollie en logt een event bij statuswijziging. */
 export const refreshMollieInvoiceStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
