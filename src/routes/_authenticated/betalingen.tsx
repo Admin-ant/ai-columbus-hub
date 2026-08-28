@@ -337,7 +337,7 @@ function BetalingenPage() {
                   <TableRow key={p.id}>
                     <TableCell>
                       <Link
-                        to="/invoices/$invoiceId"
+                        to="/betalingen/$invoiceId"
                         params={{ invoiceId: p.id }}
                         className="font-medium hover:underline"
                       >
