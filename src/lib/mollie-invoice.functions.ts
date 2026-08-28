@@ -315,3 +315,219 @@ export const refreshMollieInvoiceStatus = createServerFn({ method: "POST" })
 
     return { ok: true, status: p.status ?? null, method: p.method ?? null };
   });
+
+/** Log van binnenkomende Mollie-webhook-meldingen (geaccepteerd/afgewezen). */
+export const listMollieWebhookEvents = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("mollie_webhook_events")
+      .select(
+        "id, invoice_id, mollie_payment_id, outcome, reason, http_status, payment_status, amount_cents, method, raw, created_at",
+      )
+      .order("created_at", { ascending: false })
+      .limit(300);
+    if (error) throw new Error(error.message);
+    const rows = (data ?? []) as Array<{
+      id: string;
+      invoice_id: string | null;
+      mollie_payment_id: string | null;
+      outcome: string;
+      reason: string | null;
+      http_status: number | null;
+      payment_status: string | null;
+      amount_cents: number | null;
+      method: string | null;
+      raw: JsonValue | null;
+      created_at: string;
+    }>;
+
+    const invoiceIds = [...new Set(rows.map((r) => r.invoice_id).filter(Boolean))] as string[];
+    const numbers = new Map<string, string>();
+    if (invoiceIds.length > 0) {
+      const { data: invs } = await context.supabase
+        .from("invoices")
+        .select("id, invoice_number")
+        .in("id", invoiceIds);
+      for (const i of (invs ?? []) as Array<{ id: string; invoice_number: string }>) {
+        numbers.set(i.id, i.invoice_number);
+      }
+    }
+    return {
+      events: rows.map((r) => ({
+        ...r,
+        invoice_number: r.invoice_id ? (numbers.get(r.invoice_id) ?? null) : null,
+      })),
+    };
+  });
+
+/**
+ * Reconciliatie: vergelijkt de live status bij Mollie met de interne
+ * factuurstatus en markeert verschillen.
+ */
+export const getMollieReconciliation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ limit: z.number().min(1).max(200).optional() }).parse(d ?? {}))
+  .handler(async ({ data, context }) => {
+    const apiKey = process.env.MOLLIE_API_KEY;
+    if (!apiKey) throw new Error("Mollie is niet geconfigureerd.");
+    const { data: invoices, error } = await context.supabase
+      .from("invoices")
+      .select("id, invoice_number, client_name, total_cents, currency, status, paid_at, mollie_payment_id, created_at")
+      .not("mollie_payment_id", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(data.limit ?? 100);
+    if (error) throw new Error(error.message);
+    const rows = (invoices ?? []) as Array<{
+      id: string;
+      invoice_number: string;
+      client_name: string | null;
+      total_cents: number | null;
+      currency: string | null;
+      status: string;
+      paid_at: string | null;
+      mollie_payment_id: string | null;
+      created_at: string;
+    }>;
+
+    const results = await Promise.all(
+      rows.map(async (r) => {
+        let mollieStatus: string | null = null;
+        let mollieMethod: string | null = null;
+        let mollieAmountCents: number | null = null;
+        let paidAt: string | null = null;
+        let fetchError: string | null = null;
+        try {
+          const res = await fetch(
+            `https://api.mollie.com/v2/payments/${encodeURIComponent(r.mollie_payment_id!)}`,
+            { headers: { Authorization: `Bearer ${apiKey}` } },
+          );
+          if (!res.ok) {
+            fetchError = `Mollie ${res.status}`;
+          } else {
+            const p = (await res.json()) as {
+              status?: string;
+              method?: string | null;
+              paidAt?: string | null;
+              amount?: { value?: string } | null;
+            };
+            mollieStatus = p.status ?? null;
+            mollieMethod = p.method ?? null;
+            paidAt = p.paidAt ?? null;
+            if (p.amount?.value) mollieAmountCents = Math.round(Number(p.amount.value) * 100);
+          }
+        } catch (e) {
+          fetchError = e instanceof Error ? e.message : "Onbekende fout";
+        }
+
+        const internalPaid = r.status === "paid";
+        const molliePaid = mollieStatus === "paid";
+        const issues: string[] = [];
+        if (fetchError) issues.push("fetch_error");
+        else {
+          if (molliePaid && !internalPaid) issues.push("paid_at_mollie_not_internal");
+          if (!molliePaid && internalPaid) issues.push("paid_internal_not_at_mollie");
+          if (
+            mollieAmountCents != null &&
+            r.total_cents != null &&
+            mollieAmountCents !== r.total_cents
+          )
+            issues.push("amount_mismatch");
+          if (r.status === "cancelled" && molliePaid) issues.push("cancelled_but_paid");
+        }
+
+        return {
+          invoice_id: r.id,
+          invoice_number: r.invoice_number,
+          client_name: r.client_name,
+          total_cents: r.total_cents,
+          currency: r.currency,
+          internal_status: r.status,
+          internal_paid_at: r.paid_at,
+          mollie_payment_id: r.mollie_payment_id,
+          mollie_status: mollieStatus,
+          mollie_method: mollieMethod,
+          mollie_amount_cents: mollieAmountCents,
+          mollie_paid_at: paidAt,
+          fetch_error: fetchError,
+          issues,
+          created_at: r.created_at,
+        };
+      }),
+    );
+
+    return {
+      checked_at: new Date().toISOString(),
+      rows: results,
+      mismatches: results.filter((r) => r.issues.length > 0).length,
+    };
+  });
+
+/** Detail van één betaling: factuur, statusgeschiedenis en webhook-events. */
+export const getInvoicePaymentDetail = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ invoice_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: inv, error } = await context.supabase
+      .from("invoices")
+      .select(
+        "id, invoice_number, client_name, client_id, total_cents, currency, status, paid_at, due_date, issue_date, mollie_payment_id, mollie_checkout_url, preferred_payment_method, created_at",
+      )
+      .eq("id", data.invoice_id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!inv) throw new Error("Factuur niet gevonden");
+
+    const { data: events } = await context.supabase
+      .from("invoice_payment_events")
+      .select("id, event_type, mollie_payment_id, status, amount_cents, method, metadata, created_at")
+      .eq("invoice_id", data.invoice_id)
+      .order("created_at", { ascending: false });
+
+    const { data: hooks } = await context.supabase
+      .from("mollie_webhook_events")
+      .select("id, outcome, reason, http_status, payment_status, amount_cents, method, mollie_payment_id, raw, created_at")
+      .eq("invoice_id", data.invoice_id)
+      .order("created_at", { ascending: false });
+
+    return {
+      invoice: inv as unknown as {
+        id: string;
+        invoice_number: string;
+        client_name: string | null;
+        client_id: string | null;
+        total_cents: number | null;
+        currency: string | null;
+        status: string;
+        paid_at: string | null;
+        due_date: string | null;
+        issue_date: string | null;
+        mollie_payment_id: string | null;
+        mollie_checkout_url: string | null;
+        preferred_payment_method: string | null;
+        created_at: string;
+      },
+      events: (events ?? []) as Array<{
+        id: string;
+        event_type: string;
+        mollie_payment_id: string | null;
+        status: string | null;
+        amount_cents: number | null;
+        method: string | null;
+        metadata: JsonValue | null;
+        created_at: string;
+      }>,
+      webhookEvents: (hooks ?? []) as Array<{
+        id: string;
+        outcome: string;
+        reason: string | null;
+        http_status: number | null;
+        payment_status: string | null;
+        amount_cents: number | null;
+        method: string | null;
+        mollie_payment_id: string | null;
+        raw: JsonValue | null;
+        created_at: string;
+      }>,
+    };
+  });
