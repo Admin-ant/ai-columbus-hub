@@ -103,6 +103,8 @@ function AuditLogPage() {
   const [actor, setActor] = useState<string>("all");
   const [action, setAction] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
+
 
   const isAdmin = hasRole("admin");
 
@@ -218,9 +220,10 @@ function AuditLogPage() {
           <Button variant="outline" size="sm" onClick={exportCsv} disabled={filtered.length === 0}>
             <Download className="mr-2 h-4 w-4" /> CSV
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => setPeriod((p) => p)}>
+          <Button variant="ghost" size="sm" onClick={() => setRefreshKey((k) => k + 1)}>
             <RefreshCw className="mr-2 h-4 w-4" /> Vernieuwen
           </Button>
+
         </div>
       </div>
 
