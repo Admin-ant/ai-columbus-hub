@@ -50,6 +50,7 @@ import { Route as AuthenticatedAiColumbusModellenRouteImport } from './routes/_a
 import { Route as AuthenticatedAiColumbusProjectenRouteImport } from './routes/_authenticated/ai-columbus.projecten'
 import { Route as AuthenticatedAiColumbusRapportagesRouteImport } from './routes/_authenticated/ai-columbus.rapportages'
 import { Route as AuthenticatedAnalyticsIndexRouteImport } from './routes/_authenticated/analytics.index'
+import { Route as AuthenticatedBetalingenInvoiceIdRouteImport } from './routes/_authenticated/betalingen_.$invoiceId'
 import { Route as AuthenticatedBetalingenReconciliatieRouteImport } from './routes/_authenticated/betalingen_.reconciliatie'
 import { Route as AuthenticatedContractenContractIdRouteImport } from './routes/_authenticated/contracten.$contractId'
 import { Route as AuthenticatedCrmActivitiesRouteImport } from './routes/_authenticated/crm.activities'
@@ -311,6 +312,12 @@ const AuthenticatedAnalyticsIndexRoute =
   AuthenticatedAnalyticsIndexRouteImport.update({
     id: '/analytics/',
     path: '/analytics/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBetalingenInvoiceIdRoute =
+  AuthenticatedBetalingenInvoiceIdRouteImport.update({
+    id: '/betalingen_/$invoiceId',
+    path: '/betalingen/$invoiceId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedBetalingenReconciliatieRoute =
@@ -609,6 +616,7 @@ export interface FileRoutesByFullPath {
   '/ai-columbus/modellen': typeof AuthenticatedAiColumbusModellenRoute
   '/ai-columbus/projecten': typeof AuthenticatedAiColumbusProjectenRouteWithChildren
   '/ai-columbus/rapportages': typeof AuthenticatedAiColumbusRapportagesRoute
+  '/betalingen/$invoiceId': typeof AuthenticatedBetalingenInvoiceIdRoute
   '/betalingen/reconciliatie': typeof AuthenticatedBetalingenReconciliatieRoute
   '/contracten/$contractId': typeof AuthenticatedContractenContractIdRoute
   '/crm/activities': typeof AuthenticatedCrmActivitiesRoute
@@ -693,6 +701,7 @@ export interface FileRoutesByTo {
   '/ai-columbus/modellen': typeof AuthenticatedAiColumbusModellenRoute
   '/ai-columbus/projecten': typeof AuthenticatedAiColumbusProjectenRouteWithChildren
   '/ai-columbus/rapportages': typeof AuthenticatedAiColumbusRapportagesRoute
+  '/betalingen/$invoiceId': typeof AuthenticatedBetalingenInvoiceIdRoute
   '/betalingen/reconciliatie': typeof AuthenticatedBetalingenReconciliatieRoute
   '/contracten/$contractId': typeof AuthenticatedContractenContractIdRoute
   '/crm/activities': typeof AuthenticatedCrmActivitiesRoute
@@ -781,6 +790,7 @@ export interface FileRoutesById {
   '/_authenticated/ai-columbus/modellen': typeof AuthenticatedAiColumbusModellenRoute
   '/_authenticated/ai-columbus/projecten': typeof AuthenticatedAiColumbusProjectenRouteWithChildren
   '/_authenticated/ai-columbus/rapportages': typeof AuthenticatedAiColumbusRapportagesRoute
+  '/_authenticated/betalingen_/$invoiceId': typeof AuthenticatedBetalingenInvoiceIdRoute
   '/_authenticated/betalingen_/reconciliatie': typeof AuthenticatedBetalingenReconciliatieRoute
   '/_authenticated/contracten/$contractId': typeof AuthenticatedContractenContractIdRoute
   '/_authenticated/crm/activities': typeof AuthenticatedCrmActivitiesRoute
@@ -869,6 +879,7 @@ export interface FileRouteTypes {
     | '/ai-columbus/modellen'
     | '/ai-columbus/projecten'
     | '/ai-columbus/rapportages'
+    | '/betalingen/$invoiceId'
     | '/betalingen/reconciliatie'
     | '/contracten/$contractId'
     | '/crm/activities'
@@ -953,6 +964,7 @@ export interface FileRouteTypes {
     | '/ai-columbus/modellen'
     | '/ai-columbus/projecten'
     | '/ai-columbus/rapportages'
+    | '/betalingen/$invoiceId'
     | '/betalingen/reconciliatie'
     | '/contracten/$contractId'
     | '/crm/activities'
@@ -1040,6 +1052,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ai-columbus/modellen'
     | '/_authenticated/ai-columbus/projecten'
     | '/_authenticated/ai-columbus/rapportages'
+    | '/_authenticated/betalingen_/$invoiceId'
     | '/_authenticated/betalingen_/reconciliatie'
     | '/_authenticated/contracten/$contractId'
     | '/_authenticated/crm/activities'
@@ -1404,6 +1417,13 @@ declare module '@tanstack/react-router' {
       path: '/analytics'
       fullPath: '/analytics/'
       preLoaderRoute: typeof AuthenticatedAnalyticsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/betalingen_/$invoiceId': {
+      id: '/_authenticated/betalingen_/$invoiceId'
+      path: '/betalingen/$invoiceId'
+      fullPath: '/betalingen/$invoiceId'
+      preLoaderRoute: typeof AuthenticatedBetalingenInvoiceIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/betalingen_/reconciliatie': {
@@ -1891,6 +1911,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
   AuthenticatedWhatsappRoute: typeof AuthenticatedWhatsappRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedBetalingenInvoiceIdRoute: typeof AuthenticatedBetalingenInvoiceIdRoute
   AuthenticatedBetalingenReconciliatieRoute: typeof AuthenticatedBetalingenReconciliatieRoute
   AuthenticatedCrmActivitiesRoute: typeof AuthenticatedCrmActivitiesRoute
   AuthenticatedInvoicesInvoiceIdRoute: typeof AuthenticatedInvoicesInvoiceIdRoute
@@ -1930,6 +1951,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
   AuthenticatedWhatsappRoute: AuthenticatedWhatsappRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedBetalingenInvoiceIdRoute: AuthenticatedBetalingenInvoiceIdRoute,
   AuthenticatedBetalingenReconciliatieRoute:
     AuthenticatedBetalingenReconciliatieRoute,
   AuthenticatedCrmActivitiesRoute: AuthenticatedCrmActivitiesRoute,
