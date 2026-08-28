@@ -148,7 +148,7 @@ function AuditLogPage() {
     return () => {
       active = false;
     };
-  }, [isAdmin, currentOrganizationId, wsLoading, period]);
+  }, [isAdmin, currentOrganizationId, wsLoading, period, refreshKey]);
 
   const actors = useMemo(
     () => Array.from(new Set(rows.map((r) => r.actor_email).filter(Boolean) as string[])).sort(),
