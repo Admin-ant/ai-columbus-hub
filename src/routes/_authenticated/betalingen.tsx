@@ -12,6 +12,8 @@ import {
   Clock,
   XCircle,
   ExternalLink,
+  Scale,
+  Webhook,
 } from "lucide-react";
 
 import { listMolliePayments, refreshMollieInvoiceStatus } from "@/lib/mollie-invoice.functions";
@@ -210,6 +212,16 @@ function BetalingenPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link to="/betalingen/reconciliatie">
+              <Scale className="mr-2 h-4 w-4" /> Reconciliatie
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/betalingen/webhooks">
+              <Webhook className="mr-2 h-4 w-4" /> Webhook-events
+            </Link>
+          </Button>
           <Button variant="outline" size="sm" onClick={exportCsv} disabled={filtered.length === 0}>
             <Download className="mr-2 h-4 w-4" /> CSV
           </Button>
@@ -325,7 +337,7 @@ function BetalingenPage() {
                   <TableRow key={p.id}>
                     <TableCell>
                       <Link
-                        to="/invoices/$invoiceId"
+                        to="/betalingen/$invoiceId"
                         params={{ invoiceId: p.id }}
                         className="font-medium hover:underline"
                       >

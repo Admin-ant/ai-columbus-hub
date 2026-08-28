@@ -2868,6 +2868,66 @@ export type Database = {
           },
         ]
       }
+      mollie_webhook_events: {
+        Row: {
+          amount_cents: number | null
+          created_at: string
+          http_status: number | null
+          id: string
+          invoice_id: string | null
+          method: string | null
+          mollie_payment_id: string | null
+          organization_id: string | null
+          outcome: string
+          payment_status: string | null
+          raw: Json
+          reason: string | null
+        }
+        Insert: {
+          amount_cents?: number | null
+          created_at?: string
+          http_status?: number | null
+          id?: string
+          invoice_id?: string | null
+          method?: string | null
+          mollie_payment_id?: string | null
+          organization_id?: string | null
+          outcome: string
+          payment_status?: string | null
+          raw?: Json
+          reason?: string | null
+        }
+        Update: {
+          amount_cents?: number | null
+          created_at?: string
+          http_status?: number | null
+          id?: string
+          invoice_id?: string | null
+          method?: string | null
+          mollie_payment_id?: string | null
+          organization_id?: string | null
+          outcome?: string
+          payment_status?: string | null
+          raw?: Json
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mollie_webhook_events_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mollie_webhook_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_preferences: {
         Row: {
           categories: string[]

@@ -32,6 +32,8 @@ import {
   ChevronDown,
   History,
   CreditCard,
+  Scale,
+  Webhook,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -171,6 +173,8 @@ const netqloudGroups: NavGroup[] = [
       { title: "Facturen", url: "/invoices", icon: Receipt },
       { title: "Inkoopfacturen", url: "/inkoopfacturen", icon: Receipt },
       { title: "Betalingen", url: "/betalingen", icon: CreditCard },
+      { title: "Reconciliatie", url: "/betalingen/reconciliatie", icon: Scale },
+      { title: "Webhook-events", url: "/betalingen/webhooks", icon: Webhook },
     ],
   },
   {
