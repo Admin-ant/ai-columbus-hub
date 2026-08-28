@@ -3,12 +3,46 @@ import { createFileRoute } from "@tanstack/react-router";
 // Mollie webhook: POST application/x-www-form-urlencoded with field `id`
 // We re-fetch the payment from Mollie to verify status.
 
+type WebhookLog = {
+  organization_id?: string | null;
+  invoice_id?: string | null;
+  mollie_payment_id?: string | null;
+  outcome: "accepted" | "rejected";
+  reason?: string | null;
+  http_status: number;
+  payment_status?: string | null;
+  amount_cents?: number | null;
+  method?: string | null;
+  raw?: Record<string, unknown>;
+};
+
+async function logWebhook(entry: WebhookLog) {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("mollie_webhook_events").insert({
+      organization_id: entry.organization_id ?? null,
+      invoice_id: entry.invoice_id ?? null,
+      mollie_payment_id: entry.mollie_payment_id ?? null,
+      outcome: entry.outcome,
+      reason: entry.reason ?? null,
+      http_status: entry.http_status,
+      payment_status: entry.payment_status ?? null,
+      amount_cents: entry.amount_cents ?? null,
+      method: entry.method ?? null,
+      raw: (entry.raw ?? {}) as never,
+    } as never);
+  } catch {
+    /* logging mag nooit de webhook blokkeren */
+  }
+}
+
 export const Route = createFileRoute("/api/public/hooks/mollie")({
   server: {
     handlers: {
       POST: async ({ request }) => {
         const apiKey = process.env.MOLLIE_API_KEY;
         if (!apiKey) {
+          await logWebhook({ outcome: "rejected", reason: "mollie_not_configured", http_status: 503 });
           return new Response("Mollie not configured", { status: 503 });
         }
         let paymentId: string | null = null;
@@ -26,6 +60,12 @@ export const Route = createFileRoute("/api/public/hooks/mollie")({
           /* ignore */
         }
         if (!paymentId || !/^tr_[A-Za-z0-9]+$/.test(paymentId)) {
+          await logWebhook({
+            outcome: "rejected",
+            reason: paymentId ? "invalid_payment_id" : "missing_payment_id",
+            mollie_payment_id: paymentId,
+            http_status: 400,
+          });
           return new Response("Missing id", { status: 400 });
         }
 
@@ -33,7 +73,15 @@ export const Route = createFileRoute("/api/public/hooks/mollie")({
           `https://api.mollie.com/v2/payments/${encodeURIComponent(paymentId)}`,
           { headers: { Authorization: `Bearer ${apiKey}` } },
         );
-        if (!res.ok) return new Response("Mollie lookup failed", { status: 502 });
+        if (!res.ok) {
+          await logWebhook({
+            outcome: "rejected",
+            reason: `mollie_lookup_failed_${res.status}`,
+            mollie_payment_id: paymentId,
+            http_status: 502,
+          });
+          return new Response("Mollie lookup failed", { status: 502 });
+        }
         const payment = (await res.json()) as {
           id: string;
           status: string;
@@ -94,6 +142,28 @@ export const Route = createFileRoute("/api/public/hooks/mollie")({
                 /* journal is best-effort */
               }
             }
+            await logWebhook({
+              outcome: "accepted",
+              reason: "invoice_updated",
+              organization_id: inv.organization_id,
+              invoice_id: inv.id,
+              mollie_payment_id: payment.id,
+              http_status: 200,
+              payment_status: payment.status,
+              amount_cents: inv.total_cents,
+              method: payment.method ?? null,
+              raw: { paidAt: payment.paidAt ?? null, amount: payment.amount ?? null },
+            });
+          } else {
+            await logWebhook({
+              outcome: "rejected",
+              reason: "invoice_not_found",
+              invoice_id: null,
+              mollie_payment_id: payment.id,
+              http_status: 200,
+              payment_status: payment.status,
+              raw: { invoice_id: invoiceId },
+            });
           }
           return new Response("ok", { status: 200 });
         }
@@ -101,14 +171,32 @@ export const Route = createFileRoute("/api/public/hooks/mollie")({
 
         // --- Path B: betaling gekoppeld aan een offerte (legacy quote flow) ---
         const token = payment.metadata?.token;
-        if (!token) return new Response("ok", { status: 200 });
+        if (!token) {
+          await logWebhook({
+            outcome: "rejected",
+            reason: "no_invoice_or_quote_reference",
+            mollie_payment_id: payment.id,
+            http_status: 200,
+            payment_status: payment.status,
+          });
+          return new Response("ok", { status: 200 });
+        }
 
         const { data: q } = await supabaseAdmin
           .from("quotes")
           .select("id, organization_id, total_amount, paid_at")
           .eq("public_token", token)
           .maybeSingle();
-        if (!q) return new Response("ok", { status: 200 });
+        if (!q) {
+          await logWebhook({
+            outcome: "rejected",
+            reason: "quote_not_found",
+            mollie_payment_id: payment.id,
+            http_status: 200,
+            payment_status: payment.status,
+          });
+          return new Response("ok", { status: 200 });
+        }
 
         if (payment.status === "paid" && !q.paid_at) {
           const paidAtIso = payment.paidAt ?? new Date().toISOString();
@@ -175,6 +263,15 @@ export const Route = createFileRoute("/api/public/hooks/mollie")({
           }
         }
 
+        await logWebhook({
+          outcome: "accepted",
+          reason: "quote_processed",
+          organization_id: q.organization_id,
+          mollie_payment_id: payment.id,
+          http_status: 200,
+          payment_status: payment.status,
+          method: payment.method ?? null,
+        });
         return new Response("ok", { status: 200 });
       },
     },
