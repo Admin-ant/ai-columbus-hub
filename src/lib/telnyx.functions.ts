@@ -277,7 +277,15 @@ export const listMessagingClients = createServerFn({ method: "POST" })
       list.push(n.phone);
       byClient.set(n.client_id, list);
     }
-    return ((rows ?? []) as { id: string }[]).map((row) => ({
+    type ClientRow = {
+      id: string;
+      name: string;
+      phone: string | null;
+      email: string | null;
+      contact_person: string | null;
+      city: string | null;
+    };
+    return ((rows ?? []) as ClientRow[]).map((row) => ({
       ...row,
       numbers: byClient.get(row.id) ?? [],
     }));
