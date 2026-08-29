@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Download, FlaskConical, Loader2, Plus, RefreshCw, Save, Send, Settings2, Trash2 } from "lucide-react";
+import { Download, FlaskConical, Loader2, Plus, RefreshCw, Save, Send, Settings2, Trash2, UserPlus, Users } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { Button } from "@/components/ui/button";
@@ -26,12 +26,34 @@ import {
   saveMessageTemplate,
   deleteMessageTemplate,
   sendTelnyxMessage,
+  listMessagingClients,
+  linkMessagesToClient,
+  createClientFromNumber,
 } from "@/lib/telnyx.functions";
 
 type Channel = "sms" | "whatsapp";
 
+type Client = {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  contact_person: string | null;
+  city: string | null;
+};
+
+function normalizePhone(raw: string | null | undefined): string {
+  const trimmed = (raw ?? "").trim().replace(/[\s().-]/g, "");
+  if (!trimmed) return "";
+  if (trimmed.startsWith("+")) return trimmed;
+  if (trimmed.startsWith("00")) return `+${trimmed.slice(2)}`;
+  if (trimmed.startsWith("0")) return `+31${trimmed.slice(1)}`;
+  return `+${trimmed}`;
+}
+
 type Message = {
   id: string;
+  client_id?: string | null;
   channel: string;
   direction: string;
   from_number: string | null;
@@ -78,6 +100,9 @@ export function TelnyxMessagingPage({
   const fetchStatus = useServerFn(getTelnyxMessageStatus);
   const persistWebhookSecret = useServerFn(saveMessagingWebhookSecret);
   const fetchTemplates = useServerFn(listMessageTemplates);
+  const fetchClients = useServerFn(listMessagingClients);
+  const linkClient = useServerFn(linkMessagesToClient);
+  const createClient = useServerFn(createClientFromNumber);
   const persistTemplate = useServerFn(saveMessageTemplate);
   const removeTemplate = useServerFn(deleteMessageTemplate);
 
@@ -100,16 +125,24 @@ export function TelnyxMessagingPage({
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [clients, setClients] = useState<Client[]>([]);
+  const [linkPhone, setLinkPhone] = useState<string | null>(null);
+  const [linkClientId, setLinkClientId] = useState("");
+  const [newClientName, setNewClientName] = useState("");
+  const [newClientEmail, setNewClientEmail] = useState("");
+  const [linking, setLinking] = useState(false);
 
   const load = useCallback(async () => {
     if (!currentOrganizationId) return;
     setLoading(true);
     try {
-      const [s, m, t] = await Promise.all([
+      const [s, m, t, c] = await Promise.all([
         fetchSettings({ data: { organization_id: currentOrganizationId } }),
         fetchMessages({ data: { organization_id: currentOrganizationId, channel } }),
         fetchTemplates({ data: { organization_id: currentOrganizationId, channel } }),
+        fetchClients({ data: { organization_id: currentOrganizationId } }),
       ]);
+      setClients(c as Client[]);
       setApiKeyOk(s.api_key_configured);
       setSettings(s.settings ? { ...emptySettings, ...(s.settings as Settings) } : emptySettings);
       setMessages(m as Message[]);
@@ -119,7 +152,7 @@ export function TelnyxMessagingPage({
     } finally {
       setLoading(false);
     }
-  }, [currentOrganizationId, channel, fetchSettings, fetchMessages, fetchTemplates]);
+  }, [currentOrganizationId, channel, fetchSettings, fetchMessages, fetchTemplates, fetchClients]);
 
   useEffect(() => {
     void load();
@@ -225,6 +258,67 @@ export function TelnyxMessagingPage({
     }
   }
 
+  const clientById = new Map(clients.map((client) => [client.id, client]));
+  const clientByPhone = new Map(
+    clients.filter((client) => client.phone).map((client) => [normalizePhone(client.phone), client]),
+  );
+
+  function messageClient(message: Message): Client | undefined {
+    if (message.client_id) return clientById.get(message.client_id);
+    const counterpart = message.direction === "inbound" ? message.from_number : message.to_number;
+    return clientByPhone.get(normalizePhone(counterpart));
+  }
+
+  const activeClient = clientByPhone.get(normalizePhone(to));
+
+  function openLinkDialog(message: Message) {
+    const counterpart = message.direction === "inbound" ? message.from_number : message.to_number;
+    setLinkPhone(normalizePhone(counterpart));
+    setLinkClientId("");
+    setNewClientName("");
+    setNewClientEmail("");
+  }
+
+  async function handleLinkExisting() {
+    if (!currentOrganizationId || !linkPhone || !linkClientId) return;
+    setLinking(true);
+    try {
+      await linkClient({ data: { organization_id: currentOrganizationId, client_id: linkClientId, phone: linkPhone } });
+      toast.success("Nummer gekoppeld aan klant");
+      setLinkPhone(null);
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Koppelen mislukt");
+    } finally {
+      setLinking(false);
+    }
+  }
+
+  async function handleCreateClient() {
+    if (!currentOrganizationId || !linkPhone || !newClientName.trim()) {
+      toast.error("Vul een klantnaam in");
+      return;
+    }
+    setLinking(true);
+    try {
+      await createClient({
+        data: {
+          organization_id: currentOrganizationId,
+          name: newClientName.trim(),
+          phone: linkPhone,
+          email: newClientEmail.trim(),
+        },
+      });
+      toast.success("Nieuwe klant aangemaakt en gekoppeld");
+      setLinkPhone(null);
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Klant aanmaken mislukt");
+    } finally {
+      setLinking(false);
+    }
+  }
+
   const filteredMessages = messages.filter((message) => {
     if (statusFilter !== "all" && message.status !== statusFilter) return false;
     const created = new Date(message.created_at).getTime();
@@ -319,10 +413,57 @@ export function TelnyxMessagingPage({
               />
             </div>
             <div className="space-y-1.5">
+              <Label className="text-[11px] uppercase tracking-wider">Klant kiezen</Label>
+              <Select
+                value={activeClient?.id ?? ""}
+                onValueChange={(id) => {
+                  const client = clients.find((item) => item.id === id);
+                  if (client?.phone) setTo(normalizePhone(client.phone));
+                }}
+              >
+                <SelectTrigger><SelectValue placeholder="Kies een klant met telefoonnummer" /></SelectTrigger>
+                <SelectContent>
+                  {clients.filter((client) => client.phone).map((client) => (
+                    <SelectItem key={client.id} value={client.id}>{client.name} — {client.phone}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
               <Label className="text-[11px] uppercase tracking-wider">Van</Label>
               <Input value={fromNumber ?? ""} readOnly className="border-input bg-muted/50" />
             </div>
           </div>
+          {to.trim() && (
+            activeClient ? (
+              <div className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-muted/40 p-3 text-sm">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">{activeClient.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {[activeClient.contact_person, activeClient.email, activeClient.city].filter(Boolean).join(" · ") || "Geen extra gegevens"}
+                  </p>
+                </div>
+                <a className="text-xs underline" href={`/ai-columbus/klanten/${activeClient.id}`}>Klantenkaart openen</a>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-3 rounded-md border border-dashed border-border p-3 text-sm text-muted-foreground">
+                <span className="min-w-0 flex-1">Dit nummer hoort nog niet bij een klant.</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setLinkPhone(normalizePhone(to));
+                    setLinkClientId("");
+                    setNewClientName("");
+                    setNewClientEmail("");
+                  }}
+                >
+                  <UserPlus className="mr-1.5 h-3.5 w-3.5" /> Koppelen
+                </Button>
+              </div>
+            )
+          )}
           <div className="space-y-1.5">
             <div className="flex items-end gap-2">
               <div className="min-w-0 flex-1 space-y-1.5">
@@ -393,7 +534,9 @@ export function TelnyxMessagingPage({
             <div className="p-5 text-sm text-muted-foreground">Nog geen berichten.</div>
           ) : (
             <ul className="divide-y divide-border">
-              {filteredMessages.map((m) => (
+              {filteredMessages.map((m) => {
+                const linked = messageClient(m);
+                return (
                 <li key={m.id} className="flex flex-wrap items-start gap-3 px-4 py-3">
                   <Badge variant={m.direction === "inbound" ? "secondary" : "outline"}>
                     {m.direction === "inbound" ? "Inkomend" : "Uitgaand"}
@@ -405,16 +548,71 @@ export function TelnyxMessagingPage({
                     </p>
                     <p className="whitespace-pre-wrap text-sm">{m.body}</p>
                     {m.error && <p className="text-xs text-destructive">{m.error}</p>}
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                      {linked ? (
+                        <a className="text-xs underline" href={`/ai-columbus/klanten/${linked.id}`}>
+                          Klant: {linked.name}
+                        </a>
+                      ) : (
+                        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => openLinkDialog(m)}>
+                          <UserPlus className="mr-1.5 h-3 w-3" /> Koppelen aan klant
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <Badge variant={m.status === "failed" ? "destructive" : "secondary"}>
                     {m.status}
                   </Badge>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </div>
       </div>
+
+      <Dialog open={linkPhone !== null} onOpenChange={(open) => !open && setLinkPhone(null)}>
+        <DialogContent className="border-border bg-background text-foreground">
+          <DialogHeader>
+            <DialogTitle>Nummer koppelen aan klant</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">Nummer: {linkPhone}</p>
+            <div className="space-y-1.5">
+              <Label className="text-[11px] uppercase tracking-wider">Bestaande klant</Label>
+              <Select value={linkClientId} onValueChange={setLinkClientId}>
+                <SelectTrigger><SelectValue placeholder="Kies een klant" /></SelectTrigger>
+                <SelectContent>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button size="sm" onClick={() => void handleLinkExisting()} disabled={linking || !linkClientId}>
+                Koppelen aan bestaande klant
+              </Button>
+            </div>
+            <div className="space-y-2 border-t border-border pt-3">
+              <Label className="text-[11px] uppercase tracking-wider">Nieuwe klant aanmaken</Label>
+              <Input
+                value={newClientName}
+                onChange={(event) => setNewClientName(event.target.value)}
+                placeholder="Bedrijfsnaam"
+                className="border-input bg-background"
+              />
+              <Input
+                value={newClientEmail}
+                onChange={(event) => setNewClientEmail(event.target.value)}
+                placeholder="E-mailadres (optioneel)"
+                className="border-input bg-background"
+              />
+              <Button size="sm" variant="outline" onClick={() => void handleCreateClient()} disabled={linking}>
+                <UserPlus className="mr-1.5 h-3.5 w-3.5" /> Aanmaken en koppelen
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
         <DialogContent className="border-border bg-background text-foreground">
