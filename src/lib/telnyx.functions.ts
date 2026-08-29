@@ -10,6 +10,8 @@ import {
   sendMessageSchema,
   webhookSecretSchema,
   hashWebhookSecret,
+  linkMessageClientSchema,
+  createClientFromNumberSchema,
 } from "@/lib/ai-columbus-messaging";
 
 export const getTelnyxSettings = createServerFn({ method: "POST" })
@@ -243,4 +245,61 @@ export const sendTelnyxMessage = createServerFn({ method: "POST" })
 
     if (status === "failed") throw new Error(errText ?? "Versturen mislukt");
     return { id: messageId, provider_message_id: providerId, status };
+  });
+
+export const listMessagingClients = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { organization_id: string }) =>
+    z.object({ organization_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("clients")
+      .select("id, name, phone, email, contact_person, city")
+      .eq("organization_id", data.organization_id)
+      .order("name");
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+export const linkMessagesToClient = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => linkMessageClientSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const phone = normalizePhoneNumber(data.phone);
+    const { error } = await context.supabase
+      .from("telnyx_messages")
+      .update({ client_id: data.client_id } as never)
+      .eq("organization_id", data.organization_id)
+      .or(`from_number.eq.${phone},to_number.eq.${phone}`);
+    if (error) throw new Error(error.message);
+    return { ok: true, phone };
+  });
+
+export const createClientFromNumber = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => createClientFromNumberSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const phone = normalizePhoneNumber(data.phone);
+    const { data: inserted, error } = await context.supabase
+      .from("clients")
+      .insert({
+        organization_id: data.organization_id,
+        name: data.name,
+        phone,
+        email: data.email ? data.email : null,
+        contact_person: data.contact_person || null,
+        created_by: context.userId,
+      } as never)
+      .select("id, name, phone, email, contact_person, city")
+      .single();
+    if (error) throw new Error(error.message);
+    const client = inserted as { id: string };
+    const { error: linkError } = await context.supabase
+      .from("telnyx_messages")
+      .update({ client_id: client.id } as never)
+      .eq("organization_id", data.organization_id)
+      .or(`from_number.eq.${phone},to_number.eq.${phone}`);
+    if (linkError) throw new Error(linkError.message);
+    return inserted;
   });
