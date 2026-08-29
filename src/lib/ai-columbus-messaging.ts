@@ -50,3 +50,16 @@ export function normalizePhoneNumber(raw: string): string {
   if (trimmed.startsWith("0")) return `+31${trimmed.slice(1)}`;
   return `+${trimmed}`;
 }
+export const linkMessageClientSchema = z.object({
+  organization_id: z.string().uuid(),
+  client_id: z.string().uuid(),
+  phone: z.string().min(5).max(30),
+});
+
+export const createClientFromNumberSchema = z.object({
+  organization_id: z.string().uuid(),
+  name: z.string().trim().min(1).max(160),
+  phone: z.string().min(5).max(30),
+  email: z.string().trim().email().optional().or(z.literal("")),
+  contact_person: z.string().trim().max(160).optional(),
+});
