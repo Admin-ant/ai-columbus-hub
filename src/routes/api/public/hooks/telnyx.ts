@@ -1,12 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { hashWebhookSecret, normalizePhoneNumber } from "@/lib/ai-columbus-messaging";
 
-type AdminClient = {
-  from: (table: string) => {
-    select: (cols: string) => any;
-    insert: (row: unknown) => any;
-  };
-};
+type AdminClient = Awaited<
+  typeof import("@/integrations/supabase/client.server")
+>["supabaseAdmin"];
 
 /** Compare phone numbers by their last 9 digits (NL subscriber number). */
 function phoneDigitsMatch(a: string, b: string): boolean {
