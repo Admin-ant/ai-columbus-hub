@@ -3,6 +3,8 @@ import { toast } from "sonner";
 import { Download, FlaskConical, Loader2, Plus, RefreshCw, Save, Send, Settings2, Trash2, UserPlus, Users } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { supabase } from "@/integrations/supabase/client";
+import { phoneTail, defaultMatchSettings } from "@/lib/ai-columbus-messaging";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,6 +31,9 @@ import {
   listMessagingClients,
   linkMessagesToClient,
   createClientFromNumber,
+  getMessagingMatchSettings,
+  saveMessagingMatchSettings,
+  listMessagingLinkAudit,
 } from "@/lib/telnyx.functions";
 
 type Channel = "sms" | "whatsapp";
@@ -40,6 +45,29 @@ type Client = {
   email: string | null;
   contact_person: string | null;
   city: string | null;
+  numbers?: string[];
+};
+
+type MatchRules = typeof defaultMatchSettings;
+
+type LinkAuditRow = {
+  id: string;
+  phone: string;
+  action: string;
+  old_client_name: string | null;
+  new_client_name: string | null;
+  message_count: number;
+  actor_email: string | null;
+  created_at: string;
+};
+
+const auditLabels: Record<string, string> = {
+  linked: "Gekoppeld",
+  moved: "Verplaatst",
+  client_created: "Nieuwe klant",
+  auto_created: "Automatisch aangemaakt",
+  number_added: "Nummer toegevoegd",
+  number_removed: "Nummer verwijderd",
 };
 
 function normalizePhone(raw: string | null | undefined): string {
@@ -103,6 +131,9 @@ export function TelnyxMessagingPage({
   const fetchClients = useServerFn(listMessagingClients);
   const linkClient = useServerFn(linkMessagesToClient);
   const createClient = useServerFn(createClientFromNumber);
+  const fetchMatchRules = useServerFn(getMessagingMatchSettings);
+  const persistMatchRules = useServerFn(saveMessagingMatchSettings);
+  const fetchAudit = useServerFn(listMessagingLinkAudit);
   const persistTemplate = useServerFn(saveMessageTemplate);
   const removeTemplate = useServerFn(deleteMessageTemplate);
 
@@ -132,18 +163,24 @@ export function TelnyxMessagingPage({
   const [newClientEmail, setNewClientEmail] = useState("");
   const [linking, setLinking] = useState(false);
   const [linkConflicts, setLinkConflicts] = useState<{ id: string; name: string }[]>([]);
+  const [matchRules, setMatchRules] = useState<MatchRules>(defaultMatchSettings);
+  const [audit, setAudit] = useState<LinkAuditRow[]>([]);
 
   const load = useCallback(async () => {
     if (!currentOrganizationId) return;
     setLoading(true);
     try {
-      const [s, m, t, c] = await Promise.all([
+      const [s, m, t, c, r, a] = await Promise.all([
         fetchSettings({ data: { organization_id: currentOrganizationId } }),
         fetchMessages({ data: { organization_id: currentOrganizationId, channel } }),
         fetchTemplates({ data: { organization_id: currentOrganizationId, channel } }),
         fetchClients({ data: { organization_id: currentOrganizationId } }),
+        fetchMatchRules({ data: { organization_id: currentOrganizationId } }),
+        fetchAudit({ data: { organization_id: currentOrganizationId } }),
       ]);
       setClients(c as Client[]);
+      setMatchRules(r as MatchRules);
+      setAudit(a as LinkAuditRow[]);
       setApiKeyOk(s.api_key_configured);
       setSettings(s.settings ? { ...emptySettings, ...(s.settings as Settings) } : emptySettings);
       setMessages(m as Message[]);
@@ -153,11 +190,40 @@ export function TelnyxMessagingPage({
     } finally {
       setLoading(false);
     }
-  }, [currentOrganizationId, channel, fetchSettings, fetchMessages, fetchTemplates, fetchClients]);
+  }, [
+    currentOrganizationId,
+    channel,
+    fetchSettings,
+    fetchMessages,
+    fetchTemplates,
+    fetchClients,
+    fetchMatchRules,
+    fetchAudit,
+  ]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Realtime: houd gesprekken en klantkaarten direct in sync bij koppelingen.
+  useEffect(() => {
+    if (!currentOrganizationId) return;
+    const channelSub = supabase
+      .channel(`messaging-sync-${channel}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "telnyx_messages" }, () => {
+        void load();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "client_phone_numbers" }, () => {
+        void load();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "clients" }, () => {
+        void load();
+      })
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channelSub);
+    };
+  }, [currentOrganizationId, channel, load]);
 
   const fromNumber = channel === "sms" ? settings.sms_from_number : settings.whatsapp_from_number;
 
@@ -260,17 +326,23 @@ export function TelnyxMessagingPage({
   }
 
   const clientById = new Map(clients.map((client) => [client.id, client]));
-  const clientByPhone = new Map(
-    clients.filter((client) => client.phone).map((client) => [normalizePhone(client.phone), client]),
-  );
+  const clientByPhone = new Map<string, Client>();
+  for (const client of clients) {
+    for (const number of [client.phone, ...(client.numbers ?? [])]) {
+      const key = phoneTail(number ? normalizePhone(number) : "", matchRules.match_digits);
+      if (key && !clientByPhone.has(key)) clientByPhone.set(key, client);
+    }
+  }
+  const findClientByPhone = (raw: string | null | undefined) =>
+    clientByPhone.get(phoneTail(normalizePhone(raw ?? ""), matchRules.match_digits));
 
   function messageClient(message: Message): Client | undefined {
     if (message.client_id) return clientById.get(message.client_id);
     const counterpart = message.direction === "inbound" ? message.from_number : message.to_number;
-    return clientByPhone.get(normalizePhone(counterpart));
+    return findClientByPhone(counterpart);
   }
 
-  const activeClient = clientByPhone.get(normalizePhone(to));
+  const activeClient = findClientByPhone(to);
 
   function openLinkDialog(message: Message) {
     const counterpart = message.direction === "inbound" ? message.from_number : message.to_number;
@@ -372,6 +444,7 @@ export function TelnyxMessagingPage({
           enabled: settings.enabled,
         },
       });
+      await persistMatchRules({ data: { organization_id: currentOrganizationId, ...matchRules } });
       toast.success("Opgeslagen");
       setSettingsOpen(false);
       await load();
@@ -585,6 +658,37 @@ export function TelnyxMessagingPage({
             </ul>
           )}
         </div>
+
+        <div className="rounded-lg border border-border bg-card text-card-foreground shadow-sm">
+          <div className="border-b border-border px-4 py-3 text-sm font-semibold">
+            Auditlog koppelingen &amp; verplaatsingen
+          </div>
+          {audit.length === 0 ? (
+            <div className="p-5 text-sm text-muted-foreground">Nog geen koppelingen vastgelegd.</div>
+          ) : (
+            <ul className="max-h-80 divide-y divide-border overflow-y-auto">
+              {audit.map((row) => (
+                <li key={row.id} className="flex flex-wrap items-center gap-2 px-4 py-2.5 text-sm">
+                  <Badge variant={row.action === "moved" ? "destructive" : "secondary"}>
+                    {auditLabels[row.action] ?? row.action}
+                  </Badge>
+                  <span className="font-medium">{row.phone}</span>
+                  <span className="text-muted-foreground">
+                    {row.old_client_name ? `${row.old_client_name} → ` : ""}
+                    {row.new_client_name ?? "—"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {row.message_count} bericht(en)
+                  </span>
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    {new Date(row.created_at).toLocaleString("nl-NL")}
+                    {row.actor_email ? ` · ${row.actor_email}` : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
       <Dialog open={linkPhone !== null} onOpenChange={(open) => !open && setLinkPhone(null)}>
@@ -687,6 +791,56 @@ export function TelnyxMessagingPage({
                 className="border-input bg-background"
               />
             </div>
+            <div className="space-y-2 border-t border-border pt-3">
+              <Label className="text-[11px] uppercase tracking-wider">Conflictdetectie-regels</Label>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <span className="text-xs text-muted-foreground">Aantal cijfers vergelijken</span>
+                  <Input
+                    type="number"
+                    min={6}
+                    max={15}
+                    value={matchRules.match_digits}
+                    onChange={(event) =>
+                      setMatchRules({ ...matchRules, match_digits: Number(event.target.value) || 9 })
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-xs text-muted-foreground">Terugkijken (dagen)</span>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={3650}
+                    value={matchRules.lookback_days}
+                    onChange={(event) =>
+                      setMatchRules({ ...matchRules, lookback_days: Number(event.target.value) || 365 })
+                    }
+                  />
+                </div>
+              </div>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={matchRules.block_duplicate_numbers}
+                  onChange={(event) =>
+                    setMatchRules({ ...matchRules, block_duplicate_numbers: event.target.checked })
+                  }
+                />
+                Waarschuw als een nummer al bij een andere klant staat
+              </label>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={matchRules.auto_create_client}
+                  onChange={(event) =>
+                    setMatchRules({ ...matchRules, auto_create_client: event.target.checked })
+                  }
+                />
+                Maak automatisch een klant aan bij een onbekend inkomend nummer
+              </label>
+            </div>
+
             <div className="space-y-1.5">
               <Label className="text-[11px] uppercase tracking-wider">
                 WhatsApp-afzendernummer

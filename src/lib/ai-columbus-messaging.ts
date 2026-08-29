@@ -65,3 +65,47 @@ export const createClientFromNumberSchema = z.object({
   email: z.string().trim().email().optional().or(z.literal("")),
   contact_person: z.string().trim().max(160).optional(),
 });
+
+export const matchSettingsSchema = z.object({
+  organization_id: z.string().uuid(),
+  match_digits: z.number().int().min(6).max(15),
+  lookback_days: z.number().int().min(1).max(3650),
+  auto_create_client: z.boolean(),
+  block_duplicate_numbers: z.boolean(),
+});
+
+export type MessagingMatchSettings = z.infer<typeof matchSettingsSchema>;
+
+export const defaultMatchSettings = {
+  match_digits: 9,
+  lookback_days: 365,
+  auto_create_client: true,
+  block_duplicate_numbers: true,
+};
+
+export const clientPhoneSchema = z.object({
+  organization_id: z.string().uuid(),
+  client_id: z.string().uuid(),
+  phone: z.string().min(5).max(30),
+  label: z.string().trim().max(60).optional(),
+  is_primary: z.boolean().optional(),
+});
+
+export const clientPhoneDeleteSchema = z.object({
+  organization_id: z.string().uuid(),
+  id: z.string().uuid(),
+});
+
+/** Last `digits` digits of a phone number, used for variant matching. */
+export function phoneTail(phone: string | null | undefined, digits = 9): string {
+  const only = (phone ?? "").replace(/\D/g, "");
+  if (!only) return "";
+  return only.slice(-Math.max(4, digits));
+}
+
+export function phoneVariantsMatch(a: string, b: string, digits = 9): boolean {
+  const ta = phoneTail(a, digits);
+  const tb = phoneTail(b, digits);
+  return Boolean(ta) && ta === tb;
+}
+

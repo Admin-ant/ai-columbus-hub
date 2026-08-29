@@ -1,23 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { hashWebhookSecret, normalizePhoneNumber } from "@/lib/ai-columbus-messaging";
+import {
+  hashWebhookSecret,
+  normalizePhoneNumber,
+  phoneTail,
+  defaultMatchSettings,
+} from "@/lib/ai-columbus-messaging";
 
 type AdminClient = Awaited<
   typeof import("@/integrations/supabase/client.server")
 >["supabaseAdmin"];
 
-/** Compare phone numbers by their last 9 digits (NL subscriber number). */
-function phoneDigitsMatch(a: string, b: string): boolean {
-  const da = a.replace(/\D/g, "");
-  const db = b.replace(/\D/g, "");
-  if (!da || !db) return false;
-  const sa = da.slice(-9);
-  const sb = db.slice(-9);
-  return sa === sb;
-}
-
 /**
- * Auto-link an inbound number to an existing client (by phone, also via
- * client_contacts). Creates a placeholder client only when no match exists.
+ * Auto-link an inbound number to an existing client using the organization's
+ * configurable match rules (number of digits compared). Falls back to creating
+ * a placeholder client only when auto-creation is enabled and nothing matches.
  */
 async function findOrCreateClientForNumber(
   supabaseAdmin: AdminClient,
@@ -32,28 +28,59 @@ async function findOrCreateClientForNumber(
     normalized = rawNumber;
   }
 
+  const { data: settingsRow } = await supabaseAdmin
+    .from("messaging_match_settings")
+    .select("match_digits, auto_create_client")
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+  const rules = { ...defaultMatchSettings, ...(settingsRow ?? {}) };
+  const tail = phoneTail(normalized, rules.match_digits);
+
+  // 1. Extra client numbers (one client can own several numbers).
+  const { data: extra } = await supabaseAdmin
+    .from("client_phone_numbers")
+    .select("client_id, phone")
+    .eq("organization_id", organizationId);
+  const matchedExtra = ((extra ?? []) as { client_id: string; phone: string }[]).find(
+    (row) => phoneTail(row.phone, rules.match_digits) === tail,
+  );
+  if (matchedExtra) return matchedExtra.client_id;
+
+  // 2. Primary phone on the client record.
   const { data: clients } = await supabaseAdmin
     .from("clients")
     .select("id, phone")
     .eq("organization_id", organizationId)
     .not("phone", "is", null);
-  const matched = (clients ?? []).find(
-    (c: { id: string; phone: string | null }) => c.phone && phoneDigitsMatch(c.phone, normalized),
+  const matched = ((clients ?? []) as { id: string; phone: string | null }[]).find(
+    (c) => phoneTail(c.phone, rules.match_digits) === tail,
   );
-  if (matched) return (matched as { id: string }).id;
+  if (matched) {
+    await supabaseAdmin.from("client_phone_numbers").upsert(
+      {
+        organization_id: organizationId,
+        client_id: matched.id,
+        phone: normalized,
+        label: "Inkomend bericht",
+      } as never,
+      { onConflict: "organization_id,phone" },
+    );
+    return matched.id;
+  }
 
+  // 3. Contact persons of a client.
   const { data: contacts } = await supabaseAdmin
     .from("client_contacts")
     .select("client_id, phone, clients!inner(organization_id)")
     .eq("clients.organization_id", organizationId)
     .not("phone", "is", null);
-  const matchedContact = (contacts ?? []).find(
-    (c: { client_id: string; phone: string | null }) =>
-      c.phone && phoneDigitsMatch(c.phone, normalized),
+  const matchedContact = ((contacts ?? []) as { client_id: string; phone: string | null }[]).find(
+    (c) => phoneTail(c.phone, rules.match_digits) === tail,
   );
-  if (matchedContact) return (matchedContact as { client_id: string }).client_id;
+  if (matchedContact) return matchedContact.client_id;
 
-  // No match: create a placeholder client so the conversation is linked.
+  if (!rules.auto_create_client) return null;
+
   const { data: created, error } = await supabaseAdmin
     .from("clients")
     .insert({
@@ -65,8 +92,25 @@ async function findOrCreateClientForNumber(
     .select("id")
     .single();
   if (error) return null;
-  return (created as { id: string }).id;
+  const clientId = (created as { id: string }).id;
+  await supabaseAdmin.from("client_phone_numbers").insert({
+    organization_id: organizationId,
+    client_id: clientId,
+    phone: normalized,
+    label: "Hoofdnummer",
+    is_primary: true,
+  } as never);
+  await supabaseAdmin.from("messaging_link_audit").insert({
+    organization_id: organizationId,
+    phone: normalized,
+    action: "auto_created",
+    new_client_id: clientId,
+    actor_email: "webhook",
+    metadata: { source: "inbound_message" },
+  } as never);
+  return clientId;
 }
+
 
 /**
  * Messaging webhook: inbound SMS/WhatsApp messages and delivery status updates.
