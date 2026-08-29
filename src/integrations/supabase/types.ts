@@ -997,6 +997,57 @@ export type Database = {
           },
         ]
       }
+      client_phone_numbers: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_primary: boolean
+          label: string | null
+          organization_id: string
+          phone: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_primary?: boolean
+          label?: string | null
+          organization_id: string
+          phone: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_primary?: boolean
+          label?: string | null
+          organization_id?: string
+          phone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_phone_numbers_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_phone_numbers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_requirements: {
         Row: {
           created_at: string
@@ -2863,6 +2914,100 @@ export type Database = {
             foreignKeyName: "message_templates_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messaging_link_audit: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          id: string
+          message_count: number
+          metadata: Json
+          new_client_id: string | null
+          new_client_name: string | null
+          old_client_id: string | null
+          old_client_name: string | null
+          organization_id: string
+          phone: string
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          message_count?: number
+          metadata?: Json
+          new_client_id?: string | null
+          new_client_name?: string | null
+          old_client_id?: string | null
+          old_client_name?: string | null
+          organization_id: string
+          phone: string
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          message_count?: number
+          metadata?: Json
+          new_client_id?: string | null
+          new_client_name?: string | null
+          old_client_id?: string | null
+          old_client_name?: string | null
+          organization_id?: string
+          phone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messaging_link_audit_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messaging_match_settings: {
+        Row: {
+          auto_create_client: boolean
+          block_duplicate_numbers: boolean
+          created_at: string
+          lookback_days: number
+          match_digits: number
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          auto_create_client?: boolean
+          block_duplicate_numbers?: boolean
+          created_at?: string
+          lookback_days?: number
+          match_digits?: number
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          auto_create_client?: boolean
+          block_duplicate_numbers?: boolean
+          created_at?: string
+          lookback_days?: number
+          match_digits?: number
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messaging_match_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
