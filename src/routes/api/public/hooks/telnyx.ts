@@ -61,7 +61,7 @@ async function findOrCreateClientForNumber(
       name: normalized,
       phone: normalized,
       notes: "Automatisch aangemaakt vanuit inkomend bericht.",
-    })
+    } as never)
     .select("id")
     .single();
   if (error) return null;
