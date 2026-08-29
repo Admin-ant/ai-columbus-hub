@@ -131,6 +131,7 @@ export function TelnyxMessagingPage({
   const [newClientName, setNewClientName] = useState("");
   const [newClientEmail, setNewClientEmail] = useState("");
   const [linking, setLinking] = useState(false);
+  const [linkConflicts, setLinkConflicts] = useState<{ id: string; name: string }[]>([]);
 
   const load = useCallback(async () => {
     if (!currentOrganizationId) return;
