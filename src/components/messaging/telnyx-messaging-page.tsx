@@ -3,6 +3,8 @@ import { toast } from "sonner";
 import { Download, FlaskConical, Loader2, Plus, RefreshCw, Save, Send, Settings2, Trash2, UserPlus, Users } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { supabase } from "@/integrations/supabase/client";
+import { phoneTail, defaultMatchSettings } from "@/lib/ai-columbus-messaging";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,6 +31,9 @@ import {
   listMessagingClients,
   linkMessagesToClient,
   createClientFromNumber,
+  getMessagingMatchSettings,
+  saveMessagingMatchSettings,
+  listMessagingLinkAudit,
 } from "@/lib/telnyx.functions";
 
 type Channel = "sms" | "whatsapp";
@@ -40,6 +45,29 @@ type Client = {
   email: string | null;
   contact_person: string | null;
   city: string | null;
+  numbers?: string[];
+};
+
+type MatchRules = typeof defaultMatchSettings;
+
+type LinkAuditRow = {
+  id: string;
+  phone: string;
+  action: string;
+  old_client_name: string | null;
+  new_client_name: string | null;
+  message_count: number;
+  actor_email: string | null;
+  created_at: string;
+};
+
+const auditLabels: Record<string, string> = {
+  linked: "Gekoppeld",
+  moved: "Verplaatst",
+  client_created: "Nieuwe klant",
+  auto_created: "Automatisch aangemaakt",
+  number_added: "Nummer toegevoegd",
+  number_removed: "Nummer verwijderd",
 };
 
 function normalizePhone(raw: string | null | undefined): string {
@@ -103,6 +131,9 @@ export function TelnyxMessagingPage({
   const fetchClients = useServerFn(listMessagingClients);
   const linkClient = useServerFn(linkMessagesToClient);
   const createClient = useServerFn(createClientFromNumber);
+  const fetchMatchRules = useServerFn(getMessagingMatchSettings);
+  const persistMatchRules = useServerFn(saveMessagingMatchSettings);
+  const fetchAudit = useServerFn(listMessagingLinkAudit);
   const persistTemplate = useServerFn(saveMessageTemplate);
   const removeTemplate = useServerFn(deleteMessageTemplate);
 
@@ -132,18 +163,24 @@ export function TelnyxMessagingPage({
   const [newClientEmail, setNewClientEmail] = useState("");
   const [linking, setLinking] = useState(false);
   const [linkConflicts, setLinkConflicts] = useState<{ id: string; name: string }[]>([]);
+  const [matchRules, setMatchRules] = useState<MatchRules>(defaultMatchSettings);
+  const [audit, setAudit] = useState<LinkAuditRow[]>([]);
 
   const load = useCallback(async () => {
     if (!currentOrganizationId) return;
     setLoading(true);
     try {
-      const [s, m, t, c] = await Promise.all([
+      const [s, m, t, c, r, a] = await Promise.all([
         fetchSettings({ data: { organization_id: currentOrganizationId } }),
         fetchMessages({ data: { organization_id: currentOrganizationId, channel } }),
         fetchTemplates({ data: { organization_id: currentOrganizationId, channel } }),
         fetchClients({ data: { organization_id: currentOrganizationId } }),
+        fetchMatchRules({ data: { organization_id: currentOrganizationId } }),
+        fetchAudit({ data: { organization_id: currentOrganizationId } }),
       ]);
       setClients(c as Client[]);
+      setMatchRules(r as MatchRules);
+      setAudit(a as LinkAuditRow[]);
       setApiKeyOk(s.api_key_configured);
       setSettings(s.settings ? { ...emptySettings, ...(s.settings as Settings) } : emptySettings);
       setMessages(m as Message[]);
@@ -153,11 +190,40 @@ export function TelnyxMessagingPage({
     } finally {
       setLoading(false);
     }
-  }, [currentOrganizationId, channel, fetchSettings, fetchMessages, fetchTemplates, fetchClients]);
+  }, [
+    currentOrganizationId,
+    channel,
+    fetchSettings,
+    fetchMessages,
+    fetchTemplates,
+    fetchClients,
+    fetchMatchRules,
+    fetchAudit,
+  ]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Realtime: houd gesprekken en klantkaarten direct in sync bij koppelingen.
+  useEffect(() => {
+    if (!currentOrganizationId) return;
+    const channelSub = supabase
+      .channel(`messaging-sync-${channel}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "telnyx_messages" }, () => {
+        void load();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "client_phone_numbers" }, () => {
+        void load();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "clients" }, () => {
+        void load();
+      })
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channelSub);
+    };
+  }, [currentOrganizationId, channel, load]);
 
   const fromNumber = channel === "sms" ? settings.sms_from_number : settings.whatsapp_from_number;
 
@@ -260,17 +326,23 @@ export function TelnyxMessagingPage({
   }
 
   const clientById = new Map(clients.map((client) => [client.id, client]));
-  const clientByPhone = new Map(
-    clients.filter((client) => client.phone).map((client) => [normalizePhone(client.phone), client]),
-  );
+  const clientByPhone = new Map<string, Client>();
+  for (const client of clients) {
+    for (const number of [client.phone, ...(client.numbers ?? [])]) {
+      const key = phoneTail(number ? normalizePhone(number) : "", matchRules.match_digits);
+      if (key && !clientByPhone.has(key)) clientByPhone.set(key, client);
+    }
+  }
+  const findClientByPhone = (raw: string | null | undefined) =>
+    clientByPhone.get(phoneTail(normalizePhone(raw ?? ""), matchRules.match_digits));
 
   function messageClient(message: Message): Client | undefined {
     if (message.client_id) return clientById.get(message.client_id);
     const counterpart = message.direction === "inbound" ? message.from_number : message.to_number;
-    return clientByPhone.get(normalizePhone(counterpart));
+    return findClientByPhone(counterpart);
   }
 
-  const activeClient = clientByPhone.get(normalizePhone(to));
+  const activeClient = findClientByPhone(to);
 
   function openLinkDialog(message: Message) {
     const counterpart = message.direction === "inbound" ? message.from_number : message.to_number;
@@ -372,6 +444,7 @@ export function TelnyxMessagingPage({
           enabled: settings.enabled,
         },
       });
+      await persistMatchRules({ data: { organization_id: currentOrganizationId, ...matchRules } });
       toast.success("Opgeslagen");
       setSettingsOpen(false);
       await load();
