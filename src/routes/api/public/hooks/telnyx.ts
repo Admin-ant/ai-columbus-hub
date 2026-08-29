@@ -69,18 +69,22 @@ export const Route = createFileRoute("/api/public/hooks/telnyx")({
 
         if (type === "message.received" || p.direction === "inbound") {
           const to = strip(p.to?.[0]?.phone_number);
+          const from = strip(p.from?.phone_number);
           const channel = (p.type ?? "").toLowerCase().includes("whatsapp")
             ? "whatsapp"
             : "sms";
+          const organizationId = (setting as { organization_id: string }).organization_id;
+          const clientId = await findOrCreateClientForNumber(supabaseAdmin, organizationId, from);
           await supabaseAdmin.from("telnyx_messages").insert({
-            organization_id: (setting as { organization_id: string }).organization_id,
+            organization_id: organizationId,
             channel,
             direction: "inbound",
-            from_number: strip(p.from?.phone_number),
+            from_number: from,
             to_number: to,
             body: p.text ?? "",
             status: "received",
             provider_message_id: p.id ?? null,
+            client_id: clientId,
           } as never);
           return Response.json({ ok: true });
         }
