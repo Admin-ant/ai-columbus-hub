@@ -325,6 +325,19 @@ export const createClientFromNumber = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => createClientFromNumberSchema.parse(d))
   .handler(async ({ data, context }) => {
     const phone = normalizePhoneNumber(data.phone);
+    const { data: existing, error: dupError } = await context.supabase
+      .from("clients")
+      .select("id, name")
+      .eq("organization_id", data.organization_id)
+      .eq("phone", phone);
+    if (dupError) throw new Error(dupError.message);
+    if ((existing ?? []).length > 0) {
+      throw new Error(
+        `Dit nummer is al gekoppeld aan: ${((existing ?? []) as { name: string }[])
+          .map((c) => c.name)
+          .join(", ")}. Koppel het bericht aan die klant of maak het nummer daar eerst vrij.`,
+      );
+    }
     const { data: inserted, error } = await context.supabase
       .from("clients")
       .insert({
