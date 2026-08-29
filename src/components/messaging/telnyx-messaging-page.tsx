@@ -604,12 +604,36 @@ export function TelnyxMessagingPage({
                   ))}
                 </SelectContent>
               </Select>
-              <Button size="sm" onClick={() => void handleLinkExisting()} disabled={linking || !linkClientId}>
+              <Button size="sm" onClick={() => void handleLinkExisting(false)} disabled={linking || !linkClientId}>
                 Koppelen aan bestaande klant
               </Button>
+              <p className="text-[11px] text-muted-foreground">
+                De klantkaart wordt bijgewerkt met dit nummer (en de naam hieronder als je die invult).
+              </p>
+              {linkConflicts.length > 0 && (
+                <div className="space-y-2 rounded-md border border-destructive/40 bg-destructive/10 p-3">
+                  <p className="text-xs text-destructive">
+                    Dit nummer staat al bij: {linkConflicts.map((c) => c.name).join(", ")}. Eén nummer kan maar aan
+                    één klant gekoppeld zijn.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      disabled={linking}
+                      onClick={() => void handleLinkExisting(true)}
+                    >
+                      Verplaatsen naar deze klant
+                    </Button>
+                    <Button size="sm" variant="outline" disabled={linking} onClick={() => setLinkConflicts([])}>
+                      Annuleren
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="space-y-2 border-t border-border pt-3">
-              <Label className="text-[11px] uppercase tracking-wider">Nieuwe klant aanmaken</Label>
+              <Label className="text-[11px] uppercase tracking-wider">Naam / nieuwe klant</Label>
               <Input
                 value={newClientName}
                 onChange={(event) => setNewClientName(event.target.value)}
