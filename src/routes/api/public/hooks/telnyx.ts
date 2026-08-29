@@ -1,5 +1,75 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { hashWebhookSecret } from "@/lib/ai-columbus-messaging";
+import { hashWebhookSecret, normalizePhoneNumber } from "@/lib/ai-columbus-messaging";
+
+type AdminClient = {
+  from: (table: string) => {
+    select: (cols: string) => any;
+    insert: (row: unknown) => any;
+  };
+};
+
+/** Compare phone numbers by their last 9 digits (NL subscriber number). */
+function phoneDigitsMatch(a: string, b: string): boolean {
+  const da = a.replace(/\D/g, "");
+  const db = b.replace(/\D/g, "");
+  if (!da || !db) return false;
+  const sa = da.slice(-9);
+  const sb = db.slice(-9);
+  return sa === sb;
+}
+
+/**
+ * Auto-link an inbound number to an existing client (by phone, also via
+ * client_contacts). Creates a placeholder client only when no match exists.
+ */
+async function findOrCreateClientForNumber(
+  supabaseAdmin: AdminClient,
+  organizationId: string,
+  rawNumber: string,
+): Promise<string | null> {
+  if (!rawNumber) return null;
+  let normalized: string;
+  try {
+    normalized = normalizePhoneNumber(rawNumber);
+  } catch {
+    normalized = rawNumber;
+  }
+
+  const { data: clients } = await supabaseAdmin
+    .from("clients")
+    .select("id, phone")
+    .eq("organization_id", organizationId)
+    .not("phone", "is", null);
+  const matched = (clients ?? []).find(
+    (c: { id: string; phone: string | null }) => c.phone && phoneDigitsMatch(c.phone, normalized),
+  );
+  if (matched) return (matched as { id: string }).id;
+
+  const { data: contacts } = await supabaseAdmin
+    .from("client_contacts")
+    .select("client_id, phone, clients!inner(organization_id)")
+    .eq("clients.organization_id", organizationId)
+    .not("phone", "is", null);
+  const matchedContact = (contacts ?? []).find(
+    (c: { client_id: string; phone: string | null }) =>
+      c.phone && phoneDigitsMatch(c.phone, normalized),
+  );
+  if (matchedContact) return (matchedContact as { client_id: string }).client_id;
+
+  // No match: create a placeholder client so the conversation is linked.
+  const { data: created, error } = await supabaseAdmin
+    .from("clients")
+    .insert({
+      organization_id: organizationId,
+      name: normalized,
+      phone: normalized,
+      notes: "Automatisch aangemaakt vanuit inkomend bericht.",
+    })
+    .select("id")
+    .single();
+  if (error) return null;
+  return (created as { id: string }).id;
+}
 
 /**
  * Messaging webhook: inbound SMS/WhatsApp messages and delivery status updates.
