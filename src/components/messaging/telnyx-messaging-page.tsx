@@ -278,6 +278,7 @@ export function TelnyxMessagingPage({
     setLinkClientId("");
     setNewClientName("");
     setNewClientEmail("");
+    setLinkConflicts([]);
   }
 
   async function handleLinkExisting(force = false) {
