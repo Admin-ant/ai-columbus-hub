@@ -279,12 +279,26 @@ export function TelnyxMessagingPage({
     setNewClientEmail("");
   }
 
-  async function handleLinkExisting() {
+  async function handleLinkExisting(force = false) {
     if (!currentOrganizationId || !linkPhone || !linkClientId) return;
     setLinking(true);
     try {
-      await linkClient({ data: { organization_id: currentOrganizationId, client_id: linkClientId, phone: linkPhone } });
-      toast.success("Nummer gekoppeld aan klant");
+      const result = (await linkClient({
+        data: {
+          organization_id: currentOrganizationId,
+          client_id: linkClientId,
+          phone: linkPhone,
+          name: newClientName.trim() ? newClientName.trim() : undefined,
+          force,
+        },
+      })) as { conflict?: boolean; conflicts?: { id: string; name: string }[] };
+      if (result?.conflict) {
+        setLinkConflicts(result.conflicts ?? []);
+        toast.warning("Dit nummer staat al bij een andere klant");
+        return;
+      }
+      setLinkConflicts([]);
+      toast.success("Nummer gekoppeld en klantkaart bijgewerkt");
       setLinkPhone(null);
       await load();
     } catch (e) {
