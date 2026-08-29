@@ -54,6 +54,8 @@ export const linkMessageClientSchema = z.object({
   organization_id: z.string().uuid(),
   client_id: z.string().uuid(),
   phone: z.string().min(5).max(30),
+  name: z.string().trim().max(160).optional(),
+  force: z.boolean().optional(),
 });
 
 export const createClientFromNumberSchema = z.object({
