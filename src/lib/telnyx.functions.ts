@@ -267,13 +267,57 @@ export const linkMessagesToClient = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => linkMessageClientSchema.parse(d))
   .handler(async ({ data, context }) => {
     const phone = normalizePhoneNumber(data.phone);
+
+    // Detect other clients that already carry this phone number.
+    const { data: sameNumber, error: dupError } = await context.supabase
+      .from("clients")
+      .select("id, name, phone")
+      .eq("organization_id", data.organization_id)
+      .eq("phone", phone);
+    if (dupError) throw new Error(dupError.message);
+
+    const conflicts = ((sameNumber ?? []) as { id: string; name: string }[]).filter(
+      (row) => row.id !== data.client_id,
+    );
+
+    if (conflicts.length > 0 && !data.force) {
+      return {
+        ok: false as const,
+        conflict: true as const,
+        phone,
+        conflicts,
+      };
+    }
+
+    if (conflicts.length > 0 && data.force) {
+      // Herstel: haal het nummer weg bij de andere klanten zodat het uniek blijft.
+      const { error: clearError } = await context.supabase
+        .from("clients")
+        .update({ phone: null } as never)
+        .in(
+          "id",
+          conflicts.map((c) => c.id),
+        );
+      if (clearError) throw new Error(clearError.message);
+    }
+
+    // Werk de klantkaart bij met het laatst gebruikte nummer (en naam indien meegegeven).
+    const clientPatch: Record<string, unknown> = { phone };
+    if (data.name && data.name.trim()) clientPatch['name'] = data.name.trim();
+    const { error: clientError } = await context.supabase
+      .from("clients")
+      .update(clientPatch as never)
+      .eq("id", data.client_id)
+      .eq("organization_id", data.organization_id);
+    if (clientError) throw new Error(clientError.message);
+
     const { error } = await context.supabase
       .from("telnyx_messages")
       .update({ client_id: data.client_id } as never)
       .eq("organization_id", data.organization_id)
       .or(`from_number.eq.${phone},to_number.eq.${phone}`);
     if (error) throw new Error(error.message);
-    return { ok: true, phone };
+    return { ok: true as const, conflict: false as const, phone, cleared: conflicts.length };
   });
 
 export const createClientFromNumber = createServerFn({ method: "POST" })
