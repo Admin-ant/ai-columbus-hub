@@ -530,7 +530,7 @@ async function writeLinkAudit(
     const { data: rows } = await context.supabase.from("clients").select("id, name").in("id", ids);
     for (const row of (rows ?? []) as { id: string; name: string }[]) names.set(row.id, row.name);
   }
-  await context.supabase.from("messaging_link_audit").insert({
+  const { error } = await context.supabase.from("messaging_link_audit").insert({
     organization_id: entry.organization_id,
     phone: entry.phone,
     action: entry.action,
@@ -543,6 +543,7 @@ async function writeLinkAudit(
     actor_email: context.claims?.email ?? null,
     metadata: entry.metadata ?? {},
   } as never);
+  if (error) console.error("[messaging] audit insert failed:", error.message);
 }
 
 type SupabaseLike = {
