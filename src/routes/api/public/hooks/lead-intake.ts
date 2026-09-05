@@ -34,13 +34,13 @@ const json = (body: unknown, status = 200) =>
   });
 
 const PayloadSchema = z.object({
-  source: z.string().trim().max(100).optional(),
+  source: z.string().trim().max(100).nullish().transform((v) => v ?? undefined),
   name: z.string().trim().min(1).max(200),
-  company: z.string().trim().max(200).optional(),
-  email: z.string().trim().email().max(255).optional(),
-  phone: z.string().trim().max(50).optional(),
-  message: z.string().trim().max(5000).optional(),
-  meta: z.record(z.string(), z.unknown()).optional(),
+  company: z.string().trim().max(200).nullish().transform((v) => v ?? undefined),
+  email: z.string().trim().email().max(255).nullish().transform((v) => v ?? undefined),
+  phone: z.string().trim().max(50).nullish().transform((v) => v ?? undefined),
+  message: z.string().trim().max(5000).nullish().transform((v) => v ?? undefined),
+  meta: z.record(z.string(), z.unknown()).nullish().transform((v) => v ?? undefined),
 });
 
 export const Route = createFileRoute("/api/public/hooks/lead-intake")({
