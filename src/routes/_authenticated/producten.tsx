@@ -370,6 +370,48 @@ function ProductsPage() {
                 </div>
               </div>
 
+              <div className="rounded-md border border-dashed p-3 space-y-3">
+                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Voorraad</div>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="p-track-stock"
+                    type="checkbox"
+                    className="h-4 w-4"
+                    checked={form.track_stock}
+                    onChange={(e) => setForm({ ...form, track_stock: e.target.checked })}
+                  />
+                  <Label htmlFor="p-track-stock" className="text-sm font-normal">
+                    Voorraad bijhouden voor dit product
+                  </Label>
+                </div>
+                {form.track_stock && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="p-stock">Huidige voorraad</Label>
+                      <Input
+                        id="p-stock"
+                        type="number"
+                        min={0}
+                        step="0.001"
+                        value={form.stock_quantity}
+                        onChange={(e) => setForm({ ...form, stock_quantity: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="p-threshold">Waarschuwingsdrempel</Label>
+                      <Input
+                        id="p-threshold"
+                        type="number"
+                        min={0}
+                        step="0.001"
+                        value={form.low_stock_threshold}
+                        onChange={(e) => setForm({ ...form, low_stock_threshold: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <DialogFooter>
                 <Button type="submit" disabled={saving}>
                   {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
