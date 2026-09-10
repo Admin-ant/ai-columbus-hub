@@ -106,6 +106,9 @@ function ProductsPage() {
       discount_type: (p.discount_type ?? "none") as "none" | "one_time" | "recurring",
       contract_months: p.contract_months != null ? String(p.contract_months) : "",
       use_contract: p.contract_months != null,
+      track_stock: p.track_stock ?? false,
+      stock_quantity: String(p.stock_quantity ?? 0),
+      low_stock_threshold: String(p.low_stock_threshold ?? 0),
     });
     setOpen(true);
   }
