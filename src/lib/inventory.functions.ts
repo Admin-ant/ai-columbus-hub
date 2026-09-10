@@ -83,8 +83,9 @@ export const getLowStockProducts = createServerFn({ method: "POST" })
       .from("products")
       .select("*")
       .eq("organization_id", data.organization_id)
-      .eq("track_stock", true)
-      .lte("stock_quantity", "low_stock_threshold");
+      .eq("track_stock", true);
     if (error) throw new Error(error.message);
-    return rows ?? [];
+    return (rows ?? []).filter(
+      (p: any) => Number(p.stock_quantity) <= Number(p.low_stock_threshold),
+    );
   });
