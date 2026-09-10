@@ -510,12 +510,28 @@ function ProductsPage() {
                       </span>
                     ) : "—"}
                   </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {p.track_stock ? (
+                      <span className={Number(p.stock_quantity) <= Number(p.low_stock_threshold) ? "text-amber-600 dark:text-amber-400 font-medium" : ""}>
+                        {Number(p.stock_quantity).toFixed(Number(p.stock_quantity) % 1 === 0 ? 0 : 3)}
+                        {Number(p.stock_quantity) <= Number(p.low_stock_threshold) && (
+                          <AlertTriangle className="ml-1 inline h-3 w-3 text-amber-500" />
+                        )}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-muted-foreground">
+                    {p.track_stock ? Number(p.low_stock_threshold).toFixed(Number(p.low_stock_threshold) % 1 === 0 ? 0 : 3) : "—"}
+                  </TableCell>
                   <TableCell>
                     <Button size="sm" variant={p.active ? "default" : "outline"} onClick={() => toggleActive(p.id, !p.active)}>
                       {p.active ? "Actief" : "Inactief"}
                     </Button>
                   </TableCell>
                   <TableCell className="text-right">
+                    {p.track_stock && <MutationsButton product={p} products={products} onDone={load} />}
                     <Button size="icon" variant="ghost" onClick={() => openEdit(p)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
