@@ -421,6 +421,7 @@ function ProductsPage() {
             </form>
           </DialogContent>
         </Dialog>
+        <ManualMovementDialog products={products} onDone={load} />
         </div>
       </div>
 
