@@ -165,6 +165,9 @@ function ProductsPage() {
       discount_percent: discountPercent,
       discount_type: discountType,
       contract_months: contractMonths,
+      track_stock: form.track_stock,
+      stock_quantity: Math.max(0, Number(form.stock_quantity) || 0),
+      low_stock_threshold: Math.max(0, Number(form.low_stock_threshold) || 0),
     };
     const { error } = editingId
       ? await supabase.from("products").update(payload).eq("id", editingId)
