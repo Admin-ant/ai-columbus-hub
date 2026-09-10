@@ -36,6 +36,7 @@ import { Route as AuthenticatedQuotesRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedSalesWorkflowRouteImport } from './routes/_authenticated/sales-workflow'
 import { Route as AuthenticatedSmsRouteImport } from './routes/_authenticated/sms'
 import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated/teams'
+import { Route as AuthenticatedVoorraadRouteImport } from './routes/_authenticated/voorraad'
 import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
 import { Route as AfspraakTokenRouteImport } from './routes/afspraak.$token'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
@@ -234,6 +235,11 @@ const AuthenticatedSmsRoute = AuthenticatedSmsRouteImport.update({
 const AuthenticatedTeamsRoute = AuthenticatedTeamsRouteImport.update({
   id: '/teams',
   path: '/teams',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedVoorraadRoute = AuthenticatedVoorraadRouteImport.update({
+  id: '/voorraad',
+  path: '/voorraad',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedWhatsappRoute = AuthenticatedWhatsappRouteImport.update({
@@ -611,6 +617,7 @@ export interface FileRoutesByFullPath {
   '/sales-workflow': typeof AuthenticatedSalesWorkflowRoute
   '/sms': typeof AuthenticatedSmsRoute
   '/teams': typeof AuthenticatedTeamsRoute
+  '/voorraad': typeof AuthenticatedVoorraadRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/afspraak/$token': typeof AfspraakTokenRoute
   '/api/chat': typeof ApiChatRoute
@@ -696,6 +703,7 @@ export interface FileRoutesByTo {
   '/sales-workflow': typeof AuthenticatedSalesWorkflowRoute
   '/sms': typeof AuthenticatedSmsRoute
   '/teams': typeof AuthenticatedTeamsRoute
+  '/voorraad': typeof AuthenticatedVoorraadRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/afspraak/$token': typeof AfspraakTokenRoute
   '/api/chat': typeof ApiChatRoute
@@ -786,6 +794,7 @@ export interface FileRoutesById {
   '/_authenticated/sales-workflow': typeof AuthenticatedSalesWorkflowRoute
   '/_authenticated/sms': typeof AuthenticatedSmsRoute
   '/_authenticated/teams': typeof AuthenticatedTeamsRoute
+  '/_authenticated/voorraad': typeof AuthenticatedVoorraadRoute
   '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
   '/afspraak/$token': typeof AfspraakTokenRoute
   '/api/chat': typeof ApiChatRoute
@@ -877,6 +886,7 @@ export interface FileRouteTypes {
     | '/sales-workflow'
     | '/sms'
     | '/teams'
+    | '/voorraad'
     | '/whatsapp'
     | '/afspraak/$token'
     | '/api/chat'
@@ -962,6 +972,7 @@ export interface FileRouteTypes {
     | '/sales-workflow'
     | '/sms'
     | '/teams'
+    | '/voorraad'
     | '/whatsapp'
     | '/afspraak/$token'
     | '/api/chat'
@@ -1051,6 +1062,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sales-workflow'
     | '/_authenticated/sms'
     | '/_authenticated/teams'
+    | '/_authenticated/voorraad'
     | '/_authenticated/whatsapp'
     | '/afspraak/$token'
     | '/api/chat'
@@ -1332,6 +1344,13 @@ declare module '@tanstack/react-router' {
       path: '/teams'
       fullPath: '/teams'
       preLoaderRoute: typeof AuthenticatedTeamsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/voorraad': {
+      id: '/_authenticated/voorraad'
+      path: '/voorraad'
+      fullPath: '/voorraad'
+      preLoaderRoute: typeof AuthenticatedVoorraadRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/whatsapp': {
@@ -1929,6 +1948,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSalesWorkflowRoute: typeof AuthenticatedSalesWorkflowRoute
   AuthenticatedSmsRoute: typeof AuthenticatedSmsRoute
   AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
+  AuthenticatedVoorraadRoute: typeof AuthenticatedVoorraadRoute
   AuthenticatedWhatsappRoute: typeof AuthenticatedWhatsappRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedBetalingenInvoiceIdRoute: typeof AuthenticatedBetalingenInvoiceIdRoute
@@ -1970,6 +1990,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSalesWorkflowRoute: AuthenticatedSalesWorkflowRoute,
   AuthenticatedSmsRoute: AuthenticatedSmsRoute,
   AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
+  AuthenticatedVoorraadRoute: AuthenticatedVoorraadRoute,
   AuthenticatedWhatsappRoute: AuthenticatedWhatsappRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedBetalingenInvoiceIdRoute: AuthenticatedBetalingenInvoiceIdRoute,
