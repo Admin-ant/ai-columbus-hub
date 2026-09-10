@@ -35,6 +35,8 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { ManualMovementDialog, MutationsButton } from "@/components/inventory/stock-movement-dialog";
+
 
 export const Route = createFileRoute("/_authenticated/producten")({
   head: () => ({ meta: [{ title: "Producten & Prijzen" }] }),
