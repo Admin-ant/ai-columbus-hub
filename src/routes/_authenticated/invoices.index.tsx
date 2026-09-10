@@ -790,6 +790,17 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
                             setLines(n);
                           }}
                         />
+                        {l.product_id && (() => {
+                          const prod = products.find((p) => p.id === l.product_id);
+                          if (!prod || !prod.track_stock) return null;
+                          const low = Number(prod.stock_quantity) <= Number(prod.low_stock_threshold);
+                          return (
+                            <div className={`mt-1 text-[10px] ${low ? "text-amber-600 dark:text-amber-400 font-medium" : "text-muted-foreground"}`}>
+                              {Number(prod.stock_quantity).toFixed(prod.stock_quantity % 1 === 0 ? 0 : 3)} op voorraad
+                              {low && " (laag)"}
+                            </div>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell>
                         <Input
