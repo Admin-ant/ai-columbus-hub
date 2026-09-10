@@ -324,7 +324,7 @@ function ProductRow({
           <DialogHeader>
             <DialogTitle>Mutaties: {product.name}</DialogTitle>
           </DialogHeader>
-          <ProductMovements organizationId={product.organization_id} productId={product.id} />
+          <ProductMovementsList organizationId={product.organization_id} productId={product.id} />
         </DialogContent>
       </Dialog>
     </>
