@@ -124,6 +124,7 @@ const columbusGroups: NavGroup[] = [
       { title: "Facturen", url: "/invoices", icon: Receipt },
       { title: "Inkoopfacturen", url: "/inkoopfacturen", icon: Receipt },
       { title: "Contracten", url: "/contracten", icon: FileSignature },
+      { title: "Voorraad", url: "/voorraad", icon: Package },
     ],
   },
   {
