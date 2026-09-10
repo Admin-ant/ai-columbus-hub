@@ -73,6 +73,9 @@ type ProductRow = {
   unit_price_cents: number;
   setup_fee_cents: number;
   vat_rate: number;
+  track_stock: boolean;
+  stock_quantity: number;
+  low_stock_threshold: number;
 };
 
 const STATUS: InvoiceStatus[] = ["draft", "sent", "paid", "overdue", "cancelled"];
