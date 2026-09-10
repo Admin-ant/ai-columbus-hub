@@ -484,6 +484,37 @@ export const getInvoicePaymentDetail = createServerFn({ method: "GET" })
       .eq("invoice_id", data.invoice_id)
       .order("created_at", { ascending: false });
 
+    const { data: lineRows } = await context.supabase
+      .from("invoice_lines")
+      .select("id, description, quantity, product_id")
+      .eq("invoice_id", data.invoice_id);
+
+    const productIds = Array.from(
+      new Set((lineRows ?? []).map((l: any) => l.product_id).filter(Boolean)),
+    ) as string[];
+    const stockById = new Map<string, { track_stock: boolean; stock_quantity: number; low_stock_threshold: number }>();
+    if (productIds.length > 0) {
+      const { data: prods } = await context.supabase
+        .from("products")
+        .select("id, track_stock, stock_quantity, low_stock_threshold")
+        .in("id", productIds);
+      for (const p of prods ?? []) {
+        stockById.set((p as any).id, {
+          track_stock: Boolean((p as any).track_stock),
+          stock_quantity: Number((p as any).stock_quantity ?? 0),
+          low_stock_threshold: Number((p as any).low_stock_threshold ?? 0),
+        });
+      }
+    }
+
+    const lines = (lineRows ?? []).map((l: any) => ({
+      id: l.id as string,
+      description: (l.description ?? "") as string,
+      quantity: Number(l.quantity ?? 0),
+      product_id: (l.product_id ?? null) as string | null,
+      stock: l.product_id ? (stockById.get(l.product_id) ?? null) : null,
+    }));
+
     const { data: hooks } = await context.supabase
       .from("mollie_webhook_events")
       .select("id, outcome, reason, http_status, payment_status, amount_cents, method, mollie_payment_id, raw, created_at")
@@ -529,5 +560,6 @@ export const getInvoicePaymentDetail = createServerFn({ method: "GET" })
         raw: JsonValue | null;
         created_at: string;
       }>,
+      lines,
     };
   });

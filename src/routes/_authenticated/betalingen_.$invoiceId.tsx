@@ -7,6 +7,7 @@ import {
   ExternalLink,
   FileText,
   Loader2,
+  Package,
   Receipt,
   Webhook,
   XCircle,
@@ -139,6 +140,58 @@ function BetalingDetailPage() {
           ) : null}
         </div>
       </div>
+
+      <section className="space-y-2">
+        <h2 className="flex items-center gap-2 text-lg font-semibold">
+          <Package className="h-4 w-4" /> Factuurregels &amp; voorraad
+        </h2>
+        <div className="rounded-xl border bg-card">
+          {data.lines.length === 0 ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">
+              Geen factuurregels gevonden.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Omschrijving</TableHead>
+                  <TableHead className="text-right">Aantal</TableHead>
+                  <TableHead className="text-right">Voorraad</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.lines.map((l) => (
+                  <TableRow key={l.id}>
+                    <TableCell>{l.description || "—"}</TableCell>
+                    <TableCell className="text-right tabular-nums">{l.quantity}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {l.stock?.track_stock ? l.stock.stock_quantity : "—"}
+                    </TableCell>
+                    <TableCell>
+                      {!l.stock?.track_stock ? (
+                        <span className="text-xs text-muted-foreground">Geen voorraadbeheer</span>
+                      ) : l.stock.stock_quantity <= 0 ? (
+                        <Badge variant="outline" className="border-red-200 bg-red-100 text-red-800">
+                          Niet op voorraad
+                        </Badge>
+                      ) : l.stock.stock_quantity <= l.stock.low_stock_threshold ? (
+                        <Badge variant="outline" className="border-amber-200 bg-amber-100 text-amber-800">
+                          Lage voorraad
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="border-green-200 bg-green-100 text-green-800">
+                          Op voorraad
+                        </Badge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      </section>
 
       <section className="space-y-2">
         <h2 className="text-lg font-semibold">Statusgeschiedenis</h2>
