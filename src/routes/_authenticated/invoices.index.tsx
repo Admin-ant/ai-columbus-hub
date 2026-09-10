@@ -93,6 +93,7 @@ type LineForm = {
   quantity: number;
   unit_price_cents: number;
   vat_rate: number;
+  product_id?: string;
 };
 
 function emptyLine(): LineForm {
