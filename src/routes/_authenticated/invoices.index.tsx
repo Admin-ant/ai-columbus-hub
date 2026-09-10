@@ -455,7 +455,7 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
     const loadProducts = async () => {
       const { data } = await supabase
         .from("products")
-        .select("id,name,sku,unit_price_cents,setup_fee_cents,vat_rate")
+        .select("id,name,sku,unit_price_cents,setup_fee_cents,vat_rate,track_stock,stock_quantity,low_stock_threshold")
         .eq("organization_id", orgId)
         .eq("active", true)
         .order("name");
@@ -468,6 +468,9 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
           unit_price_cents: number;
           setup_fee_cents: number | null;
           vat_rate: number | string;
+          track_stock: boolean;
+          stock_quantity: number;
+          low_stock_threshold: number;
         }>).map((p) => ({
           ...p,
           setup_fee_cents: Number(p.setup_fee_cents ?? 0),
