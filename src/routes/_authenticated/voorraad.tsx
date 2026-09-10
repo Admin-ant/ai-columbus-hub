@@ -47,7 +47,8 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { listStockMovements, recordStockMovement, getLowStockProducts } from "@/lib/inventory.functions";
+import { listStockMovements, getLowStockProducts } from "@/lib/inventory.functions";
+import { ManualMovementDialog, ProductMovementsList } from "@/components/inventory/stock-movement-dialog";
 
 export const Route = createFileRoute("/_authenticated/voorraad")({
   head: () => ({
