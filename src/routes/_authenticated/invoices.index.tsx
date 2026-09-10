@@ -650,13 +650,18 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <datalist id="invoice-products">
-            {products.map((p) => (
-              <option
-                key={p.id}
-                value={p.name}
-                label={`€ ${(p.unit_price_cents / 100).toFixed(2)} · ${p.vat_rate}% BTW${p.sku ? ` · ${p.sku}` : ""}`}
-              />
-            ))}
+            {products.map((p) => {
+              const stockText = p.track_stock
+                ? ` · ${Number(p.stock_quantity).toFixed(p.stock_quantity % 1 === 0 ? 0 : 3)} op voorraad`
+                : "";
+              return (
+                <option
+                  key={p.id}
+                  value={p.name}
+                  label={`€ ${(p.unit_price_cents / 100).toFixed(2)} · ${p.vat_rate}% BTW${p.sku ? ` · ${p.sku}` : ""}${stockText}`}
+                />
+              );
+            })}
           </datalist>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
