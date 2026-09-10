@@ -754,8 +754,9 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
                                   unit_price_cents: match.unit_price_cents,
                                   vat_rate: match.vat_rate,
                                   quantity: l.quantity || 1,
+                                  product_id: match.id,
                                 }
-                              : { ...l, description: val };
+                              : { ...l, description: val, product_id: undefined };
                             // Verwijder een eventueel eerder auto-toegevoegde opstartkosten-regel
                             // die bij het vorige product hoorde — alleen als de vorige waarde
                             // daadwerkelijk een product was en het nieuwe product anders is.
