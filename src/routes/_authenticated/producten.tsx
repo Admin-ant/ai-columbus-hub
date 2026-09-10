@@ -476,6 +476,8 @@ function ProductsPage() {
                 <TableHead className="text-right">Opstart</TableHead>
                 <TableHead className="text-right">BTW</TableHead>
                 <TableHead className="text-right">Korting</TableHead>
+                <TableHead className="text-right">Voorraad</TableHead>
+                <TableHead className="text-right">Drempel</TableHead>
                 <TableHead>Actief</TableHead>
                 <TableHead></TableHead>
               </TableRow>
