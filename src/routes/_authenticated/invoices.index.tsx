@@ -612,6 +612,7 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
       lines.map((l, i) => ({
         invoice_id: inv.id,
         position: i + 1,
+        product_id: l.product_id || null,
         description: l.description.trim(),
         quantity: l.quantity,
         unit_price_cents: l.unit_price_cents,
