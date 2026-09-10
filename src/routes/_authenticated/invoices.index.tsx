@@ -73,6 +73,9 @@ type ProductRow = {
   unit_price_cents: number;
   setup_fee_cents: number;
   vat_rate: number;
+  track_stock: boolean;
+  stock_quantity: number;
+  low_stock_threshold: number;
 };
 
 const STATUS: InvoiceStatus[] = ["draft", "sent", "paid", "overdue", "cancelled"];
@@ -90,6 +93,7 @@ type LineForm = {
   quantity: number;
   unit_price_cents: number;
   vat_rate: number;
+  product_id?: string;
 };
 
 function emptyLine(): LineForm {
@@ -452,7 +456,7 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
     const loadProducts = async () => {
       const { data } = await supabase
         .from("products")
-        .select("id,name,sku,unit_price_cents,setup_fee_cents,vat_rate")
+        .select("id,name,sku,unit_price_cents,setup_fee_cents,vat_rate,track_stock,stock_quantity,low_stock_threshold")
         .eq("organization_id", orgId)
         .eq("active", true)
         .order("name");
@@ -465,6 +469,9 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
           unit_price_cents: number;
           setup_fee_cents: number | null;
           vat_rate: number | string;
+          track_stock: boolean;
+          stock_quantity: number;
+          low_stock_threshold: number;
         }>).map((p) => ({
           ...p,
           setup_fee_cents: Number(p.setup_fee_cents ?? 0),
@@ -605,6 +612,7 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
       lines.map((l, i) => ({
         invoice_id: inv.id,
         position: i + 1,
+        product_id: l.product_id || null,
         description: l.description.trim(),
         quantity: l.quantity,
         unit_price_cents: l.unit_price_cents,
@@ -643,13 +651,18 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <datalist id="invoice-products">
-            {products.map((p) => (
-              <option
-                key={p.id}
-                value={p.name}
-                label={`€ ${(p.unit_price_cents / 100).toFixed(2)} · ${p.vat_rate}% BTW${p.sku ? ` · ${p.sku}` : ""}`}
-              />
-            ))}
+            {products.map((p) => {
+              const stockText = p.track_stock
+                ? ` · ${Number(p.stock_quantity).toFixed(p.stock_quantity % 1 === 0 ? 0 : 3)} op voorraad`
+                : "";
+              return (
+                <option
+                  key={p.id}
+                  value={p.name}
+                  label={`€ ${(p.unit_price_cents / 100).toFixed(2)} · ${p.vat_rate}% BTW${p.sku ? ` · ${p.sku}` : ""}${stockText}`}
+                />
+              );
+            })}
           </datalist>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
@@ -742,8 +755,9 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
                                   unit_price_cents: match.unit_price_cents,
                                   vat_rate: match.vat_rate,
                                   quantity: l.quantity || 1,
+                                  product_id: match.id,
                                 }
-                              : { ...l, description: val };
+                              : { ...l, description: val, product_id: undefined };
                             // Verwijder een eventueel eerder auto-toegevoegde opstartkosten-regel
                             // die bij het vorige product hoorde — alleen als de vorige waarde
                             // daadwerkelijk een product was en het nieuwe product anders is.
@@ -777,6 +791,17 @@ function NewInvoiceDialog({ orgId, onCreated }: { orgId: string; onCreated: () =
                             setLines(n);
                           }}
                         />
+                        {l.product_id && (() => {
+                          const prod = products.find((p) => p.id === l.product_id);
+                          if (!prod || !prod.track_stock) return null;
+                          const low = Number(prod.stock_quantity) <= Number(prod.low_stock_threshold);
+                          return (
+                            <div className={`mt-1 text-[10px] ${low ? "text-amber-600 dark:text-amber-400 font-medium" : "text-muted-foreground"}`}>
+                              {Number(prod.stock_quantity).toFixed(prod.stock_quantity % 1 === 0 ? 0 : 3)} op voorraad
+                              {low && " (laag)"}
+                            </div>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell>
                         <Input

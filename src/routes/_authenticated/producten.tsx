@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Plus, Trash2, Package, Pencil, Printer, FileDown, Eye, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ZoomIn, ZoomOut } from "lucide-react";
+import { Loader2, Plus, Trash2, Package, Pencil, Printer, FileDown, Eye, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ZoomIn, ZoomOut, AlertTriangle } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -35,6 +35,8 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { ManualMovementDialog, MutationsButton } from "@/components/inventory/stock-movement-dialog";
+
 
 export const Route = createFileRoute("/_authenticated/producten")({
   head: () => ({ meta: [{ title: "Producten & Prijzen" }] }),
@@ -78,6 +80,9 @@ function ProductsPage() {
     discount_type: "none" as "none" | "one_time" | "recurring",
     contract_months: "",
     use_contract: false,
+    track_stock: false,
+    stock_quantity: "0",
+    low_stock_threshold: "0",
   };
   const [form, setForm] = useState(emptyForm);
 
@@ -101,6 +106,9 @@ function ProductsPage() {
       discount_type: (p.discount_type ?? "none") as "none" | "one_time" | "recurring",
       contract_months: p.contract_months != null ? String(p.contract_months) : "",
       use_contract: p.contract_months != null,
+      track_stock: p.track_stock ?? false,
+      stock_quantity: String(p.stock_quantity ?? 0),
+      low_stock_threshold: String(p.low_stock_threshold ?? 0),
     });
     setOpen(true);
   }
@@ -157,6 +165,9 @@ function ProductsPage() {
       discount_percent: discountPercent,
       discount_type: discountType,
       contract_months: contractMonths,
+      track_stock: form.track_stock,
+      stock_quantity: Math.max(0, Number(form.stock_quantity) || 0),
+      low_stock_threshold: Math.max(0, Number(form.low_stock_threshold) || 0),
     };
     const { error } = editingId
       ? await supabase.from("products").update(payload).eq("id", editingId)
@@ -359,6 +370,48 @@ function ProductsPage() {
                 </div>
               </div>
 
+              <div className="rounded-md border border-dashed p-3 space-y-3">
+                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Voorraad</div>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="p-track-stock"
+                    type="checkbox"
+                    className="h-4 w-4"
+                    checked={form.track_stock}
+                    onChange={(e) => setForm({ ...form, track_stock: e.target.checked })}
+                  />
+                  <Label htmlFor="p-track-stock" className="text-sm font-normal">
+                    Voorraad bijhouden voor dit product
+                  </Label>
+                </div>
+                {form.track_stock && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="p-stock">Huidige voorraad</Label>
+                      <Input
+                        id="p-stock"
+                        type="number"
+                        min={0}
+                        step="0.001"
+                        value={form.stock_quantity}
+                        onChange={(e) => setForm({ ...form, stock_quantity: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="p-threshold">Waarschuwingsdrempel</Label>
+                      <Input
+                        id="p-threshold"
+                        type="number"
+                        min={0}
+                        step="0.001"
+                        value={form.low_stock_threshold}
+                        onChange={(e) => setForm({ ...form, low_stock_threshold: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <DialogFooter>
                 <Button type="submit" disabled={saving}>
                   {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -368,6 +421,7 @@ function ProductsPage() {
             </form>
           </DialogContent>
         </Dialog>
+        <ManualMovementDialog products={products} onDone={load} />
         </div>
       </div>
 
@@ -423,6 +477,8 @@ function ProductsPage() {
                 <TableHead className="text-right">Opstart</TableHead>
                 <TableHead className="text-right">BTW</TableHead>
                 <TableHead className="text-right">Korting</TableHead>
+                <TableHead className="text-right">Voorraad</TableHead>
+                <TableHead className="text-right">Drempel</TableHead>
                 <TableHead>Actief</TableHead>
                 <TableHead></TableHead>
               </TableRow>
@@ -455,12 +511,28 @@ function ProductsPage() {
                       </span>
                     ) : "—"}
                   </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {p.track_stock ? (
+                      <span className={Number(p.stock_quantity) <= Number(p.low_stock_threshold) ? "text-amber-600 dark:text-amber-400 font-medium" : ""}>
+                        {Number(p.stock_quantity).toFixed(Number(p.stock_quantity) % 1 === 0 ? 0 : 3)}
+                        {Number(p.stock_quantity) <= Number(p.low_stock_threshold) && (
+                          <AlertTriangle className="ml-1 inline h-3 w-3 text-amber-500" />
+                        )}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-muted-foreground">
+                    {p.track_stock ? Number(p.low_stock_threshold).toFixed(Number(p.low_stock_threshold) % 1 === 0 ? 0 : 3) : "—"}
+                  </TableCell>
                   <TableCell>
                     <Button size="sm" variant={p.active ? "default" : "outline"} onClick={() => toggleActive(p.id, !p.active)}>
                       {p.active ? "Actief" : "Inactief"}
                     </Button>
                   </TableCell>
                   <TableCell className="text-right">
+                    {p.track_stock && <MutationsButton product={p} products={products} onDone={load} />}
                     <Button size="icon" variant="ghost" onClick={() => openEdit(p)}>
                       <Pencil className="h-4 w-4" />
                     </Button>

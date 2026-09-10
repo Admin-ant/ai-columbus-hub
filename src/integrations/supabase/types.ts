@@ -3646,6 +3646,69 @@ export type Database = {
           },
         ]
       }
+      product_stock_movements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          movement_type: Database["public"]["Enums"]["stock_movement_type"]
+          note: string | null
+          organization_id: string
+          product_id: string
+          quantity: number
+          reference_id: string | null
+          reference_type:
+            | Database["public"]["Enums"]["stock_reference_type"]
+            | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          movement_type: Database["public"]["Enums"]["stock_movement_type"]
+          note?: string | null
+          organization_id: string
+          product_id: string
+          quantity: number
+          reference_id?: string | null
+          reference_type?:
+            | Database["public"]["Enums"]["stock_reference_type"]
+            | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          movement_type?: Database["public"]["Enums"]["stock_movement_type"]
+          note?: string | null
+          organization_id?: string
+          product_id?: string
+          quantity?: number
+          reference_id?: string | null
+          reference_type?:
+            | Database["public"]["Enums"]["stock_reference_type"]
+            | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_stock_movements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           active: boolean
@@ -3657,11 +3720,14 @@ export type Database = {
           discount_percent: number
           discount_type: Database["public"]["Enums"]["discount_type"]
           id: string
+          low_stock_threshold: number
           name: string
           organization_id: string
           pricing_type: Database["public"]["Enums"]["pricing_type"]
           setup_fee_cents: number
           sku: string | null
+          stock_quantity: number
+          track_stock: boolean
           unit_price_cents: number
           updated_at: string
           vat_rate: number
@@ -3676,11 +3742,14 @@ export type Database = {
           discount_percent?: number
           discount_type?: Database["public"]["Enums"]["discount_type"]
           id?: string
+          low_stock_threshold?: number
           name: string
           organization_id: string
           pricing_type?: Database["public"]["Enums"]["pricing_type"]
           setup_fee_cents?: number
           sku?: string | null
+          stock_quantity?: number
+          track_stock?: boolean
           unit_price_cents?: number
           updated_at?: string
           vat_rate?: number
@@ -3695,11 +3764,14 @@ export type Database = {
           discount_percent?: number
           discount_type?: Database["public"]["Enums"]["discount_type"]
           id?: string
+          low_stock_threshold?: number
           name?: string
           organization_id?: string
           pricing_type?: Database["public"]["Enums"]["pricing_type"]
           setup_fee_cents?: number
           sku?: string | null
+          stock_quantity?: number
+          track_stock?: boolean
           unit_price_cents?: number
           updated_at?: string
           vat_rate?: number
@@ -4875,6 +4947,12 @@ export type Database = {
         | "signed"
         | "approved_paid"
         | "declined"
+      stock_movement_type: "in" | "out" | "correction"
+      stock_reference_type:
+        | "invoice"
+        | "invoice_cancel"
+        | "manual"
+        | "correction"
       sync_status: "pending" | "success" | "failed"
     }
     CompositeTypes: {
@@ -5063,6 +5141,13 @@ export const Constants = {
         "signed",
         "approved_paid",
         "declined",
+      ],
+      stock_movement_type: ["in", "out", "correction"],
+      stock_reference_type: [
+        "invoice",
+        "invoice_cancel",
+        "manual",
+        "correction",
       ],
       sync_status: ["pending", "success", "failed"],
     },
