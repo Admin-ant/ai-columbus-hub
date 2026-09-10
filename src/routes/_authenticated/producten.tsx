@@ -80,6 +80,9 @@ function ProductsPage() {
     discount_type: "none" as "none" | "one_time" | "recurring",
     contract_months: "",
     use_contract: false,
+    track_stock: false,
+    stock_quantity: "0",
+    low_stock_threshold: "0",
   };
   const [form, setForm] = useState(emptyForm);
 
