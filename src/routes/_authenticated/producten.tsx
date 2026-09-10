@@ -277,8 +277,6 @@ function ProductsPage() {
             </Button>
           </DialogTrigger>
           <DialogContent>
-            <ManualMovementDialog products={products} onDone={load} />
-          </DialogContent>
             <DialogHeader>
               <DialogTitle>{editingId ? "Product bewerken" : "Nieuw product"}</DialogTitle>
             </DialogHeader>
