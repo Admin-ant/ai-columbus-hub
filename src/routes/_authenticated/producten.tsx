@@ -153,6 +153,7 @@ function ProductsPage() {
       : null;
 
     setSaving(true);
+    const desiredStock = Math.max(0, Number(form.stock_quantity) || 0);
     const payload = {
       organization_id: currentOrganizationId,
       sku,
@@ -166,23 +167,51 @@ function ProductsPage() {
       discount_type: discountType,
       contract_months: contractMonths,
       track_stock: form.track_stock,
-      stock_quantity: Math.max(0, Number(form.stock_quantity) || 0),
       low_stock_threshold: Math.max(0, Number(form.low_stock_threshold) || 0),
     };
-    const { error } = editingId
-      ? await supabase.from("products").update(payload).eq("id", editingId)
-      : await supabase.from("products").insert({ ...payload, created_by: user?.id ?? null });
-    setSaving(false);
+    // stock_quantity is afgeleid uit de voorraadmutaties: nooit rechtstreeks schrijven,
+    // maar het verschil vastleggen als correctiemutatie zodat het getal blijft kloppen.
+    const { data: saved, error } = editingId
+      ? await supabase.from("products").update(payload).eq("id", editingId).select("id, stock_quantity").maybeSingle()
+      : await supabase
+          .from("products")
+          .insert({ ...payload, created_by: user?.id ?? null })
+          .select("id, stock_quantity")
+          .maybeSingle();
     if (error) {
+      setSaving(false);
       if (error.code === "23505") return toast.error("Dit artikelnummer bestaat al binnen deze organisatie");
       return toast.error(error.message);
     }
+
+    if (saved && form.track_stock) {
+      const currentStock = Number(saved.stock_quantity) || 0;
+      const delta = desiredStock - currentStock;
+      if (Math.abs(delta) > 0.0001) {
+        const { error: moveError } = await supabase.from("product_stock_movements").insert({
+          organization_id: currentOrganizationId,
+          product_id: saved.id,
+          movement_type: delta > 0 ? "in" : "out",
+          quantity: Math.abs(delta),
+          reference_type: "correction",
+          note: editingId ? "Handmatige voorraadcorrectie via product" : "Beginvoorraad",
+          created_by: user?.id ?? null,
+        });
+        if (moveError) {
+          setSaving(false);
+          return toast.error(`Product opgeslagen, maar voorraad kon niet worden bijgewerkt: ${moveError.message}`);
+        }
+      }
+    }
+
+    setSaving(false);
     toast.success(editingId ? "Product bijgewerkt" : "Product aangemaakt");
     setOpen(false);
     setEditingId(null);
     setForm(emptyForm);
     load();
   }
+
 
   const [search, setSearch] = useState("");
   const [pricingFilter, setPricingFilter] = useState<"all" | PricingType>("all");
