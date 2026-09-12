@@ -20,6 +20,7 @@ import {
   Table as TableIcon,
   Sparkles,
   Briefcase,
+  Trash2,
 } from "lucide-react";
 import { extractLeadFromText } from "@/lib/leads-ai.functions";
 import { Textarea } from "@/components/ui/textarea";
@@ -191,6 +192,7 @@ function LeadsPage() {
   const [winLeadRow, setWinLeadRow] = useState<Lead | null>(null);
   const [preCustomerLeadRow, setPreCustomerLeadRow] = useState<Lead | null>(null);
   const [loseLeadRow, setLoseLeadRow] = useState<Lead | null>(null);
+  const [deleteLeadRow, setDeleteLeadRow] = useState<Lead | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [editLead, setEditLead] = useState<Lead | null>(null);
   const fnWin = useServerFn(winLead);
@@ -746,6 +748,14 @@ function LeadsPage() {
                           <Button
                             size="sm"
                             variant="ghost"
+                            title="Verwijderen"
+                            onClick={() => setDeleteLeadRow(l)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             title="Bewerken"
                             onClick={() => setEditLead(l)}
                           >
@@ -774,6 +784,7 @@ function LeadsPage() {
             onWin={setWinLeadRow}
             onCreateCustomer={setPreCustomerLeadRow}
             onLose={setLoseLeadRow}
+            onDelete={setDeleteLeadRow}
             onEdit={setEditLead}
             onDetail={setOpenLead}
             onDragEnd={handleDragEnd}
@@ -824,6 +835,16 @@ function LeadsPage() {
           }}
           fnLose={fnLose}
         />
+
+        <DeleteLeadDialog
+          lead={deleteLeadRow}
+          onClose={() => setDeleteLeadRow(null)}
+          onDone={() => {
+            setDeleteLeadRow(null);
+            load();
+          }}
+        />
+
 
         <Dialog open={!!openLead} onOpenChange={(o) => !o && setOpenLead(null)}>
           <DialogContent className="max-w-lg">
@@ -1127,6 +1148,53 @@ function LoseLeadDialog({
           </Button>
           <Button variant="destructive" onClick={save} disabled={saving}>
             {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Bevestig verloren
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DeleteLeadDialog({
+  lead,
+  onClose,
+  onDone,
+}: {
+  lead: Lead | null;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const doDelete = async () => {
+    if (!lead) return;
+    setSaving(true);
+    const { error } = await supabase.from("leads").delete().eq("id", lead.id);
+    setSaving(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Lead verwijderd");
+    onDone();
+  };
+  return (
+    <Dialog open={!!lead} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Lead verwijderen</DialogTitle>
+          <DialogDescription>
+            Weet je zeker dat je {lead?.name} definitief wilt verwijderen? Dit kan niet ongedaan
+            worden gemaakt.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex justify-end gap-2 mt-4">
+          <Button variant="outline" onClick={onClose}>
+            Annuleer
+          </Button>
+          <Button variant="destructive" onClick={doDelete} disabled={saving}>
+            {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+            <Trash2 className="mr-1 h-4 w-4" />
+            Verwijderen
           </Button>
         </div>
       </DialogContent>
@@ -1704,6 +1772,7 @@ function KanbanBoard({
   onWin,
   onCreateCustomer,
   onLose,
+  onDelete,
   onEdit,
   onDetail,
   onDragEnd,
@@ -1713,6 +1782,7 @@ function KanbanBoard({
   onWin: (l: Lead) => void;
   onCreateCustomer: (l: Lead) => void;
   onLose: (l: Lead) => void;
+  onDelete: (l: Lead) => void;
   onEdit: (l: Lead) => void;
   onDetail: (l: Lead) => void;
   onDragEnd: (event: DragEndEvent) => void;
@@ -1742,6 +1812,7 @@ function KanbanBoard({
               onWin={onWin}
               onCreateCustomer={onCreateCustomer}
               onLose={onLose}
+              onDelete={onDelete}
               onEdit={onEdit}
               onDetail={onDetail}
             />
@@ -1758,6 +1829,7 @@ function KanbanColumn({
   onWin,
   onCreateCustomer,
   onLose,
+  onDelete,
   onEdit,
   onDetail,
 }: {
@@ -1766,6 +1838,7 @@ function KanbanColumn({
   onWin: (l: Lead) => void;
   onCreateCustomer: (l: Lead) => void;
   onLose: (l: Lead) => void;
+  onDelete: (l: Lead) => void;
   onEdit: (l: Lead) => void;
   onDetail: (l: Lead) => void;
 }) {
@@ -1802,6 +1875,7 @@ function KanbanColumn({
                 onWin={onWin}
                 onCreateCustomer={onCreateCustomer}
                 onLose={onLose}
+                onDelete={onDelete}
                 onEdit={onEdit}
                 onDetail={onDetail}
               />
@@ -1818,6 +1892,7 @@ function KanbanCard({
   onWin,
   onCreateCustomer,
   onLose,
+  onDelete,
   onEdit,
   onDetail,
 }: {
@@ -1825,6 +1900,7 @@ function KanbanCard({
   onWin: (l: Lead) => void;
   onCreateCustomer: (l: Lead) => void;
   onLose: (l: Lead) => void;
+  onDelete: (l: Lead) => void;
   onEdit: (l: Lead) => void;
   onDetail: (l: Lead) => void;
 }) {
@@ -1905,6 +1981,15 @@ function KanbanCard({
           disabled={lead.stage === "verloren"}
         >
           <XCircle className="h-3.5 w-3.5 text-rose-600" />
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 w-7 p-0"
+          title="Verwijderen"
+          onClick={() => onDelete(lead)}
+        >
+          <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
         </Button>
         <Button
           size="sm"
