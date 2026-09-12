@@ -1717,6 +1717,7 @@ function KanbanBoard({
   onWin,
   onCreateCustomer,
   onLose,
+  onDelete,
   onEdit,
   onDetail,
   onDragEnd,
@@ -1726,6 +1727,7 @@ function KanbanBoard({
   onWin: (l: Lead) => void;
   onCreateCustomer: (l: Lead) => void;
   onLose: (l: Lead) => void;
+  onDelete: (l: Lead) => void;
   onEdit: (l: Lead) => void;
   onDetail: (l: Lead) => void;
   onDragEnd: (event: DragEndEvent) => void;
@@ -1755,6 +1757,7 @@ function KanbanBoard({
               onWin={onWin}
               onCreateCustomer={onCreateCustomer}
               onLose={onLose}
+              onDelete={onDelete}
               onEdit={onEdit}
               onDetail={onDetail}
             />
@@ -1771,6 +1774,7 @@ function KanbanColumn({
   onWin,
   onCreateCustomer,
   onLose,
+  onDelete,
   onEdit,
   onDetail,
 }: {
@@ -1779,6 +1783,7 @@ function KanbanColumn({
   onWin: (l: Lead) => void;
   onCreateCustomer: (l: Lead) => void;
   onLose: (l: Lead) => void;
+  onDelete: (l: Lead) => void;
   onEdit: (l: Lead) => void;
   onDetail: (l: Lead) => void;
 }) {
@@ -1815,6 +1820,7 @@ function KanbanColumn({
                 onWin={onWin}
                 onCreateCustomer={onCreateCustomer}
                 onLose={onLose}
+                onDelete={onDelete}
                 onEdit={onEdit}
                 onDetail={onDetail}
               />
@@ -1831,6 +1837,7 @@ function KanbanCard({
   onWin,
   onCreateCustomer,
   onLose,
+  onDelete,
   onEdit,
   onDetail,
 }: {
@@ -1838,6 +1845,7 @@ function KanbanCard({
   onWin: (l: Lead) => void;
   onCreateCustomer: (l: Lead) => void;
   onLose: (l: Lead) => void;
+  onDelete: (l: Lead) => void;
   onEdit: (l: Lead) => void;
   onDetail: (l: Lead) => void;
 }) {
