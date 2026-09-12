@@ -185,9 +185,42 @@ function ProductsPage() {
     }
 
     if (saved && form.track_stock) {
+      // De voorraad wordt door de database herberekend uit alle mutaties. Bereken het
+      // verschil dus t.o.v. de som van de mutaties, niet t.o.v. het opgeslagen getal:
+      // producten van vóór het mutatiesysteem hebben nog geen mutaties.
+      const { data: moves, error: movesError } = await supabase
+        .from("product_stock_movements")
+        .select("movement_type, quantity")
+        .eq("product_id", saved.id);
+      if (movesError) {
+        setSaving(false);
+        return toast.error(`Product opgeslagen, maar voorraad kon niet worden gelezen: ${movesError.message}`);
+      }
+      const movementTotal = (moves ?? []).reduce(
+        (sum, m) => sum + (m.movement_type === "out" ? -Number(m.quantity) : Number(m.quantity)),
+        0,
+      );
       const currentStock = Number(saved.stock_quantity) || 0;
-      const delta = desiredStock - currentStock;
+      // Legacy: voorraad stond direct op het product zonder mutaties -> eerst openingsmutatie.
+      if ((moves?.length ?? 0) === 0 && Math.abs(currentStock) > 0.0001) {
+        const { error: openError } = await supabase.from("product_stock_movements").insert({
+          organization_id: currentOrganizationId,
+          product_id: saved.id,
+          movement_type: currentStock > 0 ? "in" : "out",
+          quantity: Math.abs(currentStock),
+          reference_type: "correction",
+          note: "Beginvoorraad (omzetting bestaande voorraad)",
+          created_by: user?.id ?? null,
+        });
+        if (openError) {
+          setSaving(false);
+          return toast.error(`Product opgeslagen, maar voorraad kon niet worden bijgewerkt: ${openError.message}`);
+        }
+      }
+      const baseStock = (moves?.length ?? 0) === 0 ? currentStock : movementTotal;
+      const delta = desiredStock - baseStock;
       if (Math.abs(delta) > 0.0001) {
+
         const { error: moveError } = await supabase.from("product_stock_movements").insert({
           organization_id: currentOrganizationId,
           product_id: saved.id,
