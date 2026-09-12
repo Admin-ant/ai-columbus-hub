@@ -776,6 +776,7 @@ function LeadsPage() {
             onWin={setWinLeadRow}
             onCreateCustomer={setPreCustomerLeadRow}
             onLose={setLoseLeadRow}
+            onDelete={setDeleteLeadRow}
             onEdit={setEditLead}
             onDetail={setOpenLead}
             onDragEnd={handleDragEnd}
@@ -826,6 +827,16 @@ function LeadsPage() {
           }}
           fnLose={fnLose}
         />
+
+        <DeleteLeadDialog
+          lead={deleteLeadRow}
+          onClose={() => setDeleteLeadRow(null)}
+          onDone={() => {
+            setDeleteLeadRow(null);
+            load();
+          }}
+        />
+
 
         <Dialog open={!!openLead} onOpenChange={(o) => !o && setOpenLead(null)}>
           <DialogContent className="max-w-lg">
