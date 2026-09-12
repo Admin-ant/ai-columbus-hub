@@ -20,6 +20,7 @@ import {
   Table as TableIcon,
   Sparkles,
   Briefcase,
+  Trash2,
 } from "lucide-react";
 import { extractLeadFromText } from "@/lib/leads-ai.functions";
 import { Textarea } from "@/components/ui/textarea";
@@ -191,6 +192,7 @@ function LeadsPage() {
   const [winLeadRow, setWinLeadRow] = useState<Lead | null>(null);
   const [preCustomerLeadRow, setPreCustomerLeadRow] = useState<Lead | null>(null);
   const [loseLeadRow, setLoseLeadRow] = useState<Lead | null>(null);
+  const [deleteLeadRow, setDeleteLeadRow] = useState<Lead | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [editLead, setEditLead] = useState<Lead | null>(null);
   const fnWin = useServerFn(winLead);
