@@ -748,6 +748,14 @@ function LeadsPage() {
                           <Button
                             size="sm"
                             variant="ghost"
+                            title="Verwijderen"
+                            onClick={() => setDeleteLeadRow(l)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             title="Bewerken"
                             onClick={() => setEditLead(l)}
                           >
@@ -1140,6 +1148,53 @@ function LoseLeadDialog({
           </Button>
           <Button variant="destructive" onClick={save} disabled={saving}>
             {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Bevestig verloren
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DeleteLeadDialog({
+  lead,
+  onClose,
+  onDone,
+}: {
+  lead: Lead | null;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const doDelete = async () => {
+    if (!lead) return;
+    setSaving(true);
+    const { error } = await supabase.from("leads").delete().eq("id", lead.id);
+    setSaving(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Lead verwijderd");
+    onDone();
+  };
+  return (
+    <Dialog open={!!lead} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Lead verwijderen</DialogTitle>
+          <DialogDescription>
+            Weet je zeker dat je {lead?.name} definitief wilt verwijderen? Dit kan niet ongedaan
+            worden gemaakt.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex justify-end gap-2 mt-4">
+          <Button variant="outline" onClick={onClose}>
+            Annuleer
+          </Button>
+          <Button variant="destructive" onClick={doDelete} disabled={saving}>
+            {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+            <Trash2 className="mr-1 h-4 w-4" />
+            Verwijderen
           </Button>
         </div>
       </DialogContent>
@@ -1926,6 +1981,15 @@ function KanbanCard({
           disabled={lead.stage === "verloren"}
         >
           <XCircle className="h-3.5 w-3.5 text-rose-600" />
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 w-7 p-0"
+          title="Verwijderen"
+          onClick={() => onDelete(lead)}
+        >
+          <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
         </Button>
         <Button
           size="sm"
