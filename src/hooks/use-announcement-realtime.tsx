@@ -68,7 +68,7 @@ export function useAnnouncementRealtime(options?: { notify?: boolean }) {
     void refresh();
 
     const channel = supabase
-      .channel(`announcements-live-${orgId}`)
+      .channel(`announcements-live-${orgId}-${instanceId}`)
       .on(
         "postgres_changes",
         {
@@ -101,7 +101,7 @@ export function useAnnouncementRealtime(options?: { notify?: boolean }) {
       active = false;
       supabase.removeChannel(channel);
     };
-  }, [orgId, userId, qc, notify]);
+  }, [orgId, userId, qc, notify, instanceId]);
 
   return unread;
 }
