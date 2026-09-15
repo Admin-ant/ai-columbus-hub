@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -17,6 +17,9 @@ export function useAnnouncementRealtime(options?: { notify?: boolean }) {
   const qc = useQueryClient();
   const [unread, setUnread] = useState(0);
   const userId = user?.id ?? null;
+  // Uniek kanaal per hook-instantie: anders hergebruikt Supabase een al
+  // geabonneerd kanaal en faalt het toevoegen van de listeners.
+  const instanceId = useId();
 
   useEffect(() => {
     if (!orgId || !userId) {
