@@ -261,6 +261,15 @@ export const getTicket = createServerFn({ method: "POST" })
         .order("sort_order"),
     ]);
 
+    // E-mails die bij dit ticket horen (status- en meldingsmails, antwoorden)
+    const { data: mails } = await context.supabase
+      .from("mail_messages")
+      .select("id, folder, from_email, from_name, to_emails, subject, body_html, body_text, attachments, sent_at, received_at, created_at")
+      .eq("organization_id", t.organization_id)
+      .ilike("subject", `%${t.ticket_number}%`)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
     return {
       ticket: t,
       messages: (msgRes.data ?? []) as any[],
@@ -268,6 +277,7 @@ export const getTicket = createServerFn({ method: "POST" })
       attachments: (attRes.data ?? []) as any[],
       client: (clientRes as any).data ?? null,
       categories: (catRes.data ?? []) as any[],
+      mails: (mails ?? []) as any[],
     };
   });
 
