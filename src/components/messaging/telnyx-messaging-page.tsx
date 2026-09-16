@@ -123,6 +123,7 @@ export function TelnyxMessagingPage({
 }) {
   const { currentOrganizationId, currentOrganization } = useWorkspace();
   const fetchSettings = useServerFn(getTelnyxSettings);
+  const createTicketFn = useServerFn(createTicket);
   const persistSettings = useServerFn(saveTelnyxSettings);
   const fetchMessages = useServerFn(listTelnyxMessages);
   const send = useServerFn(sendTelnyxMessage);
