@@ -188,12 +188,24 @@ export const Route = createFileRoute("/api/public/hooks/ticket-intake")({
         }
 
         // Bevestiging naar de melder + interne melding (mogen falen)
+        const portalBase = (process.env.PUBLIC_APP_URL || new URL(request.url).origin).replace(/\/$/, "");
+        const portalUrl = `${portalBase}/portaal/${encodeURIComponent(org.slug || org.id)}?t=${
+          (ticket as { portal_token: string | null }).portal_token ?? ""
+        }`;
         try {
           const key = process.env.RESEND_API_KEY;
           const from = process.env.OUTREACH_FROM_EMAIL || "info@aivancolumbus.com";
+          const { logMailMessage } = await import("@/lib/mail-log.server");
           if (key) {
-            const send = (to: string[], subject: string, html: string, replyTo?: string) =>
-              fetch("https://api.resend.com/emails", {
+            const send = async (
+              to: string[],
+              subject: string,
+              html: string,
+              replyTo?: string,
+              folder: "inbox" | "sent" = "sent",
+              attachments: { filename: string; mime?: string | null; size?: number | null; url?: string | null }[] = [],
+            ) => {
+              await fetch("https://api.resend.com/emails", {
                 method: "POST",
                 headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -204,11 +216,24 @@ export const Route = createFileRoute("/api/public/hooks/ticket-intake")({
                   ...(replyTo ? { reply_to: replyTo } : {}),
                 }),
               });
+              await logMailMessage({
+                organizationId: org.id,
+                folder,
+                fromEmail: from,
+                fromName: `${org.name} Support`,
+                to,
+                subject,
+                html,
+                clientId: (client as { id: string } | null)?.id ?? null,
+                attachments,
+              });
+            };
 
             await send(
               [p.email],
               `[${ticket_number}] ${p.subject}`,
-              `<p>Bedankt voor je melding. We hebben ticket <b>${ticket_number}</b> aangemaakt en nemen zo snel mogelijk contact op.</p>`,
+              `<p>Bedankt voor je melding. We hebben ticket <b>${ticket_number}</b> aangemaakt en nemen zo snel mogelijk contact op.</p>
+               <p><a href="${portalUrl}">Volg je melding online</a></p>`,
             );
 
             // Interne melding naar het support-adres van de organisatie
