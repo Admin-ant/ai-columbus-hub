@@ -180,6 +180,29 @@ function PortalPage() {
     }
   }
 
+  async function createTicket() {
+    if (!session || !newSubject.trim() || !newBody.trim()) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const d = await api({
+        action: "new_ticket",
+        session,
+        subject: newSubject.trim(),
+        body: newBody.trim(),
+        name: newName.trim() || null,
+      });
+      setCreated((d['ticket_number'] as string) ?? null);
+      setNewSubject("");
+      setNewBody("");
+      await loadList(session);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Onbekende fout");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function sendReply() {
     if (!ticket || !reply.trim()) return;
     setBusy(true);
