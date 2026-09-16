@@ -101,6 +101,7 @@ import { Route as ApiPublicHooksResendEventsRouteImport } from './routes/api/pub
 import { Route as ApiPublicHooksStudioFollowupsRouteImport } from './routes/api/public/hooks/studio-followups'
 import { Route as ApiPublicHooksTelnyxRouteImport } from './routes/api/public/hooks/telnyx'
 import { Route as ApiPublicHooksTicketIntakeRouteImport } from './routes/api/public/hooks/ticket-intake'
+import { Route as ApiPublicHooksTicketPortalRouteImport } from './routes/api/public/hooks/ticket-portal'
 import { Route as ApiPublicLTokenRouteImport } from './routes/api/public/l.$token'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -618,6 +619,12 @@ const ApiPublicHooksTicketIntakeRoute =
     path: '/api/public/hooks/ticket-intake',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksTicketPortalRoute =
+  ApiPublicHooksTicketPortalRouteImport.update({
+    id: '/api/public/hooks/ticket-portal',
+    path: '/api/public/hooks/ticket-portal',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicLTokenRoute = ApiPublicLTokenRouteImport.update({
   id: '/api/public/l/$token',
   path: '/api/public/l/$token',
@@ -715,6 +722,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
   '/api/public/hooks/telnyx': typeof ApiPublicHooksTelnyxRoute
   '/api/public/hooks/ticket-intake': typeof ApiPublicHooksTicketIntakeRoute
+  '/api/public/hooks/ticket-portal': typeof ApiPublicHooksTicketPortalRoute
   '/api/public/l/$token': typeof ApiPublicLTokenRoute
   '/ai-columbus/klanten/': typeof AuthenticatedAiColumbusKlantenIndexRoute
 }
@@ -807,6 +815,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
   '/api/public/hooks/telnyx': typeof ApiPublicHooksTelnyxRoute
   '/api/public/hooks/ticket-intake': typeof ApiPublicHooksTicketIntakeRoute
+  '/api/public/hooks/ticket-portal': typeof ApiPublicHooksTicketPortalRoute
   '/api/public/l/$token': typeof ApiPublicLTokenRoute
   '/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenIndexRoute
 }
@@ -903,6 +912,7 @@ export interface FileRoutesById {
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
   '/api/public/hooks/telnyx': typeof ApiPublicHooksTelnyxRoute
   '/api/public/hooks/ticket-intake': typeof ApiPublicHooksTicketIntakeRoute
+  '/api/public/hooks/ticket-portal': typeof ApiPublicHooksTicketPortalRoute
   '/api/public/l/$token': typeof ApiPublicLTokenRoute
   '/_authenticated/ai-columbus/klanten/': typeof AuthenticatedAiColumbusKlantenIndexRoute
 }
@@ -999,6 +1009,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/studio-followups'
     | '/api/public/hooks/telnyx'
     | '/api/public/hooks/ticket-intake'
+    | '/api/public/hooks/ticket-portal'
     | '/api/public/l/$token'
     | '/ai-columbus/klanten/'
   fileRoutesByTo: FileRoutesByTo
@@ -1091,6 +1102,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/studio-followups'
     | '/api/public/hooks/telnyx'
     | '/api/public/hooks/ticket-intake'
+    | '/api/public/hooks/ticket-portal'
     | '/api/public/l/$token'
     | '/ai-columbus/klanten'
   id:
@@ -1186,6 +1198,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/studio-followups'
     | '/api/public/hooks/telnyx'
     | '/api/public/hooks/ticket-intake'
+    | '/api/public/hooks/ticket-portal'
     | '/api/public/l/$token'
     | '/_authenticated/ai-columbus/klanten/'
   fileRoutesById: FileRoutesById
@@ -1218,6 +1231,7 @@ export interface RootRouteChildren {
   ApiPublicHooksStudioFollowupsRoute: typeof ApiPublicHooksStudioFollowupsRoute
   ApiPublicHooksTelnyxRoute: typeof ApiPublicHooksTelnyxRoute
   ApiPublicHooksTicketIntakeRoute: typeof ApiPublicHooksTicketIntakeRoute
+  ApiPublicHooksTicketPortalRoute: typeof ApiPublicHooksTicketPortalRoute
   ApiPublicLTokenRoute: typeof ApiPublicLTokenRoute
 }
 
@@ -1867,6 +1881,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksTicketIntakeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/ticket-portal': {
+      id: '/api/public/hooks/ticket-portal'
+      path: '/api/public/hooks/ticket-portal'
+      fullPath: '/api/public/hooks/ticket-portal'
+      preLoaderRoute: typeof ApiPublicHooksTicketPortalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/l/$token': {
       id: '/api/public/l/$token'
       path: '/api/public/l/$token'
@@ -2147,6 +2168,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksStudioFollowupsRoute: ApiPublicHooksStudioFollowupsRoute,
   ApiPublicHooksTelnyxRoute: ApiPublicHooksTelnyxRoute,
   ApiPublicHooksTicketIntakeRoute: ApiPublicHooksTicketIntakeRoute,
+  ApiPublicHooksTicketPortalRoute: ApiPublicHooksTicketPortalRoute,
   ApiPublicLTokenRoute: ApiPublicLTokenRoute,
 }
 export const routeTree = rootRouteImport
