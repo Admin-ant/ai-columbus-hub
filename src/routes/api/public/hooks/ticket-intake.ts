@@ -32,6 +32,17 @@ const Payload = z.object({
   message: z.string().trim().min(3).max(10000),
   priority: z.enum(["laag", "normaal", "hoog", "urgent"]).nullish().transform((v) => v ?? "normaal"),
   company: z.string().trim().max(200).nullish().transform((v) => v ?? undefined), // honeypot
+  attachments: z
+    .array(
+      z.object({
+        filename: z.string().trim().min(1).max(200),
+        mime_type: z.string().trim().max(120).nullish().transform((v) => v ?? undefined),
+        base64: z.string().min(1).max(9_000_000),
+      }),
+    )
+    .max(5)
+    .nullish()
+    .transform((v) => v ?? []),
 });
 
 const UUID_RE = /^[0-9a-f-]{36}$/i;
