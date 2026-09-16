@@ -10,7 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/use-workspace";
-import { deleteTicketCategory, upsertTicketCategory } from "@/lib/tickets.functions";
+import { Switch } from "@/components/ui/switch";
+import {
+  deleteTicketCategory,
+  getTicketMailSettings,
+  saveTicketMailSettings,
+  upsertTicketCategory,
+} from "@/lib/tickets.functions";
 
 export const Route = createFileRoute("/_authenticated/tickets/instellingen")({
   head: () => ({
