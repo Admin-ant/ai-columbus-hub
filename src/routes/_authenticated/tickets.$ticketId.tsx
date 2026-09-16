@@ -170,6 +170,46 @@ function TicketDetailPage() {
 
   const t = data.ticket as Any;
 
+  type TimelineItem = { key: string; at: string; kind: string; title: string; detail?: string; who?: string };
+  const fieldLabel: Record<string, string> = {
+    status: "Status", priority: "Prioriteit", assigned_to: "Eigenaar",
+    category_id: "Categorie", subject: "Onderwerp", client_id: "Klant",
+  };
+  const timeline: TimelineItem[] = [
+    { key: `created-${t.id}`, at: t.created_at, kind: "aangemaakt", title: `Ticket aangemaakt via ${t.source}` },
+    ...((data.events as Any[]) ?? []).map((ev) => ({
+      key: `ev-${ev.id}`,
+      at: ev.created_at as string,
+      kind: ev.field === "status" ? "status" : "wijziging",
+      who: (ev.actor_name as string) ?? "Systeem",
+      title:
+        ev.field === "status"
+          ? `Status: ${STATUS_LABEL[ev.new_value as TicketStatus] ?? ev.new_value}`
+          : `${fieldLabel[ev.field] ?? ev.field} gewijzigd`,
+      detail:
+        ev.field === "status"
+          ? `van ${STATUS_LABEL[ev.old_value as TicketStatus] ?? ev.old_value ?? "—"}`
+          : `${ev.old_value ?? "—"} → ${ev.new_value ?? "—"}`,
+    })),
+    ...((data.messages as Any[]) ?? []).map((m) => ({
+      key: `msg-${m.id}`,
+      at: m.created_at as string,
+      kind: m.is_internal ? "interne notitie" : m.direction === "in" ? "bericht van melder" : "antwoord",
+      who: (m.author_name as string) ?? undefined,
+      title: String(m.body ?? "").slice(0, 140),
+    })),
+    ...(((data as Any).mails as Any[]) ?? []).map((m) => ({
+      key: `mail-${m.id}`,
+      at: (m.sent_at ?? m.received_at ?? m.created_at) as string,
+      kind: m.folder === "inbox" ? "e-mail ontvangen" : "e-mail verzonden",
+      title: String(m.subject ?? ""),
+      detail: (m.to_emails ?? []).join(", "),
+    })),
+  ]
+    .filter((i) => Boolean(i.at))
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+
+
   return (
     <div className="space-y-6 pb-16">
       <div className="flex flex-wrap items-start justify-between gap-3">
