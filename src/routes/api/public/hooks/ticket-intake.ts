@@ -246,7 +246,20 @@ export const Route = createFileRoute("/api/public/hooks/ticket-intake")({
                  <b>Prioriteit:</b> ${esc(p.priority)}<br/>
                  <b>Van:</b> ${esc(p.name)} &lt;${esc(p.email)}&gt;${p.phone ? ` (${esc(p.phone)})` : ""}</p>
                  <p><b>Onderwerp:</b> ${esc(p.subject)}</p>
-                 <p style="white-space:pre-wrap">${esc(p.message)}</p>`,
+                 <p style="white-space:pre-wrap">${esc(p.message)}</p>
+                 ${
+                   savedAttachments.length
+                     ? `<h3 style="font-size:14px;margin:18px 0 6px">Bijlagen (${savedAttachments.length})</h3>
+                        <ul style="font-size:14px">${savedAttachments
+                          .map((a) => {
+                            const kb = `${Math.max(1, Math.round(a.size / 1024))} kB`;
+                            const label = `${esc(a.filename)} <span style="color:#64748b">(${esc(a.mime)}, ${kb})</span>`;
+                            return `<li>${a.url ? `<a href="${a.url}">${label}</a>` : label}</li>`;
+                          })
+                          .join("")}</ul>
+                        <p style="font-size:12px;color:#64748b">Downloadlinks zijn 7 dagen geldig.</p>`
+                     : ""
+                 }`,
                 p.email,
               );
             }
