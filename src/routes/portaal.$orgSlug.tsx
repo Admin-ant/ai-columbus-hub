@@ -119,6 +119,16 @@ function PortalPage() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
+  const needle = q.trim().toLowerCase();
+  const filtered: ListItem[] = list.filter((t) => {
+    if (needle && !`${t.ticket_number} ${t.subject}`.toLowerCase().includes(needle)) return false;
+    if (statusFilter !== "alle" && t.status !== statusFilter) return false;
+    const d = new Date(t.last_message_at ?? t.created_at);
+    if (fromDate && d < new Date(`${fromDate}T00:00:00`)) return false;
+    if (toDate && d > new Date(`${toDate}T23:59:59`)) return false;
+    return true;
+  });
+
   useEffect(() => {
     setSession(localStorage.getItem(storageKey));
   }, [storageKey]);
