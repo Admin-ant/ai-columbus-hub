@@ -44,6 +44,47 @@ function TicketSettingsPage() {
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const loadMail = useServerFn(getTicketMailSettings);
+  const saveMail = useServerFn(saveTicketMailSettings);
+  const [mail, setMail] = useState({ reply: "", notify: "", statusNotify: true });
+  const [mailHints, setMailHints] = useState({ reply: "", notify: "" });
+  const [mailSaving, setMailSaving] = useState(false);
+
+  useEffect(() => {
+    if (!currentOrganizationId) return;
+    void loadMail({ data: { organization_id: currentOrganizationId } })
+      .then((d) => {
+        setMail({
+          reply: d.ticket_reply_to,
+          notify: d.ticket_notify_email,
+          statusNotify: d.ticket_status_notify,
+        });
+        setMailHints({ reply: d.fallback_reply_to, notify: d.fallback_notify });
+      })
+      .catch(() => undefined);
+  }, [currentOrganizationId, loadMail]);
+
+  async function saveMailSettings() {
+    if (!currentOrganizationId) return;
+    setMailSaving(true);
+    try {
+      await saveMail({
+        data: {
+          organization_id: currentOrganizationId,
+          ticket_reply_to: mail.reply.trim() || null,
+          ticket_notify_email: mail.notify.trim() || null,
+          ticket_status_notify: mail.statusNotify,
+        },
+      });
+      toast.success("E-mailinstellingen opgeslagen");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Opslaan mislukt");
+    } finally {
+      setMailSaving(false);
+    }
+  }
+
+
   const refresh = useCallback(async () => {
     if (!currentOrganizationId) return;
     setLoading(true);
