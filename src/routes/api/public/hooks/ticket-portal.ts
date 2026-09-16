@@ -317,7 +317,7 @@ export const Route = createFileRoute("/api/public/hooks/ticket-portal")({
           const { data: rows } = await db
             .from("tickets")
             .select(
-              "id, ticket_number, subject, status, priority, created_at, last_message_at, portal_token",
+              "id, ticket_number, subject, status, priority, created_at, last_message_at, portal_token, customer_seen_at",
             )
             .eq("organization_id", sess.organization_id)
             .ilike("requester_email", sess.email)
