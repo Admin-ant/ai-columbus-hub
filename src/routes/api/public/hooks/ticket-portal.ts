@@ -363,6 +363,119 @@ export const Route = createFileRoute("/api/public/hooks/ticket-portal")({
           return json({ ok: true, origin });
         }
 
+        /* ------------------------------------------------ nieuwe melding */
+        if (p.action === "new_ticket") {
+          if (!p.session || !p.subject || !p.body) return json({ error: "Onvolledig" }, 400);
+          if (rateLimited(`new:${ip}`, 10)) return json({ error: "Te veel meldingen" }, 429);
+          const { data: s } = await db
+            .from("ticket_portal_sessions")
+            .select("organization_id, email, session_expires_at")
+            .eq("session_token", p.session)
+            .maybeSingle();
+          const sess = s as { organization_id: string; email: string; session_expires_at: string } | null;
+          if (!sess || new Date(sess.session_expires_at) < new Date()) {
+            return json({ error: "Sessie verlopen" }, 401);
+          }
+          const { data: org } = await db
+            .from("organizations")
+            .select("id, name, slug")
+            .eq("id", sess.organization_id)
+            .maybeSingle();
+          const o = (org ?? { id: sess.organization_id, name: "Support", slug: sess.organization_id }) as {
+            id: string;
+            name: string;
+            slug: string;
+          };
+
+          // Bestaande klant zoeken op e-mailadres
+          const { data: byClient } = await db
+            .from("clients")
+            .select("id")
+            .eq("organization_id", o.id)
+            .ilike("email", sess.email)
+            .maybeSingle();
+          let clientId = (byClient as { id: string } | null)?.id ?? null;
+          if (!clientId) {
+            const { data: byContact } = await db
+              .from("client_contacts")
+              .select("client_id")
+              .ilike("email", sess.email)
+              .limit(1)
+              .maybeSingle();
+            clientId = (byContact as { client_id: string } | null)?.client_id ?? null;
+          }
+
+          const { data: numRes } = await db.rpc("next_ticket_number", { _org_id: o.id } as never);
+          const ticketNumber = (numRes as unknown as string) ?? `TCK-${Date.now()}`;
+
+          const { data: inserted, error: insErr } = await db
+            .from("tickets")
+            .insert({
+              organization_id: o.id,
+              ticket_number: ticketNumber,
+              subject: p.subject,
+              status: "nieuw",
+              priority: "normaal",
+              source: "web",
+              requester_name: p.name || null,
+              requester_email: sess.email,
+              requester_phone: p.phone || null,
+              client_id: clientId,
+              last_message_at: new Date().toISOString(),
+            } as never)
+            .select("id, portal_token")
+            .single();
+          if (insErr || !inserted) return json({ error: "Aanmaken mislukt" }, 500);
+          const created = inserted as { id: string; portal_token: string | null };
+
+          await db.from("ticket_messages").insert({
+            ticket_id: created.id,
+            organization_id: o.id,
+            direction: "in",
+            body: p.body,
+            author_name: p.name || sess.email,
+            channel: "portaal",
+          } as never);
+
+          const portalUrl = `${origin}/portaal/${encodeURIComponent(o.slug || o.id)}?t=${created.portal_token ?? ""}`;
+          await sendPortalMail(
+            db,
+            o.id,
+            o.name,
+            sess.email,
+            `[${ticketNumber}] ${p.subject}`,
+            `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111">
+               <p>Bedankt voor je melding. We hebben ticket <b>${ticketNumber}</b> aangemaakt.</p>
+               <p><a href="${portalUrl}">Volg je melding online</a></p>
+             </div>`,
+          );
+          const { data: ms } = await db
+            .from("mail_settings")
+            .select("ticket_notify_email, reply_to")
+            .eq("organization_id", o.id)
+            .maybeSingle();
+          const notify =
+            (ms as { ticket_notify_email: string | null; reply_to: string | null } | null)
+              ?.ticket_notify_email ??
+            (ms as { reply_to: string | null } | null)?.reply_to ??
+            null;
+          if (notify) {
+            await sendPortalMail(
+              db,
+              o.id,
+              o.name,
+              notify,
+              `Nieuwe melding ${ticketNumber}: ${p.subject}`,
+              `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111">
+                 <p><b>Nieuwe melding via het klantportaal</b></p>
+                 <p>Van: ${p.name ? `${p.name} · ` : ""}${sess.email}</p>
+                 <p>${p.body.replace(/</g, "&lt;")}</p>
+               </div>`,
+            );
+          }
+          return json({ ok: true, ticket_number: ticketNumber, token: created.portal_token });
+        }
+
         return json({ error: "Onbekende actie" }, 400);
       },
     },
