@@ -5066,6 +5066,8 @@ export type Database = {
           contact_id: string | null
           created_at: string
           created_by: string | null
+          customer_notify_email: boolean
+          customer_seen_at: string | null
           id: string
           is_internal: boolean
           last_message_at: string
@@ -5091,6 +5093,8 @@ export type Database = {
           contact_id?: string | null
           created_at?: string
           created_by?: string | null
+          customer_notify_email?: boolean
+          customer_seen_at?: string | null
           id?: string
           is_internal?: boolean
           last_message_at?: string
@@ -5116,6 +5120,8 @@ export type Database = {
           contact_id?: string | null
           created_at?: string
           created_by?: string | null
+          customer_notify_email?: boolean
+          customer_seen_at?: string | null
           id?: string
           is_internal?: boolean
           last_message_at?: string
