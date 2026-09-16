@@ -225,6 +225,7 @@ export const Route = createFileRoute("/api/public/hooks/ticket-intake")({
               .maybeSingle();
             const notify =
               process.env.TICKET_NOTIFY_EMAIL ||
+              settings?.ticket_notify_email ||
               settings?.reply_to ||
               (orgRow as { email: string | null } | null)?.email ||
               settings?.from_email ||
