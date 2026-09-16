@@ -134,6 +134,29 @@ function SupportFormPage() {
                 <Label htmlFor="message">Omschrijving</Label>
                 <Textarea id="message" rows={6} required value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
               </div>
+              <div className="grid gap-2">
+                <Label htmlFor="files">Bijlagen (optioneel, max. 5 bestanden van 5 MB)</Label>
+                <Input
+                  id="files"
+                  type="file"
+                  multiple
+                  onChange={(e) => {
+                    const picked = Array.from(e.target.files ?? []);
+                    const tooBig = picked.filter((f) => f.size > 5 * 1024 * 1024);
+                    if (tooBig.length) setError(`Te groot: ${tooBig.map((f) => f.name).join(", ")}`);
+                    setFiles(picked.filter((f) => f.size <= 5 * 1024 * 1024).slice(0, 5));
+                  }}
+                />
+                {files.length > 0 && (
+                  <ul className="text-xs text-muted-foreground">
+                    {files.map((f) => (
+                      <li key={f.name}>
+                        {f.name} — {f.type || "onbekend type"}, {Math.max(1, Math.round(f.size / 1024))} kB
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               <input
                 tabIndex={-1}
                 autoComplete="off"
