@@ -42,15 +42,32 @@ function SupportFormPage() {
       .catch(() => setOrgName(null));
   }, [orgSlug]);
 
+  async function toBase64(file: File) {
+    const buf = await file.arrayBuffer();
+    let binary = "";
+    const bytes = new Uint8Array(buf);
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    }
+    return btoa(binary);
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setSending(true);
     try {
+      const attachments = await Promise.all(
+        files.map(async (f) => ({
+          filename: f.name,
+          mime_type: f.type || "application/octet-stream",
+          base64: await toBase64(f),
+        })),
+      );
       const res = await fetch(`/api/public/hooks/ticket-intake?org=${encodeURIComponent(orgSlug)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, attachments }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body?.error ?? "Versturen mislukt");
