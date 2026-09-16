@@ -217,7 +217,11 @@ export const Route = createFileRoute("/api/public/hooks/ticket-intake")({
               .select("reply_to, from_email, ticket_notify_email")
               .eq("organization_id", org.id)
               .maybeSingle();
-            const settings = (ms ?? null) as { reply_to: string | null; from_email: string | null } | null;
+            const settings = (ms ?? null) as {
+              reply_to: string | null;
+              from_email: string | null;
+              ticket_notify_email: string | null;
+            } | null;
             const { data: orgRow } = await supabaseAdmin
               .from("organizations")
               .select("email")
