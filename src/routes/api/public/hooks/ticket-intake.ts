@@ -136,7 +136,7 @@ export const Route = createFileRoute("/api/public/hooks/ticket-intake")({
             requester_email: p.email,
             requester_phone: p.phone ?? null,
           } as never)
-          .select("id")
+          .select("id, portal_token")
           .single();
         if (insErr || !ticket) {
           console.error("[ticket-intake] insert failed", insErr);
