@@ -428,6 +428,24 @@ export const updateTicket = createServerFn({ method: "POST" })
       try {
         const cfg = await ticketMailConfig(context.supabase, prev.organization_id);
         if (cfg.statusNotify && cfg.notifyTo) {
+          const { data: atts } = await context.supabase
+            .from("ticket_attachments")
+            .select("file_name, mime_type, file_size")
+            .eq("ticket_id", id)
+            .limit(20);
+          const attList = ((atts ?? []) as any[])
+            .map(
+              (a) =>
+                `<li>${esc(a.file_name)} <span style="color:#6b7280">(${esc(a.mime_type ?? "bestand")}${
+                  a.file_size ? ` · ${Math.max(1, Math.round(Number(a.file_size) / 1024))} kB` : ""
+                })</span></li>`,
+            )
+            .join("");
+          const portalUrl = await ticketPortalUrl(
+            context.supabase,
+            prev.organization_id,
+            prev.portal_token,
+          );
           await sendTicketMail(cfg, {
             to: cfg.notifyTo,
             subject: `[${prev.ticket_number}] status: ${STATUS_LABEL[patch.status]}`,
@@ -436,7 +454,10 @@ export const updateTicket = createServerFn({ method: "POST" })
               <p>Status gewijzigd van <b>${esc(STATUS_LABEL[prev.status as TicketStatus] ?? String(prev.status))}</b>
                  naar <b>${esc(STATUS_LABEL[patch.status])}</b>${name ? ` door ${esc(name)}` : ""}.</p>
               ${patch.priority ? `<p>Prioriteit: <b>${esc(patch.priority)}</b></p>` : ""}
+              ${attList ? `<p><b>Bijlagen</b></p><ul>${attList}</ul>` : "<p>Geen bijlagen.</p>"}
+              ${portalUrl ? `<p><a href="${portalUrl}">Open het ticket</a></p>` : ""}
             </div>`,
+            folder: "inbox",
           });
         }
       } catch (e) {
