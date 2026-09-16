@@ -303,6 +303,39 @@ function TicketDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">E-mailberichten</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {((data as Any).mails as Any[] | undefined)?.length ? (
+                ((data as Any).mails as Any[]).map((m) => (
+                  <details key={m.id} className="rounded-md border p-3">
+                    <summary className="cursor-pointer text-sm">
+                      <span className="font-medium">{m.subject}</span>
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {m.folder === "inbox" ? "ontvangen" : "verzonden"} ·{" "}
+                        {fmt(m.sent_at ?? m.received_at ?? m.created_at)} ·{" "}
+                        {(m.to_emails ?? []).join(", ")}
+                      </span>
+                    </summary>
+                    <div
+                      className="prose prose-sm mt-3 max-w-none text-sm [&_a]:text-primary"
+                      dangerouslySetInnerHTML={{ __html: String(m.body_html ?? "") }}
+                    />
+                    {Array.isArray(m.attachments) && m.attachments.length > 0 && (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Bijlagen: {m.attachments.map((a: Any) => a.filename).join(", ")}
+                      </p>
+                    )}
+                  </details>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">Nog geen e-mails voor dit ticket.</p>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         <div className="space-y-4">
