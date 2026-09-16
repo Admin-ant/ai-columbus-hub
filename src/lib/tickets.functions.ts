@@ -440,14 +440,14 @@ export const updateTicket = createServerFn({ method: "POST" })
         if (cfg.statusNotify && cfg.notifyTo) {
           const { data: atts } = await context.supabase
             .from("ticket_attachments")
-            .select("file_name, mime_type, file_size")
+            .select("filename, mime_type, size_bytes")
             .eq("ticket_id", id)
             .limit(20);
           const attList = ((atts ?? []) as any[])
             .map(
               (a) =>
-                `<li>${esc(a.file_name)} <span style="color:#6b7280">(${esc(a.mime_type ?? "bestand")}${
-                  a.file_size ? ` · ${Math.max(1, Math.round(Number(a.file_size) / 1024))} kB` : ""
+                `<li>${esc(a.filename)} <span style="color:#6b7280">(${esc(a.mime_type ?? "bestand")}${
+                  a.size_bytes ? ` · ${Math.max(1, Math.round(Number(a.size_bytes) / 1024))} kB` : ""
                 })</span></li>`,
             )
             .join("");
