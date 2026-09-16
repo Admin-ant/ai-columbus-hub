@@ -34,6 +34,7 @@ function SupportFormPage() {
   const [form, setForm] = useState({
     name: "", email: "", phone: "", subject: "", message: "", priority: "normaal", company: "",
   });
+  const [files, setFiles] = useState<File[]>([]);
 
   useEffect(() => {
     fetch(`/api/public/hooks/ticket-intake?org=${encodeURIComponent(orgSlug)}`)
