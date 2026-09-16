@@ -117,6 +117,8 @@ async function ticketPayload(db: Admin, ticket: Record<string, unknown>) {
     requester_name: ticket['requester_name'],
     requester_email: ticket['requester_email'],
     portal_token: ticket['portal_token'],
+    notify_email: ticket['customer_notify_email'] !== false,
+    has_update: !ticket['customer_seen_at'],
     messages: ((messages ?? []) as Record<string, unknown>[]).map((m) => ({
       id: m['id'],
       direction: m['direction'],
