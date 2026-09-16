@@ -141,24 +141,67 @@ export const Route = createFileRoute("/api/public/hooks/ticket-intake")({
           channel: "web",
         } as never);
 
-        // Bevestiging naar de melder (mag falen)
+        // Bevestiging naar de melder + interne melding (mogen falen)
         try {
           const key = process.env.RESEND_API_KEY;
           const from = process.env.OUTREACH_FROM_EMAIL || "info@aivancolumbus.com";
           if (key) {
-            await fetch("https://api.resend.com/emails", {
-              method: "POST",
-              headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-              body: JSON.stringify({
-                from: `${org.name} Support <${from}>`,
-                to: [p.email],
-                subject: `[${ticket_number}] ${p.subject}`,
-                html: `<p>Bedankt voor je melding. We hebben ticket <b>${ticket_number}</b> aangemaakt en nemen zo snel mogelijk contact op.</p>`,
-              }),
-            });
+            const send = (to: string[], subject: string, html: string, replyTo?: string) =>
+              fetch("https://api.resend.com/emails", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  from: `${org.name} Support <${from}>`,
+                  to,
+                  subject,
+                  html,
+                  ...(replyTo ? { reply_to: replyTo } : {}),
+                }),
+              });
+
+            await send(
+              [p.email],
+              `[${ticket_number}] ${p.subject}`,
+              `<p>Bedankt voor je melding. We hebben ticket <b>${ticket_number}</b> aangemaakt en nemen zo snel mogelijk contact op.</p>`,
+            );
+
+            // Interne melding naar het support-adres van de organisatie
+            const { data: ms } = await supabaseAdmin
+              .from("mail_settings")
+              .select("reply_to, from_email")
+              .eq("organization_id", org.id)
+              .maybeSingle();
+            const settings = (ms ?? null) as { reply_to: string | null; from_email: string | null } | null;
+            const { data: orgRow } = await supabaseAdmin
+              .from("organizations")
+              .select("email")
+              .eq("id", org.id)
+              .maybeSingle();
+            const notify =
+              process.env.TICKET_NOTIFY_EMAIL ||
+              settings?.reply_to ||
+              (orgRow as { email: string | null } | null)?.email ||
+              settings?.from_email ||
+              null;
+
+            if (notify) {
+              const esc = (s: string) =>
+                s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+              await send(
+                [notify],
+                `Nieuw ticket ${ticket_number}: ${p.subject}`,
+                `<p><b>Nieuwe melding via het supportformulier</b></p>
+                 <p><b>Ticket:</b> ${ticket_number}<br/>
+                 <b>Prioriteit:</b> ${esc(p.priority)}<br/>
+                 <b>Van:</b> ${esc(p.name)} &lt;${esc(p.email)}&gt;${p.phone ? ` (${esc(p.phone)})` : ""}</p>
+                 <p><b>Onderwerp:</b> ${esc(p.subject)}</p>
+                 <p style="white-space:pre-wrap">${esc(p.message)}</p>`,
+                p.email,
+              );
+            }
           }
         } catch (e) {
-          console.error("[ticket-intake] confirm mail failed", e);
+          console.error("[ticket-intake] mail failed", e);
         }
 
         return json({ ok: true, ticket_number }, 201);
