@@ -56,6 +56,8 @@ function TicketDetailPage() {
   const upload = useServerFn(uploadTicketAttachment);
   const signedUrl = useServerFn(getTicketAttachmentUrl);
   const delAtt = useServerFn(deleteTicketAttachment);
+  const mailHistory = useServerFn(emailTicketHistory);
+  const [historySending, setHistorySending] = useState(false);
 
   const [data, setData] = useState<Any | null>(null);
   const [agents, setAgents] = useState<Array<{ id: string; name: string }>>([]);
