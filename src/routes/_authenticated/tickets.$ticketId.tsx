@@ -136,12 +136,29 @@ function TicketDetailPage() {
     }
   }
 
-  async function openAttachment(id: string) {
+  async function openAttachment(a: Any) {
     try {
-      const { url } = await signedUrl({ data: { id } });
-      window.open(url, "_blank", "noopener");
+      const { url } = await signedUrl({ data: { id: a.id } });
+      const mime = String(a.mime_type ?? "");
+      const inline = mime.startsWith("image/") || mime === "application/pdf";
+      if (inline) setViewer({ url, mime, filename: a.filename as string });
+      else window.open(url, "_blank", "noopener");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Openen mislukt");
+    }
+  }
+
+  async function downloadAttachment(a: Any) {
+    try {
+      const { url } = await signedUrl({ data: { id: a.id } });
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = String(a.filename ?? "bijlage");
+      link.rel = "noopener";
+      link.target = "_blank";
+      link.click();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Downloaden mislukt");
     }
   }
 
