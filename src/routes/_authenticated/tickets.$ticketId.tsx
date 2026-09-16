@@ -304,8 +304,13 @@ function TicketDetailPage() {
                   {(data.attachments as Any[]).map((a) => (
                     <li key={a.id} className="flex items-center gap-2 py-2 text-sm">
                       <span className="truncate">{a.filename}</span>
-                      <span className="text-xs text-muted-foreground">{Math.round((a.size_bytes ?? 0) / 1024)} kB</span>
-                      <Button variant="ghost" size="sm" className="ml-auto" onClick={() => openAttachment(a.id)}>
+                      <span className="text-xs text-muted-foreground">
+                        {a.mime_type ?? "bestand"} · {Math.round((a.size_bytes ?? 0) / 1024)} kB
+                      </span>
+                      <Button variant="ghost" size="sm" className="ml-auto" onClick={() => void openAttachment(a)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => void downloadAttachment(a)}>
                         <Download className="h-4 w-4" />
                       </Button>
                       <Button
