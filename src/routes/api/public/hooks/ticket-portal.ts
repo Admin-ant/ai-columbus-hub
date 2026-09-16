@@ -30,7 +30,7 @@ const sha = (s: string) => createHash("sha256").update(s).digest("hex");
 const UUID_RE = /^[0-9a-f-]{36}$/i;
 
 const Payload = z.object({
-  action: z.enum(["ticket", "request_code", "verify_code", "list", "reply"]),
+  action: z.enum(["ticket", "request_code", "verify_code", "list", "reply", "new_ticket"]),
   org: z.string().trim().max(200).nullish(),
   email: z.string().trim().email().max(255).nullish(),
   code: z.string().trim().max(12).nullish(),
@@ -38,6 +38,9 @@ const Payload = z.object({
   session: z.string().trim().max(200).nullish(),
   ticket_id: z.string().uuid().nullish(),
   body: z.string().trim().max(10000).nullish(),
+  subject: z.string().trim().max(300).nullish(),
+  name: z.string().trim().max(200).nullish(),
+  phone: z.string().trim().max(50).nullish(),
 });
 
 const hits = new Map<string, number[]>();
