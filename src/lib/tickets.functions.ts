@@ -471,6 +471,33 @@ export const updateTicket = createServerFn({ method: "POST" })
             folder: "inbox",
           });
         }
+
+        // Melding aan de klant zelf: in-app in het portaal (customer_seen_at
+        // wordt gewist) en optioneel per e-mail.
+        await context.supabase
+          .from("tickets")
+          .update({ customer_seen_at: null } as never)
+          .eq("id", id);
+
+        const notifyCustomer =
+          patch.customer_notify_email ?? (prev.customer_notify_email as boolean | null) ?? true;
+        if (notifyCustomer && prev.requester_email) {
+          const portalUrl = await ticketPortalUrl(
+            context.supabase,
+            prev.organization_id,
+            prev.portal_token,
+          );
+          await sendTicketMail(cfg, {
+            to: prev.requester_email as string,
+            subject: `[${prev.ticket_number}] status: ${STATUS_LABEL[patch.status]}`,
+            html: `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111">
+              <p>Hallo${prev.requester_name ? ` ${esc(prev.requester_name)}` : ""},</p>
+              <p>De status van je melding <b>${esc(prev.ticket_number)}</b> — ${esc(prev.subject ?? "")} is nu
+                 <b>${esc(STATUS_LABEL[patch.status])}</b>.</p>
+              ${portalUrl ? `<p><a href="${portalUrl}">Bekijk je melding online</a></p>` : ""}
+            </div>`,
+          });
+        }
       } catch (e) {
         console.error("[tickets] status mail failed", e);
       }
