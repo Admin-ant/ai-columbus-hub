@@ -22,6 +22,7 @@ import { ClientEmailComposer } from "@/components/clients/client-email-composer"
 import { ClientTasksCard } from "@/components/clients/client-tasks-card";
 import { ClientDocumentsCard } from "@/components/clients/client-documents-card";
 import { ClientMessagingSummary } from "@/components/clients/client-messaging-summary";
+import { ClientTicketsCard } from "@/components/clients/client-tickets-card";
 
 export const Route = createFileRoute("/_authenticated/ai-columbus/klanten/$clientId")({
   head: () => ({ meta: [{ title: "Klant detail" }] }),
@@ -304,6 +305,7 @@ function ClientDetailPage() {
           <TabsTrigger value="afspraken"><CalendarDays className="mr-2 h-4 w-4" /> Afspraken <Badge variant="secondary" className="ml-2">{appointments.length}</Badge></TabsTrigger>
           <TabsTrigger value="taken"><ClipboardList className="mr-2 h-4 w-4" /> Taken</TabsTrigger>
           <TabsTrigger value="berichten"><MessageSquare className="mr-2 h-4 w-4" /> Berichten</TabsTrigger>
+          <TabsTrigger value="tickets"><LifeBuoy className="mr-2 h-4 w-4" /> Tickets</TabsTrigger>
           <TabsTrigger value="documenten"><FileText className="mr-2 h-4 w-4" /> Documenten</TabsTrigger>
         </TabsList>
 
@@ -313,6 +315,10 @@ function ClientDetailPage() {
 
         <TabsContent value="berichten" className="mt-4">
           <ClientMessagingSummary clientId={clientId} organizationId={client.organization_id ?? ""} />
+        </TabsContent>
+
+        <TabsContent value="tickets" className="mt-4">
+          <ClientTicketsCard clientId={clientId} organizationId={client.organization_id ?? ""} />
         </TabsContent>
 
         <TabsContent value="documenten" className="mt-4">
