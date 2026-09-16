@@ -40,6 +40,7 @@ import { Route as AuthenticatedVoorraadRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
 import { Route as AfspraakTokenRouteImport } from './routes/afspraak.$token'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as PortaalOrgSlugRouteImport } from './routes/portaal.$orgSlug'
 import { Route as QTokenRouteImport } from './routes/q.$token'
 import { Route as SupportOrgSlugRouteImport } from './routes/support.$orgSlug'
 import { Route as TTokenRouteImport } from './routes/t.$token'
@@ -261,6 +262,11 @@ const AfspraakTokenRoute = AfspraakTokenRouteImport.update({
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortaalOrgSlugRoute = PortaalOrgSlugRouteImport.update({
+  id: '/portaal/$orgSlug',
+  path: '/portaal/$orgSlug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QTokenRoute = QTokenRouteImport.update({
@@ -662,6 +668,7 @@ export interface FileRoutesByFullPath {
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/afspraak/$token': typeof AfspraakTokenRoute
   '/api/chat': typeof ApiChatRoute
+  '/portaal/$orgSlug': typeof PortaalOrgSlugRoute
   '/q/$token': typeof QTokenRoute
   '/support/$orgSlug': typeof SupportOrgSlugRoute
   '/t/$token': typeof TTokenRoute
@@ -754,6 +761,7 @@ export interface FileRoutesByTo {
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/afspraak/$token': typeof AfspraakTokenRoute
   '/api/chat': typeof ApiChatRoute
+  '/portaal/$orgSlug': typeof PortaalOrgSlugRoute
   '/q/$token': typeof QTokenRoute
   '/support/$orgSlug': typeof SupportOrgSlugRoute
   '/t/$token': typeof TTokenRoute
@@ -851,6 +859,7 @@ export interface FileRoutesById {
   '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
   '/afspraak/$token': typeof AfspraakTokenRoute
   '/api/chat': typeof ApiChatRoute
+  '/portaal/$orgSlug': typeof PortaalOrgSlugRoute
   '/q/$token': typeof QTokenRoute
   '/support/$orgSlug': typeof SupportOrgSlugRoute
   '/t/$token': typeof TTokenRoute
@@ -949,6 +958,7 @@ export interface FileRouteTypes {
     | '/whatsapp'
     | '/afspraak/$token'
     | '/api/chat'
+    | '/portaal/$orgSlug'
     | '/q/$token'
     | '/support/$orgSlug'
     | '/t/$token'
@@ -1041,6 +1051,7 @@ export interface FileRouteTypes {
     | '/whatsapp'
     | '/afspraak/$token'
     | '/api/chat'
+    | '/portaal/$orgSlug'
     | '/q/$token'
     | '/support/$orgSlug'
     | '/t/$token'
@@ -1137,6 +1148,7 @@ export interface FileRouteTypes {
     | '/_authenticated/whatsapp'
     | '/afspraak/$token'
     | '/api/chat'
+    | '/portaal/$orgSlug'
     | '/q/$token'
     | '/support/$orgSlug'
     | '/t/$token'
@@ -1210,6 +1222,7 @@ export interface RootRouteChildren {
   VisualCheckRoute: typeof VisualCheckRoute
   AfspraakTokenRoute: typeof AfspraakTokenRoute
   ApiChatRoute: typeof ApiChatRoute
+  PortaalOrgSlugRoute: typeof PortaalOrgSlugRoute
   QTokenRoute: typeof QTokenRoute
   SupportOrgSlugRoute: typeof SupportOrgSlugRoute
   TTokenRoute: typeof TTokenRoute
@@ -1452,6 +1465,13 @@ declare module '@tanstack/react-router' {
       path: '/api/chat'
       fullPath: '/api/chat'
       preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portaal/$orgSlug': {
+      id: '/portaal/$orgSlug'
+      path: '/portaal/$orgSlug'
+      fullPath: '/portaal/$orgSlug'
+      preLoaderRoute: typeof PortaalOrgSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/q/$token': {
@@ -2147,6 +2167,7 @@ const rootRouteChildren: RootRouteChildren = {
   VisualCheckRoute: VisualCheckRoute,
   AfspraakTokenRoute: AfspraakTokenRoute,
   ApiChatRoute: ApiChatRoute,
+  PortaalOrgSlugRoute: PortaalOrgSlugRoute,
   QTokenRoute: QTokenRoute,
   SupportOrgSlugRoute: SupportOrgSlugRoute,
   TTokenRoute: TTokenRoute,
