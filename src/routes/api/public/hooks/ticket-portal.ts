@@ -328,6 +328,7 @@ export const Route = createFileRoute("/api/public/hooks/ticket-portal")({
             tickets: ((rows ?? []) as Record<string, unknown>[]).map((t) => ({
               ...t,
               status_label: STATUS_LABEL[String(t['status'])] ?? String(t['status']),
+              has_update: !t['customer_seen_at'],
             })),
           });
         }
