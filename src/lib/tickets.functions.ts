@@ -26,6 +26,61 @@ function esc(s: string) {
   );
 }
 
+export const STATUS_LABEL: Record<TicketStatus, string> = {
+  nieuw: "Nieuw",
+  in_behandeling: "In behandeling",
+  wachten_op_klant: "Wachten op klant",
+  opgelost: "Opgelost",
+  gesloten: "Gesloten",
+};
+
+type TicketMailConfig = {
+  fromEmail: string;
+  fromName: string | null;
+  replyTo: string | null;
+  notifyTo: string | null;
+  statusNotify: boolean;
+};
+
+async function ticketMailConfig(supabase: any, organizationId: string): Promise<TicketMailConfig> {
+  const [{ data: ms }, { data: org }] = await Promise.all([
+    supabase
+      .from("mail_settings")
+      .select("from_email, from_name, reply_to, ticket_reply_to, ticket_notify_email, ticket_status_notify")
+      .eq("organization_id", organizationId)
+      .maybeSingle(),
+    supabase.from("organizations").select("email").eq("id", organizationId).maybeSingle(),
+  ]);
+  const s = (ms ?? {}) as any;
+  return {
+    fromEmail: s.from_email || process.env["OUTREACH_FROM_EMAIL"] || "support@resend.dev",
+    fromName: s.from_name ?? null,
+    replyTo: s.ticket_reply_to || s.reply_to || null,
+    notifyTo: s.ticket_notify_email || s.reply_to || (org as any)?.email || s.from_email || null,
+    statusNotify: s.ticket_status_notify !== false,
+  };
+}
+
+async function sendTicketMail(
+  cfg: TicketMailConfig,
+  msg: { to: string; subject: string; html: string; replyTo?: string | null },
+) {
+  const key = process.env["RESEND_API_KEY"];
+  if (!key) throw new Error("RESEND_API_KEY ontbreekt");
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      from: cfg.fromName ? `${cfg.fromName} <${cfg.fromEmail}>` : cfg.fromEmail,
+      to: [msg.to],
+      reply_to: msg.replyTo ?? cfg.replyTo ?? undefined,
+      subject: msg.subject,
+      html: msg.html,
+    }),
+  });
+  if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
+}
+
 async function assertOrgAccess(
   supabase: { from: (t: string) => any },
   userId: string,
@@ -340,6 +395,27 @@ export const updateTicket = createServerFn({ method: "POST" })
       }));
     if (events.length) await context.supabase.from("ticket_events").insert(events as never);
 
+    // Interne melding bij statuswijziging (mag falen)
+    if (patch.status && patch.status !== prev.status) {
+      try {
+        const cfg = await ticketMailConfig(context.supabase, prev.organization_id);
+        if (cfg.statusNotify && cfg.notifyTo) {
+          await sendTicketMail(cfg, {
+            to: cfg.notifyTo,
+            subject: `[${prev.ticket_number}] status: ${STATUS_LABEL[patch.status]}`,
+            html: `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111">
+              <p><b>${esc(prev.ticket_number)}</b> — ${esc(prev.subject ?? "")}</p>
+              <p>Status gewijzigd van <b>${esc(STATUS_LABEL[prev.status as TicketStatus] ?? String(prev.status))}</b>
+                 naar <b>${esc(STATUS_LABEL[patch.status])}</b>${name ? ` door ${esc(name)}` : ""}.</p>
+              ${patch.priority ? `<p>Prioriteit: <b>${esc(patch.priority)}</b></p>` : ""}
+            </div>`,
+          });
+        }
+      } catch (e) {
+        console.error("[tickets] status mail failed", e);
+      }
+    }
+
     return { ok: true };
   });
 
@@ -593,4 +669,149 @@ export const deleteTicketAttachment = createServerFn({ method: "POST" })
       .from("ticket-attachments")
       .remove([(row as any).storage_path as string]);
     return { ok: true };
+  });
+
+/* ------------------------------------------------------------- mail settings */
+
+export const getTicketMailSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ organization_id: uuid }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertOrgAccess(context.supabase as any, context.userId, data.organization_id);
+    const { data: ms } = await context.supabase
+      .from("mail_settings")
+      .select("from_email, reply_to, ticket_reply_to, ticket_notify_email, ticket_status_notify")
+      .eq("organization_id", data.organization_id)
+      .maybeSingle();
+    const { data: org } = await context.supabase
+      .from("organizations")
+      .select("email")
+      .eq("id", data.organization_id)
+      .maybeSingle();
+    const s = (ms ?? {}) as any;
+    return {
+      ticket_reply_to: (s.ticket_reply_to as string) ?? "",
+      ticket_notify_email: (s.ticket_notify_email as string) ?? "",
+      ticket_status_notify: s.ticket_status_notify !== false,
+      fallback_reply_to: (s.reply_to as string) || (s.from_email as string) || "",
+      fallback_notify: (s.reply_to as string) || ((org as any)?.email as string) || "",
+    };
+  });
+
+export const saveTicketMailSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        organization_id: uuid,
+        ticket_reply_to: z.string().trim().max(255).nullish(),
+        ticket_notify_email: z.string().trim().max(255).nullish(),
+        ticket_status_notify: z.boolean().default(true),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertOrgAccess(context.supabase as any, context.userId, data.organization_id);
+    const mail = z.string().email();
+    for (const v of [data.ticket_reply_to, data.ticket_notify_email]) {
+      if (v && !mail.safeParse(v).success) throw new Error(`Ongeldig e-mailadres: ${v}`);
+    }
+    const { error } = await context.supabase.from("mail_settings").upsert(
+      {
+        organization_id: data.organization_id,
+        ticket_reply_to: data.ticket_reply_to || null,
+        ticket_notify_email: data.ticket_notify_email || null,
+        ticket_status_notify: data.ticket_status_notify,
+      } as never,
+      { onConflict: "organization_id" },
+    );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/* ------------------------------------------------------------- mail history */
+
+export const emailTicketHistory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({ ticket_id: uuid, to: z.string().email().max(255).nullish() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: t } = await context.supabase
+      .from("tickets")
+      .select("*")
+      .eq("id", data.ticket_id)
+      .maybeSingle();
+    if (!t) throw new Error("Ticket niet gevonden");
+    const ticket = t as any;
+
+    const cfg = await ticketMailConfig(context.supabase, ticket.organization_id);
+    const to = data.to || cfg.notifyTo;
+    if (!to) throw new Error("Geen ontvanger ingesteld — vul een e-mailadres in bij de ticketinstellingen");
+
+    const [{ data: msgs }, { data: atts }] = await Promise.all([
+      context.supabase
+        .from("ticket_messages")
+        .select("*")
+        .eq("ticket_id", data.ticket_id)
+        .order("created_at", { ascending: true }),
+      context.supabase
+        .from("ticket_attachments")
+        .select("id, filename, mime_type, size_bytes, storage_path")
+        .eq("ticket_id", data.ticket_id)
+        .order("created_at", { ascending: true }),
+    ]);
+
+    const fmt = (iso: string) =>
+      new Date(iso).toLocaleString("nl-NL", { dateStyle: "short", timeStyle: "short" });
+
+    const thread = ((msgs ?? []) as any[])
+      .map((m) => {
+        const internal = m.is_internal === true;
+        return `<div style="border-left:3px solid ${internal ? "#f59e0b" : m.direction === "in" ? "#94a3b8" : "#2563eb"};padding:6px 0 6px 12px;margin:0 0 14px">
+          <div style="font-size:12px;color:#64748b">
+            ${esc(fmt(m.created_at))} — ${esc(m.author_name || (m.direction === "in" ? "Melder" : "Medewerker"))}
+            ${internal ? " · <b>interne notitie</b>" : ` · ${esc(m.channel ?? "app")}`}
+          </div>
+          <div style="white-space:pre-wrap;font-size:14px;color:#111">${esc(String(m.body ?? ""))}</div>
+        </div>`;
+      })
+      .join("");
+
+    const attachmentRows = await Promise.all(
+      ((atts ?? []) as any[]).map(async (a) => {
+        let url: string | null = null;
+        try {
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          const { data: signed } = await supabaseAdmin.storage
+            .from("ticket-attachments")
+            .createSignedUrl(a.storage_path as string, 60 * 60 * 24 * 7);
+          url = signed?.signedUrl ?? null;
+        } catch {
+          url = null;
+        }
+        const kb = a.size_bytes ? `${Math.max(1, Math.round(a.size_bytes / 1024))} kB` : "";
+        const label = `${esc(a.filename)} <span style="color:#64748b">(${esc(a.mime_type || "onbekend type")}${kb ? `, ${kb}` : ""})</span>`;
+        return `<li>${url ? `<a href="${url}">${label}</a>` : label}</li>`;
+      }),
+    );
+
+    await sendTicketMail(cfg, {
+      to,
+      subject: `Historiek ${ticket.ticket_number}: ${ticket.subject}`,
+      replyTo: (ticket.requester_email as string) || null,
+      html: `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111">
+        <h2 style="margin:0 0 4px">${esc(ticket.ticket_number)} — ${esc(ticket.subject ?? "")}</h2>
+        <p style="margin:0 0 16px;color:#64748b;font-size:13px">
+          Status: ${esc(STATUS_LABEL[ticket.status as TicketStatus] ?? String(ticket.status))} ·
+          Prioriteit: ${esc(String(ticket.priority))} ·
+          Aangemaakt: ${esc(fmt(ticket.created_at))}<br/>
+          Melder: ${esc(ticket.requester_name || "-")}${ticket.requester_email ? ` &lt;${esc(ticket.requester_email)}&gt;` : ""}
+        </p>
+        ${thread || "<p>Nog geen berichten.</p>"}
+        ${attachmentRows.length ? `<h3 style="font-size:14px;margin:18px 0 6px">Bijlagen</h3><ul style="font-size:14px">${attachmentRows.join("")}</ul>` : ""}
+      </div>`,
+    });
+
+    return { ok: true, to };
   });

@@ -32,6 +32,17 @@ const Payload = z.object({
   message: z.string().trim().min(3).max(10000),
   priority: z.enum(["laag", "normaal", "hoog", "urgent"]).nullish().transform((v) => v ?? "normaal"),
   company: z.string().trim().max(200).nullish().transform((v) => v ?? undefined), // honeypot
+  attachments: z
+    .array(
+      z.object({
+        filename: z.string().trim().min(1).max(200),
+        mime_type: z.string().trim().max(120).nullish().transform((v) => v ?? undefined),
+        base64: z.string().min(1).max(9_000_000),
+      }),
+    )
+    .max(5)
+    .nullish()
+    .transform((v) => v ?? []),
 });
 
 const UUID_RE = /^[0-9a-f-]{36}$/i;
@@ -141,6 +152,41 @@ export const Route = createFileRoute("/api/public/hooks/ticket-intake")({
           channel: "web",
         } as never);
 
+        // Bijlagen opslaan (mag falen)
+        const savedAttachments: { filename: string; mime: string; size: number; url: string | null }[] = [];
+        for (const a of p.attachments) {
+          try {
+            const bytes = Buffer.from(a.base64, "base64");
+            if (!bytes.byteLength || bytes.byteLength > 6_000_000) continue;
+            const safe = a.filename.replace(/[^\w.\-]+/g, "_").slice(-120);
+            const path = `${org.id}/${(ticket as { id: string }).id}/${Date.now()}-${safe}`;
+            const mime = a.mime_type || "application/octet-stream";
+            const { error: upErr } = await supabaseAdmin.storage
+              .from("ticket-attachments")
+              .upload(path, bytes, { contentType: mime });
+            if (upErr) throw upErr;
+            await supabaseAdmin.from("ticket_attachments").insert({
+              ticket_id: (ticket as { id: string }).id,
+              organization_id: org.id,
+              storage_path: path,
+              filename: a.filename,
+              mime_type: mime,
+              size_bytes: bytes.byteLength,
+            } as never);
+            const { data: signed } = await supabaseAdmin.storage
+              .from("ticket-attachments")
+              .createSignedUrl(path, 60 * 60 * 24 * 7);
+            savedAttachments.push({
+              filename: a.filename,
+              mime,
+              size: bytes.byteLength,
+              url: signed?.signedUrl ?? null,
+            });
+          } catch (e) {
+            console.error("[ticket-intake] attachment failed", e);
+          }
+        }
+
         // Bevestiging naar de melder + interne melding (mogen falen)
         try {
           const key = process.env.RESEND_API_KEY;
@@ -168,10 +214,14 @@ export const Route = createFileRoute("/api/public/hooks/ticket-intake")({
             // Interne melding naar het support-adres van de organisatie
             const { data: ms } = await supabaseAdmin
               .from("mail_settings")
-              .select("reply_to, from_email")
+              .select("reply_to, from_email, ticket_notify_email")
               .eq("organization_id", org.id)
               .maybeSingle();
-            const settings = (ms ?? null) as { reply_to: string | null; from_email: string | null } | null;
+            const settings = (ms ?? null) as {
+              reply_to: string | null;
+              from_email: string | null;
+              ticket_notify_email: string | null;
+            } | null;
             const { data: orgRow } = await supabaseAdmin
               .from("organizations")
               .select("email")
@@ -179,6 +229,7 @@ export const Route = createFileRoute("/api/public/hooks/ticket-intake")({
               .maybeSingle();
             const notify =
               process.env.TICKET_NOTIFY_EMAIL ||
+              settings?.ticket_notify_email ||
               settings?.reply_to ||
               (orgRow as { email: string | null } | null)?.email ||
               settings?.from_email ||
@@ -195,7 +246,20 @@ export const Route = createFileRoute("/api/public/hooks/ticket-intake")({
                  <b>Prioriteit:</b> ${esc(p.priority)}<br/>
                  <b>Van:</b> ${esc(p.name)} &lt;${esc(p.email)}&gt;${p.phone ? ` (${esc(p.phone)})` : ""}</p>
                  <p><b>Onderwerp:</b> ${esc(p.subject)}</p>
-                 <p style="white-space:pre-wrap">${esc(p.message)}</p>`,
+                 <p style="white-space:pre-wrap">${esc(p.message)}</p>
+                 ${
+                   savedAttachments.length
+                     ? `<h3 style="font-size:14px;margin:18px 0 6px">Bijlagen (${savedAttachments.length})</h3>
+                        <ul style="font-size:14px">${savedAttachments
+                          .map((a) => {
+                            const kb = `${Math.max(1, Math.round(a.size / 1024))} kB`;
+                            const label = `${esc(a.filename)} <span style="color:#64748b">(${esc(a.mime)}, ${kb})</span>`;
+                            return `<li>${a.url ? `<a href="${a.url}">${label}</a>` : label}</li>`;
+                          })
+                          .join("")}</ul>
+                        <p style="font-size:12px;color:#64748b">Downloadlinks zijn 7 dagen geldig.</p>`
+                     : ""
+                 }`,
                 p.email,
               );
             }
