@@ -35,6 +35,7 @@ export const STATUS_LABEL: Record<TicketStatus, string> = {
 };
 
 type TicketMailConfig = {
+  organizationId: string;
   fromEmail: string;
   fromName: string | null;
   replyTo: string | null;
@@ -53,6 +54,7 @@ async function ticketMailConfig(supabase: any, organizationId: string): Promise<
   ]);
   const s = (ms ?? {}) as any;
   return {
+    organizationId,
     fromEmail: s.from_email || process.env["OUTREACH_FROM_EMAIL"] || "support@resend.dev",
     fromName: s.from_name ?? null,
     replyTo: s.ticket_reply_to || s.reply_to || null,
@@ -63,7 +65,7 @@ async function ticketMailConfig(supabase: any, organizationId: string): Promise<
 
 async function sendTicketMail(
   cfg: TicketMailConfig,
-  msg: { to: string; subject: string; html: string; replyTo?: string | null },
+  msg: { to: string; subject: string; html: string; replyTo?: string | null; folder?: "inbox" | "sent" },
 ) {
   const key = process.env["RESEND_API_KEY"];
   if (!key) throw new Error("RESEND_API_KEY ontbreekt");
@@ -79,6 +81,16 @@ async function sendTicketMail(
     }),
   });
   if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
+  const { logMailMessage } = await import("@/lib/mail-log.server");
+  await logMailMessage({
+    organizationId: cfg.organizationId,
+    folder: msg.folder ?? (msg.to === cfg.notifyTo ? "inbox" : "sent"),
+    fromEmail: cfg.fromEmail,
+    fromName: cfg.fromName,
+    to: [msg.to],
+    subject: msg.subject,
+    html: msg.html,
+  });
 }
 
 async function assertOrgAccess(
