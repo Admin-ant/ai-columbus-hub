@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ArrowLeft, Download, Loader2, Lock, Mail, Paperclip, Send, Trash2,
+  ArrowLeft, Clock, Download, Eye, Loader2, Lock, Mail, Paperclip, Send, Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
