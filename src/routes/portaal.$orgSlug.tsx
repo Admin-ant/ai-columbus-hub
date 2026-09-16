@@ -59,6 +59,8 @@ type PortalTicket = {
   portal_token: string;
   messages: PortalMessage[];
   attachments: PortalFile[];
+  notify_email?: boolean;
+  has_update?: boolean;
 };
 type ListItem = {
   id: string;
