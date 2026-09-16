@@ -213,34 +213,27 @@ export const Route = createFileRoute("/api/public/hooks/ticket-portal")({
           const org = await resolveOrg(db, p.org);
           if (!org) return json({ error: "Niet gevonden" }, 404);
 
-          const { count } = await db
-            .from("tickets")
-            .select("id", { count: "exact", head: true })
-            .eq("organization_id", org.id)
-            .ilike("requester_email", p.email);
-
-          // Altijd hetzelfde antwoord: geen adressen prijsgeven.
-          if (count && count > 0) {
-            const code = String(randomBytes(4).readUInt32BE(0) % 1000000).padStart(6, "0");
-            await db.from("ticket_portal_sessions").insert({
-              organization_id: org.id,
-              email: p.email.toLowerCase(),
-              code_hash: sha(code),
-              code_expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-            } as never);
-            await sendPortalMail(
-              db,
-              org.id,
-              org.name,
-              p.email,
-              "Inlogcode voor je tickets",
-              `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111">
-                 <p>Gebruik deze code om je tickets te bekijken:</p>
+          // Iedereen kan zich zelf aanmelden met zijn e-mailadres; de code
+          // bewijst dat het adres van hem is.
+          const code = String(randomBytes(4).readUInt32BE(0) % 1000000).padStart(6, "0");
+          await db.from("ticket_portal_sessions").insert({
+            organization_id: org.id,
+            email: p.email.toLowerCase(),
+            code_hash: sha(code),
+            code_expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+          } as never);
+          await sendPortalMail(
+            db,
+            org.id,
+            org.name,
+            p.email,
+            "Inlogcode voor je meldingen",
+            `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111">
+                 <p>Gebruik deze code om je meldingen te bekijken of een nieuwe melding te maken:</p>
                  <p style="font-size:28px;font-weight:700;letter-spacing:4px">${code}</p>
                  <p>De code is 15 minuten geldig.</p>
                </div>`,
-            );
-          }
+          );
           return json({ ok: true });
         }
 
