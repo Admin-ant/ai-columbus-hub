@@ -34,6 +34,7 @@ import {
   CreditCard,
   Scale,
   Webhook,
+  LifeBuoy,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -131,6 +132,7 @@ const columbusGroups: NavGroup[] = [
     label: "Communicatie",
     items: [
       { title: "Mail", url: "/mail", icon: Mail },
+      { title: "Tickets", url: "/tickets", icon: LifeBuoy },
       { title: "Mededelingen", url: "/mededelingen", icon: Megaphone },
       { title: "Mijn meldingen", url: "/meldingen", icon: BellRing },
       { title: "Agenda", url: "/agenda", icon: CalendarDays },
@@ -249,6 +251,51 @@ function useUpcomingAppointmentsCount(organizationId: string | null) {
   return count;
 }
 
+function useOpenTicketsCount(organizationId: string | null) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!organizationId) {
+      setCount(0);
+      return;
+    }
+
+    const fetchCount = async () => {
+      const { count: c, error } = await supabase
+        .from("tickets")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", organizationId)
+        .in("status", ["nieuw", "in_behandeling", "wachten_op_klant"]);
+      if (!error) setCount(c ?? 0);
+    };
+
+    fetchCount();
+
+    const channel = supabase
+      .channel(`tickets-badge-${organizationId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "tickets",
+          filter: `organization_id=eq.${organizationId}`,
+        },
+        fetchCount,
+      )
+      .subscribe();
+
+    const interval = setInterval(fetchCount, 60_000);
+
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
+  }, [organizationId]);
+
+  return count;
+}
+
 export function AppSidebar() {
   const { user, roles, hasRole, signOut } = useAuth();
   const { currentOrganization } = useWorkspace();
@@ -257,6 +304,7 @@ export function AppSidebar() {
   const [leadsFunnelVisible] = useLeadsFunnelVisible();
   const upcomingAppointments = useUpcomingAppointmentsCount(currentOrganization?.id ?? null);
   const unreadAnnouncements = useAnnouncementRealtime({ notify: true });
+  const openTickets = useOpenTicketsCount(currentOrganization?.id ?? null);
 
   const visibleAdmin = adminItems.filter((i) => !i.requiredRole || hasRole(i.requiredRole));
   const initials = (user?.email ?? "?").slice(0, 2).toUpperCase();
@@ -376,6 +424,17 @@ export function AppSidebar() {
                                   className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-primary-foreground shadow-sm hover:bg-primary/90"
                                 >
                                   {unreadAnnouncements}
+                                </Link>
+                              </SidebarMenuBadge>
+                            )}
+                            {item.url === "/tickets" && openTickets > 0 && (
+                              <SidebarMenuBadge className="p-0 bg-transparent group-data-[collapsible=icon]:flex">
+                                <Link
+                                  to="/tickets"
+                                  aria-label={`${openTickets} openstaande tickets bekijken`}
+                                  className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-primary-foreground shadow-sm hover:bg-primary/90"
+                                >
+                                  {openTickets}
                                 </Link>
                               </SidebarMenuBadge>
                             )}
