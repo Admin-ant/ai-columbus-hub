@@ -610,6 +610,15 @@ export const addTicketMessage = createServerFn({ method: "POST" })
     } as never);
     if (error) throw new Error(error.message);
 
+    // Klantmelding in het portaal: markeer als ongelezen voor de melder.
+    if (!data.is_internal) {
+      await context.supabase
+        .from("tickets")
+        .update({ customer_seen_at: null } as never)
+        .eq("id", data.ticket_id);
+    }
+
+
     return { ok: true, emailed, emailError };
   });
 
