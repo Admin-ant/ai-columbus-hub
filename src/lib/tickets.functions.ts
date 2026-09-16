@@ -388,6 +388,7 @@ const UPDATE_SCHEMA = z.object({
   requester_email: z.string().max(255).nullable().optional(),
   requester_phone: z.string().max(50).nullable().optional(),
   tags: z.array(z.string().max(40)).max(20).optional(),
+  customer_notify_email: z.boolean().optional(),
 });
 
 export const updateTicket = createServerFn({ method: "POST" })
