@@ -284,8 +284,16 @@ export const Route = createFileRoute("/api/public/hooks/ticket-intake")({
                           .join("")}</ul>
                         <p style="font-size:12px;color:#64748b">Downloadlinks zijn 7 dagen geldig.</p>`
                      : ""
-                 }`,
+                 }
+                 <p style="font-size:13px"><a href="${portalUrl}">Klantweergave van dit ticket</a></p>`,
                 p.email,
+                "inbox",
+                savedAttachments.map((a) => ({
+                  filename: a.filename,
+                  mime: a.mime,
+                  size: a.size,
+                  url: a.url,
+                })),
               );
             }
           }
