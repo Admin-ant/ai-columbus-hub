@@ -152,6 +152,41 @@ export const Route = createFileRoute("/api/public/hooks/ticket-intake")({
           channel: "web",
         } as never);
 
+        // Bijlagen opslaan (mag falen)
+        const savedAttachments: { filename: string; mime: string; size: number; url: string | null }[] = [];
+        for (const a of p.attachments) {
+          try {
+            const bytes = Buffer.from(a.base64, "base64");
+            if (!bytes.byteLength || bytes.byteLength > 6_000_000) continue;
+            const safe = a.filename.replace(/[^\w.\-]+/g, "_").slice(-120);
+            const path = `${org.id}/${(ticket as { id: string }).id}/${Date.now()}-${safe}`;
+            const mime = a.mime_type || "application/octet-stream";
+            const { error: upErr } = await supabaseAdmin.storage
+              .from("ticket-attachments")
+              .upload(path, bytes, { contentType: mime });
+            if (upErr) throw upErr;
+            await supabaseAdmin.from("ticket_attachments").insert({
+              ticket_id: (ticket as { id: string }).id,
+              organization_id: org.id,
+              storage_path: path,
+              filename: a.filename,
+              mime_type: mime,
+              size_bytes: bytes.byteLength,
+            } as never);
+            const { data: signed } = await supabaseAdmin.storage
+              .from("ticket-attachments")
+              .createSignedUrl(path, 60 * 60 * 24 * 7);
+            savedAttachments.push({
+              filename: a.filename,
+              mime,
+              size: bytes.byteLength,
+              url: signed?.signedUrl ?? null,
+            });
+          } catch (e) {
+            console.error("[ticket-intake] attachment failed", e);
+          }
+        }
+
         // Bevestiging naar de melder + interne melding (mogen falen)
         try {
           const key = process.env.RESEND_API_KEY;
