@@ -109,6 +109,10 @@ function PortalPage() {
   const [list, setList] = useState<ListItem[]>([]);
   const [ticket, setTicket] = useState<PortalTicket | null>(null);
   const [reply, setReply] = useState("");
+  const [newName, setNewName] = useState("");
+  const [newSubject, setNewSubject] = useState("");
+  const [newBody, setNewBody] = useState("");
+  const [created, setCreated] = useState<string | null>(null);
 
   useEffect(() => {
     setSession(localStorage.getItem(storageKey));
@@ -169,6 +173,29 @@ function PortalPage() {
       setSession(s);
       setCode("");
       setCodeSent(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Onbekende fout");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function createTicket() {
+    if (!session || !newSubject.trim() || !newBody.trim()) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const d = await api({
+        action: "new_ticket",
+        session,
+        subject: newSubject.trim(),
+        body: newBody.trim(),
+        name: newName.trim() || null,
+      });
+      setCreated((d['ticket_number'] as string) ?? null);
+      setNewSubject("");
+      setNewBody("");
+      await loadList(session);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Onbekende fout");
     } finally {
@@ -306,45 +333,92 @@ function PortalPage() {
             </CardContent>
           </Card>
         ) : session ? (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Tickets van {email}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {list.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Er staan nog geen meldingen op dit adres.</p>
-              ) : (
-                list.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => openTicket(t.portal_token)}
-                    className="flex w-full flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-left hover:bg-muted/50"
-                  >
-                    <span>
-                      <span className="mr-2 font-mono text-xs text-muted-foreground">{t.ticket_number}</span>
-                      <span className="font-medium">{t.subject}</span>
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_TONE[t.status] ?? ""}`}>
-                        {t.status_label}
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Meldingen van {email}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {list.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Er staan nog geen meldingen op dit adres.</p>
+                ) : (
+                  list.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => openTicket(t.portal_token)}
+                      className="flex w-full flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-left hover:bg-muted/50"
+                    >
+                      <span>
+                        <span className="mr-2 font-mono text-xs text-muted-foreground">{t.ticket_number}</span>
+                        <span className="font-medium">{t.subject}</span>
                       </span>
-                      <span className="text-xs text-muted-foreground">{fmt(t.last_message_at)}</span>
-                    </span>
-                  </button>
-                ))
-              )}
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  localStorage.removeItem(storageKey);
-                  setSession(null);
-                  setList([]);
-                }}
-              >
-                Uitloggen
-              </Button>
-            </CardContent>
-          </Card>
+                      <span className="flex items-center gap-2">
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_TONE[t.status] ?? ""}`}>
+                          {t.status_label}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{fmt(t.last_message_at)}</span>
+                      </span>
+                    </button>
+                  ))
+                )}
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    localStorage.removeItem(storageKey);
+                    setSession(null);
+                    setList([]);
+                  }}
+                >
+                  Uitloggen
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Nieuwe melding maken</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="nt-name">Je naam</Label>
+                  <Input
+                    id="nt-name"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="Voor- en achternaam"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="nt-subject">Onderwerp</Label>
+                  <Input
+                    id="nt-subject"
+                    value={newSubject}
+                    onChange={(e) => setNewSubject(e.target.value)}
+                    placeholder="Waar gaat het over?"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="nt-body">Omschrijving</Label>
+                  <Textarea
+                    id="nt-body"
+                    rows={5}
+                    value={newBody}
+                    onChange={(e) => setNewBody(e.target.value)}
+                    placeholder="Vertel wat er aan de hand is…"
+                  />
+                </div>
+                <Button onClick={createTicket} disabled={busy || !newSubject.trim() || !newBody.trim()}>
+                  {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                  Melding versturen
+                </Button>
+                {created ? (
+                  <p className="text-sm text-emerald-700">
+                    Je melding is aangemaakt met nummer {created}. Je krijgt een bevestiging per e-mail.
+                  </p>
+                ) : null}
+              </CardContent>
+            </Card>
+          </>
         ) : (
           <Card>
             <CardHeader>
