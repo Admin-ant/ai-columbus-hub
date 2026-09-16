@@ -167,18 +167,39 @@ function TicketDetailPage() {
             <span>Aangemaakt {fmt(t.created_at)} · via {t.source}</span>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={async () => {
-            if (!confirm("Dit ticket definitief verwijderen?")) return;
-            await remove({ data: { id: ticketId } });
-            toast.success("Ticket verwijderd");
-            void navigate({ to: "/tickets" });
-          }}
-        >
-          <Trash2 className="mr-1 h-4 w-4 text-destructive" /> Verwijderen
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={historySending}
+            onClick={async () => {
+              setHistorySending(true);
+              try {
+                const r = await mailHistory({ data: { ticket_id: ticketId } });
+                toast.success(`Historiek gemaild naar ${r.to}`);
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "Mailen mislukt");
+              } finally {
+                setHistorySending(false);
+              }
+            }}
+          >
+            {historySending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Mail className="mr-1 h-4 w-4" />}
+            Historiek mailen
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              if (!confirm("Dit ticket definitief verwijderen?")) return;
+              await remove({ data: { id: ticketId } });
+              toast.success("Ticket verwijderd");
+              void navigate({ to: "/tickets" });
+            }}
+          >
+            <Trash2 className="mr-1 h-4 w-4 text-destructive" /> Verwijderen
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(260px,1fr)]">
