@@ -15,6 +15,13 @@
       "when": 1789566159203,
       "tag": "0001_ticket_mail_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789567172974,
+      "tag": "0002_ticket_portal",
+      "breakpoints": true
     }
   ]
 }

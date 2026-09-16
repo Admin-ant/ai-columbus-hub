@@ -5021,6 +5021,42 @@ export type Database = {
           },
         ]
       }
+      ticket_portal_sessions: {
+        Row: {
+          attempts: number
+          code_expires_at: string | null
+          code_hash: string | null
+          created_at: string
+          email: string
+          id: string
+          organization_id: string
+          session_expires_at: string | null
+          session_token: string | null
+        }
+        Insert: {
+          attempts?: number
+          code_expires_at?: string | null
+          code_hash?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          organization_id: string
+          session_expires_at?: string | null
+          session_token?: string | null
+        }
+        Update: {
+          attempts?: number
+          code_expires_at?: string | null
+          code_hash?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          organization_id?: string
+          session_expires_at?: string | null
+          session_token?: string | null
+        }
+        Relationships: []
+      }
       tickets: {
         Row: {
           assigned_to: string | null
@@ -5034,6 +5070,7 @@ export type Database = {
           is_internal: boolean
           last_message_at: string
           organization_id: string
+          portal_token: string | null
           priority: Database["public"]["Enums"]["ticket_priority"]
           requester_email: string | null
           requester_name: string | null
@@ -5058,6 +5095,7 @@ export type Database = {
           is_internal?: boolean
           last_message_at?: string
           organization_id: string
+          portal_token?: string | null
           priority?: Database["public"]["Enums"]["ticket_priority"]
           requester_email?: string | null
           requester_name?: string | null
@@ -5082,6 +5120,7 @@ export type Database = {
           is_internal?: boolean
           last_message_at?: string
           organization_id?: string
+          portal_token?: string | null
           priority?: Database["public"]["Enums"]["ticket_priority"]
           requester_email?: string | null
           requester_name?: string | null

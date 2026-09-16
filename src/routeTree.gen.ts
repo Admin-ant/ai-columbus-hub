@@ -40,6 +40,7 @@ import { Route as AuthenticatedVoorraadRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
 import { Route as AfspraakTokenRouteImport } from './routes/afspraak.$token'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as PortaalOrgSlugRouteImport } from './routes/portaal.$orgSlug'
 import { Route as QTokenRouteImport } from './routes/q.$token'
 import { Route as SupportOrgSlugRouteImport } from './routes/support.$orgSlug'
 import { Route as TTokenRouteImport } from './routes/t.$token'
@@ -101,6 +102,7 @@ import { Route as ApiPublicHooksResendEventsRouteImport } from './routes/api/pub
 import { Route as ApiPublicHooksStudioFollowupsRouteImport } from './routes/api/public/hooks/studio-followups'
 import { Route as ApiPublicHooksTelnyxRouteImport } from './routes/api/public/hooks/telnyx'
 import { Route as ApiPublicHooksTicketIntakeRouteImport } from './routes/api/public/hooks/ticket-intake'
+import { Route as ApiPublicHooksTicketPortalRouteImport } from './routes/api/public/hooks/ticket-portal'
 import { Route as ApiPublicLTokenRouteImport } from './routes/api/public/l.$token'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -260,6 +262,11 @@ const AfspraakTokenRoute = AfspraakTokenRouteImport.update({
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortaalOrgSlugRoute = PortaalOrgSlugRouteImport.update({
+  id: '/portaal/$orgSlug',
+  path: '/portaal/$orgSlug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QTokenRoute = QTokenRouteImport.update({
@@ -618,6 +625,12 @@ const ApiPublicHooksTicketIntakeRoute =
     path: '/api/public/hooks/ticket-intake',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksTicketPortalRoute =
+  ApiPublicHooksTicketPortalRouteImport.update({
+    id: '/api/public/hooks/ticket-portal',
+    path: '/api/public/hooks/ticket-portal',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicLTokenRoute = ApiPublicLTokenRouteImport.update({
   id: '/api/public/l/$token',
   path: '/api/public/l/$token',
@@ -655,6 +668,7 @@ export interface FileRoutesByFullPath {
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/afspraak/$token': typeof AfspraakTokenRoute
   '/api/chat': typeof ApiChatRoute
+  '/portaal/$orgSlug': typeof PortaalOrgSlugRoute
   '/q/$token': typeof QTokenRoute
   '/support/$orgSlug': typeof SupportOrgSlugRoute
   '/t/$token': typeof TTokenRoute
@@ -715,6 +729,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
   '/api/public/hooks/telnyx': typeof ApiPublicHooksTelnyxRoute
   '/api/public/hooks/ticket-intake': typeof ApiPublicHooksTicketIntakeRoute
+  '/api/public/hooks/ticket-portal': typeof ApiPublicHooksTicketPortalRoute
   '/api/public/l/$token': typeof ApiPublicLTokenRoute
   '/ai-columbus/klanten/': typeof AuthenticatedAiColumbusKlantenIndexRoute
 }
@@ -746,6 +761,7 @@ export interface FileRoutesByTo {
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/afspraak/$token': typeof AfspraakTokenRoute
   '/api/chat': typeof ApiChatRoute
+  '/portaal/$orgSlug': typeof PortaalOrgSlugRoute
   '/q/$token': typeof QTokenRoute
   '/support/$orgSlug': typeof SupportOrgSlugRoute
   '/t/$token': typeof TTokenRoute
@@ -807,6 +823,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
   '/api/public/hooks/telnyx': typeof ApiPublicHooksTelnyxRoute
   '/api/public/hooks/ticket-intake': typeof ApiPublicHooksTicketIntakeRoute
+  '/api/public/hooks/ticket-portal': typeof ApiPublicHooksTicketPortalRoute
   '/api/public/l/$token': typeof ApiPublicLTokenRoute
   '/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenIndexRoute
 }
@@ -842,6 +859,7 @@ export interface FileRoutesById {
   '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
   '/afspraak/$token': typeof AfspraakTokenRoute
   '/api/chat': typeof ApiChatRoute
+  '/portaal/$orgSlug': typeof PortaalOrgSlugRoute
   '/q/$token': typeof QTokenRoute
   '/support/$orgSlug': typeof SupportOrgSlugRoute
   '/t/$token': typeof TTokenRoute
@@ -903,6 +921,7 @@ export interface FileRoutesById {
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
   '/api/public/hooks/telnyx': typeof ApiPublicHooksTelnyxRoute
   '/api/public/hooks/ticket-intake': typeof ApiPublicHooksTicketIntakeRoute
+  '/api/public/hooks/ticket-portal': typeof ApiPublicHooksTicketPortalRoute
   '/api/public/l/$token': typeof ApiPublicLTokenRoute
   '/_authenticated/ai-columbus/klanten/': typeof AuthenticatedAiColumbusKlantenIndexRoute
 }
@@ -939,6 +958,7 @@ export interface FileRouteTypes {
     | '/whatsapp'
     | '/afspraak/$token'
     | '/api/chat'
+    | '/portaal/$orgSlug'
     | '/q/$token'
     | '/support/$orgSlug'
     | '/t/$token'
@@ -999,6 +1019,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/studio-followups'
     | '/api/public/hooks/telnyx'
     | '/api/public/hooks/ticket-intake'
+    | '/api/public/hooks/ticket-portal'
     | '/api/public/l/$token'
     | '/ai-columbus/klanten/'
   fileRoutesByTo: FileRoutesByTo
@@ -1030,6 +1051,7 @@ export interface FileRouteTypes {
     | '/whatsapp'
     | '/afspraak/$token'
     | '/api/chat'
+    | '/portaal/$orgSlug'
     | '/q/$token'
     | '/support/$orgSlug'
     | '/t/$token'
@@ -1091,6 +1113,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/studio-followups'
     | '/api/public/hooks/telnyx'
     | '/api/public/hooks/ticket-intake'
+    | '/api/public/hooks/ticket-portal'
     | '/api/public/l/$token'
     | '/ai-columbus/klanten'
   id:
@@ -1125,6 +1148,7 @@ export interface FileRouteTypes {
     | '/_authenticated/whatsapp'
     | '/afspraak/$token'
     | '/api/chat'
+    | '/portaal/$orgSlug'
     | '/q/$token'
     | '/support/$orgSlug'
     | '/t/$token'
@@ -1186,6 +1210,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/studio-followups'
     | '/api/public/hooks/telnyx'
     | '/api/public/hooks/ticket-intake'
+    | '/api/public/hooks/ticket-portal'
     | '/api/public/l/$token'
     | '/_authenticated/ai-columbus/klanten/'
   fileRoutesById: FileRoutesById
@@ -1197,6 +1222,7 @@ export interface RootRouteChildren {
   VisualCheckRoute: typeof VisualCheckRoute
   AfspraakTokenRoute: typeof AfspraakTokenRoute
   ApiChatRoute: typeof ApiChatRoute
+  PortaalOrgSlugRoute: typeof PortaalOrgSlugRoute
   QTokenRoute: typeof QTokenRoute
   SupportOrgSlugRoute: typeof SupportOrgSlugRoute
   TTokenRoute: typeof TTokenRoute
@@ -1218,6 +1244,7 @@ export interface RootRouteChildren {
   ApiPublicHooksStudioFollowupsRoute: typeof ApiPublicHooksStudioFollowupsRoute
   ApiPublicHooksTelnyxRoute: typeof ApiPublicHooksTelnyxRoute
   ApiPublicHooksTicketIntakeRoute: typeof ApiPublicHooksTicketIntakeRoute
+  ApiPublicHooksTicketPortalRoute: typeof ApiPublicHooksTicketPortalRoute
   ApiPublicLTokenRoute: typeof ApiPublicLTokenRoute
 }
 
@@ -1438,6 +1465,13 @@ declare module '@tanstack/react-router' {
       path: '/api/chat'
       fullPath: '/api/chat'
       preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portaal/$orgSlug': {
+      id: '/portaal/$orgSlug'
+      path: '/portaal/$orgSlug'
+      fullPath: '/portaal/$orgSlug'
+      preLoaderRoute: typeof PortaalOrgSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/q/$token': {
@@ -1867,6 +1901,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksTicketIntakeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/ticket-portal': {
+      id: '/api/public/hooks/ticket-portal'
+      path: '/api/public/hooks/ticket-portal'
+      fullPath: '/api/public/hooks/ticket-portal'
+      preLoaderRoute: typeof ApiPublicHooksTicketPortalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/l/$token': {
       id: '/api/public/l/$token'
       path: '/api/public/l/$token'
@@ -2126,6 +2167,7 @@ const rootRouteChildren: RootRouteChildren = {
   VisualCheckRoute: VisualCheckRoute,
   AfspraakTokenRoute: AfspraakTokenRoute,
   ApiChatRoute: ApiChatRoute,
+  PortaalOrgSlugRoute: PortaalOrgSlugRoute,
   QTokenRoute: QTokenRoute,
   SupportOrgSlugRoute: SupportOrgSlugRoute,
   TTokenRoute: TTokenRoute,
@@ -2147,6 +2189,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksStudioFollowupsRoute: ApiPublicHooksStudioFollowupsRoute,
   ApiPublicHooksTelnyxRoute: ApiPublicHooksTelnyxRoute,
   ApiPublicHooksTicketIntakeRoute: ApiPublicHooksTicketIntakeRoute,
+  ApiPublicHooksTicketPortalRoute: ApiPublicHooksTicketPortalRoute,
   ApiPublicLTokenRoute: ApiPublicLTokenRoute,
 }
 export const routeTree = rootRouteImport

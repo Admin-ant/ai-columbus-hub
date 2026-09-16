@@ -34,7 +34,24 @@ export const STATUS_LABEL: Record<TicketStatus, string> = {
   gesloten: "Gesloten",
 };
 
+async function ticketPortalUrl(
+  supabase: any,
+  organizationId: string,
+  portalToken: string | null | undefined,
+): Promise<string | null> {
+  if (!portalToken) return null;
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("slug, id")
+    .eq("id", organizationId)
+    .maybeSingle();
+  const slug = (org as any)?.slug || organizationId;
+  const base = (process.env["PUBLIC_APP_URL"] || "https://aiqloud.nl").replace(/\/$/, "");
+  return `${base}/portaal/${encodeURIComponent(slug)}?t=${portalToken}`;
+}
+
 type TicketMailConfig = {
+  organizationId: string;
   fromEmail: string;
   fromName: string | null;
   replyTo: string | null;
@@ -53,6 +70,7 @@ async function ticketMailConfig(supabase: any, organizationId: string): Promise<
   ]);
   const s = (ms ?? {}) as any;
   return {
+    organizationId,
     fromEmail: s.from_email || process.env["OUTREACH_FROM_EMAIL"] || "support@resend.dev",
     fromName: s.from_name ?? null,
     replyTo: s.ticket_reply_to || s.reply_to || null,
@@ -63,7 +81,7 @@ async function ticketMailConfig(supabase: any, organizationId: string): Promise<
 
 async function sendTicketMail(
   cfg: TicketMailConfig,
-  msg: { to: string; subject: string; html: string; replyTo?: string | null },
+  msg: { to: string; subject: string; html: string; replyTo?: string | null; folder?: "inbox" | "sent" },
 ) {
   const key = process.env["RESEND_API_KEY"];
   if (!key) throw new Error("RESEND_API_KEY ontbreekt");
@@ -79,6 +97,16 @@ async function sendTicketMail(
     }),
   });
   if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
+  const { logMailMessage } = await import("@/lib/mail-log.server");
+  await logMailMessage({
+    organizationId: cfg.organizationId,
+    folder: msg.folder ?? (msg.to === cfg.notifyTo ? "inbox" : "sent"),
+    fromEmail: cfg.fromEmail,
+    fromName: cfg.fromName,
+    to: [msg.to],
+    subject: msg.subject,
+    html: msg.html,
+  });
 }
 
 async function assertOrgAccess(
@@ -443,7 +471,7 @@ export const addTicketMessage = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: t } = await context.supabase
       .from("tickets")
-      .select("id, organization_id, ticket_number, subject, requester_email")
+      .select("id, organization_id, ticket_number, subject, requester_email, portal_token")
       .eq("id", data.ticket_id)
       .maybeSingle();
     if (!t) throw new Error("Ticket niet gevonden");
@@ -468,6 +496,16 @@ export const addTicketMessage = createServerFn({ method: "POST" })
           const fromEmail = s?.from_email || process.env.OUTREACH_FROM_EMAIL || "support@resend.dev";
           const from = s?.from_name ? `${s.from_name} <${fromEmail}>` : fromEmail;
           const full = s?.signature ? `${data.body}\n\n${s.signature}` : data.body;
+          const portalUrl = await ticketPortalUrl(
+            context.supabase,
+            ticket.organization_id,
+            ticket.portal_token,
+          );
+          const html = `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111;white-space:pre-wrap">${esc(full)}</div>${
+            portalUrl
+              ? `<p style="font-family:Inter,Arial,sans-serif;font-size:14px"><a href="${portalUrl}">Bekijk je ticket online</a></p>`
+              : ""
+          }`;
           const key = process.env.RESEND_API_KEY;
           if (!key) throw new Error("RESEND_API_KEY ontbreekt");
           const res = await fetch("https://api.resend.com/emails", {
@@ -478,12 +516,23 @@ export const addTicketMessage = createServerFn({ method: "POST" })
               to: [to],
               reply_to: s?.reply_to || undefined,
               subject: `[${ticket.ticket_number}] ${ticket.subject}`,
-              html: `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111;white-space:pre-wrap">${esc(full)}</div>`,
+              html,
               text: full,
             }),
           });
           if (!res.ok) throw new Error(`Resend ${res.status}: ${(await res.text()).slice(0, 200)}`);
           emailed = true;
+          const { logMailMessage } = await import("@/lib/mail-log.server");
+          await logMailMessage({
+            organizationId: ticket.organization_id,
+            folder: "sent",
+            fromEmail,
+            fromName: s?.from_name ?? null,
+            to: [to],
+            subject: `[${ticket.ticket_number}] ${ticket.subject}`,
+            html,
+            text: full,
+          });
         } catch (e) {
           emailError = e instanceof Error ? e.message : String(e);
         }
