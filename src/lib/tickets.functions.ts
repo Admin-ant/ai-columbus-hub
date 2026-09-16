@@ -34,6 +34,22 @@ export const STATUS_LABEL: Record<TicketStatus, string> = {
   gesloten: "Gesloten",
 };
 
+async function ticketPortalUrl(
+  supabase: any,
+  organizationId: string,
+  portalToken: string | null | undefined,
+): Promise<string | null> {
+  if (!portalToken) return null;
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("slug, id")
+    .eq("id", organizationId)
+    .maybeSingle();
+  const slug = (org as any)?.slug || organizationId;
+  const base = (process.env["PUBLIC_APP_URL"] || "https://aiqloud.nl").replace(/\/$/, "");
+  return `${base}/portaal/${encodeURIComponent(slug)}?t=${portalToken}`;
+}
+
 type TicketMailConfig = {
   organizationId: string;
   fromEmail: string;
