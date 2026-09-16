@@ -30,7 +30,15 @@ const sha = (s: string) => createHash("sha256").update(s).digest("hex");
 const UUID_RE = /^[0-9a-f-]{36}$/i;
 
 const Payload = z.object({
-  action: z.enum(["ticket", "request_code", "verify_code", "list", "reply", "new_ticket"]),
+  action: z.enum([
+    "ticket",
+    "request_code",
+    "verify_code",
+    "list",
+    "reply",
+    "new_ticket",
+    "set_notify",
+  ]),
   org: z.string().trim().max(200).nullish(),
   email: z.string().trim().email().max(255).nullish(),
   code: z.string().trim().max(12).nullish(),
