@@ -105,6 +105,40 @@ export const Route = createFileRoute("/api/public/hooks/mail-inbound")({
           received_at: new Date().toISOString(),
         } as never);
 
+        // Ticketreactie: onderwerp bevat [TCK-JJJJ-NNNN] -> bericht aan het ticket toevoegen
+        try {
+          const match = /\[?(TCK-\d{4}-\d{4})\]?/i.exec(d.subject ?? "");
+          if (match) {
+            const ticketNumber = match[1]!.toUpperCase();
+            const { data: ticket } = await supabaseAdmin
+              .from("tickets")
+              .select("id, organization_id, status")
+              .eq("organization_id", organization_id)
+              .eq("ticket_number", ticketNumber)
+              .maybeSingle();
+            const tk = ticket as { id: string; organization_id: string; status: string } | null;
+            if (tk) {
+              await supabaseAdmin.from("ticket_messages").insert({
+                ticket_id: tk.id,
+                organization_id: tk.organization_id,
+                direction: "in",
+                body: (d.text ?? d.html ?? "").slice(0, 20000),
+                author_name: fromName || fromEmail,
+                channel: "email",
+                external_id: d.email_id ?? d.message_id ?? null,
+              } as never);
+              if (tk.status === "opgelost" || tk.status === "gesloten" || tk.status === "wachten_op_klant") {
+                await supabaseAdmin
+                  .from("tickets")
+                  .update({ status: "in_behandeling" } as never)
+                  .eq("id", tk.id);
+              }
+            }
+          }
+        } catch (e) {
+          console.error("[mail-inbound] ticket reply failed", e);
+        }
+
         return Response.json({ ok: true });
       },
     },
