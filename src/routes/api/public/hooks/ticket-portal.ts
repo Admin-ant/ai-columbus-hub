@@ -30,7 +30,15 @@ const sha = (s: string) => createHash("sha256").update(s).digest("hex");
 const UUID_RE = /^[0-9a-f-]{36}$/i;
 
 const Payload = z.object({
-  action: z.enum(["ticket", "request_code", "verify_code", "list", "reply", "new_ticket"]),
+  action: z.enum([
+    "ticket",
+    "request_code",
+    "verify_code",
+    "list",
+    "reply",
+    "new_ticket",
+    "set_notify",
+  ]),
   org: z.string().trim().max(200).nullish(),
   email: z.string().trim().email().max(255).nullish(),
   code: z.string().trim().max(12).nullish(),
@@ -41,6 +49,7 @@ const Payload = z.object({
   subject: z.string().trim().max(300).nullish(),
   name: z.string().trim().max(200).nullish(),
   phone: z.string().trim().max(50).nullish(),
+  notify: z.boolean().nullish(),
 });
 
 const hits = new Map<string, number[]>();
@@ -117,6 +126,8 @@ async function ticketPayload(db: Admin, ticket: Record<string, unknown>) {
     requester_name: ticket['requester_name'],
     requester_email: ticket['requester_email'],
     portal_token: ticket['portal_token'],
+    notify_email: ticket['customer_notify_email'] !== false,
+    has_update: !ticket['customer_seen_at'],
     messages: ((messages ?? []) as Record<string, unknown>[]).map((m) => ({
       id: m['id'],
       direction: m['direction'],
@@ -203,8 +214,31 @@ export const Route = createFileRoute("/api/public/hooks/ticket-portal")({
             .eq("portal_token", p.token)
             .maybeSingle();
           if (!t) return json({ error: "Niet gevonden" }, 404);
-          return json({ ticket: await ticketPayload(db, t as Record<string, unknown>) });
+          const payload = await ticketPayload(db, t as Record<string, unknown>);
+          // Openen = gelezen: de in-app melding verdwijnt hierna.
+          await db
+            .from("tickets")
+            .update({ customer_seen_at: new Date().toISOString() } as never)
+            .eq("id", payload.id);
+          return json({ ticket: payload });
         }
+
+        /* ------------------------------------------------ meldingsvoorkeur */
+        if (p.action === "set_notify") {
+          if (!p.token || typeof p.notify !== "boolean") return json({ error: "Onvolledig" }, 400);
+          const { data: t } = await db
+            .from("tickets")
+            .select("id")
+            .eq("portal_token", p.token)
+            .maybeSingle();
+          if (!t) return json({ error: "Niet gevonden" }, 404);
+          await db
+            .from("tickets")
+            .update({ customer_notify_email: p.notify } as never)
+            .eq("id", (t as { id: string }).id);
+          return json({ ok: true, notify: p.notify });
+        }
+
 
         /* ------------------------------------------------ code aanvragen */
         if (p.action === "request_code") {
@@ -283,7 +317,7 @@ export const Route = createFileRoute("/api/public/hooks/ticket-portal")({
           const { data: rows } = await db
             .from("tickets")
             .select(
-              "id, ticket_number, subject, status, priority, created_at, last_message_at, portal_token",
+              "id, ticket_number, subject, status, priority, created_at, last_message_at, portal_token, customer_seen_at",
             )
             .eq("organization_id", sess.organization_id)
             .ilike("requester_email", sess.email)
@@ -294,6 +328,7 @@ export const Route = createFileRoute("/api/public/hooks/ticket-portal")({
             tickets: ((rows ?? []) as Record<string, unknown>[]).map((t) => ({
               ...t,
               status_label: STATUS_LABEL[String(t['status'])] ?? String(t['status']),
+              has_update: !t['customer_seen_at'],
             })),
           });
         }

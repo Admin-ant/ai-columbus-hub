@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  ArrowLeft, Download, Loader2, Lock, Mail, Paperclip, Send, Trash2,
+  ArrowLeft, Clock, Download, Eye, Loader2, Lock, Mail, Paperclip, Send, Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -67,6 +68,7 @@ function TicketDetailPage() {
   const [byEmail, setByEmail] = useState(false);
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [viewer, setViewer] = useState<{ url: string; mime: string; filename: string } | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -136,12 +138,29 @@ function TicketDetailPage() {
     }
   }
 
-  async function openAttachment(id: string) {
+  async function openAttachment(a: Any) {
     try {
-      const { url } = await signedUrl({ data: { id } });
-      window.open(url, "_blank", "noopener");
+      const { url } = await signedUrl({ data: { id: a.id } });
+      const mime = String(a.mime_type ?? "");
+      const inline = mime.startsWith("image/") || mime === "application/pdf";
+      if (inline) setViewer({ url, mime, filename: a.filename as string });
+      else window.open(url, "_blank", "noopener");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Openen mislukt");
+    }
+  }
+
+  async function downloadAttachment(a: Any) {
+    try {
+      const { url } = await signedUrl({ data: { id: a.id } });
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = String(a.filename ?? "bijlage");
+      link.rel = "noopener";
+      link.target = "_blank";
+      link.click();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Downloaden mislukt");
     }
   }
 
@@ -151,6 +170,46 @@ function TicketDetailPage() {
   if (!data) return <div className="py-10 text-sm text-muted-foreground">Ticket niet gevonden.</div>;
 
   const t = data.ticket as Any;
+
+  type TimelineItem = { key: string; at: string; kind: string; title: string; detail?: string; who?: string };
+  const fieldLabel: Record<string, string> = {
+    status: "Status", priority: "Prioriteit", assigned_to: "Eigenaar",
+    category_id: "Categorie", subject: "Onderwerp", client_id: "Klant",
+  };
+  const timeline: TimelineItem[] = [
+    { key: `created-${t.id}`, at: t.created_at, kind: "aangemaakt", title: `Ticket aangemaakt via ${t.source}` },
+    ...((data.events as Any[]) ?? []).map((ev) => ({
+      key: `ev-${ev.id}`,
+      at: ev.created_at as string,
+      kind: ev.field === "status" ? "status" : "wijziging",
+      who: (ev.actor_name as string) ?? "Systeem",
+      title:
+        ev.field === "status"
+          ? `Status: ${STATUS_LABEL[ev.new_value as TicketStatus] ?? ev.new_value}`
+          : `${fieldLabel[ev.field] ?? ev.field} gewijzigd`,
+      detail:
+        ev.field === "status"
+          ? `van ${STATUS_LABEL[ev.old_value as TicketStatus] ?? ev.old_value ?? "—"}`
+          : `${ev.old_value ?? "—"} → ${ev.new_value ?? "—"}`,
+    })),
+    ...((data.messages as Any[]) ?? []).map((m) => ({
+      key: `msg-${m.id}`,
+      at: m.created_at as string,
+      kind: m.is_internal ? "interne notitie" : m.direction === "in" ? "bericht van melder" : "antwoord",
+      who: (m.author_name as string) ?? undefined,
+      title: String(m.body ?? "").slice(0, 140),
+    })),
+    ...(((data as Any).mails as Any[]) ?? []).map((m) => ({
+      key: `mail-${m.id}`,
+      at: (m.sent_at ?? m.received_at ?? m.created_at) as string,
+      kind: m.folder === "inbox" ? "e-mail ontvangen" : "e-mail verzonden",
+      title: String(m.subject ?? ""),
+      detail: (m.to_emails ?? []).join(", "),
+    })),
+  ]
+    .filter((i) => Boolean(i.at))
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+
 
   return (
     <div className="space-y-6 pb-16">
@@ -286,8 +345,13 @@ function TicketDetailPage() {
                   {(data.attachments as Any[]).map((a) => (
                     <li key={a.id} className="flex items-center gap-2 py-2 text-sm">
                       <span className="truncate">{a.filename}</span>
-                      <span className="text-xs text-muted-foreground">{Math.round((a.size_bytes ?? 0) / 1024)} kB</span>
-                      <Button variant="ghost" size="sm" className="ml-auto" onClick={() => openAttachment(a.id)}>
+                      <span className="text-xs text-muted-foreground">
+                        {a.mime_type ?? "bestand"} · {Math.round((a.size_bytes ?? 0) / 1024)} kB
+                      </span>
+                      <Button variant="ghost" size="sm" className="ml-auto" onClick={() => void openAttachment(a)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => void downloadAttachment(a)}>
                         <Download className="h-4 w-4" />
                       </Button>
                       <Button
@@ -333,6 +397,36 @@ function TicketDetailPage() {
                 ))
               ) : (
                 <p className="text-sm text-muted-foreground">Nog geen e-mails voor dit ticket.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Clock className="h-4 w-4" /> Tijdlijn
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {timeline.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nog geen gebeurtenissen.</p>
+              ) : (
+                <ol className="relative space-y-4 border-l pl-5">
+                  {timeline.map((item) => (
+                    <li key={item.key} className="relative">
+                      <span className="absolute -left-[23px] top-1.5 h-2.5 w-2.5 rounded-full bg-primary" />
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <Badge variant="outline" className="text-[10px]">{item.kind}</Badge>
+                        <span>{fmt(item.at)}</span>
+                        {item.who ? <span>· {item.who}</span> : null}
+                      </div>
+                      <div className="text-sm">{item.title}</div>
+                      {item.detail ? (
+                        <div className="text-xs text-muted-foreground">{item.detail}</div>
+                      ) : null}
+                    </li>
+                  ))}
+                </ol>
               )}
             </CardContent>
           </Card>
@@ -428,6 +522,26 @@ function TicketDetailPage() {
           </Card>
         </div>
       </div>
+
+      <Dialog open={!!viewer} onOpenChange={(o) => { if (!o) setViewer(null); }}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="truncate text-base">{viewer?.filename}</DialogTitle>
+          </DialogHeader>
+          {viewer?.mime.startsWith("image/") ? (
+            <img src={viewer.url} alt={viewer.filename} className="max-h-[70vh] w-full rounded-md object-contain" />
+          ) : viewer ? (
+            <iframe src={viewer.url} title={viewer.filename} className="h-[70vh] w-full rounded-md border" />
+          ) : null}
+          {viewer ? (
+            <a href={viewer.url} download={viewer.filename} target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" size="sm">
+                <Download className="mr-1 h-4 w-4" /> Downloaden
+              </Button>
+            </a>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

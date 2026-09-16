@@ -59,6 +59,8 @@ type PortalTicket = {
   portal_token: string;
   messages: PortalMessage[];
   attachments: PortalFile[];
+  notify_email?: boolean;
+  has_update?: boolean;
 };
 type ListItem = {
   id: string;
@@ -70,6 +72,7 @@ type ListItem = {
   created_at: string;
   last_message_at: string | null;
   portal_token: string;
+  has_update?: boolean;
 };
 
 const STATUS_TONE: Record<string, string> = {
@@ -113,6 +116,20 @@ function PortalPage() {
   const [newSubject, setNewSubject] = useState("");
   const [newBody, setNewBody] = useState("");
   const [created, setCreated] = useState<string | null>(null);
+  const [q, setQ] = useState("");
+  const [statusFilter, setStatusFilter] = useState("alle");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+
+  const needle = q.trim().toLowerCase();
+  const filtered: ListItem[] = list.filter((t) => {
+    if (needle && !`${t.ticket_number} ${t.subject}`.toLowerCase().includes(needle)) return false;
+    if (statusFilter !== "alle" && t.status !== statusFilter) return false;
+    const d = new Date(t.last_message_at ?? t.created_at);
+    if (fromDate && d < new Date(`${fromDate}T00:00:00`)) return false;
+    if (toDate && d > new Date(`${toDate}T23:59:59`)) return false;
+    return true;
+  });
 
   useEffect(() => {
     setSession(localStorage.getItem(storageKey));
@@ -256,6 +273,23 @@ function PortalPage() {
               <p className="text-sm text-muted-foreground">
                 Aangemaakt {fmt(ticket.created_at)} · laatste bericht {fmt(ticket.last_message_at)}
               </p>
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4"
+                  checked={ticket.notify_email !== false}
+                  onChange={async (e) => {
+                    const notify = e.target.checked;
+                    setTicket({ ...ticket, notify_email: notify });
+                    try {
+                      await api({ action: "set_notify", token: ticket.portal_token, notify });
+                    } catch {
+                      setTicket({ ...ticket, notify_email: !notify });
+                    }
+                  }}
+                />
+                Stuur mij ook een e-mail bij nieuwe berichten en statuswijzigingen
+              </label>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-3">
@@ -336,13 +370,46 @@ function PortalPage() {
           <>
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Meldingen van {email}</CardTitle>
+                <CardTitle className="text-lg">
+                  Meldingen van {email}
+                  {list.some((t) => t.has_update) ? (
+                    <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">
+                      {list.filter((t) => t.has_update).length} nieuw
+                    </span>
+                  ) : null}
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                {list.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Er staan nog geen meldingen op dit adres.</p>
+              <CardContent className="space-y-3">
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                  <Input
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                    placeholder="Zoek op nummer of onderwerp"
+                  />
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="h-9 rounded-md border bg-background px-3 text-sm"
+                  >
+                    <option value="alle">Alle statussen</option>
+                    {Object.keys(STATUS_TONE).map((s) => (
+                      <option key={s} value={s}>
+                        {s.replaceAll("_", " ")}
+                      </option>
+                    ))}
+                  </select>
+                  <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+                  <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+                </div>
+
+                {filtered.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    {list.length === 0
+                      ? "Er staan nog geen meldingen op dit adres."
+                      : "Geen meldingen gevonden met deze zoekopdracht."}
+                  </p>
                 ) : (
-                  list.map((t) => (
+                  filtered.map((t) => (
                     <button
                       key={t.id}
                       onClick={() => openTicket(t.portal_token)}
@@ -351,6 +418,11 @@ function PortalPage() {
                       <span>
                         <span className="mr-2 font-mono text-xs text-muted-foreground">{t.ticket_number}</span>
                         <span className="font-medium">{t.subject}</span>
+                        {t.has_update ? (
+                          <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                            nieuw bericht
+                          </span>
+                        ) : null}
                       </span>
                       <span className="flex items-center gap-2">
                         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_TONE[t.status] ?? ""}`}>
