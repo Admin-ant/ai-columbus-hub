@@ -521,6 +521,26 @@ function TicketDetailPage() {
           </Card>
         </div>
       </div>
+
+      <Dialog open={!!viewer} onOpenChange={(o) => { if (!o) setViewer(null); }}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="truncate text-base">{viewer?.filename}</DialogTitle>
+          </DialogHeader>
+          {viewer?.mime.startsWith("image/") ? (
+            <img src={viewer.url} alt={viewer.filename} className="max-h-[70vh] w-full rounded-md object-contain" />
+          ) : viewer ? (
+            <iframe src={viewer.url} title={viewer.filename} className="h-[70vh] w-full rounded-md border" />
+          ) : null}
+          {viewer ? (
+            <a href={viewer.url} download={viewer.filename} target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" size="sm">
+                <Download className="mr-1 h-4 w-4" /> Downloaden
+              </Button>
+            </a>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
