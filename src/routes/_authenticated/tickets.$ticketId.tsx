@@ -359,6 +359,36 @@ function TicketDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Clock className="h-4 w-4" /> Tijdlijn
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {timeline.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nog geen gebeurtenissen.</p>
+              ) : (
+                <ol className="relative space-y-4 border-l pl-5">
+                  {timeline.map((item) => (
+                    <li key={item.key} className="relative">
+                      <span className="absolute -left-[23px] top-1.5 h-2.5 w-2.5 rounded-full bg-primary" />
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <Badge variant="outline" className="text-[10px]">{item.kind}</Badge>
+                        <span>{fmt(item.at)}</span>
+                        {item.who ? <span>· {item.who}</span> : null}
+                      </div>
+                      <div className="text-sm">{item.title}</div>
+                      {item.detail ? (
+                        <div className="text-xs text-muted-foreground">{item.detail}</div>
+                      ) : null}
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         <div className="space-y-4">
