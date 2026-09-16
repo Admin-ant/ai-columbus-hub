@@ -214,7 +214,7 @@ export const Route = createFileRoute("/api/public/hooks/ticket-intake")({
             // Interne melding naar het support-adres van de organisatie
             const { data: ms } = await supabaseAdmin
               .from("mail_settings")
-              .select("reply_to, from_email")
+              .select("reply_to, from_email, ticket_notify_email")
               .eq("organization_id", org.id)
               .maybeSingle();
             const settings = (ms ?? null) as { reply_to: string | null; from_email: string | null } | null;
