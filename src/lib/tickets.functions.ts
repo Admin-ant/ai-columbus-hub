@@ -340,6 +340,27 @@ export const updateTicket = createServerFn({ method: "POST" })
       }));
     if (events.length) await context.supabase.from("ticket_events").insert(events as never);
 
+    // Interne melding bij statuswijziging (mag falen)
+    if (patch.status && patch.status !== prev.status) {
+      try {
+        const cfg = await ticketMailConfig(context.supabase, prev.organization_id);
+        if (cfg.statusNotify && cfg.notifyTo) {
+          await sendTicketMail(cfg, {
+            to: cfg.notifyTo,
+            subject: `[${prev.ticket_number}] status: ${STATUS_LABEL[patch.status]}`,
+            html: `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111">
+              <p><b>${esc(prev.ticket_number)}</b> — ${esc(prev.subject ?? "")}</p>
+              <p>Status gewijzigd van <b>${esc(STATUS_LABEL[prev.status as TicketStatus] ?? String(prev.status))}</b>
+                 naar <b>${esc(STATUS_LABEL[patch.status])}</b>${name ? ` door ${esc(name)}` : ""}.</p>
+              ${patch.priority ? `<p>Prioriteit: <b>${esc(patch.priority)}</b></p>` : ""}
+            </div>`,
+          });
+        }
+      } catch (e) {
+        console.error("[tickets] status mail failed", e);
+      }
+    }
+
     return { ok: true };
   });
 
