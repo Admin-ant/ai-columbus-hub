@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { useWorkspace } from "@/hooks/use-workspace";
 import {
-  addTicketMessage, deleteTicket, deleteTicketAttachment, getTicket, getTicketAttachmentUrl,
+  addTicketMessage, deleteTicket, deleteTicketAttachment, emailTicketHistory, getTicket, getTicketAttachmentUrl,
   listTicketAgents, updateTicket, uploadTicketAttachment,
   TICKET_PRIORITIES, TICKET_STATUSES, type TicketPriority, type TicketStatus,
 } from "@/lib/tickets.functions";
