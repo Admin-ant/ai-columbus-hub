@@ -73,6 +73,9 @@ import { Route as AuthenticatedOfferteStudioIndexRouteImport } from './routes/_a
 import { Route as AuthenticatedOpnameRegelsRouteImport } from './routes/_authenticated/opname.regels'
 import { Route as AuthenticatedOutreachIndexRouteImport } from './routes/_authenticated/outreach.index'
 import { Route as AuthenticatedOutreachTemplatesRouteImport } from './routes/_authenticated/outreach.templates'
+import { Route as AuthenticatedTicketsIndexRouteImport } from './routes/_authenticated/tickets.index'
+import { Route as AuthenticatedTicketsTicketIdRouteImport } from './routes/_authenticated/tickets.$ticketId'
+import { Route as AuthenticatedTicketsInstellingenRouteImport } from './routes/_authenticated/tickets.instellingen'
 import { Route as AcceptQuoteTokenRouteImport } from './routes/accept.quote.$token'
 import { Route as QuoteTokenPdfRouteImport } from './routes/quote.$token.pdf'
 import { Route as AuthenticatedAiColumbusKlantenIndexRouteImport } from './routes/_authenticated/ai-columbus.klanten.index'
@@ -450,6 +453,24 @@ const AuthenticatedOutreachTemplatesRoute =
     path: '/outreach/templates',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedTicketsIndexRoute =
+  AuthenticatedTicketsIndexRouteImport.update({
+    id: '/tickets/',
+    path: '/tickets/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedTicketsTicketIdRoute =
+  AuthenticatedTicketsTicketIdRouteImport.update({
+    id: '/tickets/$ticketId',
+    path: '/tickets/$ticketId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedTicketsInstellingenRoute =
+  AuthenticatedTicketsInstellingenRouteImport.update({
+    id: '/tickets/instellingen',
+    path: '/tickets/instellingen',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AcceptQuoteTokenRoute = AcceptQuoteTokenRouteImport.update({
   id: '/accept/quote/$token',
   path: '/accept/quote/$token',
@@ -648,6 +669,8 @@ export interface FileRoutesByFullPath {
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
   '/opname/regels': typeof AuthenticatedOpnameRegelsRoute
   '/outreach/templates': typeof AuthenticatedOutreachTemplatesRoute
+  '/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
+  '/tickets/instellingen': typeof AuthenticatedTicketsInstellingenRoute
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/quote/$token/pdf': typeof QuoteTokenPdfRoute
   '/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
@@ -656,6 +679,7 @@ export interface FileRoutesByFullPath {
   '/netqloud/': typeof AuthenticatedNetqloudIndexRoute
   '/offerte-studio/': typeof AuthenticatedOfferteStudioIndexRoute
   '/outreach/': typeof AuthenticatedOutreachIndexRoute
+  '/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/ai-columbus/klanten/$clientId': typeof AuthenticatedAiColumbusKlantenClientIdRoute
   '/ai-columbus/projecten/$projectId': typeof AuthenticatedAiColumbusProjectenProjectIdRoute
   '/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
@@ -735,6 +759,8 @@ export interface FileRoutesByTo {
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
   '/opname/regels': typeof AuthenticatedOpnameRegelsRoute
   '/outreach/templates': typeof AuthenticatedOutreachTemplatesRoute
+  '/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
+  '/tickets/instellingen': typeof AuthenticatedTicketsInstellingenRoute
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/quote/$token/pdf': typeof QuoteTokenPdfRoute
   '/ai-columbus': typeof AuthenticatedAiColumbusIndexRoute
@@ -743,6 +769,7 @@ export interface FileRoutesByTo {
   '/netqloud': typeof AuthenticatedNetqloudIndexRoute
   '/offerte-studio': typeof AuthenticatedOfferteStudioIndexRoute
   '/outreach': typeof AuthenticatedOutreachIndexRoute
+  '/tickets': typeof AuthenticatedTicketsIndexRoute
   '/ai-columbus/klanten/$clientId': typeof AuthenticatedAiColumbusKlantenClientIdRoute
   '/ai-columbus/projecten/$projectId': typeof AuthenticatedAiColumbusProjectenProjectIdRoute
   '/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
@@ -826,6 +853,8 @@ export interface FileRoutesById {
   '/_authenticated/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
   '/_authenticated/opname/regels': typeof AuthenticatedOpnameRegelsRoute
   '/_authenticated/outreach/templates': typeof AuthenticatedOutreachTemplatesRoute
+  '/_authenticated/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
+  '/_authenticated/tickets/instellingen': typeof AuthenticatedTicketsInstellingenRoute
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/quote/$token/pdf': typeof QuoteTokenPdfRoute
   '/_authenticated/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
@@ -834,6 +863,7 @@ export interface FileRoutesById {
   '/_authenticated/netqloud/': typeof AuthenticatedNetqloudIndexRoute
   '/_authenticated/offerte-studio/': typeof AuthenticatedOfferteStudioIndexRoute
   '/_authenticated/outreach/': typeof AuthenticatedOutreachIndexRoute
+  '/_authenticated/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/_authenticated/ai-columbus/klanten/$clientId': typeof AuthenticatedAiColumbusKlantenClientIdRoute
   '/_authenticated/ai-columbus/projecten/$projectId': typeof AuthenticatedAiColumbusProjectenProjectIdRoute
   '/_authenticated/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
@@ -917,6 +947,8 @@ export interface FileRouteTypes {
     | '/netqloud/servers'
     | '/opname/regels'
     | '/outreach/templates'
+    | '/tickets/$ticketId'
+    | '/tickets/instellingen'
     | '/accept/quote/$token'
     | '/quote/$token/pdf'
     | '/ai-columbus/'
@@ -925,6 +957,7 @@ export interface FileRouteTypes {
     | '/netqloud/'
     | '/offerte-studio/'
     | '/outreach/'
+    | '/tickets/'
     | '/ai-columbus/klanten/$clientId'
     | '/ai-columbus/projecten/$projectId'
     | '/boekhouding/journal/$entryId'
@@ -1004,6 +1037,8 @@ export interface FileRouteTypes {
     | '/netqloud/servers'
     | '/opname/regels'
     | '/outreach/templates'
+    | '/tickets/$ticketId'
+    | '/tickets/instellingen'
     | '/accept/quote/$token'
     | '/quote/$token/pdf'
     | '/ai-columbus'
@@ -1012,6 +1047,7 @@ export interface FileRouteTypes {
     | '/netqloud'
     | '/offerte-studio'
     | '/outreach'
+    | '/tickets'
     | '/ai-columbus/klanten/$clientId'
     | '/ai-columbus/projecten/$projectId'
     | '/boekhouding/journal/$entryId'
@@ -1094,6 +1130,8 @@ export interface FileRouteTypes {
     | '/_authenticated/netqloud/servers'
     | '/_authenticated/opname/regels'
     | '/_authenticated/outreach/templates'
+    | '/_authenticated/tickets/$ticketId'
+    | '/_authenticated/tickets/instellingen'
     | '/accept/quote/$token'
     | '/quote/$token/pdf'
     | '/_authenticated/ai-columbus/'
@@ -1102,6 +1140,7 @@ export interface FileRouteTypes {
     | '/_authenticated/netqloud/'
     | '/_authenticated/offerte-studio/'
     | '/_authenticated/outreach/'
+    | '/_authenticated/tickets/'
     | '/_authenticated/ai-columbus/klanten/$clientId'
     | '/_authenticated/ai-columbus/projecten/$projectId'
     | '/_authenticated/boekhouding/journal/$entryId'
@@ -1605,6 +1644,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOutreachTemplatesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/tickets/': {
+      id: '/_authenticated/tickets/'
+      path: '/tickets'
+      fullPath: '/tickets/'
+      preLoaderRoute: typeof AuthenticatedTicketsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/tickets/$ticketId': {
+      id: '/_authenticated/tickets/$ticketId'
+      path: '/tickets/$ticketId'
+      fullPath: '/tickets/$ticketId'
+      preLoaderRoute: typeof AuthenticatedTicketsTicketIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/tickets/instellingen': {
+      id: '/_authenticated/tickets/instellingen'
+      path: '/tickets/instellingen'
+      fullPath: '/tickets/instellingen'
+      preLoaderRoute: typeof AuthenticatedTicketsInstellingenRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/accept/quote/$token': {
       id: '/accept/quote/$token'
       path: '/accept/quote/$token'
@@ -1958,10 +2018,13 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInvoicesInvoiceIdRoute: typeof AuthenticatedInvoicesInvoiceIdRoute
   AuthenticatedKpiMetricRoute: typeof AuthenticatedKpiMetricRoute
   AuthenticatedOutreachTemplatesRoute: typeof AuthenticatedOutreachTemplatesRoute
+  AuthenticatedTicketsTicketIdRoute: typeof AuthenticatedTicketsTicketIdRoute
+  AuthenticatedTicketsInstellingenRoute: typeof AuthenticatedTicketsInstellingenRoute
   AuthenticatedAnalyticsIndexRoute: typeof AuthenticatedAnalyticsIndexRoute
   AuthenticatedInvoicesIndexRoute: typeof AuthenticatedInvoicesIndexRoute
   AuthenticatedOfferteStudioIndexRoute: typeof AuthenticatedOfferteStudioIndexRoute
   AuthenticatedOutreachIndexRoute: typeof AuthenticatedOutreachIndexRoute
+  AuthenticatedTicketsIndexRoute: typeof AuthenticatedTicketsIndexRoute
   AuthenticatedOfferteStudioQIdRoute: typeof AuthenticatedOfferteStudioQIdRoute
   AuthenticatedOfferteStudioTIdRoute: typeof AuthenticatedOfferteStudioTIdRoute
 }
@@ -2001,10 +2064,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedInvoicesInvoiceIdRoute: AuthenticatedInvoicesInvoiceIdRoute,
   AuthenticatedKpiMetricRoute: AuthenticatedKpiMetricRoute,
   AuthenticatedOutreachTemplatesRoute: AuthenticatedOutreachTemplatesRoute,
+  AuthenticatedTicketsTicketIdRoute: AuthenticatedTicketsTicketIdRoute,
+  AuthenticatedTicketsInstellingenRoute: AuthenticatedTicketsInstellingenRoute,
   AuthenticatedAnalyticsIndexRoute: AuthenticatedAnalyticsIndexRoute,
   AuthenticatedInvoicesIndexRoute: AuthenticatedInvoicesIndexRoute,
   AuthenticatedOfferteStudioIndexRoute: AuthenticatedOfferteStudioIndexRoute,
   AuthenticatedOutreachIndexRoute: AuthenticatedOutreachIndexRoute,
+  AuthenticatedTicketsIndexRoute: AuthenticatedTicketsIndexRoute,
   AuthenticatedOfferteStudioQIdRoute: AuthenticatedOfferteStudioQIdRoute,
   AuthenticatedOfferteStudioTIdRoute: AuthenticatedOfferteStudioTIdRoute,
 }

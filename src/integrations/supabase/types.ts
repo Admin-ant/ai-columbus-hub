@@ -4792,6 +4792,330 @@ export type Database = {
           },
         ]
       }
+      ticket_attachments: {
+        Row: {
+          created_at: string
+          filename: string
+          id: string
+          mime_type: string | null
+          organization_id: string
+          size_bytes: number | null
+          storage_path: string
+          ticket_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          filename: string
+          id?: string
+          mime_type?: string | null
+          organization_id: string
+          size_bytes?: number | null
+          storage_path: string
+          ticket_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          filename?: string
+          id?: string
+          mime_type?: string | null
+          organization_id?: string
+          size_bytes?: number | null
+          storage_path?: string
+          ticket_id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_attachments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_attachments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          organization_id: string
+          sort_order: number
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          organization_id: string
+          sort_order?: number
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          organization_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_categories_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_events: {
+        Row: {
+          actor_id: string | null
+          actor_name: string | null
+          created_at: string
+          field: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          organization_id: string
+          ticket_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          field: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          organization_id: string
+          ticket_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          field?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          organization_id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_events_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_messages: {
+        Row: {
+          author_id: string | null
+          author_name: string | null
+          body: string
+          channel: string
+          created_at: string
+          direction: string
+          external_id: string | null
+          id: string
+          is_internal: boolean
+          organization_id: string
+          ticket_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          author_name?: string | null
+          body: string
+          channel?: string
+          created_at?: string
+          direction?: string
+          external_id?: string | null
+          id?: string
+          is_internal?: boolean
+          organization_id: string
+          ticket_id: string
+        }
+        Update: {
+          author_id?: string | null
+          author_name?: string | null
+          body?: string
+          channel?: string
+          created_at?: string
+          direction?: string
+          external_id?: string | null
+          id?: string
+          is_internal?: boolean
+          organization_id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_messages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_number_sequences: {
+        Row: {
+          last_number: number
+          organization_id: string
+          year: number
+        }
+        Insert: {
+          last_number?: number
+          organization_id: string
+          year: number
+        }
+        Update: {
+          last_number?: number
+          organization_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_number_sequences_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tickets: {
+        Row: {
+          assigned_to: string | null
+          category_id: string | null
+          client_id: string | null
+          closed_at: string | null
+          contact_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_internal: boolean
+          last_message_at: string
+          organization_id: string
+          priority: Database["public"]["Enums"]["ticket_priority"]
+          requester_email: string | null
+          requester_name: string | null
+          requester_phone: string | null
+          resolved_at: string | null
+          source: Database["public"]["Enums"]["ticket_source"]
+          status: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          tags: string[]
+          ticket_number: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          category_id?: string | null
+          client_id?: string | null
+          closed_at?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_internal?: boolean
+          last_message_at?: string
+          organization_id: string
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          requester_email?: string | null
+          requester_name?: string | null
+          requester_phone?: string | null
+          resolved_at?: string | null
+          source?: Database["public"]["Enums"]["ticket_source"]
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          tags?: string[]
+          ticket_number: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          category_id?: string | null
+          client_id?: string | null
+          closed_at?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_internal?: boolean
+          last_message_at?: string
+          organization_id?: string
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          requester_email?: string | null
+          requester_name?: string | null
+          requester_phone?: string | null
+          resolved_at?: string | null
+          source?: Database["public"]["Enums"]["ticket_source"]
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject?: string
+          tags?: string[]
+          ticket_number?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "client_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -4873,6 +5197,7 @@ export type Database = {
         }[]
       }
       next_invoice_number: { Args: { _org_id: string }; Returns: string }
+      next_ticket_number: { Args: { _org_id: string }; Returns: string }
       post_expense_journal:
         | { Args: { _expense_id: string }; Returns: string }
         | {
@@ -4954,6 +5279,14 @@ export type Database = {
         | "manual"
         | "correction"
       sync_status: "pending" | "success" | "failed"
+      ticket_priority: "laag" | "normaal" | "hoog" | "urgent"
+      ticket_source: "manual" | "web" | "email" | "whatsapp" | "sms" | "intern"
+      ticket_status:
+        | "nieuw"
+        | "in_behandeling"
+        | "wachten_op_klant"
+        | "opgelost"
+        | "gesloten"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -5150,6 +5483,15 @@ export const Constants = {
         "correction",
       ],
       sync_status: ["pending", "success", "failed"],
+      ticket_priority: ["laag", "normaal", "hoog", "urgent"],
+      ticket_source: ["manual", "web", "email", "whatsapp", "sms", "intern"],
+      ticket_status: [
+        "nieuw",
+        "in_behandeling",
+        "wachten_op_klant",
+        "opgelost",
+        "gesloten",
+      ],
     },
   },
 } as const
