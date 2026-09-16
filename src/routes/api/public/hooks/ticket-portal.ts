@@ -205,8 +205,31 @@ export const Route = createFileRoute("/api/public/hooks/ticket-portal")({
             .eq("portal_token", p.token)
             .maybeSingle();
           if (!t) return json({ error: "Niet gevonden" }, 404);
-          return json({ ticket: await ticketPayload(db, t as Record<string, unknown>) });
+          const payload = await ticketPayload(db, t as Record<string, unknown>);
+          // Openen = gelezen: de in-app melding verdwijnt hierna.
+          await db
+            .from("tickets")
+            .update({ customer_seen_at: new Date().toISOString() } as never)
+            .eq("id", payload.id);
+          return json({ ticket: payload });
         }
+
+        /* ------------------------------------------------ meldingsvoorkeur */
+        if (p.action === "set_notify") {
+          if (!p.token || typeof p.notify !== "boolean") return json({ error: "Onvolledig" }, 400);
+          const { data: t } = await db
+            .from("tickets")
+            .select("id")
+            .eq("portal_token", p.token)
+            .maybeSingle();
+          if (!t) return json({ error: "Niet gevonden" }, 404);
+          await db
+            .from("tickets")
+            .update({ customer_notify_email: p.notify } as never)
+            .eq("id", (t as { id: string }).id);
+          return json({ ok: true, notify: p.notify });
+        }
+
 
         /* ------------------------------------------------ code aanvragen */
         if (p.action === "request_code") {
