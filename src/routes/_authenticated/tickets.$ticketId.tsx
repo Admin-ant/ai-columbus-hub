@@ -67,6 +67,7 @@ function TicketDetailPage() {
   const [byEmail, setByEmail] = useState(false);
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [viewer, setViewer] = useState<{ url: string; mime: string; filename: string } | null>(null);
 
   const refresh = useCallback(async () => {
     try {
