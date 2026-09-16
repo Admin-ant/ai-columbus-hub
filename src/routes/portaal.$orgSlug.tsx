@@ -70,6 +70,7 @@ type ListItem = {
   created_at: string;
   last_message_at: string | null;
   portal_token: string;
+  has_update?: boolean;
 };
 
 const STATUS_TONE: Record<string, string> = {
