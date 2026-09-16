@@ -26,6 +26,61 @@ function esc(s: string) {
   );
 }
 
+export const STATUS_LABEL: Record<TicketStatus, string> = {
+  nieuw: "Nieuw",
+  in_behandeling: "In behandeling",
+  wachten_op_klant: "Wachten op klant",
+  opgelost: "Opgelost",
+  gesloten: "Gesloten",
+};
+
+type TicketMailConfig = {
+  fromEmail: string;
+  fromName: string | null;
+  replyTo: string | null;
+  notifyTo: string | null;
+  statusNotify: boolean;
+};
+
+async function ticketMailConfig(supabase: any, organizationId: string): Promise<TicketMailConfig> {
+  const [{ data: ms }, { data: org }] = await Promise.all([
+    supabase
+      .from("mail_settings")
+      .select("from_email, from_name, reply_to, ticket_reply_to, ticket_notify_email, ticket_status_notify")
+      .eq("organization_id", organizationId)
+      .maybeSingle(),
+    supabase.from("organizations").select("email").eq("id", organizationId).maybeSingle(),
+  ]);
+  const s = (ms ?? {}) as any;
+  return {
+    fromEmail: s.from_email || process.env["OUTREACH_FROM_EMAIL"] || "support@resend.dev",
+    fromName: s.from_name ?? null,
+    replyTo: s.ticket_reply_to || s.reply_to || null,
+    notifyTo: s.ticket_notify_email || s.reply_to || (org as any)?.email || s.from_email || null,
+    statusNotify: s.ticket_status_notify !== false,
+  };
+}
+
+async function sendTicketMail(
+  cfg: TicketMailConfig,
+  msg: { to: string; subject: string; html: string; replyTo?: string | null },
+) {
+  const key = process.env["RESEND_API_KEY"];
+  if (!key) throw new Error("RESEND_API_KEY ontbreekt");
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      from: cfg.fromName ? `${cfg.fromName} <${cfg.fromEmail}>` : cfg.fromEmail,
+      to: [msg.to],
+      reply_to: msg.replyTo ?? cfg.replyTo ?? undefined,
+      subject: msg.subject,
+      html: msg.html,
+    }),
+  });
+  if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
+}
+
 async function assertOrgAccess(
   supabase: { from: (t: string) => any },
   userId: string,
