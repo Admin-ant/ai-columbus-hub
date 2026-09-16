@@ -49,6 +49,7 @@ const Payload = z.object({
   subject: z.string().trim().max(300).nullish(),
   name: z.string().trim().max(200).nullish(),
   phone: z.string().trim().max(50).nullish(),
+  notify: z.boolean().nullish(),
 });
 
 const hits = new Map<string, number[]>();
