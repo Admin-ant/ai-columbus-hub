@@ -271,6 +271,23 @@ function PortalPage() {
               <p className="text-sm text-muted-foreground">
                 Aangemaakt {fmt(ticket.created_at)} · laatste bericht {fmt(ticket.last_message_at)}
               </p>
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4"
+                  checked={ticket.notify_email !== false}
+                  onChange={async (e) => {
+                    const notify = e.target.checked;
+                    setTicket({ ...ticket, notify_email: notify });
+                    try {
+                      await api({ action: "set_notify", token: ticket.portal_token, notify });
+                    } catch {
+                      setTicket({ ...ticket, notify_email: !notify });
+                    }
+                  }}
+                />
+                Stuur mij ook een e-mail bij nieuwe berichten en statuswijzigingen
+              </label>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-3">
