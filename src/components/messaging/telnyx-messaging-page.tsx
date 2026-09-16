@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Download, FlaskConical, Loader2, Plus, RefreshCw, Save, Send, Settings2, Trash2, UserPlus, Users } from "lucide-react";
+import { Download, FlaskConical, LifeBuoy, Loader2, Plus, RefreshCw, Save, Send, Settings2, Trash2, UserPlus, Users } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +35,7 @@ import {
   saveMessagingMatchSettings,
   listMessagingLinkAudit,
 } from "@/lib/telnyx.functions";
+import { createTicket } from "@/lib/tickets.functions";
 
 type Channel = "sms" | "whatsapp";
 
@@ -122,6 +123,7 @@ export function TelnyxMessagingPage({
 }) {
   const { currentOrganizationId, currentOrganization } = useWorkspace();
   const fetchSettings = useServerFn(getTelnyxSettings);
+  const createTicketFn = useServerFn(createTicket);
   const persistSettings = useServerFn(saveTelnyxSettings);
   const fetchMessages = useServerFn(listTelnyxMessages);
   const send = useServerFn(sendTelnyxMessage);
@@ -352,6 +354,28 @@ export function TelnyxMessagingPage({
     setNewClientEmail("");
     setLinkConflicts([]);
   }
+
+  async function handleCreateTicket(message: Message, linkedClientId: string | null) {
+    if (!currentOrganizationId) return;
+    const counterpart = message.direction === "inbound" ? message.from_number : message.to_number;
+    try {
+      const res = await createTicketFn({
+        data: {
+          organization_id: currentOrganizationId,
+          subject: (message.body || "Bericht").slice(0, 80),
+          body: message.body ?? "",
+          source: channel === "whatsapp" ? "whatsapp" : "sms",
+          client_id: linkedClientId,
+          requester_phone: counterpart ?? null,
+        },
+      });
+      toast.success(`Ticket ${res.ticket_number} aangemaakt`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Ticket aanmaken mislukt");
+    }
+  }
+
+
 
   async function handleLinkExisting(force = false) {
     if (!currentOrganizationId || !linkPhone || !linkClientId) return;
@@ -647,6 +671,14 @@ export function TelnyxMessagingPage({
                           <UserPlus className="mr-1.5 h-3 w-3" /> Koppelen aan klant
                         </Button>
                       )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => void handleCreateTicket(m, linked?.id ?? null)}
+                      >
+                        <LifeBuoy className="mr-1.5 h-3 w-3" /> Maak ticket
+                      </Button>
                     </div>
                   </div>
                   <Badge variant={m.status === "failed" ? "destructive" : "secondary"}>

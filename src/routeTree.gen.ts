@@ -41,6 +41,7 @@ import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticat
 import { Route as AfspraakTokenRouteImport } from './routes/afspraak.$token'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as QTokenRouteImport } from './routes/q.$token'
+import { Route as SupportOrgSlugRouteImport } from './routes/support.$orgSlug'
 import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as AuthenticatedAiColumbusIndexRouteImport } from './routes/_authenticated/ai-columbus.index'
 import { Route as AuthenticatedAiColumbusInstellingenRouteImport } from './routes/_authenticated/ai-columbus.instellingen'
@@ -73,6 +74,9 @@ import { Route as AuthenticatedOfferteStudioIndexRouteImport } from './routes/_a
 import { Route as AuthenticatedOpnameRegelsRouteImport } from './routes/_authenticated/opname.regels'
 import { Route as AuthenticatedOutreachIndexRouteImport } from './routes/_authenticated/outreach.index'
 import { Route as AuthenticatedOutreachTemplatesRouteImport } from './routes/_authenticated/outreach.templates'
+import { Route as AuthenticatedTicketsIndexRouteImport } from './routes/_authenticated/tickets.index'
+import { Route as AuthenticatedTicketsTicketIdRouteImport } from './routes/_authenticated/tickets.$ticketId'
+import { Route as AuthenticatedTicketsInstellingenRouteImport } from './routes/_authenticated/tickets.instellingen'
 import { Route as AcceptQuoteTokenRouteImport } from './routes/accept.quote.$token'
 import { Route as QuoteTokenPdfRouteImport } from './routes/quote.$token.pdf'
 import { Route as AuthenticatedAiColumbusKlantenIndexRouteImport } from './routes/_authenticated/ai-columbus.klanten.index'
@@ -96,6 +100,7 @@ import { Route as ApiPublicHooksRecurringInvoicesRouteImport } from './routes/ap
 import { Route as ApiPublicHooksResendEventsRouteImport } from './routes/api/public/hooks/resend-events'
 import { Route as ApiPublicHooksStudioFollowupsRouteImport } from './routes/api/public/hooks/studio-followups'
 import { Route as ApiPublicHooksTelnyxRouteImport } from './routes/api/public/hooks/telnyx'
+import { Route as ApiPublicHooksTicketIntakeRouteImport } from './routes/api/public/hooks/ticket-intake'
 import { Route as ApiPublicLTokenRouteImport } from './routes/api/public/l.$token'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -260,6 +265,11 @@ const ApiChatRoute = ApiChatRouteImport.update({
 const QTokenRoute = QTokenRouteImport.update({
   id: '/q/$token',
   path: '/q/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportOrgSlugRoute = SupportOrgSlugRouteImport.update({
+  id: '/support/$orgSlug',
+  path: '/support/$orgSlug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TTokenRoute = TTokenRouteImport.update({
@@ -450,6 +460,24 @@ const AuthenticatedOutreachTemplatesRoute =
     path: '/outreach/templates',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedTicketsIndexRoute =
+  AuthenticatedTicketsIndexRouteImport.update({
+    id: '/tickets/',
+    path: '/tickets/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedTicketsTicketIdRoute =
+  AuthenticatedTicketsTicketIdRouteImport.update({
+    id: '/tickets/$ticketId',
+    path: '/tickets/$ticketId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedTicketsInstellingenRoute =
+  AuthenticatedTicketsInstellingenRouteImport.update({
+    id: '/tickets/instellingen',
+    path: '/tickets/instellingen',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AcceptQuoteTokenRoute = AcceptQuoteTokenRouteImport.update({
   id: '/accept/quote/$token',
   path: '/accept/quote/$token',
@@ -584,6 +612,12 @@ const ApiPublicHooksTelnyxRoute = ApiPublicHooksTelnyxRouteImport.update({
   path: '/api/public/hooks/telnyx',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksTicketIntakeRoute =
+  ApiPublicHooksTicketIntakeRouteImport.update({
+    id: '/api/public/hooks/ticket-intake',
+    path: '/api/public/hooks/ticket-intake',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicLTokenRoute = ApiPublicLTokenRouteImport.update({
   id: '/api/public/l/$token',
   path: '/api/public/l/$token',
@@ -622,6 +656,7 @@ export interface FileRoutesByFullPath {
   '/afspraak/$token': typeof AfspraakTokenRoute
   '/api/chat': typeof ApiChatRoute
   '/q/$token': typeof QTokenRoute
+  '/support/$orgSlug': typeof SupportOrgSlugRoute
   '/t/$token': typeof TTokenRoute
   '/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
   '/ai-columbus/koppelingen': typeof AuthenticatedAiColumbusKoppelingenRoute
@@ -648,6 +683,8 @@ export interface FileRoutesByFullPath {
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
   '/opname/regels': typeof AuthenticatedOpnameRegelsRoute
   '/outreach/templates': typeof AuthenticatedOutreachTemplatesRoute
+  '/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
+  '/tickets/instellingen': typeof AuthenticatedTicketsInstellingenRoute
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/quote/$token/pdf': typeof QuoteTokenPdfRoute
   '/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
@@ -656,6 +693,7 @@ export interface FileRoutesByFullPath {
   '/netqloud/': typeof AuthenticatedNetqloudIndexRoute
   '/offerte-studio/': typeof AuthenticatedOfferteStudioIndexRoute
   '/outreach/': typeof AuthenticatedOutreachIndexRoute
+  '/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/ai-columbus/klanten/$clientId': typeof AuthenticatedAiColumbusKlantenClientIdRoute
   '/ai-columbus/projecten/$projectId': typeof AuthenticatedAiColumbusProjectenProjectIdRoute
   '/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
@@ -676,6 +714,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
   '/api/public/hooks/telnyx': typeof ApiPublicHooksTelnyxRoute
+  '/api/public/hooks/ticket-intake': typeof ApiPublicHooksTicketIntakeRoute
   '/api/public/l/$token': typeof ApiPublicLTokenRoute
   '/ai-columbus/klanten/': typeof AuthenticatedAiColumbusKlantenIndexRoute
 }
@@ -708,6 +747,7 @@ export interface FileRoutesByTo {
   '/afspraak/$token': typeof AfspraakTokenRoute
   '/api/chat': typeof ApiChatRoute
   '/q/$token': typeof QTokenRoute
+  '/support/$orgSlug': typeof SupportOrgSlugRoute
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
@@ -735,6 +775,8 @@ export interface FileRoutesByTo {
   '/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
   '/opname/regels': typeof AuthenticatedOpnameRegelsRoute
   '/outreach/templates': typeof AuthenticatedOutreachTemplatesRoute
+  '/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
+  '/tickets/instellingen': typeof AuthenticatedTicketsInstellingenRoute
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/quote/$token/pdf': typeof QuoteTokenPdfRoute
   '/ai-columbus': typeof AuthenticatedAiColumbusIndexRoute
@@ -743,6 +785,7 @@ export interface FileRoutesByTo {
   '/netqloud': typeof AuthenticatedNetqloudIndexRoute
   '/offerte-studio': typeof AuthenticatedOfferteStudioIndexRoute
   '/outreach': typeof AuthenticatedOutreachIndexRoute
+  '/tickets': typeof AuthenticatedTicketsIndexRoute
   '/ai-columbus/klanten/$clientId': typeof AuthenticatedAiColumbusKlantenClientIdRoute
   '/ai-columbus/projecten/$projectId': typeof AuthenticatedAiColumbusProjectenProjectIdRoute
   '/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
@@ -763,6 +806,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
   '/api/public/hooks/telnyx': typeof ApiPublicHooksTelnyxRoute
+  '/api/public/hooks/ticket-intake': typeof ApiPublicHooksTicketIntakeRoute
   '/api/public/l/$token': typeof ApiPublicLTokenRoute
   '/ai-columbus/klanten': typeof AuthenticatedAiColumbusKlantenIndexRoute
 }
@@ -799,6 +843,7 @@ export interface FileRoutesById {
   '/afspraak/$token': typeof AfspraakTokenRoute
   '/api/chat': typeof ApiChatRoute
   '/q/$token': typeof QTokenRoute
+  '/support/$orgSlug': typeof SupportOrgSlugRoute
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/ai-columbus/instellingen': typeof AuthenticatedAiColumbusInstellingenRoute
@@ -826,6 +871,8 @@ export interface FileRoutesById {
   '/_authenticated/netqloud/servers': typeof AuthenticatedNetqloudServersRoute
   '/_authenticated/opname/regels': typeof AuthenticatedOpnameRegelsRoute
   '/_authenticated/outreach/templates': typeof AuthenticatedOutreachTemplatesRoute
+  '/_authenticated/tickets/$ticketId': typeof AuthenticatedTicketsTicketIdRoute
+  '/_authenticated/tickets/instellingen': typeof AuthenticatedTicketsInstellingenRoute
   '/accept/quote/$token': typeof AcceptQuoteTokenRoute
   '/quote/$token/pdf': typeof QuoteTokenPdfRoute
   '/_authenticated/ai-columbus/': typeof AuthenticatedAiColumbusIndexRoute
@@ -834,6 +881,7 @@ export interface FileRoutesById {
   '/_authenticated/netqloud/': typeof AuthenticatedNetqloudIndexRoute
   '/_authenticated/offerte-studio/': typeof AuthenticatedOfferteStudioIndexRoute
   '/_authenticated/outreach/': typeof AuthenticatedOutreachIndexRoute
+  '/_authenticated/tickets/': typeof AuthenticatedTicketsIndexRoute
   '/_authenticated/ai-columbus/klanten/$clientId': typeof AuthenticatedAiColumbusKlantenClientIdRoute
   '/_authenticated/ai-columbus/projecten/$projectId': typeof AuthenticatedAiColumbusProjectenProjectIdRoute
   '/_authenticated/boekhouding/journal/$entryId': typeof AuthenticatedBoekhoudingJournalEntryIdRoute
@@ -854,6 +902,7 @@ export interface FileRoutesById {
   '/api/public/hooks/resend-events': typeof ApiPublicHooksResendEventsRoute
   '/api/public/hooks/studio-followups': typeof ApiPublicHooksStudioFollowupsRoute
   '/api/public/hooks/telnyx': typeof ApiPublicHooksTelnyxRoute
+  '/api/public/hooks/ticket-intake': typeof ApiPublicHooksTicketIntakeRoute
   '/api/public/l/$token': typeof ApiPublicLTokenRoute
   '/_authenticated/ai-columbus/klanten/': typeof AuthenticatedAiColumbusKlantenIndexRoute
 }
@@ -891,6 +940,7 @@ export interface FileRouteTypes {
     | '/afspraak/$token'
     | '/api/chat'
     | '/q/$token'
+    | '/support/$orgSlug'
     | '/t/$token'
     | '/ai-columbus/instellingen'
     | '/ai-columbus/koppelingen'
@@ -917,6 +967,8 @@ export interface FileRouteTypes {
     | '/netqloud/servers'
     | '/opname/regels'
     | '/outreach/templates'
+    | '/tickets/$ticketId'
+    | '/tickets/instellingen'
     | '/accept/quote/$token'
     | '/quote/$token/pdf'
     | '/ai-columbus/'
@@ -925,6 +977,7 @@ export interface FileRouteTypes {
     | '/netqloud/'
     | '/offerte-studio/'
     | '/outreach/'
+    | '/tickets/'
     | '/ai-columbus/klanten/$clientId'
     | '/ai-columbus/projecten/$projectId'
     | '/boekhouding/journal/$entryId'
@@ -945,6 +998,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
     | '/api/public/hooks/telnyx'
+    | '/api/public/hooks/ticket-intake'
     | '/api/public/l/$token'
     | '/ai-columbus/klanten/'
   fileRoutesByTo: FileRoutesByTo
@@ -977,6 +1031,7 @@ export interface FileRouteTypes {
     | '/afspraak/$token'
     | '/api/chat'
     | '/q/$token'
+    | '/support/$orgSlug'
     | '/t/$token'
     | '/'
     | '/ai-columbus/instellingen'
@@ -1004,6 +1059,8 @@ export interface FileRouteTypes {
     | '/netqloud/servers'
     | '/opname/regels'
     | '/outreach/templates'
+    | '/tickets/$ticketId'
+    | '/tickets/instellingen'
     | '/accept/quote/$token'
     | '/quote/$token/pdf'
     | '/ai-columbus'
@@ -1012,6 +1069,7 @@ export interface FileRouteTypes {
     | '/netqloud'
     | '/offerte-studio'
     | '/outreach'
+    | '/tickets'
     | '/ai-columbus/klanten/$clientId'
     | '/ai-columbus/projecten/$projectId'
     | '/boekhouding/journal/$entryId'
@@ -1032,6 +1090,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
     | '/api/public/hooks/telnyx'
+    | '/api/public/hooks/ticket-intake'
     | '/api/public/l/$token'
     | '/ai-columbus/klanten'
   id:
@@ -1067,6 +1126,7 @@ export interface FileRouteTypes {
     | '/afspraak/$token'
     | '/api/chat'
     | '/q/$token'
+    | '/support/$orgSlug'
     | '/t/$token'
     | '/_authenticated/'
     | '/_authenticated/ai-columbus/instellingen'
@@ -1094,6 +1154,8 @@ export interface FileRouteTypes {
     | '/_authenticated/netqloud/servers'
     | '/_authenticated/opname/regels'
     | '/_authenticated/outreach/templates'
+    | '/_authenticated/tickets/$ticketId'
+    | '/_authenticated/tickets/instellingen'
     | '/accept/quote/$token'
     | '/quote/$token/pdf'
     | '/_authenticated/ai-columbus/'
@@ -1102,6 +1164,7 @@ export interface FileRouteTypes {
     | '/_authenticated/netqloud/'
     | '/_authenticated/offerte-studio/'
     | '/_authenticated/outreach/'
+    | '/_authenticated/tickets/'
     | '/_authenticated/ai-columbus/klanten/$clientId'
     | '/_authenticated/ai-columbus/projecten/$projectId'
     | '/_authenticated/boekhouding/journal/$entryId'
@@ -1122,6 +1185,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/resend-events'
     | '/api/public/hooks/studio-followups'
     | '/api/public/hooks/telnyx'
+    | '/api/public/hooks/ticket-intake'
     | '/api/public/l/$token'
     | '/_authenticated/ai-columbus/klanten/'
   fileRoutesById: FileRoutesById
@@ -1134,6 +1198,7 @@ export interface RootRouteChildren {
   AfspraakTokenRoute: typeof AfspraakTokenRoute
   ApiChatRoute: typeof ApiChatRoute
   QTokenRoute: typeof QTokenRoute
+  SupportOrgSlugRoute: typeof SupportOrgSlugRoute
   TTokenRoute: typeof TTokenRoute
   AcceptQuoteTokenRoute: typeof AcceptQuoteTokenRoute
   QuoteTokenPdfRoute: typeof QuoteTokenPdfRoute
@@ -1152,6 +1217,7 @@ export interface RootRouteChildren {
   ApiPublicHooksResendEventsRoute: typeof ApiPublicHooksResendEventsRoute
   ApiPublicHooksStudioFollowupsRoute: typeof ApiPublicHooksStudioFollowupsRoute
   ApiPublicHooksTelnyxRoute: typeof ApiPublicHooksTelnyxRoute
+  ApiPublicHooksTicketIntakeRoute: typeof ApiPublicHooksTicketIntakeRoute
   ApiPublicLTokenRoute: typeof ApiPublicLTokenRoute
 }
 
@@ -1381,6 +1447,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/support/$orgSlug': {
+      id: '/support/$orgSlug'
+      path: '/support/$orgSlug'
+      fullPath: '/support/$orgSlug'
+      preLoaderRoute: typeof SupportOrgSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/t/$token': {
       id: '/t/$token'
       path: '/t/$token'
@@ -1605,6 +1678,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOutreachTemplatesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/tickets/': {
+      id: '/_authenticated/tickets/'
+      path: '/tickets'
+      fullPath: '/tickets/'
+      preLoaderRoute: typeof AuthenticatedTicketsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/tickets/$ticketId': {
+      id: '/_authenticated/tickets/$ticketId'
+      path: '/tickets/$ticketId'
+      fullPath: '/tickets/$ticketId'
+      preLoaderRoute: typeof AuthenticatedTicketsTicketIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/tickets/instellingen': {
+      id: '/_authenticated/tickets/instellingen'
+      path: '/tickets/instellingen'
+      fullPath: '/tickets/instellingen'
+      preLoaderRoute: typeof AuthenticatedTicketsInstellingenRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/accept/quote/$token': {
       id: '/accept/quote/$token'
       path: '/accept/quote/$token'
@@ -1764,6 +1858,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/telnyx'
       fullPath: '/api/public/hooks/telnyx'
       preLoaderRoute: typeof ApiPublicHooksTelnyxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/ticket-intake': {
+      id: '/api/public/hooks/ticket-intake'
+      path: '/api/public/hooks/ticket-intake'
+      fullPath: '/api/public/hooks/ticket-intake'
+      preLoaderRoute: typeof ApiPublicHooksTicketIntakeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/l/$token': {
@@ -1958,10 +2059,13 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInvoicesInvoiceIdRoute: typeof AuthenticatedInvoicesInvoiceIdRoute
   AuthenticatedKpiMetricRoute: typeof AuthenticatedKpiMetricRoute
   AuthenticatedOutreachTemplatesRoute: typeof AuthenticatedOutreachTemplatesRoute
+  AuthenticatedTicketsTicketIdRoute: typeof AuthenticatedTicketsTicketIdRoute
+  AuthenticatedTicketsInstellingenRoute: typeof AuthenticatedTicketsInstellingenRoute
   AuthenticatedAnalyticsIndexRoute: typeof AuthenticatedAnalyticsIndexRoute
   AuthenticatedInvoicesIndexRoute: typeof AuthenticatedInvoicesIndexRoute
   AuthenticatedOfferteStudioIndexRoute: typeof AuthenticatedOfferteStudioIndexRoute
   AuthenticatedOutreachIndexRoute: typeof AuthenticatedOutreachIndexRoute
+  AuthenticatedTicketsIndexRoute: typeof AuthenticatedTicketsIndexRoute
   AuthenticatedOfferteStudioQIdRoute: typeof AuthenticatedOfferteStudioQIdRoute
   AuthenticatedOfferteStudioTIdRoute: typeof AuthenticatedOfferteStudioTIdRoute
 }
@@ -2001,10 +2105,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedInvoicesInvoiceIdRoute: AuthenticatedInvoicesInvoiceIdRoute,
   AuthenticatedKpiMetricRoute: AuthenticatedKpiMetricRoute,
   AuthenticatedOutreachTemplatesRoute: AuthenticatedOutreachTemplatesRoute,
+  AuthenticatedTicketsTicketIdRoute: AuthenticatedTicketsTicketIdRoute,
+  AuthenticatedTicketsInstellingenRoute: AuthenticatedTicketsInstellingenRoute,
   AuthenticatedAnalyticsIndexRoute: AuthenticatedAnalyticsIndexRoute,
   AuthenticatedInvoicesIndexRoute: AuthenticatedInvoicesIndexRoute,
   AuthenticatedOfferteStudioIndexRoute: AuthenticatedOfferteStudioIndexRoute,
   AuthenticatedOutreachIndexRoute: AuthenticatedOutreachIndexRoute,
+  AuthenticatedTicketsIndexRoute: AuthenticatedTicketsIndexRoute,
   AuthenticatedOfferteStudioQIdRoute: AuthenticatedOfferteStudioQIdRoute,
   AuthenticatedOfferteStudioTIdRoute: AuthenticatedOfferteStudioTIdRoute,
 }
@@ -2020,6 +2127,7 @@ const rootRouteChildren: RootRouteChildren = {
   AfspraakTokenRoute: AfspraakTokenRoute,
   ApiChatRoute: ApiChatRoute,
   QTokenRoute: QTokenRoute,
+  SupportOrgSlugRoute: SupportOrgSlugRoute,
   TTokenRoute: TTokenRoute,
   AcceptQuoteTokenRoute: AcceptQuoteTokenRoute,
   QuoteTokenPdfRoute: QuoteTokenPdfRoute,
@@ -2038,6 +2146,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksResendEventsRoute: ApiPublicHooksResendEventsRoute,
   ApiPublicHooksStudioFollowupsRoute: ApiPublicHooksStudioFollowupsRoute,
   ApiPublicHooksTelnyxRoute: ApiPublicHooksTelnyxRoute,
+  ApiPublicHooksTicketIntakeRoute: ApiPublicHooksTicketIntakeRoute,
   ApiPublicLTokenRoute: ApiPublicLTokenRoute,
 }
 export const routeTree = rootRouteImport
