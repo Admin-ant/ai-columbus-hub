@@ -354,6 +354,28 @@ export function TelnyxMessagingPage({
     setLinkConflicts([]);
   }
 
+  async function handleCreateTicket(message: Message, linkedClientId: string | null) {
+    if (!currentOrganizationId) return;
+    const counterpart = message.direction === "inbound" ? message.from_number : message.to_number;
+    try {
+      const res = await createTicketFn({
+        data: {
+          organization_id: currentOrganizationId,
+          subject: (message.body || "Bericht").slice(0, 80),
+          body: message.body ?? "",
+          source: channel === "whatsapp" ? "whatsapp" : "sms",
+          client_id: linkedClientId,
+          requester_phone: counterpart ?? null,
+        },
+      });
+      toast.success(`Ticket ${res.ticket_number} aangemaakt`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Ticket aanmaken mislukt");
+    }
+  }
+
+
+
   async function handleLinkExisting(force = false) {
     if (!currentOrganizationId || !linkPhone || !linkClientId) return;
     setLinking(true);
