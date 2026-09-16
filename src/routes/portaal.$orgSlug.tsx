@@ -109,6 +109,10 @@ function PortalPage() {
   const [list, setList] = useState<ListItem[]>([]);
   const [ticket, setTicket] = useState<PortalTicket | null>(null);
   const [reply, setReply] = useState("");
+  const [newName, setNewName] = useState("");
+  const [newSubject, setNewSubject] = useState("");
+  const [newBody, setNewBody] = useState("");
+  const [created, setCreated] = useState<string | null>(null);
 
   useEffect(() => {
     setSession(localStorage.getItem(storageKey));
