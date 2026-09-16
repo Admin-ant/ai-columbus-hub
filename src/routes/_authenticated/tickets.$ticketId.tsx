@@ -170,6 +170,20 @@ function TicketDetailPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          {t.portal_token ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const url = `${window.location.origin}/portaal/${t.organization_id}?t=${t.portal_token}`;
+                void navigator.clipboard.writeText(url);
+                toast.success("Klantlink gekopieerd");
+              }}
+            >
+              <Mail className="mr-1 h-4 w-4" />
+              Klantlink kopiëren
+            </Button>
+          ) : null}
           <Button
             variant="outline"
             size="sm"
