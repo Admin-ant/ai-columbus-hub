@@ -2817,6 +2817,9 @@ export type Database = {
           organization_id: string
           reply_to: string | null
           signature: string | null
+          ticket_notify_email: string | null
+          ticket_reply_to: string | null
+          ticket_status_notify: boolean
           updated_at: string
         }
         Insert: {
@@ -2831,6 +2834,9 @@ export type Database = {
           organization_id: string
           reply_to?: string | null
           signature?: string | null
+          ticket_notify_email?: string | null
+          ticket_reply_to?: string | null
+          ticket_status_notify?: boolean
           updated_at?: string
         }
         Update: {
@@ -2845,6 +2851,9 @@ export type Database = {
           organization_id?: string
           reply_to?: string | null
           signature?: string | null
+          ticket_notify_email?: string | null
+          ticket_reply_to?: string | null
+          ticket_status_notify?: boolean
           updated_at?: string
         }
         Relationships: [
