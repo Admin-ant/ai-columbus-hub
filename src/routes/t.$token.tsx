@@ -28,7 +28,7 @@ export const Route = createFileRoute("/t/$token")({
     <div className="flex min-h-screen items-center justify-center bg-black p-6 text-center text-white/70">
       <div>
         <div className="text-lg font-semibold text-white">Preview niet beschikbaar</div>
-        <div className="mt-1 text-sm">{error.message}</div>
+        <div className="mt-1 text-sm">{(error as Error).message}</div>
       </div>
     </div>
   ),
