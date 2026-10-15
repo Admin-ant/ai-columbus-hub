@@ -36,6 +36,13 @@
       "when": 1792061359044,
       "tag": "0004_accounting_period_close",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792061955249,
+      "tag": "0005_fix_recordings_policy_stagger_cron",
+      "breakpoints": true
     }
   ]
 }
