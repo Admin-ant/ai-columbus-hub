@@ -16,7 +16,8 @@ import { WorkspaceProvider } from "@/hooks/use-workspace";
 import { Toaster } from "@/components/ui/sonner";
 import { ColumbusChatWidget } from "@/components/columbus-chat-widget";
 import { supabase } from "@/integrations/supabase/client";
-import "@/i18n";
+import i18n from "@/i18n";
+import { I18nextProvider } from "react-i18next";
 
 function NotFoundComponent() {
   return (
@@ -128,14 +129,16 @@ function RootComponent() {
   }, [router, queryClient]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <WorkspaceProvider>
-          <Outlet />
-          <ColumbusChatWidget />
-          <Toaster />
-        </WorkspaceProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <I18nextProvider i18n={i18n}>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <WorkspaceProvider>
+            <Outlet />
+            <ColumbusChatWidget />
+            <Toaster />
+          </WorkspaceProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </I18nextProvider>
   );
 }
