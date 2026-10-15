@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 
 import { ExpensesTab } from "@/components/expenses-tab";
+import { QuarterCloseTab } from "@/components/quarter-close-tab";
 
 
 import { supabase } from "@/integrations/supabase/client";
@@ -276,8 +277,14 @@ function BoekhoudingPage() {
             <TabsTrigger value="sync" className="gap-1.5">
               <Activity className="h-3.5 w-3.5" /> {t("acc.tabs.sync")}
             </TabsTrigger>
-
+            <TabsTrigger value="quarters" className="gap-1.5">
+              <FileText className="h-3.5 w-3.5" /> Kwartalen
+            </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="quarters">
+            <QuarterCloseTab orgId={currentOrganizationId!} userId={user?.id ?? null} />
+          </TabsContent>
 
           <TabsContent value="dashboard">
             <DashboardTab totals={totals} invoices={invoices} events={events} lang={lang} />
