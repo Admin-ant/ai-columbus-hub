@@ -65,6 +65,36 @@ export type Database = {
           },
         ]
       }
+      accounting_periods: {
+        Row: {
+          closed_at: string
+          closed_by: string | null
+          id: string
+          organization_id: string
+          quarter: number
+          summary: Json
+          year: number
+        }
+        Insert: {
+          closed_at?: string
+          closed_by?: string | null
+          id?: string
+          organization_id: string
+          quarter: number
+          summary?: Json
+          year: number
+        }
+        Update: {
+          closed_at?: string
+          closed_by?: string | null
+          id?: string
+          organization_id?: string
+          quarter?: number
+          summary?: Json
+          year?: number
+        }
+        Relationships: []
+      }
       announcement_reads: {
         Row: {
           announcement_id: string
@@ -5250,6 +5280,7 @@ export type Database = {
           status: string
         }[]
       }
+      is_period_closed: { Args: { _d: string; _org: string }; Returns: boolean }
       next_invoice_number: { Args: { _org_id: string }; Returns: string }
       next_ticket_number: { Args: { _org_id: string }; Returns: string }
       post_expense_journal:
