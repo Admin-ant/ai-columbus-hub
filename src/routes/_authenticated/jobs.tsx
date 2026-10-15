@@ -11,7 +11,7 @@ import { RefreshCw, CheckCircle2, XCircle, Clock } from "lucide-react";
 export const Route = createFileRoute("/_authenticated/jobs")({
   head: () => ({ meta: [{ title: "Cron jobs — status & logs" }] }),
   component: JobsPage,
-  errorComponent: ({ error }) => <div className="p-6 text-sm text-destructive">{error.message}</div>,
+  errorComponent: ({ error }) => <div className="p-6 text-sm text-destructive">{(error as Error).message}</div>,
   notFoundComponent: () => <div className="p-6">Niet gevonden</div>,
 });
 
