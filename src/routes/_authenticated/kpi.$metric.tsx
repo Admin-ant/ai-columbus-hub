@@ -87,7 +87,7 @@ export const Route = createFileRoute("/_authenticated/kpi/$metric")({
   component: KpiDetailPage,
   errorComponent: ({ error }) => (
     <div className="rounded-lg border border-destructive bg-destructive/5 p-6 text-sm">
-      Er ging iets mis: {error.message}
+      Er ging iets mis: {(error as Error).message}
     </div>
   ),
   notFoundComponent: () => (
