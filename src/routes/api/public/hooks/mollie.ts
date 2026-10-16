@@ -126,7 +126,7 @@ export const Route = createFileRoute("/api/public/hooks/mollie")({
 
             if (payment.status === "paid" && inv.paid_at == null) {
               const paidAtIso = payment.paidAt ?? new Date().toISOString();
-              await supabaseAdmin
+              const { error: updErr } = await supabaseAdmin
                 .from("invoices")
                 .update({
                   status: "paid",
@@ -134,6 +134,18 @@ export const Route = createFileRoute("/api/public/hooks/mollie")({
                   mollie_payment_id: payment.id,
                 } as never)
                 .eq("id", invoiceId);
+              if (updErr) {
+                await logWebhook({
+                  outcome: "rejected",
+                  reason: `invoice_update_failed: ${updErr.message}`.slice(0, 300),
+                  organization_id: inv.organization_id,
+                  invoice_id: inv.id,
+                  mollie_payment_id: payment.id,
+                  http_status: 500,
+                  payment_status: payment.status,
+                });
+                return new Response("update failed", { status: 500 });
+              }
               try {
                 await supabaseAdmin.rpc("post_invoice_journal", {
                   _invoice_id: invoiceId,
