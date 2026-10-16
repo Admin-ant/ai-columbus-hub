@@ -43,6 +43,13 @@
       "when": 1792061955249,
       "tag": "0005_fix_recordings_policy_stagger_cron",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792143138788,
+      "tag": "0006_allow_payments_in_closed_period",
+      "breakpoints": true
     }
   ]
 }
