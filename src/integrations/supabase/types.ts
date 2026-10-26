@@ -868,6 +868,7 @@ export type Database = {
           email: string | null
           first_name: string
           id: string
+          is_active: boolean
           is_primary: boolean
           job_title: string | null
           last_name: string | null
@@ -876,6 +877,7 @@ export type Database = {
           notes: string | null
           organization_id: string
           phone: string | null
+          secondary_email: string | null
           updated_at: string
         }
         Insert: {
@@ -886,6 +888,7 @@ export type Database = {
           email?: string | null
           first_name: string
           id?: string
+          is_active?: boolean
           is_primary?: boolean
           job_title?: string | null
           last_name?: string | null
@@ -894,6 +897,7 @@ export type Database = {
           notes?: string | null
           organization_id: string
           phone?: string | null
+          secondary_email?: string | null
           updated_at?: string
         }
         Update: {
@@ -904,6 +908,7 @@ export type Database = {
           email?: string | null
           first_name?: string
           id?: string
+          is_active?: boolean
           is_primary?: boolean
           job_title?: string | null
           last_name?: string | null
@@ -912,6 +917,7 @@ export type Database = {
           notes?: string | null
           organization_id?: string
           phone?: string | null
+          secondary_email?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2713,6 +2719,7 @@ export type Database = {
       mail_messages: {
         Row: {
           attachments: Json
+          auto_linked_contact_id: string | null
           bcc_emails: string[]
           body_html: string | null
           body_text: string | null
@@ -2746,6 +2753,7 @@ export type Database = {
         }
         Insert: {
           attachments?: Json
+          auto_linked_contact_id?: string | null
           bcc_emails?: string[]
           body_html?: string | null
           body_text?: string | null
@@ -2779,6 +2787,7 @@ export type Database = {
         }
         Update: {
           attachments?: Json
+          auto_linked_contact_id?: string | null
           bcc_emails?: string[]
           body_html?: string | null
           body_text?: string | null

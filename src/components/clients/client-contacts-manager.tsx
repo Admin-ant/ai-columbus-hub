@@ -30,6 +30,8 @@ const EMPTY = {
   first_name: "",
   last_name: "",
   email: "",
+  secondary_email: "",
+  is_active: true,
   phone: "",
   mobile: "",
   linkedin_url: "",
@@ -97,6 +99,8 @@ export function ClientContactsManager({
       first_name: r.first_name ?? "",
       last_name: r.last_name ?? "",
       email: r.email ?? "",
+      secondary_email: r.secondary_email ?? "",
+      is_active: r.is_active,
       phone: r.phone ?? "",
       mobile: r.mobile ?? "",
       linkedin_url: r.linkedin_url ?? "",
@@ -111,6 +115,9 @@ export function ClientContactsManager({
   async function save() {
     if (!organizationId) { toast.error("Organisatie ontbreekt"); return; }
     if (!form.first_name.trim()) { toast.error("Voornaam is verplicht"); return; }
+    if ([form.email, form.secondary_email].some((email) => email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))) {
+      toast.error("Vul een geldig e-mailadres in"); return;
+    }
     setSaving(true);
     const payload = {
       client_id: clientId,
@@ -118,6 +125,8 @@ export function ClientContactsManager({
       first_name: form.first_name.trim(),
       last_name: form.last_name.trim() || null,
       email: form.email.trim() || null,
+      secondary_email: form.secondary_email.trim() || null,
+      is_active: form.is_active,
       phone: form.phone.trim() || null,
       mobile: form.mobile.trim() || null,
       linkedin_url: form.linkedin_url.trim() || null,
@@ -205,6 +214,7 @@ export function ClientContactsManager({
                       {[r.first_name, r.last_name].filter(Boolean).join(" ")}
                     </div>
                     {r.is_primary && <Badge className="text-[10px]" variant="default">Primair</Badge>}
+                    {!r.is_active && <Badge variant="secondary">Inactief</Badge>}
                   </div>
                   {(r.job_title || r.department) && (
                     <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
@@ -229,6 +239,7 @@ export function ClientContactsManager({
               </div>
               <div className="mt-3 space-y-1 text-sm">
                 {r.email && <a href={`mailto:${r.email}`} className="flex items-center gap-2 hover:text-foreground text-muted-foreground"><Mail className="h-3.5 w-3.5" /> {r.email}</a>}
+                {r.secondary_email && <a href={`mailto:${r.secondary_email}`} className="flex items-center gap-2 break-all text-muted-foreground hover:text-foreground"><Mail className="h-3.5 w-3.5 shrink-0" /> {r.secondary_email}</a>}
                 {r.phone && <a href={`tel:${r.phone}`} className="flex items-center gap-2 hover:text-foreground text-muted-foreground"><Phone className="h-3.5 w-3.5" /> {r.phone}</a>}
                 {r.mobile && <a href={`tel:${r.mobile}`} className="flex items-center gap-2 hover:text-foreground text-muted-foreground"><Smartphone className="h-3.5 w-3.5" /> {r.mobile}</a>}
                 {r.linkedin_url && (
@@ -269,6 +280,13 @@ export function ClientContactsManager({
             <div>
               <Label>E-mail</Label>
               <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            </div>
+            <div>
+              <Label>Tweede e-mailadres</Label>
+              <Input type="email" value={form.secondary_email} onChange={(e) => setForm({ ...form, secondary_email: e.target.value })} />
+            </div>
+            <div className="md:col-span-2">
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} /> Actieve contactpersoon</label>
             </div>
             <div>
               <Label>Telefoon (vast)</Label>

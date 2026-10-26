@@ -1,0 +1,4 @@
+- [x] Automatisch binnenkomende mails en eerdere mails koppelen aan actieve contactpersonen, inclusief tweede e-mailadres.
+- [x] Klanten-tab met contactkeuze, klantnaam en vooraf ingevulde mail.
+- [ ] IMAP ophalen, werkende ophaalknop en beveiligde 15-minutentaak: geblokkeerd totdat mailprovider/serverinstellingen en veilige toegang beschikbaar zijn; er bestaat nog geen IMAP-verbinding.
+- [x] Klantkoppeling gecontroleerd met teruggedraaide databasetests; aangemelde klantkeuze en vooraf ingevulde mail gecontroleerd in de browser.
