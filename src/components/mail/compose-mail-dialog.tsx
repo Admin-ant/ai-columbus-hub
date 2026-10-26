@@ -38,6 +38,7 @@ type Props = {
   onOpenChange: (b: boolean) => void;
   organizationId: string;
   defaultTo?: string;
+  defaultClientId?: string;
   defaultSubject?: string;
   defaultBody?: string;
   inReplyTo?: string | null;
@@ -50,6 +51,7 @@ export function ComposeMailDialog({
   onOpenChange,
   organizationId,
   defaultTo,
+  defaultClientId,
   defaultSubject,
   defaultBody,
   inReplyTo,
@@ -78,7 +80,7 @@ export function ComposeMailDialog({
     setBody(defaultBody ?? "");
     setCc("");
     setAttachments([]);
-    setSelectedClient(null);
+    setSelectedClient(defaultClientId ?? null);
     setSelectedTemplate(null);
     (async () => {
       const [tRes, cRes] = await Promise.all([
@@ -98,7 +100,7 @@ export function ComposeMailDialog({
       setTemplates((tRes.data ?? []) as Template[]);
       setClients((cRes.data ?? []) as Client[]);
     })();
-  }, [open, organizationId, defaultTo, defaultSubject, defaultBody]);
+  }, [open, organizationId, defaultTo, defaultSubject, defaultBody, defaultClientId]);
 
   const selectedClientObj = useMemo(
     () => clients.find((c) => c.id === selectedClient) ?? null,
