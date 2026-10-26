@@ -387,8 +387,8 @@ function MailInbox() {
             const contact = contacts.find((c) => c.id === contactId);
             setReplyDefaults(null); setComposeTo(contact?.email || contact?.secondary_email || clients.find((c) => c.id === clientId)?.email || ""); setComposeOpen(true);
           }}><SendIcon className="mr-2 h-4 w-4" /> Mail sturen</Button>
-          <span title="De IMAP-mailserver is nog niet gekoppeld"><Button variant="outline" disabled><RefreshCw className="mr-2 h-4 w-4" /> Mails ophalen</Button></span>
-          <span className="text-sm text-muted-foreground">Mailserver nog niet gekoppeld</span>
+          <Button variant="outline" onClick={() => void load()} disabled={loading}><RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Vernieuwen</Button>
+          <span className="text-sm text-muted-foreground">Inkomende mail komt direct binnen via Resend</span>
         </div>}
 
         {clientId && (

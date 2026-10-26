@@ -12,16 +12,20 @@ export const Route = createFileRoute("/api/public/hooks/mail-inbound")({
       POST: async ({ request }) => {
         const secret = process.env.RESEND_WEBHOOK_SECRET;
         if (!secret) return new Response("Not configured", { status: 503 });
-        if (request.headers.get("x-webhook-secret") !== secret) {
+        const raw = await request.text();
+        const headerOk = request.headers.get("x-webhook-secret") === secret;
+        if (!headerOk && !(await verifySvix(request.headers, raw, secret))) {
           return new Response("Unauthorized", { status: 401 });
         }
 
         let payload: unknown;
         try {
-          payload = await request.json();
+          payload = JSON.parse(raw);
         } catch {
           return new Response("Invalid JSON", { status: 400 });
         }
+        const evType = (payload as { type?: string }).type;
+        if (evType && evType !== "email.received") return Response.json({ ok: true, ignored: evType });
 
         const ev = payload as {
           type?: string;
