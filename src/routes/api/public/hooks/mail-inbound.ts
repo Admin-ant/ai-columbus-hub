@@ -192,7 +192,7 @@ async function verifySvix(h: Headers, body: string, secret: string): Promise<boo
   if (!id || !ts || !sig) return false;
   if (Math.abs(Date.now() / 1000 - Number(ts)) > 300) return false;
   const keyB64 = secret.startsWith("whsec_") ? secret.slice(6) : secret;
-  let keyBytes: Uint8Array;
+  let keyBytes: Uint8Array<ArrayBuffer>;
   try { keyBytes = Uint8Array.from(atob(keyB64), (c) => c.charCodeAt(0)); } catch { return false; }
   const key = await crypto.subtle.importKey("raw", keyBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${id}.${ts}.${body}`));
