@@ -44,6 +44,7 @@ import {
 } from "@/lib/mail.functions";
 import { renderTokens } from "@/lib/outreach-templates";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,7 +54,14 @@ import {
 import { CheckCheck, EyeOff, FolderInput } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/mail")({
-  head: () => ({ meta: [{ title: "Mail" }] }),
+  head: () => ({ meta: [
+    { title: "Mail en klantdossiers — Columbus AI Hub" },
+    { name: "description", content: "Lees ontvangen e-mails en bekijk gesprekken per klant in Columbus AI Hub." },
+    { property: "og:title", content: "Mail en klantdossiers — Columbus AI Hub" },
+    { property: "og:description", content: "Ontvangen e-mails en gesprekken per klant." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   validateSearch: (search: Record<string, unknown>): { clientId?: string } =>
     typeof search.clientId === "string" ? { clientId: search.clientId } : {},
   component: MailPage,
@@ -91,6 +99,8 @@ type MailRow = {
 };
 
 type Template = { id: string; name: string; subject: string | null; body: string };
+type ClientOption = { id: string; name: string; email: string | null };
+type ContactOption = { id: string; client_id: string; first_name: string; last_name: string | null; email: string | null; secondary_email: string | null };
 
 function formatBytes(n?: number) {
   if (!n && n !== 0) return "";
@@ -141,6 +151,11 @@ function MailInbox() {
   const { clientId } = Route.useSearch();
   const navigate = Route.useNavigate();
   const [clientName, setClientName] = useState<string | null>(null);
+  const [customerView, setCustomerView] = useState(Boolean(clientId));
+  const [clients, setClients] = useState<ClientOption[]>([]);
+  const [contacts, setContacts] = useState<ContactOption[]>([]);
+  const [contactId, setContactId] = useState<string>("");
+  const [composeTo, setComposeTo] = useState("");
   const [folder, setFolder] = useState<Folder>("inbox");
   const [items, setItems] = useState<MailRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -169,8 +184,9 @@ function MailInbox() {
     let q = supabase
       .from("mail_messages")
       .select("*")
-      .eq("organization_id", currentOrganizationId)
-      .eq("folder", folder);
+      .eq("organization_id", currentOrganizationId);
+    if (!customerView) q = q.eq("folder", folder);
+    if (customerView && !clientId) q = q.not("client_id", "is", null);
     if (clientId) q = q.eq("client_id", clientId);
     const { data, error } = await q
       .order(order, { ascending: false, nullsFirst: false })
@@ -183,7 +199,19 @@ function MailInbox() {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentOrganizationId, folder, clientId]);
+  }, [currentOrganizationId, folder, clientId, customerView]);
+
+  useEffect(() => {
+    if (!currentOrganizationId) { setClients([]); setContacts([]); return; }
+    setClients([]); setContacts([]); setContactId("");
+    void Promise.all([
+      supabase.from("clients").select("id, name, email").eq("organization_id", currentOrganizationId).order("name"),
+      supabase.from("client_contacts").select("id, client_id, first_name, last_name, email, secondary_email").eq("organization_id", currentOrganizationId).eq("is_active", true).order("first_name"),
+    ]).then(([c, p]) => {
+      if (c.error || p.error) { toast.error("Klanten laden mislukt"); return; }
+      setClients(c.data ?? []); setContacts(p.data ?? []);
+    });
+  }, [currentOrganizationId]);
 
   useEffect(() => {
     if (!clientId || !currentOrganizationId) {
@@ -219,7 +247,7 @@ function MailInbox() {
       supabase.removeChannel(ch);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentOrganizationId, folder, clientId]);
+  }, [currentOrganizationId, folder, clientId, customerView]);
 
   const selected = useMemo(() => items.find((i) => i.id === selectedId) ?? null, [items, selectedId]);
 
@@ -267,6 +295,7 @@ function MailInbox() {
 
   const onCompose = () => {
     setReplyDefaults(null);
+    setComposeTo("");
     setComposeOpen(true);
   };
 
@@ -309,7 +338,7 @@ function MailInbox() {
   return (
     <div className="min-h-full bg-background text-foreground">
       <div className="mx-auto max-w-7xl space-y-6">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
               <MailIcon className="h-6 w-6 text-brand" />
@@ -319,7 +348,7 @@ function MailInbox() {
               {currentOrganization?.name ?? ""} — inbox, threads, status & templates
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="sm" className="border-border text-foreground hover:bg-muted">
               <Link to="/mail/templates"><Settings className="mr-2 h-4 w-4" /> Templates</Link>
             </Button>
@@ -334,6 +363,33 @@ function MailInbox() {
             </Button>
           </div>
         </div>
+
+        <Tabs value={customerView ? "customers" : "mail"} onValueChange={(v) => {
+          setCustomerView(v === "customers"); setSelectedId(null); setBulkIds(new Set());
+          if (v === "mail") void navigate({ search: {} });
+        }}>
+          <TabsList><TabsTrigger value="mail">Postvak</TabsTrigger><TabsTrigger value="customers">Klanten</TabsTrigger></TabsList>
+        </Tabs>
+        {customerView && <div className="flex flex-wrap items-center gap-3">
+          <Select value={clientId ?? "all"} onValueChange={(id) => { setContactId(""); setSelectedId(null); void navigate({ search: id === "all" ? {} : { clientId: id } }); }}>
+            <SelectTrigger className="w-full sm:w-64" aria-label="Klant"><SelectValue placeholder="Kies klant" /></SelectTrigger>
+            <SelectContent><SelectItem value="all">Alle klanten</SelectItem>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+          </Select>
+          <Select value={contactId || "all"} onValueChange={(id) => {
+            setContactId(id === "all" ? "" : id);
+            const contact = contacts.find((c) => c.id === id);
+            if (contact) void navigate({ search: { clientId: contact.client_id } });
+          }}>
+            <SelectTrigger className="w-full sm:w-64" aria-label="Contactpersoon"><SelectValue placeholder="Kies contactpersoon" /></SelectTrigger>
+            <SelectContent><SelectItem value="all">Alle contactpersonen</SelectItem>{contacts.filter((c) => !clientId || c.client_id === clientId).map((c) => <SelectItem key={c.id} value={c.id}>{[c.first_name, c.last_name].filter(Boolean).join(" ")}</SelectItem>)}</SelectContent>
+          </Select>
+          <Button disabled={!clientId || !(contacts.find((c) => c.id === contactId)?.email || contacts.find((c) => c.id === contactId)?.secondary_email || clients.find((c) => c.id === clientId)?.email)} onClick={() => {
+            const contact = contacts.find((c) => c.id === contactId);
+            setReplyDefaults(null); setComposeTo(contact?.email || contact?.secondary_email || clients.find((c) => c.id === clientId)?.email || ""); setComposeOpen(true);
+          }}><SendIcon className="mr-2 h-4 w-4" /> Mail sturen</Button>
+          <span title="De IMAP-mailserver is nog niet gekoppeld"><Button variant="outline" disabled><RefreshCw className="mr-2 h-4 w-4" /> Mails ophalen</Button></span>
+          <span className="text-sm text-muted-foreground">Mailserver nog niet gekoppeld</span>
+        </div>}
 
         {clientId && (
           <div className="flex items-center justify-between gap-3 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm">
@@ -572,6 +628,7 @@ function MailInbox() {
                         </div>
                         <div className="mt-1 flex items-center gap-2">
                           <StatusBadge m={m} />
+                          {m.client_id && <span className="truncate text-[11px] text-muted-foreground">{clients.find((c) => c.id === m.client_id)?.name ?? clientName ?? "Klant"}</span>}
                           {m.attachments?.length > 0 && <Paperclip className="h-3 w-3 text-muted-foreground" />}
                         </div>
                       </button>
@@ -609,7 +666,8 @@ function MailInbox() {
           open={composeOpen}
           onOpenChange={setComposeOpen}
           organizationId={currentOrganizationId}
-          defaultTo={replyDefaults?.to}
+          defaultTo={replyDefaults?.to ?? composeTo}
+          defaultClientId={clientId}
           defaultSubject={replyDefaults?.subject}
           inReplyTo={replyDefaults?.inReplyTo ?? null}
           threadId={replyDefaults?.threadId ?? null}
