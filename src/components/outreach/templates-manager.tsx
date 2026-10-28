@@ -501,6 +501,16 @@ export function TemplatesManager({
                 onChange={(e) => setEditing({ ...editing, body: e.target.value })}
                 className="border-input bg-background font-mono text-sm leading-relaxed text-foreground placeholder:text-muted-foreground shadow-sm"
               />
+              {editing.channel === "email" && (
+                <label className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={editing.is_html === true}
+                    onChange={(e) => setEditing({ ...editing, is_html: e.target.checked })}
+                  />
+                  HTML-sjabloon — de opmaak blijft zo bij verzenden en in de voorbeeldmail
+                </label>
+              )}
             </div>
 
             {editing.channel === "email" && (
@@ -717,9 +727,20 @@ export function TemplatesManager({
                 // eslint-disable-next-line react/no-danger
                 <div dangerouslySetInnerHTML={{ __html: sanitizeSkinHtml(previewHeaderHtml) }} />
               )}
-              <div className="whitespace-pre-wrap p-3 leading-relaxed text-foreground">
-                {renderTokens(preview.body, sample)}
-              </div>
+              {preview.is_html ? (
+                <iframe
+                  title="Voorbeeld van HTML-sjabloon"
+                  sandbox=""
+                  className="h-[440px] w-full border-0 bg-white"
+                  srcDoc={sanitizeMailHtml(
+                    `${previewHeaderHtml ?? ""}<div>${renderTokens(preview.body, sample)}</div>${previewFooterHtml ?? ""}`,
+                  )}
+                />
+              ) : (
+                <div className="whitespace-pre-wrap p-3 leading-relaxed text-foreground">
+                  {renderTokens(preview.body, sample)}
+                </div>
+              )}
               {previewFooterHtml && (
                 // eslint-disable-next-line react/no-danger
                 <div dangerouslySetInnerHTML={{ __html: sanitizeSkinHtml(previewFooterHtml) }} />
