@@ -933,6 +933,63 @@ export function TemplatesManager({
           </div>
         )}
       </div>
+
+      {/* Volledig opgemaakt voorbeeld met ingevulde voorbeeldgegevens */}
+      <Dialog open={fullPreview && !!preview} onOpenChange={setFullPreview}>
+        <DialogContent className="max-w-[860px] gap-3 sm:max-w-[860px]">
+          <DialogHeader>
+            <DialogTitle>{preview?.name}</DialogTitle>
+            <DialogDescription>
+              Zo ziet de mail er bij de klant uit. De stukjes tussen dubbele haakjes zijn
+              vervangen door voorbeeldgegevens.
+            </DialogDescription>
+          </DialogHeader>
+          {preview && (
+            <div className="space-y-3">
+              {preview.subject && (
+                <div className="rounded border border-border bg-muted/40 px-3 py-2 text-sm">
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Onderwerp:{" "}
+                  </span>
+                  <span className="font-medium text-foreground">
+                    {renderTokens(preview.subject, sample)}
+                  </span>
+                </div>
+              )}
+              <div className="max-h-[58vh] overflow-y-auto rounded border border-border bg-white">
+                {preview.is_html ? (
+                  <iframe
+                    title="Volledig voorbeeld van HTML-sjabloon"
+                    sandbox=""
+                    className="h-[58vh] w-full border-0 bg-white"
+                    srcDoc={sanitizeMailHtml(
+                      `${previewHeaderHtml ?? ""}<div>${renderTokens(preview.body, sample)}</div>${previewFooterHtml ?? ""}`,
+                    )}
+                  />
+                ) : (
+                  <div className="whitespace-pre-wrap p-4 leading-relaxed text-foreground">
+                    {renderTokens(preview.body, sample)}
+                  </div>
+                )}
+              </div>
+              <div className="grid gap-1.5 sm:grid-cols-2">
+                {SAMPLE_FIELDS.map((f) => (
+                  <div key={f.key} className="grid grid-cols-[92px_1fr] items-center gap-2">
+                    <Label className="text-[10px] text-muted-foreground truncate" title={f.label}>
+                      {f.label}
+                    </Label>
+                    <Input
+                      value={sample[f.key]}
+                      onChange={(e) => setSample((s) => ({ ...s, [f.key]: e.target.value }))}
+                      className="h-7 border-input bg-background text-[11px] text-foreground shadow-sm"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
