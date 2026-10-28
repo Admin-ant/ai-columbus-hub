@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { apptDict, normalizeLocale, type ApptLocale } from "@/lib/appointment-i18n";
 import { renderTokens, type TokenVars } from "@/lib/outreach-templates";
+import { renderAppointmentMail, googleCalendarLink, parseAgendaPoints } from "@/lib/appointment-email-template";
 
 function pad(n: number) {
   return String(n).padStart(2, "0");
@@ -250,11 +251,11 @@ export const sendAppointmentInvite = createServerFn({ method: "POST" })
 
     const appUrl = process.env.APP_PUBLIC_URL || "https://ai-columbus-hub.lovable.app";
     const actionUrl = `${appUrl}/afspraak/${a.confirm_token}`;
-    const logoUrl = `${appUrl}/__l5e/assets-v1/85be082d-1ee9-479b-8166-888a14e2734d/logo-columbus-full.png`;
+    const logoUrl = `${appUrl}/__l5e/assets-v1/fa495ec7-4dc0-4ae6-9093-fb790ddb8334/logo-columbus-email.png`;
 
     const attendeeDisplayName = a.attendee_name ?? t.fallbackName;
     let heading = data.cancel ? t.headingCancelled : t.headingConfirm;
-    let intro = data.cancel ? t.introCancelled(attendeeDisplayName) : t.introConfirm(attendeeDisplayName);
+    let intro = data.cancel ? t.introCancelled(attendeeDisplayName) : locale === "nl" ? "Dank je wel voor het fijne gesprek. Hierbij bevestig ik onze afspraak. Ik kijk ernaar uit!" : t.introConfirm(attendeeDisplayName);
     const customMessage = data.message?.trim() ? data.message.trim() : "";
     let subject = `${data.cancel ? t.subjectPrefixCancel + " " : ""}${a.title} — ${dateStr}`;
 
@@ -303,6 +304,9 @@ export const sendAppointmentInvite = createServerFn({ method: "POST" })
       fromName,
       logoUrl,
       cancelled: data.cancel === true,
+      firstName: (a.attendee_name ?? "").trim().split(/\s+/)[0] || attendeeDisplayName,
+      startsAt: a.starts_at,
+      endsAt: a.ends_at,
     });
 
 
@@ -431,7 +435,7 @@ export const previewAppointmentEmailHtml = createServerFn({ method: "POST" })
     const dateStr = startDate.toLocaleDateString(t.bcp47, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
     const timeStr = `${startDate.toLocaleTimeString(t.bcp47, { hour: "2-digit", minute: "2-digit" })} – ${endDate.toLocaleTimeString(t.bcp47, { hour: "2-digit", minute: "2-digit" })}`;
     const appUrl = process.env.APP_PUBLIC_URL || "https://ai-columbus-hub.lovable.app";
-    const logoUrl = `${appUrl}/__l5e/assets-v1/85be082d-1ee9-479b-8166-888a14e2734d/logo-columbus-full.png`;
+    const logoUrl = `${appUrl}/__l5e/assets-v1/fa495ec7-4dc0-4ae6-9093-fb790ddb8334/logo-columbus-email.png`;
     const sampleTokens: Record<string, string> = {
       confirm: "preview-confirm-abc123",
       cancel: "preview-cancel-abc123",
@@ -474,6 +478,9 @@ export const previewAppointmentEmailHtml = createServerFn({ method: "POST" })
       fromName: "AI van Columbus",
       logoUrl,
       cancelled,
+      firstName: attendeeName.split(/\s+/)[0],
+      startsAt,
+      endsAt,
     });
     return { html, subject: `${cancelled ? t.subjectPrefixCancel + " " : ""}${data.title?.trim() || "Kennismaking"} — ${dateStr}` };
   });
@@ -492,67 +499,30 @@ function renderAppointmentHtml(opts: {
   fromName: string;
   logoUrl: string;
   cancelled: boolean;
+  firstName?: string;
+  startsAt?: string;
+  endsAt?: string;
 }): string {
-  const t = apptDict(opts.locale);
-  const accent = "#ff6a3d";
-  const accentDark = "#d94e24";
-  const btnBase = `text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;display:inline-block;font-size:15px;line-height:1.4;mso-line-height-rule:exactly;`;
-  const btnPrimary = `${btnBase}background:${accent};color:#ffffff;border:2px solid ${accent};`;
-  const btnPrimaryHover = `background:${accentDark};border-color:${accentDark};`;
-  const btnSecondary = `${btnBase}background:#ffffff;color:#1a1a1a;border:2px solid #e5e0d5;margin-left:8px;`;
-  const btnSecondaryHover = `background:#f5f5f5;border-color:#d4d4d4;`;
-  const focusRing = `outline:3px solid #2563eb;outline-offset:2px;`;
-  const actionUrlEscaped = escapeAttr(opts.actionUrl);
-  const buttons = opts.cancelled
-    ? ""
-    : `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0;border-collapse:separate"><tr>
-         <td style="padding-right:8px"><a href="${actionUrlEscaped}?a=confirm" role="button" aria-label="${escapeAttr(t.btnConfirmAriaLabel)}" style="${btnPrimary}">${escapeHtml(t.btnConfirm)}</a></td>
-         <td><a href="${actionUrlEscaped}?a=reschedule" role="button" aria-label="${escapeAttr(t.btnRescheduleAriaLabel)}" style="${btnSecondary}">${escapeHtml(t.btnReschedule)}</a></td>
-       </tr></table>
-       <style>
-         a[role="button"]:hover { text-decoration:none !important; }
-         a[href^="${actionUrlEscaped}?a=confirm"]:hover { ${btnPrimaryHover} }
-         a[href^="${actionUrlEscaped}?a=reschedule"]:hover { ${btnSecondaryHover} }
-         a[role="button"]:focus-visible { ${focusRing} }
-       </style>`;
-
-  return `<!doctype html><html lang="${opts.locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(opts.title)}</title></head>
-<body style="margin:0;padding:0;background:#faf7f2;font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#1a1a1a">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#faf7f2;padding:32px 12px">
-  <tr><td align="center">
-    <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;width:100%">
-      <tr><td align="center" style="padding-bottom:20px">
-        <img src="${escapeAttr(opts.logoUrl)}" alt="AI van Columbus" width="200" style="max-width:220px;height:auto;display:block">
-      </td></tr>
-      <tr><td style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,0.06)">
-        <div style="background:linear-gradient(135deg,#ff6a3d 0%,#ff8a4a 55%,#ffb37a 100%);color:#ffffff;padding:32px 32px 28px">
-          <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;opacity:0.9">${escapeHtml(opts.heading)}</div>
-          <h1 style="margin:8px 0 0;font-size:26px;line-height:1.25;font-weight:700">${escapeHtml(opts.title)}</h1>
-          <div style="margin-top:18px;font-size:15px;opacity:0.95">
-            📅 ${escapeHtml(opts.dateStr)}<br>
-            🕐 ${escapeHtml(opts.timeStr)}
-            ${opts.location ? `<br>📍 ${escapeHtml(opts.location)}` : ""}
-          </div>
-        </div>
-        <div style="padding:28px 32px 32px">
-          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#3a3a3a">${escapeHtml(opts.intro)}</p>
-          ${opts.description ? `<div style="background:#faf7f2;border-radius:10px;padding:16px 18px;font-size:14px;line-height:1.6;color:#3a3a3a;white-space:pre-wrap;margin-bottom:8px">${escapeHtml(opts.description)}</div>` : ""}
-          ${opts.customMessage ? `<div style="border-left:3px solid ${accent};padding:6px 0 6px 14px;font-size:14px;line-height:1.6;color:#3a3a3a;white-space:pre-wrap;margin-top:16px">${escapeHtml(opts.customMessage)}</div>` : ""}
-          ${buttons}
-          ${!opts.cancelled ? `<p style="margin:8px 0 0;font-size:13px;line-height:1.5;color:#595959">${escapeHtml(t.linkFallback)} <a href="${escapeAttr(opts.actionUrl)}" aria-label="${escapeAttr(t.linkFallbackLabel)}" style="color:#595959;text-decoration:underline;text-underline-offset:2px;font-weight:500;outline:none">${escapeHtml(t.linkFallbackLabel)}</a>.<br><code style="font-size:12px;color:#737373;word-break:break-all">${escapeHtml(opts.actionUrl)}</code></p>` : ""}
-          ${opts.cancelled ? `<p style="margin:8px 0 0;font-size:13px;color:#8a8a8a">${escapeHtml(t.cancelledFootnote)}</p>` : ""}
-        </div>
-        <div style="background:#faf7f2;padding:16px 32px;text-align:center;font-size:12px;color:#8a8a8a;border-top:1px solid #efe9dd">
-          ${escapeHtml(t.signature)} ${escapeHtml(opts.fromName)}
-        </div>
-      </td></tr>
-      <tr><td align="center" style="padding-top:16px;font-size:11px;color:#a8a29a">
-        ${escapeHtml(t.footerFrom)} ${escapeHtml(opts.fromName)} • ${escapeHtml(opts.dateStr)}
-      </td></tr>
-    </table>
-  </td></tr>
-</table>
-</body></html>`;
+  const dayMonth = opts.dateStr.replace(/^\S+\s+/, "").replace(/\s+\d{4}$/, "");
+  const agendaLink = opts.startsAt && opts.endsAt
+    ? googleCalendarLink({ title: opts.title, start: opts.startsAt, end: opts.endsAt, location: opts.location, details: opts.description })
+    : opts.actionUrl;
+  return renderAppointmentMail({
+    heading: opts.cancelled ? "Je afspraak is geannuleerd" : "Je afspraak is bevestigd",
+    firstName: opts.firstName || "",
+    intro: opts.intro,
+    dateStr: opts.dateStr,
+    dateUrl: encodeURIComponent(dayMonth),
+    timeStr: opts.timeStr.includes("uur") ? opts.timeStr : `${opts.timeStr} uur`,
+    location: opts.location || "Wordt nog afgestemd",
+    subject: opts.title,
+    agendaLink,
+    agendaPoints: parseAgendaPoints(opts.description),
+    logoUrl: opts.logoUrl,
+    confirmUrl: opts.cancelled ? null : opts.actionUrl,
+    cancelled: opts.cancelled,
+    customMessage: opts.customMessage,
+  });
 }
 
 function escapeAttr(s: string): string {
