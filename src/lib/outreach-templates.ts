@@ -45,6 +45,8 @@ export type OutreachTemplate = {
   header_html?: string | null;
   footer_html?: string | null;
   mail_background_id?: string | null;
+  /** true = de sjabloontekst is HTML: opmaak blijft bij verzenden en voorbeeld behouden. */
+  is_html?: boolean;
 };
 
 export type MailBackground = {
