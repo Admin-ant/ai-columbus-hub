@@ -13,6 +13,7 @@ import {
   History,
   RotateCcw,
   Send,
+  Maximize2,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -102,6 +110,7 @@ export function TemplatesManager({
   const [backgrounds, setBackgrounds] = useState<MailBackground[]>([]);
   const [savingBg, setSavingBg] = useState(false);
   const [previewSkinId, setPreviewSkinId] = useState<string | null>(null);
+  const [fullPreview, setFullPreview] = useState(false);
   const { user } = useAuth();
   const [testTo, setTestTo] = useState<string>("");
   const [sendingTest, setSendingTest] = useState(false);
