@@ -43,6 +43,7 @@ import {
   bulkUpdateMail,
 } from "@/lib/mail.functions";
 import { renderTokens } from "@/lib/outreach-templates";
+import { HtmlMailBody, escapeTokenVars } from "@/components/mail/html-mail-body";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -98,7 +99,7 @@ type MailRow = {
   created_at: string;
 };
 
-type Template = { id: string; name: string; subject: string | null; body: string };
+type Template = { id: string; name: string; subject: string | null; body: string; is_html?: boolean | null };
 type ClientOption = { id: string; name: string; email: string | null };
 type ContactOption = { id: string; client_id: string; first_name: string; last_name: string | null; email: string | null; secondary_email: string | null };
 
@@ -850,10 +851,12 @@ function InlineReply({
   const [tplId, setTplId] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [defaultTplId, setDefaultTplId] = useState<string | null>(null);
+  const [isHtml, setIsHtml] = useState(false);
 
   useEffect(() => {
     setBody("");
     setTplId("");
+    setIsHtml(false);
   }, [selected.id]);
 
   useEffect(() => {
@@ -862,7 +865,7 @@ function InlineReply({
       const [t, s] = await Promise.all([
         supabase
           .from("outreach_message_templates")
-          .select("id, name, subject, body")
+          .select("id, name, subject, body, is_html")
           .eq("organization_id", organizationId)
           .eq("channel", "email")
           .order("name"),
@@ -882,7 +885,8 @@ function InlineReply({
     const tpl = templates.find((t) => t.id === id);
     if (!tpl) return;
     const vars = { contact_name: selected.from_name ?? "", company: "", sender_name: "", province: "" };
-    setBody(renderTokens(tpl.body, vars));
+    setIsHtml(!!tpl.is_html);
+    setBody(renderTokens(tpl.body, tpl.is_html ? escapeTokenVars(vars) : vars));
   }
 
   async function quickSend() {
@@ -910,11 +914,13 @@ function InlineReply({
           in_reply_to: selected.provider_message_id,
           thread_id: selected.thread_id ?? selected.id,
           attachments: [],
+          is_html: isHtml,
         },
       });
       toast.success("Reply verstuurd");
       setBody("");
       setTplId("");
+      setIsHtml(false);
       onSent();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Verzendfout");
@@ -948,6 +954,9 @@ function InlineReply({
           </Select>
         </div>
       </div>
+      {isHtml ? (
+        <HtmlMailBody html={body} height={360} onSwitchToText={() => { setIsHtml(false); setBody(""); setTplId(""); }} />
+      ) : (
       <Textarea
         rows={5}
         value={body}
@@ -955,6 +964,7 @@ function InlineReply({
         placeholder="Typ je antwoord…"
         className="border-input bg-background text-sm leading-relaxed text-foreground placeholder:text-muted-foreground shadow-sm"
       />
+      )}
       <div className="flex justify-end">
         <Button
           size="sm"

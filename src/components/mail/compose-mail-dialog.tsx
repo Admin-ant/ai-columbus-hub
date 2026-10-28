@@ -23,6 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { sendMail } from "@/lib/mail.functions";
 import { renderTokens } from "@/lib/outreach-templates";
+import { HtmlMailBody, escapeTokenVars } from "@/components/mail/html-mail-body";
 
 type Template = {
   id: string;
@@ -30,6 +31,7 @@ type Template = {
   channel: string;
   subject: string | null;
   body: string;
+  is_html?: boolean | null;
 };
 type Client = { id: string; name: string; email: string | null };
 
@@ -70,6 +72,7 @@ export function ComposeMailDialog({
   const [attachments, setAttachments] = useState<
     Array<{ path: string; filename: string; size: number; mime: string }>
   >([]);
+  const [isHtml, setIsHtml] = useState(false);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -82,11 +85,12 @@ export function ComposeMailDialog({
     setAttachments([]);
     setSelectedClient(defaultClientId ?? null);
     setSelectedTemplate(null);
+    setIsHtml(false);
     (async () => {
       const [tRes, cRes] = await Promise.all([
         supabase
           .from("outreach_message_templates")
-          .select("id, name, channel, subject, body")
+          .select("id, name, channel, subject, body, is_html")
           .eq("organization_id", organizationId)
           .in("channel", ["email"])
           .order("name"),
@@ -118,7 +122,8 @@ export function ComposeMailDialog({
       province: "",
     };
     if (t.subject) setSubject(renderTokens(t.subject, vars));
-    setBody(renderTokens(t.body, vars));
+    setIsHtml(!!t.is_html);
+    setBody(renderTokens(t.body, t.is_html ? escapeTokenVars(vars) : vars));
   }
 
   function pickClient(id: string) {
@@ -176,6 +181,7 @@ export function ComposeMailDialog({
           in_reply_to: inReplyTo ?? null,
           thread_id: threadId ?? null,
           attachments,
+          is_html: isHtml,
         },
       });
       toast.success("Mail verstuurd");
@@ -264,12 +270,16 @@ export function ComposeMailDialog({
           </div>
           <div>
             <label className="text-[11px] font-medium uppercase tracking-wider text-foreground">Bericht</label>
+            {isHtml ? (
+              <HtmlMailBody html={body} onSwitchToText={() => { setIsHtml(false); setBody(""); setSelectedTemplate(null); }} />
+            ) : (
             <Textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={12}
               className="border-input bg-background text-sm leading-relaxed text-foreground placeholder:text-muted-foreground shadow-sm"
             />
+            )}
           </div>
 
           <div>
