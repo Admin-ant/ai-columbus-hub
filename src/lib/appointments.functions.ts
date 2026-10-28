@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { apptDict, normalizeLocale, type ApptLocale } from "@/lib/appointment-i18n";
 import { renderTokens, type TokenVars } from "@/lib/outreach-templates";
+import { renderAppointmentMail, googleCalendarLink, parseAgendaPoints } from "@/lib/appointment-email-template";
 
 function pad(n: number) {
   return String(n).padStart(2, "0");
