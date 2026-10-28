@@ -705,11 +705,23 @@ export function TemplatesManager({
             <Eye className="h-3.5 w-3.5" />
             Preview
           </span>
+          <span className="flex items-center gap-2">
           {previewVersion && (
             <Badge variant="outline" className="border-primary/40 bg-primary/10 text-[9px] text-primary">
               v{previewVersion.version}
             </Badge>
           )}
+          {preview && (
+            <button
+              type="button"
+              onClick={() => setFullPreview(true)}
+              className="inline-flex items-center gap-1 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal text-primary hover:bg-primary/15"
+              title="Toon het opgemaakte voorbeeld op volle grootte"
+            >
+              <Maximize2 className="h-2.5 w-2.5" /> Volledig voorbeeld
+            </button>
+          )}
+          </span>
         </div>
         {preview ? (
           <div className="rounded-lg border border-border bg-card p-3 text-sm text-card-foreground shadow-sm space-y-2">
