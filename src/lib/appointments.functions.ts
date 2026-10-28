@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { apptDict, normalizeLocale, type ApptLocale } from "@/lib/appointment-i18n";
 import { renderTokens, type TokenVars } from "@/lib/outreach-templates";
 import { renderAppointmentMail, googleCalendarLink, parseAgendaPoints } from "@/lib/appointment-email-template";
+import { sanitizeMailHtml } from "@/lib/skin-sanitize";
 
 function pad(n: number) {
   return String(n).padStart(2, "0");
@@ -258,18 +259,30 @@ export const sendAppointmentInvite = createServerFn({ method: "POST" })
     const customMessage = data.message?.trim() ? data.message.trim() : "";
     let subject = `${data.cancel ? t.subjectPrefixCancel + " " : ""}${a.title} — ${dateStr}`;
 
-    // Optional: override subject + intro from editable template "Afspraak bevestiging"
+    // Optioneel: onderwerp/inqtekst of een volledig HTML-sjabloon uit "Afspraak bevestiging".
+    let htmlTemplate: string | null = null;
     if (!data.cancel) {
-      const { data: tpl } = await context.supabase
-        .from("outreach_message_templates")
-        .select("subject, body")
+      const { data: mailSettings } = await context.supabase
+        .from("mail_settings")
+        .select("appointment_template_id")
         .eq("organization_id", a.organization_id)
-        .eq("channel", "email")
-        .ilike("name", "Afspraak bevestiging")
-        .order("is_default", { ascending: false })
-        .limit(1)
         .maybeSingle();
-      const row = tpl as { subject: string | null; body: string | null } | null;
+      const chosenId = (mailSettings as { appointment_template_id: string | null } | null)
+        ?.appointment_template_id;
+      let tplQuery = context.supabase
+        .from("outreach_message_templates")
+        .select("subject, body, is_html")
+        .eq("organization_id", a.organization_id)
+        .eq("channel", "email");
+      if (chosenId) {
+        tplQuery = tplQuery.eq("id", chosenId);
+      } else {
+        tplQuery = tplQuery
+          .ilike("name", "Afspraak bevestiging")
+          .order("is_default", { ascending: false });
+      }
+      const { data: tpl } = await tplQuery.limit(1).maybeSingle();
+      const row = tpl as { subject: string | null; body: string | null; is_html?: boolean } | null;
       if (row && (row.subject || row.body)) {
         const tokens: TokenVars = {
           contact_name: attendeeDisplayName,
@@ -283,7 +296,12 @@ export const sendAppointmentInvite = createServerFn({ method: "POST" })
           appointment_link: actionUrl,
         };
         if (row.subject && row.subject.trim()) subject = renderTokens(row.subject, tokens);
-        if (row.body && row.body.trim()) intro = renderTokens(row.body, tokens);
+        if (row.is_html && row.body && row.body.trim()) {
+          // HTML-sjabloon: de volledige mail komt uit het sjabloon, niet uit het standaardontwerp.
+          htmlTemplate = sanitizeMailHtml(renderTokens(row.body, tokens));
+        } else if (row.body && row.body.trim()) {
+          intro = renderTokens(row.body, tokens);
+        }
       }
     }
 
@@ -497,7 +515,10 @@ function renderAppointmentHtml(opts: {
   firstName?: string;
   startsAt?: string;
   endsAt?: string;
+  htmlOverride?: string | null;
 }): string {
+  // Een HTML-sjabloon uit de sjabloonlijst vervangt het standaardontwerp volledig.
+  if (opts.htmlOverride && opts.htmlOverride.trim()) return opts.htmlOverride;
   const dayMonth = opts.dateStr.replace(/^\S+\s+/, "").replace(/\s+\d{4}$/, "");
   const agendaLink = opts.startsAt && opts.endsAt
     ? googleCalendarLink({ title: opts.title, start: opts.startsAt, end: opts.endsAt, location: opts.location, details: opts.description })
