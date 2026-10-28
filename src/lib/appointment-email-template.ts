@@ -1,5 +1,6 @@
 // Afspraakbevestiging in AI van Columbus-huisstijl. Tabel-layout + inline CSS
 // zodat de mail werkt in Gmail, Outlook (desktop) en Apple Mail.
+import logoAsset from "@/assets/logo-wit.png.asset.json";
 
 export type AppointmentMailVars = {
   heading: string; // "Je afspraak is bevestigd"
@@ -38,12 +39,11 @@ function outlineButton(href: string, label: string): string {
 </td></tr></table>`;
 }
 
-/** Tekstlogo in huisstijl: volledige naam, altijd leesbaar op de zwarte balk. */
-function textLogo(): string {
-  return `<table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr>
-<td align="center" bgcolor="${ORANGE}" style="background:${ORANGE};border-radius:4px;padding:6px 9px;font-family:${FONT};font-size:18px;font-weight:bold;line-height:22px;color:#ffffff;letter-spacing:1px;">AI</td>
-<td valign="middle" style="padding-left:11px;font-family:${FONT};font-size:22px;line-height:26px;letter-spacing:0.5px;color:#ffffff;white-space:nowrap;"><span style="font-weight:normal;color:#CCCCCC;">van</span>&nbsp;<span style="font-weight:bold;color:#ffffff;">Columbus</span></td>
-</tr></table>`;
+/** Merklogo op de zwarte balk; wit/oranje, altijd bereikbaar via het eigen domein. */
+const LOGO_URL = `https://aiqloud.nl${logoAsset.url}`;
+
+function logo(): string {
+  return `<img src="${LOGO_URL}" width="200" height="52" alt="AI van Columbus" style="display:block;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;">`;
 }
 
 export function renderAppointmentMail(v: AppointmentMailVars): string {
@@ -79,7 +79,7 @@ export function renderAppointmentMail(v: AppointmentMailVars): string {
 <tr><td align="center" style="padding:24px 10px;">
 <table role="presentation" class="container" width="600" cellspacing="0" cellpadding="0" border="0" style="width:600px;max-width:600px;background:#ffffff;">
 <tr><td bgcolor="#000000" class="px" style="background:#000000;padding:22px 40px;" align="left">
-${textLogo()}
+${logo()}
 </td></tr>
 <tr><td height="4" bgcolor="${ORANGE}" style="background:${ORANGE};font-size:0;line-height:0;">&nbsp;</td></tr>
 <tr><td class="px" style="padding:40px 40px 8px;">
