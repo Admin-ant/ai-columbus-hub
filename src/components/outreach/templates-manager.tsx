@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { VisualHtmlEditor, type VisualHtmlEditorHandle } from "@/components/outreach/visual-html-editor";
 import { toast } from "sonner";
 import {
   Plus,
@@ -90,6 +91,9 @@ export function TemplatesManager({
   const [templates, setTemplates] = useState<OutreachTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<OutreachTemplate | null>(null);
+  const [codeMode, setCodeMode] = useState(false);
+  const [visualKey, setVisualKey] = useState(0);
+  const visualRef = useRef<VisualHtmlEditorHandle>(null);
   const [channel, setChannel] = useState<TemplateChannel>("email");
   const [versions, setVersions] = useState<TemplateVersion[]>([]);
   const [previewVersion, setPreviewVersion] = useState<TemplateVersion | null>(null);
@@ -315,11 +319,16 @@ export function TemplatesManager({
 
   function insertToken(token: string) {
     if (!editing) return;
+    if (editing.is_html && !codeMode && visualRef.current) {
+      visualRef.current.insertText(token);
+      return;
+    }
     setEditing({ ...editing, body: editing.body + token });
   }
 
   function restoreVersion(v: TemplateVersion) {
     if (!editing) return;
+    setVisualKey((k) => k + 1);
     setEditing({
       ...editing,
       name: v.name,
@@ -495,12 +504,46 @@ export function TemplatesManager({
                   ))}
                 </div>
               </div>
+              {editing.channel === "email" && editing.is_html && (
+                <div className="mb-1.5 mt-1 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                  <span>
+                    {codeMode
+                      ? "Je bewerkt de HTML-code."
+                      : "Klik in de mail en pas de tekst aan. Logo en opmaak blijven behouden."}
+                  </span>
+                  <div className="flex rounded-md border border-border p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => { setCodeMode(false); setVisualKey((k) => k + 1); }}
+                      className={`rounded px-2 py-0.5 ${!codeMode ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent"}`}
+                    >
+                      Visueel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCodeMode(true)}
+                      className={`rounded px-2 py-0.5 ${codeMode ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent"}`}
+                    >
+                      Code
+                    </button>
+                  </div>
+                </div>
+              )}
+              {editing.channel === "email" && editing.is_html && !codeMode ? (
+                <VisualHtmlEditor
+                  key={`${editing.id ?? "new"}-${visualKey}`}
+                  ref={visualRef}
+                  html={editing.body}
+                  onChange={(body) => setEditing((cur) => (cur ? { ...cur, body } : cur))}
+                />
+              ) : (
               <Textarea
                 rows={14}
                 value={editing.body}
                 onChange={(e) => setEditing({ ...editing, body: e.target.value })}
                 className="border-input bg-background font-mono text-sm leading-relaxed text-foreground placeholder:text-muted-foreground shadow-sm"
               />
+              )}
               {editing.channel === "email" && (
                 <label className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
                   <input
