@@ -28,6 +28,30 @@ export function sanitizeSkinHtml(input: string | null | undefined): string {
   });
 }
 
+/**
+ * Sanitize a complete HTML mail (body may contain <style>, <meta>, table layout).
+ * Used for templates flagged as HTML: scripts, event handlers, iframes and
+ * javascript:/data: URLs are removed, everything else stays as-is.
+ * Falls back to an escaped plain-text block when the input is not valid HTML.
+ */
+export function sanitizeMailHtml(input: string | null | undefined): string {
+  if (!input) return "";
+  const trimmed = String(input).slice(0, 100_000);
+  const out = DOMPurify.sanitize(trimmed, {
+    USE_PROFILES: { html: true },
+    ADD_TAGS: ["style"],
+    ADD_ATTR: ["style", "align", "valign", "width", "height", "bgcolor", "border", "cellspacing", "cellpadding", "role", "target", "rel", "background", "hspace", "vspace", "nowrap", "span", "colspan"],
+    ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|tel:|#|\/)/i,
+    FORBID_TAGS: ["script", "iframe", "object", "embed", "form", "base", "applet"],
+    FORBID_ATTR: ["srcset", "formaction", "xlink:href"],
+    ALLOW_DATA_ATTR: false,
+    KEEP_CONTENT: true,
+  });
+  if (out && out.trim().length > 0) return out;
+  return `<pre style="white-space:pre-wrap;font-family:Arial,sans-serif">${trimmed.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]!)}</pre>`;
+}
+
+
 const HEX_COLOR = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 const NAMED_COLOR = /^[a-zA-Z]{3,20}$/; // white, transparent, rebeccapurple, …
 

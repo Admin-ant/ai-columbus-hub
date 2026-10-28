@@ -30,6 +30,7 @@ type Settings = {
   default_email_template_id: string | null;
   default_linkedin_template_id: string | null;
   default_whatsapp_template_id: string | null;
+  appointment_template_id: string | null;
 };
 const empty: Settings = {
   from_email: "",
@@ -39,6 +40,7 @@ const empty: Settings = {
   default_email_template_id: null,
   default_linkedin_template_id: null,
   default_whatsapp_template_id: null,
+  appointment_template_id: null,
 };
 
 function MailSettingsPage() {
@@ -83,6 +85,7 @@ function MailSettingsPage() {
       default_email_template_id: s.default_email_template_id,
       default_linkedin_template_id: s.default_linkedin_template_id,
       default_whatsapp_template_id: s.default_whatsapp_template_id,
+      appointment_template_id: s.appointment_template_id,
     };
     const { error } = await supabase
       .from("mail_settings")
@@ -170,6 +173,19 @@ function MailSettingsPage() {
                 options={byChannel("whatsapp")}
               />
             </div>
+
+            <div className="grid gap-4 sm:grid-cols-1">
+              <TplSel
+                label="Afspraakbevestiging (HTML-sjabloon)"
+                value={s.appointment_template_id}
+                onChange={(v) => setS({ ...s, appointment_template_id: v })}
+                options={byChannel("email")}
+              />
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Kies hier een sjabloon met het vinkje "HTML-sjabloon": die mail gaat dan volledig
+              zoals hij eruitziet naar de klant. Zonder keuze gebruikt de app het standaardontwerp.
+            </p>
 
             <div className="flex justify-end">
               <Button

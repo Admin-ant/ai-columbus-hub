@@ -60,6 +60,7 @@ const SEND_SCHEMA = z.object({
   in_reply_to: z.string().optional().nullable(),
   thread_id: z.string().uuid().optional().nullable(),
   attachments: z.array(ATTACH).max(10).optional().default([]),
+  is_html: z.boolean().optional().default(false),
 });
 
 export const sendMail = createServerFn({ method: "POST" })
@@ -82,9 +83,19 @@ export const sendMail = createServerFn({ method: "POST" })
     const from_name = data.from_name ?? s?.from_name ?? null;
     const from = from_name ? `${from_name} <${from_email}>` : from_email;
     const replyTo = data.reply_to || s?.reply_to || undefined;
-    const fullBody = s?.signature ? `${data.body}\n\n${s.signature}` : data.body;
-
-    const html = `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111;white-space:pre-wrap">${fullBody.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]!))}</div>`;
+    let html: string;
+    let fullBody: string;
+    if (data.is_html) {
+      // HTML-sjabloon: opmaak blijft intact, alleen onveilige stukken eruit halen.
+      const { sanitizeMailHtml } = await import("@/lib/skin-sanitize");
+      fullBody = s?.signature
+        ? `${data.body}<div style="margin-top:16px">${s.signature.replace(/\n/g, "<br>")}</div>`
+        : data.body;
+      html = sanitizeMailHtml(fullBody);
+    } else {
+      fullBody = s?.signature ? `${data.body}\n\n${s.signature}` : data.body;
+      html = `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111;white-space:pre-wrap">${fullBody.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]!))}</div>`;
+    }
 
     // Resolve attachments: download from storage and base64-encode
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -291,6 +302,7 @@ const TEST_SCHEMA = z.object({
   header_html: z.string().max(20000).nullable().optional(),
   footer_html: z.string().max(20000).nullable().optional(),
   sample: z.record(z.string(), z.string()).optional().default({}),
+  is_html: z.boolean().optional().default(false),
 });
 
 function renderTokensServer(text: string, vars: Record<string, string>): string {
@@ -325,9 +337,16 @@ export const sendTemplateTestEmail = createServerFn({ method: "POST" })
 
     const sample = data.sample ?? {};
     const subject = `[TEST] ${renderTokensServer(data.subject, sample)}`;
-    const bodyRendered = renderTokensServer(data.body, sample);
+    // In HTML mag een variabele geen markup toevoegen: waarden eerst veiliger maken.
+    const safeSample = Object.fromEntries(
+      Object.entries(sample).map(([k, v]) => [k, escapeHtml(String(v ?? ""))]),
+    );
+    const bodyRendered = renderTokensServer(
+      data.body,
+      data.is_html ? safeSample : sample,
+    );
 
-    const { sanitizeSkinHtml, sanitizeColor, sanitizeImageUrl } = await import(
+    const { sanitizeSkinHtml, sanitizeMailHtml, sanitizeColor, sanitizeImageUrl } = await import(
       "@/lib/skin-sanitize"
     );
     const bgColor = sanitizeColor(data.background_color ?? null) ?? "#ffffff";
@@ -345,7 +364,7 @@ export const sendTemplateTestEmail = createServerFn({ method: "POST" })
     const html = `<!doctype html><html><body style="margin:0;padding:0;${bgStyle}">
 <div style="max-width:640px;margin:0 auto;font-family:Inter,Arial,sans-serif;color:#111">
 ${safeHeader}
-<div style="padding:24px;font-size:15px;line-height:1.6;white-space:pre-wrap">${escapeHtml(bodyRendered)}</div>
+${data.is_html ? sanitizeMailHtml(bodyRendered) : `<div style="padding:24px;font-size:15px;line-height:1.6;white-space:pre-wrap">${escapeHtml(bodyRendered)}</div>`}
 ${safeFooter}
 </div></body></html>`;
 

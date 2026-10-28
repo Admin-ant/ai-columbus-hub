@@ -2845,6 +2845,7 @@ export type Database = {
       }
       mail_settings: {
         Row: {
+          appointment_template_id: string | null
           created_at: string
           default_email_template_id: string | null
           default_linkedin_template_id: string | null
@@ -2862,6 +2863,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          appointment_template_id?: string | null
           created_at?: string
           default_email_template_id?: string | null
           default_linkedin_template_id?: string | null
@@ -2879,6 +2881,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          appointment_template_id?: string | null
           created_at?: string
           default_email_template_id?: string | null
           default_linkedin_template_id?: string | null
@@ -3371,6 +3374,7 @@ export type Database = {
           header_html: string | null
           id: string
           is_default: boolean
+          is_html: boolean
           mail_background_id: string | null
           name: string
           organization_id: string
@@ -3389,6 +3393,7 @@ export type Database = {
           header_html?: string | null
           id?: string
           is_default?: boolean
+          is_html?: boolean
           mail_background_id?: string | null
           name: string
           organization_id: string
@@ -3407,6 +3412,7 @@ export type Database = {
           header_html?: string | null
           id?: string
           is_default?: boolean
+          is_html?: boolean
           mail_background_id?: string | null
           name?: string
           organization_id?: string
