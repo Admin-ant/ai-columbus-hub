@@ -323,6 +323,7 @@ export const sendAppointmentInvite = createServerFn({ method: "POST" })
       firstName: (a.attendee_name ?? "").trim().split(/\s+/)[0] || attendeeDisplayName,
       startsAt: a.starts_at,
       endsAt: a.ends_at,
+      htmlOverride: htmlTemplate,
     });
 
 
