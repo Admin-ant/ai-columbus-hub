@@ -1,5 +1,6 @@
 - [x] Automatisch binnenkomende mails en eerdere mails koppelen aan actieve contactpersonen, inclusief tweede e-mailadres.
 - [x] Klanten-tab met contactkeuze, klantnaam en vooraf ingevulde mail.
-- [ ] IMAP-verbinding afronden met beveiligde invoer van mailboxgegevens, werkende ophaalknop en beveiligde 15-minutentaak: geblokkeerd omdat het beveiligde formulier is afgewezen en mailboxgegevens ontbreken.
-- [ ] Met echte mailboxgegevens controleren dat nieuwe mails via Mails ophalen in het juiste klantdossier verschijnen: wacht op veilige mailbox-toegang.
+- [x] Inkomende mail via Resend-webhook binnenhalen, beveiligen en aan het juiste klantdossier koppelen; webhookgeheim opgeslagen en testmail belandde in het juiste dossier.
+- [ ] Hostinger-DNS-records voor het ontvangstadres en de doorstuurregel met kopieën bewaren activeren, daarna de echte mailroute testen: wacht op gebruiker, de records staan nog niet openbaar.
 - [x] Klantkoppeling gecontroleerd met teruggedraaide databasetests; aangemelde klantkeuze en vooraf ingevulde mail gecontroleerd in de browser.
+- [x] Afspraakbevestiging afgewerkt: tekstlogo met volledige leesbare naam, adres blijft [adres invullen], dubbele aanhef weg; gecontroleerd in de app en op telefoonbreedte.

@@ -12,7 +12,6 @@ export type AppointmentMailVars = {
   subject: string;
   agendaLink: string;
   agendaPoints: string[];
-  logoUrl: string;
   confirmUrl?: string | null;
   cancelled?: boolean;
   customMessage?: string;
@@ -39,6 +38,14 @@ function outlineButton(href: string, label: string): string {
 </td></tr></table>`;
 }
 
+/** Tekstlogo in huisstijl: volledige naam, altijd leesbaar op de zwarte balk. */
+function textLogo(): string {
+  return `<table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr>
+<td align="center" bgcolor="${ORANGE}" style="background:${ORANGE};border-radius:4px;padding:6px 9px;font-family:${FONT};font-size:18px;font-weight:bold;line-height:22px;color:#ffffff;letter-spacing:1px;">AI</td>
+<td valign="middle" style="padding-left:11px;font-family:${FONT};font-size:22px;line-height:26px;letter-spacing:0.5px;color:#ffffff;white-space:nowrap;"><span style="font-weight:normal;color:#CCCCCC;">van</span>&nbsp;<span style="font-weight:bold;color:#ffffff;">Columbus</span></td>
+</tr></table>`;
+}
+
 export function renderAppointmentMail(v: AppointmentMailVars): string {
   const mailHref = `mailto:info@aivancolumbus.com?subject=Afspraak%20verzetten%20${v.dateUrl}`;
   const waHref = `https://wa.me/31639291340?text=Hoi%20Anton%2C%20ik%20wil%20graag%20onze%20afspraak%20van%20${v.dateUrl}%20verzetten.`;
@@ -47,6 +54,10 @@ export function renderAppointmentMail(v: AppointmentMailVars): string {
   const points = v.agendaPoints.filter((p) => p.trim()).slice(0, 4);
   const p = (html: string) => `<p style="margin:0 0 16px;font-family:${FONT};font-size:15px;line-height:24px;color:#333333;">${html}</p>`;
   const h2 = (t: string) => `<h2 style="margin:0 0 12px;font-family:${FONT};font-size:18px;line-height:24px;color:${ORANGE};">${t}</h2>`;
+  // Losse aanhef alleen als de intro die nog niet zelf bevat (voorkomt "Beste X," dubbel).
+  const hasGreeting =
+    /^\s*(beste|geachte|hi|hallo|hey|hoi|dear|goedemorgen|goedemiddag|guten tag|morgen)/i.test(v.intro) ||
+    (!!v.firstName.trim() && v.intro.toLowerCase().slice(0, 40).includes(v.firstName.trim().toLowerCase() + ","));
 
   return `<!DOCTYPE html>
 <html lang="nl" xmlns="http://www.w3.org/1999/xhtml">
@@ -67,13 +78,13 @@ export function renderAppointmentMail(v: AppointmentMailVars): string {
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#F4F4F4" style="background:#F4F4F4;">
 <tr><td align="center" style="padding:24px 10px;">
 <table role="presentation" class="container" width="600" cellspacing="0" cellpadding="0" border="0" style="width:600px;max-width:600px;background:#ffffff;">
-<tr><td bgcolor="#000000" class="px" style="background:#000000;padding:24px 40px;" align="left">
-<img src="${esc(v.logoUrl)}" alt="AI van Columbus" width="180" style="display:block;width:180px;max-width:180px;height:auto;border:0;color:#ffffff;font-family:${FONT};font-size:18px;">
+<tr><td bgcolor="#000000" class="px" style="background:#000000;padding:22px 40px;" align="left">
+${textLogo()}
 </td></tr>
 <tr><td height="4" bgcolor="${ORANGE}" style="background:${ORANGE};font-size:0;line-height:0;">&nbsp;</td></tr>
 <tr><td class="px" style="padding:40px 40px 8px;">
 <h1 style="margin:0 0 24px;font-family:${FONT};font-size:26px;line-height:32px;color:#111111;">${esc(v.heading)}</h1>
-${p(`Beste ${esc(v.firstName)},`)}
+${hasGreeting || !v.firstName.trim() ? "" : p(`Beste ${esc(v.firstName)},`)}
 ${p(esc(v.intro))}
 ${v.customMessage ? p(esc(v.customMessage).replace(/\n/g, "<br>")) : ""}
 </td></tr>
