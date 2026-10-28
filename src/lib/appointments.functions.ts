@@ -251,7 +251,6 @@ export const sendAppointmentInvite = createServerFn({ method: "POST" })
 
     const appUrl = process.env.APP_PUBLIC_URL || "https://ai-columbus-hub.lovable.app";
     const actionUrl = `${appUrl}/afspraak/${a.confirm_token}`;
-    const logoUrl = `${appUrl}/__l5e/assets-v1/fa495ec7-4dc0-4ae6-9093-fb790ddb8334/logo-columbus-email.png`;
 
     const attendeeDisplayName = a.attendee_name ?? t.fallbackName;
     let heading = data.cancel ? t.headingCancelled : t.headingConfirm;
@@ -302,7 +301,6 @@ export const sendAppointmentInvite = createServerFn({ method: "POST" })
       customMessage,
       actionUrl,
       fromName,
-      logoUrl,
       cancelled: data.cancel === true,
       firstName: (a.attendee_name ?? "").trim().split(/\s+/)[0] || attendeeDisplayName,
       startsAt: a.starts_at,
@@ -435,7 +433,6 @@ export const previewAppointmentEmailHtml = createServerFn({ method: "POST" })
     const dateStr = startDate.toLocaleDateString(t.bcp47, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
     const timeStr = `${startDate.toLocaleTimeString(t.bcp47, { hour: "2-digit", minute: "2-digit" })} – ${endDate.toLocaleTimeString(t.bcp47, { hour: "2-digit", minute: "2-digit" })}`;
     const appUrl = process.env.APP_PUBLIC_URL || "https://ai-columbus-hub.lovable.app";
-    const logoUrl = `${appUrl}/__l5e/assets-v1/fa495ec7-4dc0-4ae6-9093-fb790ddb8334/logo-columbus-email.png`;
     const sampleTokens: Record<string, string> = {
       confirm: "preview-confirm-abc123",
       cancel: "preview-cancel-abc123",
@@ -476,7 +473,6 @@ export const previewAppointmentEmailHtml = createServerFn({ method: "POST" })
       customMessage: data.custom_message?.trim() ?? "",
       actionUrl,
       fromName: "AI van Columbus",
-      logoUrl,
       cancelled,
       firstName: attendeeName.split(/\s+/)[0],
       startsAt,
@@ -497,7 +493,6 @@ function renderAppointmentHtml(opts: {
   customMessage: string;
   actionUrl: string;
   fromName: string;
-  logoUrl: string;
   cancelled: boolean;
   firstName?: string;
   startsAt?: string;
@@ -518,7 +513,6 @@ function renderAppointmentHtml(opts: {
     subject: opts.title,
     agendaLink,
     agendaPoints: parseAgendaPoints(opts.description),
-    logoUrl: opts.logoUrl,
     confirmUrl: opts.cancelled ? null : opts.actionUrl,
     cancelled: opts.cancelled,
     customMessage: opts.customMessage,
