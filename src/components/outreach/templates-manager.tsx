@@ -13,6 +13,7 @@ import {
   History,
   RotateCcw,
   Send,
+  Maximize2,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -102,6 +110,7 @@ export function TemplatesManager({
   const [backgrounds, setBackgrounds] = useState<MailBackground[]>([]);
   const [savingBg, setSavingBg] = useState(false);
   const [previewSkinId, setPreviewSkinId] = useState<string | null>(null);
+  const [fullPreview, setFullPreview] = useState(false);
   const { user } = useAuth();
   const [testTo, setTestTo] = useState<string>("");
   const [sendingTest, setSendingTest] = useState(false);
@@ -696,11 +705,23 @@ export function TemplatesManager({
             <Eye className="h-3.5 w-3.5" />
             Preview
           </span>
+          <span className="flex items-center gap-2">
           {previewVersion && (
             <Badge variant="outline" className="border-primary/40 bg-primary/10 text-[9px] text-primary">
               v{previewVersion.version}
             </Badge>
           )}
+          {preview && (
+            <button
+              type="button"
+              onClick={() => setFullPreview(true)}
+              className="inline-flex items-center gap-1 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal text-primary hover:bg-primary/15"
+              title="Toon het opgemaakte voorbeeld op volle grootte"
+            >
+              <Maximize2 className="h-2.5 w-2.5" /> Volledig voorbeeld
+            </button>
+          )}
+          </span>
         </div>
         {preview ? (
           <div className="rounded-lg border border-border bg-card p-3 text-sm text-card-foreground shadow-sm space-y-2">
@@ -912,6 +933,63 @@ export function TemplatesManager({
           </div>
         )}
       </div>
+
+      {/* Volledig opgemaakt voorbeeld met ingevulde voorbeeldgegevens */}
+      <Dialog open={fullPreview && !!preview} onOpenChange={setFullPreview}>
+        <DialogContent className="max-w-[860px] gap-3 sm:max-w-[860px]">
+          <DialogHeader>
+            <DialogTitle>{preview?.name}</DialogTitle>
+            <DialogDescription>
+              Zo ziet de mail er bij de klant uit. De stukjes tussen dubbele haakjes zijn
+              vervangen door voorbeeldgegevens.
+            </DialogDescription>
+          </DialogHeader>
+          {preview && (
+            <div className="space-y-3">
+              {preview.subject && (
+                <div className="rounded border border-border bg-muted/40 px-3 py-2 text-sm">
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Onderwerp:{" "}
+                  </span>
+                  <span className="font-medium text-foreground">
+                    {renderTokens(preview.subject, sample)}
+                  </span>
+                </div>
+              )}
+              <div className="max-h-[58vh] overflow-y-auto rounded border border-border bg-white">
+                {preview.is_html ? (
+                  <iframe
+                    title="Volledig voorbeeld van HTML-sjabloon"
+                    sandbox=""
+                    className="h-[58vh] w-full border-0 bg-white"
+                    srcDoc={sanitizeMailHtml(
+                      `${previewHeaderHtml ?? ""}<div>${renderTokens(preview.body, sample)}</div>${previewFooterHtml ?? ""}`,
+                    )}
+                  />
+                ) : (
+                  <div className="whitespace-pre-wrap p-4 leading-relaxed text-foreground">
+                    {renderTokens(preview.body, sample)}
+                  </div>
+                )}
+              </div>
+              <div className="grid gap-1.5 sm:grid-cols-2">
+                {SAMPLE_FIELDS.map((f) => (
+                  <div key={f.key} className="grid grid-cols-[92px_1fr] items-center gap-2">
+                    <Label className="text-[10px] text-muted-foreground truncate" title={f.label}>
+                      {f.label}
+                    </Label>
+                    <Input
+                      value={sample[f.key]}
+                      onChange={(e) => setSample((s) => ({ ...s, [f.key]: e.target.value }))}
+                      className="h-7 border-input bg-background text-[11px] text-foreground shadow-sm"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
