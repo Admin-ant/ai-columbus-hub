@@ -23,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { sendTemplateTestEmail } from "@/lib/mail.functions";
-import { sanitizeSkinHtml, sanitizeColor, sanitizeImageUrl } from "@/lib/skin-sanitize";
+import { sanitizeSkinHtml, sanitizeMailHtml, sanitizeColor, sanitizeImageUrl } from "@/lib/skin-sanitize";
 import {
   type OutreachTemplate,
   type TemplateChannel,
@@ -126,6 +126,7 @@ export function TemplatesManager({
           header_html: editing.header_html ?? null,
           footer_html: editing.footer_html ?? null,
           sample: sample as Record<string, string>,
+          is_html: editing.is_html === true,
         },
       });
       toast.success(`Testmail verstuurd naar ${testTo}`);
@@ -213,6 +214,7 @@ export function TemplatesManager({
       subject: ch === "email" ? "Onderwerp {{company}}" : null,
       body: `Hi {{contact_name}},\n\n`,
       is_default: false,
+      is_html: false,
     };
     const { data, error } = await supabase
       .from("outreach_message_templates")
@@ -241,6 +243,7 @@ export function TemplatesManager({
         description: editing.description,
         subject: editing.subject,
         body: editing.body,
+        is_html: editing.channel === "email" && editing.is_html === true,
         background_color: bgColor,
         background_image_url: bgImg,
         header_html: editing.header_html ? sanitizeSkinHtml(editing.header_html) : null,

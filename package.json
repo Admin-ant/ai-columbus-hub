@@ -16,6 +16,7 @@
     "test:grants": "node scripts/check-mail-skin-grants.mjs",
     "test:e2e": "playwright test --config=playwright.e2e.config.ts",
     "test:mail-outlet": "node scripts/check-mail-outlet.mjs",
+    "test:appointment-template": "node scripts/check-appointment-template.mjs",
     "ci": "bun run check:colors && bun run lint",
     "format": "prettier --write ."
   },
