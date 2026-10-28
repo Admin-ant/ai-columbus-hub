@@ -64,6 +64,13 @@
       "when": 1793198640989,
       "tag": "0008_add_template_is_html",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793198831480,
+      "tag": "0009_appointment_avc_template_seed",
+      "breakpoints": true
     }
   ]
 }
