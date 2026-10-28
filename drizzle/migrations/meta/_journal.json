@@ -57,6 +57,13 @@
       "when": 1793002317063,
       "tag": "0007_mail_contact_linking",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793198640989,
+      "tag": "0008_add_template_is_html",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,2 @@
+ALTER TABLE public.outreach_message_templates ADD COLUMN IF NOT EXISTS is_html boolean NOT NULL DEFAULT false;
+COMMENT ON COLUMN public.outreach_message_templates.is_html IS 'Waar wanneer de sjabloontekst HTML is: verzendpad en voorbeeld tonen de opmaak in plaats van platte tekst.';

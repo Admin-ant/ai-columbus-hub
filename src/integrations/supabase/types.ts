@@ -3371,6 +3371,7 @@ export type Database = {
           header_html: string | null
           id: string
           is_default: boolean
+          is_html: boolean
           mail_background_id: string | null
           name: string
           organization_id: string
@@ -3389,6 +3390,7 @@ export type Database = {
           header_html?: string | null
           id?: string
           is_default?: boolean
+          is_html?: boolean
           mail_background_id?: string | null
           name: string
           organization_id: string
@@ -3407,6 +3409,7 @@ export type Database = {
           header_html?: string | null
           id?: string
           is_default?: boolean
+          is_html?: boolean
           mail_background_id?: string | null
           name?: string
           organization_id?: string
