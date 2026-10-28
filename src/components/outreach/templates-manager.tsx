@@ -111,6 +111,7 @@ export function TemplatesManager({
   const [savingBg, setSavingBg] = useState(false);
   const [previewSkinId, setPreviewSkinId] = useState<string | null>(null);
   const [fullPreview, setFullPreview] = useState(false);
+  const [fullEdit, setFullEdit] = useState(false);
   const { user } = useAuth();
   const [testTo, setTestTo] = useState<string>("");
   const [sendingTest, setSendingTest] = useState(false);
@@ -364,6 +365,7 @@ export function TemplatesManager({
     | (TemplateVersion & Partial<OutreachTemplate>)
     | null;
   const previewSkin = previewSkinId ? backgrounds.find((b) => b.id === previewSkinId) ?? null : null;
+  const canFullEdit = !!editing && !previewVersion && editing.channel === "email" && editing.is_html === true;
   const previewBgColor = previewSkin ? previewSkin.background_color : preview?.background_color ?? null;
   const previewBgImage = previewSkin ? previewSkin.background_image_url : preview?.background_image_url ?? null;
   const previewHeaderHtml = previewSkin ? previewSkin.header_html : preview?.header_html ?? null;
@@ -935,18 +937,53 @@ export function TemplatesManager({
       </div>
 
       {/* Volledig opgemaakt voorbeeld met ingevulde voorbeeldgegevens */}
-      <Dialog open={fullPreview && !!preview} onOpenChange={setFullPreview}>
+      <Dialog
+        open={fullPreview && !!preview}
+        onOpenChange={(o) => {
+          setFullPreview(o);
+          if (!o) {
+            setFullEdit(false);
+            setVisualKey((k) => k + 1);
+          }
+        }}
+      >
         <DialogContent className="max-w-[860px] gap-3 sm:max-w-[860px]">
           <DialogHeader>
             <DialogTitle>{preview?.name}</DialogTitle>
             <DialogDescription>
-              Zo ziet de mail er bij de klant uit. De stukjes tussen dubbele haakjes zijn
-              vervangen door voorbeeldgegevens.
+              {fullEdit
+                ? "Klik in de tekst om die aan te passen. Logo en opmaak blijven vast. Laat de stukjes tussen dubbele haakjes staan: die worden bij verzenden ingevuld."
+                : "Zo ziet de mail er bij de klant uit. De stukjes tussen dubbele haakjes zijn vervangen door voorbeeldgegevens."}
             </DialogDescription>
           </DialogHeader>
           {preview && (
             <div className="space-y-3">
-              {preview.subject && (
+              {canFullEdit && (
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex rounded border border-border p-0.5 text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => setFullEdit(false)}
+                      className={`rounded px-2 py-0.5 ${!fullEdit ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent"}`}
+                    >
+                      Voorbeeld
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFullEdit(true)}
+                      className={`rounded px-2 py-0.5 ${fullEdit ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent"}`}
+                    >
+                      Tekst bewerken
+                    </button>
+                  </div>
+                  {fullEdit && (
+                    <Button size="sm" onClick={() => void save()}>
+                      Opslaan in sjabloon
+                    </Button>
+                  )}
+                </div>
+              )}
+              {preview.subject && !fullEdit && (
                 <div className="rounded border border-border bg-muted/40 px-3 py-2 text-sm">
                   <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                     Onderwerp:{" "}
@@ -956,6 +993,24 @@ export function TemplatesManager({
                   </span>
                 </div>
               )}
+              {fullEdit && editing ? (
+                <>
+                  <div className="grid grid-cols-[92px_1fr] items-center gap-2">
+                    <Label className="text-[11px] text-muted-foreground">Onderwerp</Label>
+                    <Input
+                      value={editing.subject ?? ""}
+                      onChange={(e) => setEditing({ ...editing, subject: e.target.value })}
+                      className="h-8 border-input bg-background text-sm text-foreground"
+                    />
+                  </div>
+                  <VisualHtmlEditor
+                    key={`full-${editing.id}`}
+                    html={editing.body}
+                    height={Math.round(typeof window !== "undefined" ? window.innerHeight * 0.55 : 520)}
+                    onChange={(body) => setEditing((cur) => (cur ? { ...cur, body } : cur))}
+                  />
+                </>
+              ) : (
               <div className="max-h-[58vh] overflow-y-auto rounded border border-border bg-white">
                 {preview.is_html ? (
                   <iframe
@@ -972,6 +1027,8 @@ export function TemplatesManager({
                   </div>
                 )}
               </div>
+              )}
+              {!fullEdit && (
               <div className="grid gap-1.5 sm:grid-cols-2">
                 {SAMPLE_FIELDS.map((f) => (
                   <div key={f.key} className="grid grid-cols-[92px_1fr] items-center gap-2">
@@ -986,6 +1043,7 @@ export function TemplatesManager({
                   </div>
                 ))}
               </div>
+              )}
             </div>
           )}
         </DialogContent>
