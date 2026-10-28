@@ -85,15 +85,34 @@ export const sendMail = createServerFn({ method: "POST" })
     const replyTo = data.reply_to || s?.reply_to || undefined;
     let html: string;
     let fullBody: string;
-    if (data.is_html) {
+    let textPart: string;
+    // Veiligheidsnet: een volledige HTML-mail (bv. uit een sjabloon) mag nooit
+    // als platte tekst verstuurd worden, ook als een aanroeper is_html vergeet.
+    const looksLikeHtml = /^\s*<!doctype html/i.test(data.body) || /^\s*<html[\s>]/i.test(data.body);
+    if (data.is_html || looksLikeHtml) {
       // HTML-sjabloon: opmaak blijft intact, alleen onveilige stukken eruit halen.
       const { sanitizeMailHtml } = await import("@/lib/skin-sanitize");
       fullBody = s?.signature
         ? `${data.body}<div style="margin-top:16px">${s.signature.replace(/\n/g, "<br>")}</div>`
         : data.body;
       html = sanitizeMailHtml(fullBody);
+      // Platte-tekstversie voor mailprogramma's die geen HTML tonen.
+      textPart = fullBody
+        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<\/(p|div|tr|h[1-6]|li)>/gi, "\n")
+        .replace(/<[^>]+>/g, "")
+        .replace(/&nbsp;/g, " ")
+        .replace(/&middot;/g, "·")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/[ \t]+\n/g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
     } else {
       fullBody = s?.signature ? `${data.body}\n\n${s.signature}` : data.body;
+      textPart = fullBody;
       html = `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111;white-space:pre-wrap">${fullBody.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]!))}</div>`;
     }
 
@@ -120,7 +139,7 @@ export const sendMail = createServerFn({ method: "POST" })
       cc_emails: data.cc ?? [],
       bcc_emails: data.bcc ?? [],
       subject: data.subject,
-      body_text: fullBody,
+      body_text: textPart,
       body_html: html,
       in_reply_to: data.in_reply_to ?? null,
       client_id: data.client_id ?? null,
@@ -145,7 +164,7 @@ export const sendMail = createServerFn({ method: "POST" })
         bcc: data.bcc,
         subject: data.subject,
         html,
-        text: fullBody,
+        text: textPart,
         replyTo,
         headers: { "X-Mail-Message-Id": id },
         attachments: att.length ? att : undefined,
