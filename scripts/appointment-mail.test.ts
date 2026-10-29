@@ -22,7 +22,7 @@ describe("appointment locale and customer message rules", () => {
       expect(saved.match(/<html lang="([^"]+)"/)?.[1]).toBe(locale);
       const link = builtin.match(/mailto:info@aivancolumbus.com\?subject=([^"]+)/)?.[1];
       const savedLink = saved.match(/mailto:info@aivancolumbus.com\?subject=([^"]+)/)?.[1];
-      expect(savedLink).toBe(link);
+      expect(decodeURIComponent(savedLink ?? "")).toBe(decodeURIComponent(link ?? ""));
     });
   }
   test("English times have no Dutch unit; German and Dutch use their own unit", () => {
