@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { apptDict, normalizeLocale, type ApptLocale } from "@/lib/appointment-i18n";
 import { renderTokens, type TokenVars } from "@/lib/outreach-templates";
-import { renderAppointmentMail, googleCalendarLink, parseAgendaPoints } from "@/lib/appointment-email-template";
+import { renderAppointmentMail, googleCalendarLink, parseAgendaPoints, prepareAppointmentTemplate, appointmentMailTime } from "@/lib/appointment-email-template";
 import { sanitizeMailHtml } from "@/lib/skin-sanitize";
 
 function pad(n: number) {
@@ -187,6 +187,7 @@ const InviteSchema = z.object({
   id: z.string().uuid(),
   message: z.string().max(4000).optional(),
   cancel: z.boolean().optional().default(false),
+  rescheduled: z.boolean().optional().default(false),
 });
 
 export const sendAppointmentInvite = createServerFn({ method: "POST" })
@@ -254,8 +255,9 @@ export const sendAppointmentInvite = createServerFn({ method: "POST" })
     const actionUrl = `${appUrl}/afspraak/${a.confirm_token}`;
 
     const attendeeDisplayName = a.attendee_name ?? t.fallbackName;
-    let heading = data.cancel ? t.headingCancelled : t.headingConfirm;
-    let intro = data.cancel ? t.introCancelled(attendeeDisplayName) : locale === "nl" ? "Dank je wel voor het fijne gesprek. Hierbij bevestig ik onze afspraak. Ik kijk ernaar uit!" : t.introConfirm(attendeeDisplayName);
+    const rescheduled = !data.cancel && data.rescheduled;
+    const heading = data.cancel ? t.headingCancelled : rescheduled ? t.headingRescheduled : t.headingConfirm;
+    let intro = data.cancel ? t.introCancelled(attendeeDisplayName) : rescheduled ? t.introRescheduled(attendeeDisplayName) : locale === "nl" ? "Dank je wel voor het fijne gesprek. Hierbij bevestig ik onze afspraak. Ik kijk ernaar uit!" : t.introConfirm(attendeeDisplayName);
     const customMessage = data.message?.trim() ? data.message.trim() : "";
     let subject = `${data.cancel ? t.subjectPrefixCancel + " " : ""}${a.title} — ${dateStr}`;
 
@@ -295,12 +297,18 @@ export const sendAppointmentInvite = createServerFn({ method: "POST" })
           appointment_location: a.location ?? "",
           appointment_link: actionUrl,
         };
-        if (row.subject && row.subject.trim()) subject = renderTokens(row.subject, tokens);
+        if (row.subject && row.subject.trim()) {
+          const templateSubject = locale === "nl" ? row.subject : row.subject.replace(/^Afspraak\s/, locale === "en" ? "Appointment " : "Termin ");
+          subject = renderTokens(templateSubject, tokens);
+        }
+        if (rescheduled) subject = `${t.headingRescheduled}: ${subject}`;
         if (row.is_html && row.body && row.body.trim()) {
           // HTML-sjabloon: de volledige mail komt uit het sjabloon, niet uit het standaardontwerp.
-          htmlTemplate = sanitizeMailHtml(renderTokens(row.body, tokens));
+          const escapedTokens = Object.fromEntries(Object.entries(tokens).map(([key, value]) => [key, value == null ? value : escapeHtml(value)]));
+          htmlTemplate = sanitizeMailHtml(renderTokens(row.body, escapedTokens));
         } else if (row.body && row.body.trim()) {
-          intro = renderTokens(row.body, tokens);
+          const templateIntro = renderTokens(row.body, tokens);
+          intro = rescheduled ? `${t.introRescheduled(attendeeDisplayName)}\n\n${templateIntro}` : templateIntro;
         }
       }
     }
@@ -324,6 +332,8 @@ export const sendAppointmentInvite = createServerFn({ method: "POST" })
       startsAt: a.starts_at,
       endsAt: a.ends_at,
       htmlOverride: htmlTemplate,
+      rescheduled,
+      attendeeName: attendeeDisplayName,
     });
 
 
@@ -517,21 +527,31 @@ function renderAppointmentHtml(opts: {
   startsAt?: string;
   endsAt?: string;
   htmlOverride?: string | null;
+  rescheduled?: boolean;
+  attendeeName?: string;
 }): string {
   // Een HTML-sjabloon uit de sjabloonlijst vervangt het standaardontwerp volledig.
-  if (opts.htmlOverride && opts.htmlOverride.trim()) return opts.htmlOverride;
+  if (opts.htmlOverride && opts.htmlOverride.trim()) {
+    return sanitizeMailHtml(prepareAppointmentTemplate(opts.htmlOverride, {
+      locale: opts.locale,
+      customMessage: opts.customMessage,
+      rescheduled: opts.rescheduled,
+      attendeeName: opts.attendeeName ?? opts.firstName ?? "",
+    }));
+  }
   const dayMonth = opts.dateStr.replace(/^\S+\s+/, "").replace(/\s+\d{4}$/, "");
   const agendaLink = opts.startsAt && opts.endsAt
     ? googleCalendarLink({ title: opts.title, start: opts.startsAt, end: opts.endsAt, location: opts.location, details: opts.description })
     : opts.actionUrl;
   return renderAppointmentMail({
-    heading: opts.cancelled ? "Je afspraak is geannuleerd" : "Je afspraak is bevestigd",
+    locale: opts.locale,
+    heading: opts.heading,
     firstName: opts.firstName || "",
     intro: opts.intro,
     dateStr: opts.dateStr,
     dateUrl: encodeURIComponent(dayMonth),
-    timeStr: opts.timeStr.includes("uur") ? opts.timeStr : `${opts.timeStr} uur`,
-    location: opts.location || "Wordt nog afgestemd",
+    timeStr: appointmentMailTime(opts.timeStr, opts.locale),
+    location: opts.location || (opts.locale === "en" ? "To be agreed" : opts.locale === "de" ? "Wird noch vereinbart" : "Wordt nog afgestemd"),
     subject: opts.title,
     agendaLink,
     agendaPoints: parseAgendaPoints(opts.description),
@@ -546,5 +566,5 @@ function escapeAttr(s: string): string {
 }
 
 function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] ?? c));
 }

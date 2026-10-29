@@ -12,7 +12,7 @@ import { APPT_LOCALES } from "@/lib/appointment-i18n";
 import { previewAppointmentEmailHtml } from "@/lib/appointments.functions";
 
 export const Route = createFileRoute("/_authenticated/mail/appointment-preview")({
-  head: () => ({ meta: [{ title: "Preview afspraakmail" }] }),
+  head: () => ({ meta: [{ title: "Voorbeeld afspraakmail — Columbus AI Hub" }, { name: "description", content: "Bekijk afspraakmails in Nederlands, Engels en Duits." }, { property: "og:title", content: "Voorbeeld afspraakmail — Columbus AI Hub" }, { property: "og:description", content: "Bekijk afspraakmails in Nederlands, Engels en Duits." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: AppointmentMailPreview,
 });
 
