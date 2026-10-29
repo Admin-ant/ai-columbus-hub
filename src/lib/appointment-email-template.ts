@@ -63,7 +63,11 @@ export function prepareAppointmentTemplate(html: string, opts: { locale: ApptLoc
     result = result.replace(/(<h1\b[^>]*>)[\s\S]*?(<\/h1>)/i, `$1${esc(t.headingRescheduled)}$2`);
     result = result.replace(/(<title>)[\s\S]*?(<\/title>)/i, `$1${esc(t.headingRescheduled)}$2`);
   }
-  const notice = [opts.rescheduled ? t.introRescheduled(opts.attendeeName) : "", opts.customMessage.trim()].filter(Boolean).join("\n\n");
+  const greeted = new RegExp(`>\\s*${text.greeting}\\s`).test(result) || />\s*Beste\s/.test(result);
+  const rescheduleIntro = opts.rescheduled ? t.introRescheduled(opts.attendeeName) : "";
+  // The layout already greets the client; drop the duplicate greeting from the reschedule note.
+  const rescheduleNote = greeted ? rescheduleIntro.replace(/^[^,]{1,80},\s*/, "").replace(/^./, (c) => c.toUpperCase()) : rescheduleIntro;
+  const notice = [rescheduleNote, opts.customMessage.trim()].filter(Boolean).join("\n\n");
   if (notice) {
     const paragraph = `<p style="margin:16px 0;font-family:${FONT};font-size:15px;line-height:24px;color:#333333;">${esc(notice).replace(/\n/g, "<br>")}</p>`;
     // Inside the main content cell for table mails; generic templates get a body fallback.
