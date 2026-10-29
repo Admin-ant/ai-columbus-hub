@@ -50,3 +50,16 @@ describe("appointment locale and customer message rules", () => {
     expect(prepareAppointmentTemplate(template, { locale: "nl", attendeeName: "Alex", customMessage: "" })).toBe(template);
   });
 });
+describe("rescheduled AVC mail", () => {
+  for (const locale of ["nl", "en", "de"] as const) {
+    test(`${locale}: greets once and drops the confirmation thank-you`, () => {
+      const html = prepareAppointmentTemplate(template, { locale, attendeeName: "Alex", customMessage: "Bring laptop", rescheduled: true });
+      const text = html.replace(/<[^>]+>/g, " ");
+      expect(text.match(/(Beste|Dear|Hallo) Alex,/g)?.length).toBe(1);
+      expect(text).not.toContain("Hierbij bevestig ik onze afspraak");
+      expect(text).not.toContain("This email confirms our appointment");
+      expect(text).not.toContain("Hiermit bestätige ich unseren Termin");
+      expect(text).toContain("Bring laptop");
+    });
+  }
+});
