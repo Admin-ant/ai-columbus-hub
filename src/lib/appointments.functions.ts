@@ -247,8 +247,8 @@ export const sendAppointmentInvite = createServerFn({ method: "POST" })
 
     const startDate = new Date(a.starts_at);
     const endDate = new Date(a.ends_at);
-    const dateStr = startDate.toLocaleDateString(t.bcp47, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-    const timeStr = `${startDate.toLocaleTimeString(t.bcp47, { hour: "2-digit", minute: "2-digit" })} – ${endDate.toLocaleTimeString(t.bcp47, { hour: "2-digit", minute: "2-digit" })}`;
+    const dateStr = startDate.toLocaleDateString(t.bcp47, { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Amsterdam" });
+    const timeStr = `${startDate.toLocaleTimeString(t.bcp47, { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Amsterdam" })} – ${endDate.toLocaleTimeString(t.bcp47, { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Amsterdam" })}`;
     const dt = `${dateStr} · ${timeStr}`;
 
     const appUrl = process.env.APP_PUBLIC_URL || "https://ai-columbus-hub.lovable.app";
@@ -459,8 +459,8 @@ export const previewAppointmentEmailHtml = createServerFn({ method: "POST" })
     const endsAt = data.ends_at ?? new Date(new Date(startsAt).getTime() + 30 * 60_000).toISOString();
     const startDate = new Date(startsAt);
     const endDate = new Date(endsAt);
-    const dateStr = startDate.toLocaleDateString(t.bcp47, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-    const timeStr = `${startDate.toLocaleTimeString(t.bcp47, { hour: "2-digit", minute: "2-digit" })} – ${endDate.toLocaleTimeString(t.bcp47, { hour: "2-digit", minute: "2-digit" })}`;
+    const dateStr = startDate.toLocaleDateString(t.bcp47, { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Amsterdam" });
+    const timeStr = `${startDate.toLocaleTimeString(t.bcp47, { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Amsterdam" })} – ${endDate.toLocaleTimeString(t.bcp47, { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Amsterdam" })}`;
     const appUrl = process.env.APP_PUBLIC_URL || "https://ai-columbus-hub.lovable.app";
     const sampleTokens: Record<string, string> = {
       confirm: "preview-confirm-abc123",

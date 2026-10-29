@@ -56,6 +56,10 @@ export function prepareAppointmentTemplate(html: string, opts: { locale: ApptLoc
       .replace(/%20verzetten\./g, opts.locale === "en" ? "." : "%20verschieben.");
   }
   if (opts.rescheduled) {
+    // The confirmation thank-you sentence contradicts a moved appointment; the reschedule notice replaces it.
+    for (const intro of [MAIL_TEXT.nl.intro, text.intro]) {
+      result = result.replace(new RegExp(`<p\\b[^>]*>\\s*${intro.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*</p>`), "");
+    }
     result = result.replace(/(<h1\b[^>]*>)[\s\S]*?(<\/h1>)/i, `$1${esc(t.headingRescheduled)}$2`);
     result = result.replace(/(<title>)[\s\S]*?(<\/title>)/i, `$1${esc(t.headingRescheduled)}$2`);
   }
