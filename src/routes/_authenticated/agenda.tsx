@@ -30,7 +30,7 @@ import {
 import { APPT_LOCALES, normalizeLocale } from "@/lib/appointment-i18n";
 
 export const Route = createFileRoute("/_authenticated/agenda")({
-  head: () => ({ meta: [{ title: "Agenda" }] }),
+  head: () => ({ meta: [{ title: "Agenda — Columbus AI Hub" }, { name: "description", content: "Beheer klantafspraken en verstuur uitnodigingen vanuit Columbus AI Hub." }, { property: "og:title", content: "Agenda — Columbus AI Hub" }, { property: "og:description", content: "Beheer klantafspraken en verstuur uitnodigingen vanuit Columbus AI Hub." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   validateSearch: (s: Record<string, unknown>): { view?: "upcoming" } =>
     s.view === "upcoming" ? { view: "upcoming" } : {},
   component: AgendaPage,
@@ -794,13 +794,12 @@ function RescheduleDialog({
     try {
       await reschedule({ data: { id: appointment.id, starts_at: s, ends_at: e } });
       if (sendEmail && appointment.attendee_email) {
-        const intro =
-          "Let op: de datum/tijd van deze afspraak is aangepast. Deze uitnodiging vervangt de vorige.";
         await invite({
           data: {
             id: appointment.id,
-            message: message.trim() ? `${message.trim()}\n\n${intro}` : intro,
+            message: message.trim() || undefined,
             cancel: false,
+            rescheduled: true,
           },
         });
         toast.success("Verplaatst — bijgewerkte uitnodiging verstuurd");
