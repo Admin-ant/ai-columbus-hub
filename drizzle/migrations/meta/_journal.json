@@ -71,6 +71,13 @@
       "when": 1793198831480,
       "tag": "0009_appointment_avc_template_seed",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793532130274,
+      "tag": "0010_fix_quarter_guard_record_fields",
+      "breakpoints": true
     }
   ]
 }

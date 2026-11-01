@@ -1,4 +1,5 @@
 # Architecture
+- Shared quarter-closure triggers must read table-specific fields through JSON or inside a separate table-only branch; PostgreSQL can resolve record fields in boolean expressions even for other tables.
 - Match inbound mail to contacts with organization-scoped database triggers; UI and ingestion must share the same linking rules.
 - Never label a mailbox refresh as fetching mail unless a real mailbox connection is configured and exercised.
 - Branded mails show the company with the uploaded brand mark on a dark header bar, served from the app's own domain; the mark's white lettering only reads on dark surfaces, so never place it on white.
