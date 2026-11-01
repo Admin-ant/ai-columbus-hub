@@ -6,3 +6,4 @@
 - [x] Afspraakbevestiging afgewerkt: tekstlogo met volledige leesbare naam, adres blijft [adres invullen], dubbele aanhef weg; gecontroleerd in de app en op telefoonbreedte.
 - [x] Huisstijl-afspraakmail als sjabloon "Afspraak bevestiging AVC" in Mail → Sjablonen (HTML-sjabloon), inklapbaar in de afspraakmail; gecontroleerd door echt een uitnodiging te versturen en de mail te openen.
 - [x] Afspraakmails: Engelse/Duitse huisstijl hersteld en verplaatsingsbericht behouden bij gekozen HTML-sjabloon; zes regressietests, opgeslagen sjabloon en aangemelde voorbeeldpagina gecontroleerd (geen echte mail verstuurd).
+- [x] Boekingsfout in kwartaalbeveiliging hersteld; status Geboekt in open kwartaal en blokkade in gesloten kwartaal gecontroleerd met SQL-regressietests en aangemelde app; tijdelijke testgegevens verwijderd.
