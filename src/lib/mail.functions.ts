@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { checkAttachmentSizes, isOrgPath, safeDisplayName } from "@/lib/mail-security";
 // Note: skin-sanitize pulls in isomorphic-dompurify (jsdom) which is not
 // Worker-safe at module init. Import lazily inside handlers that need it.
 
@@ -39,11 +40,10 @@ async function sendViaResend(opts: {
   return JSON.parse(body) as { id: string };
 }
 
+// The browser only sends an attachment id; the server resolves the path itself.
 const ATTACH = z.object({
-  path: z.string(), // storage path within mail-attachments bucket
-  filename: z.string(),
-  size: z.number().optional(),
-  mime: z.string().optional(),
+  id: z.string().uuid(),
+  filename: z.string().max(255),
 });
 
 const SEND_SCHEMA = z.object({
@@ -67,6 +67,10 @@ export const sendMail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => SEND_SCHEMA.parse(d))
   .handler(async ({ data, context }) => {
+    const { data: member } = await context.supabase
+      .from("organization_members").select("user_id")
+      .eq("organization_id", data.organization_id).eq("user_id", context.userId).maybeSingle();
+    if (!member) throw new Error("Geen toegang tot deze organisatie");
     // Per-org overrides
     const { data: settings } = await context.supabase
       .from("mail_settings")
@@ -79,8 +83,10 @@ export const sendMail = createServerFn({ method: "POST" })
       reply_to: string | null;
       signature: string | null;
     } | null;
-    const from_email = s?.from_email || process.env.OUTREACH_FROM_EMAIL || "outreach@resend.dev";
-    const from_name = data.from_name ?? s?.from_name ?? null;
+    const from_email = (s?.from_email || process.env.OUTREACH_FROM_EMAIL || "").trim();
+    const { assertAllowedSender } = await import("@/lib/mail-sender.server");
+    await assertAllowedSender(from_email);
+    const from_name = safeDisplayName(data.from_name ?? s?.from_name ?? null);
     const from = from_name ? `${from_name} <${from_email}>` : from_email;
     const replyTo = data.reply_to || s?.reply_to || undefined;
     let html: string;
@@ -116,16 +122,29 @@ export const sendMail = createServerFn({ method: "POST" })
       html = `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111;white-space:pre-wrap">${fullBody.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]!))}</div>`;
     }
 
-    // Resolve attachments: download from storage and base64-encode
+    // Resolve attachments by id: only objects in this organization's folder.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const att: Array<{ filename: string; content: string }> = [];
-    for (const a of data.attachments ?? []) {
-      const { data: blob, error } = await supabaseAdmin.storage
-        .from("mail-attachments")
-        .download(a.path);
-      if (error || !blob) continue;
-      const buf = Buffer.from(await blob.arrayBuffer());
-      att.push({ filename: a.filename, content: buf.toString("base64") });
+    const stored: Array<{ id: string; path: string; filename: string; size: number; mime: string | null }> = [];
+    if (data.attachments.length) {
+      const ids = data.attachments.map((a) => a.id);
+      const { data: objs, error: rErr } = await context.supabase.rpc("resolve_mail_attachments" as never, { _ids: ids } as never);
+      if (rErr) throw new Error("Bijlagen konden niet worden gecontroleerd");
+      const list = (objs ?? []) as Array<{ id: string; name: string; size: number; mime: string | null }>;
+      for (const a of data.attachments) {
+        const o = list.find((x) => x.id === a.id);
+        if (!o || !isOrgPath(o.name, data.organization_id)) {
+          throw new Error("Bijlage niet gevonden of hoort niet bij jouw organisatie");
+        }
+        stored.push({ id: o.id, path: o.name, filename: a.filename, size: Number(o.size) || 0, mime: o.mime });
+      }
+      const sizeErr = checkAttachmentSizes(stored.map((x) => x.size));
+      if (sizeErr) throw new Error(sizeErr);
+      for (const o of stored) {
+        const { data: blob, error } = await supabaseAdmin.storage.from("mail-attachments").download(o.path);
+        if (error || !blob) throw new Error(`Bijlage ${o.filename} kon niet worden geladen`);
+        att.push({ filename: o.filename, content: Buffer.from(await blob.arrayBuffer()).toString("base64") });
+      }
     }
 
     // Pre-insert log row
@@ -144,7 +163,7 @@ export const sendMail = createServerFn({ method: "POST" })
       in_reply_to: data.in_reply_to ?? null,
       client_id: data.client_id ?? null,
       lead_id: data.lead_id ?? null,
-      attachments: data.attachments ?? [],
+      attachments: stored,
       status: "queued",
       created_by: context.userId,
     };
@@ -214,49 +233,54 @@ export const markMailRead = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const ATTACH_REF = z.object({ message_id: z.string().uuid(), attachment_id: z.string().min(1).max(64) });
+
+type StoredAttach = { id?: string; path: string; filename: string };
+
+/** Find an attachment on a message the caller can read (RLS) and verify its org folder. */
+async function findOwnAttachment(
+  supabase: { from: (t: string) => any },
+  messageId: string,
+  attachmentId: string,
+) {
+  const { data: row, error } = await supabase
+    .from("mail_messages").select("id, organization_id, attachments").eq("id", messageId).maybeSingle();
+  if (error || !row) throw new Error("Bijlage niet gevonden");
+  const r = row as { organization_id: string; attachments: StoredAttach[] | null };
+  const list = r.attachments ?? [];
+  const idx = list.findIndex((a, i) => (a.id ?? `idx-${i}`) === attachmentId);
+  const item = idx >= 0 ? list[idx] : undefined;
+  if (!item || !isOrgPath(item.path, r.organization_id)) throw new Error("Bijlage niet gevonden of hoort niet bij jouw organisatie");
+  return { list, idx, item };
+}
+
 export const getAttachmentUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ path: z.string() }).parse(d))
+  .inputValidator((d) => ATTACH_REF.parse(d))
   .handler(async ({ data, context }) => {
-    // Verify the caller's org owns a mail_message whose attachments include this path.
-    const { data: rows, error: rowsErr } = await context.supabase
-      .from("mail_messages")
-      .select("id, attachments")
-      .contains("attachments", [{ path: data.path }] as never)
-      .limit(1);
-    if (rowsErr) throw new Error(rowsErr.message);
-    if (!rows || rows.length === 0) throw new Error("Bijlage niet gevonden");
-
+    const { item } = await findOwnAttachment(context.supabase as never, data.message_id, data.attachment_id);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: signed, error } = await supabaseAdmin.storage
       .from("mail-attachments")
-      .createSignedUrl(data.path, 60 * 10);
-    if (error || !signed) throw new Error(error?.message ?? "URL mislukt");
+      .createSignedUrl(item.path, 60 * 10);
+    if (error || !signed) throw new Error("Downloadlink maken mislukt");
     return { url: signed.signedUrl };
   });
 
 export const deleteAttachment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) =>
-    z.object({ message_id: z.string().uuid(), path: z.string() }).parse(d),
-  )
+  .inputValidator((d) => ATTACH_REF.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: row, error } = await context.supabase
+    const { list, idx, item } = await findOwnAttachment(context.supabase as never, data.message_id, data.attachment_id);
+    const next = list.filter((_, i) => i !== idx);
+    const { data: upd, error: upErr } = await context.supabase
       .from("mail_messages")
-      .select("attachments")
+      .update({ attachments: next } as never)
       .eq("id", data.message_id)
-      .single();
-    if (error || !row) throw new Error(error?.message ?? "Niet gevonden");
-    const list = ((row as { attachments: Array<{ path: string }> }).attachments ?? []).filter(
-      (a) => a.path !== data.path,
-    );
+      .select("id");
+    if (upErr || !upd?.length) throw new Error("Verwijderen niet toegestaan");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.storage.from("mail-attachments").remove([data.path]);
-    const { error: upErr } = await context.supabase
-      .from("mail_messages")
-      .update({ attachments: list } as never)
-      .eq("id", data.message_id);
-    if (upErr) throw new Error(upErr.message);
+    await supabaseAdmin.storage.from("mail-attachments").remove([item.path]);
     return { ok: true };
   });
 
@@ -351,8 +375,11 @@ export const sendTemplateTestEmail = createServerFn({ method: "POST" })
       .eq("organization_id", data.organization_id)
       .maybeSingle();
     const s = (settings ?? null) as { from_email: string | null; from_name: string | null } | null;
-    const from_email = s?.from_email || process.env.OUTREACH_FROM_EMAIL || "outreach@resend.dev";
-    const from = s?.from_name ? `${s.from_name} <${from_email}>` : from_email;
+    const from_email = (s?.from_email || process.env.OUTREACH_FROM_EMAIL || "").trim();
+    const { assertAllowedSender } = await import("@/lib/mail-sender.server");
+    await assertAllowedSender(from_email);
+    const testName = safeDisplayName(s?.from_name);
+    const from = testName ? `${testName} <${from_email}>` : from_email;
 
     const sample = data.sample ?? {};
     const subject = `[TEST] ${renderTokensServer(data.subject, sample)}`;

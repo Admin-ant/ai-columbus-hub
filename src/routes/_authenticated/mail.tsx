@@ -70,7 +70,8 @@ export const Route = createFileRoute("/_authenticated/mail")({
 });
 
 type Folder = "inbox" | "sent" | "draft";
-type Attach = { path: string; filename: string; size?: number; mime?: string };
+type Attach = { id?: string; path?: string; filename: string; size?: number; mime?: string };
+const attachKey = (a: Attach, i: number) => a.id ?? `idx-${i}`;
 
 type MailRow = {
   id: string;
@@ -301,20 +302,19 @@ function MailInbox() {
     setComposeOpen(true);
   };
 
-  const openAttachment = async (path: string) => {
+  const openAttachment = async (messageId: string, attachmentId: string) => {
     try {
-      const r = await getUrl({ data: { path } });
+      const r = await getUrl({ data: { message_id: messageId, attachment_id: attachmentId } });
       window.open(r.url, "_blank");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Kan bijlage niet openen");
     }
   };
 
-  const removeAttachment = async (path: string) => {
-    if (!selected) return;
+  const removeAttachment = async (messageId: string, attachmentId: string) => {
     if (!confirm("Bijlage verwijderen?")) return;
     try {
-      await delAttach({ data: { message_id: selected.id, path } });
+      await delAttach({ data: { message_id: messageId, attachment_id: attachmentId } });
       toast.success("Bijlage verwijderd");
       load();
     } catch (e) {
@@ -693,8 +693,8 @@ function ThreadView({
   selected: MailRow;
   thread: MailRow[];
   organizationId: string;
-  onOpenAttachment: (p: string) => void;
-  onDeleteAttachment: (p: string) => void;
+  onOpenAttachment: (messageId: string, attachmentId: string) => void;
+  onDeleteAttachment: (messageId: string, attachmentId: string) => void;
   onDeleteMessage: () => void;
   onOpenCompose: () => void;
   onSent: () => void;
@@ -764,8 +764,8 @@ function MessageCard({
   onDeleteAttachment,
 }: {
   m: MailRow;
-  onOpenAttachment: (p: string) => void;
-  onDeleteAttachment: (p: string) => void;
+  onOpenAttachment: (messageId: string, attachmentId: string) => void;
+  onDeleteAttachment: (messageId: string, attachmentId: string) => void;
 }) {
   return (
       <div className="rounded border border-border bg-background p-3 text-sm text-foreground shadow-sm">
@@ -800,9 +800,9 @@ function MessageCard({
         <div className="mt-3">
           <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Bijlagen</div>
           <div className="flex flex-col gap-1.5">
-            {m.attachments.map((a) => (
+            {m.attachments.map((a, i) => (
               <div
-                key={a.path}
+                key={attachKey(a, i)}
                 className="flex items-center justify-between gap-2 rounded border border-border bg-card px-2 py-1.5 text-card-foreground"
               >
                 <div className="flex min-w-0 items-center gap-2">
@@ -816,13 +816,13 @@ function MessageCard({
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button
-                    onClick={() => onOpenAttachment(a.path)}
+                    onClick={() => onOpenAttachment(m.id, attachKey(a, i))}
                     className="inline-flex items-center gap-1 rounded border border-border px-2 py-1 text-[11px] font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
                   >
                     <Download className="h-3 w-3" /> Download
                   </button>
                   <button
-                    onClick={() => onDeleteAttachment(a.path)}
+                    onClick={() => onDeleteAttachment(m.id, attachKey(a, i))}
                     className="inline-flex items-center gap-1 rounded border border-destructive/30 px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10"
                   >
                     <Trash2 className="h-3 w-3" />

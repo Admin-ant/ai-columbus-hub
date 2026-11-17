@@ -464,6 +464,10 @@ export const emailInvoice = createServerFn({ method: "POST" })
     // Load PDF + extras
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const attachments: Array<{ filename: string; content: string }> = [];
+    const invOrg = (inv as { organization_id: string }).organization_id;
+    if (!data.pdf_storage_path.startsWith(`${invOrg}/`) || data.pdf_storage_path.includes("..")) {
+      throw new Error("PDF-bijlage hoort niet bij jouw organisatie");
+    }
     const { data: pdfBlob, error: pdfErr } = await supabaseAdmin.storage
       .from("mail-attachments")
       .download(data.pdf_storage_path);

@@ -70,7 +70,7 @@ export function ComposeMailDialog({
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<
-    Array<{ path: string; filename: string; size: number; mime: string }>
+    Array<{ id: string; path: string; filename: string; size: number; mime: string }>
   >([]);
   const [isHtml, setIsHtml] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -142,16 +142,16 @@ export function ComposeMailDialog({
           continue;
         }
         const path = `${organizationId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${f.name}`;
-        const { error } = await supabase.storage
+        const { data: up, error } = await supabase.storage
           .from("mail-attachments")
           .upload(path, f, { contentType: f.type });
-        if (error) {
-          toast.error(error.message);
+        if (error || !up?.id) {
+          toast.error(error?.message ?? "Upload mislukt");
           continue;
         }
         setAttachments((a) => [
           ...a,
-          { path, filename: f.name, size: f.size, mime: f.type },
+          { id: up.id, path, filename: f.name, size: f.size, mime: f.type },
         ]);
       }
     } finally {
@@ -180,7 +180,7 @@ export function ComposeMailDialog({
           lead_id: null,
           in_reply_to: inReplyTo ?? null,
           thread_id: threadId ?? null,
-          attachments,
+          attachments: attachments.map((a) => ({ id: a.id, filename: a.filename })),
           is_html: isHtml,
         },
       });

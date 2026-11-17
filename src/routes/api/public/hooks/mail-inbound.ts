@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { normalizeAddresses, threadReferences, verifySvixSignature } from "@/lib/mail-security";
 
 /**
  * Resend inbound webhook for general mail. Configure in Resend dashboard
- * with header `x-webhook-secret: $RESEND_WEBHOOK_SECRET`.
+ * signed with Svix using $RESEND_WEBHOOK_SECRET (whsec_...).
  * Routes inbound mail to mail_messages.inbox for the organization that
  * owns the recipient address (matched via OUTREACH_FROM_EMAIL).
  */
@@ -13,8 +14,8 @@ export const Route = createFileRoute("/api/public/hooks/mail-inbound")({
         const secret = process.env.RESEND_WEBHOOK_SECRET;
         if (!secret) return new Response("Not configured", { status: 503 });
         const raw = await request.text();
-        const headerOk = request.headers.get("x-webhook-secret") === secret;
-        if (!headerOk && !(await verifySvix(request.headers, raw, secret))) {
+        // Only a valid Resend (Svix) signature within the replay window is accepted.
+        if (!(await verifySvixSignature(request.headers, raw, secret))) {
           return new Response("Unauthorized", { status: 401 });
         }
 
@@ -70,60 +71,51 @@ export const Route = createFileRoute("/api/public/hooks/mail-inbound")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-        // Determine organization: prefer thread match
+        // Organization is determined ONLY by the receiving address. No guessing.
         let organization_id: string | null = null;
         let thread_id: string | null = null;
-        if (mailHeader) {
-          const { data: orig } = await supabaseAdmin
-            .from("mail_messages")
-            .select("organization_id, thread_id, id")
-            .eq("id", mailHeader)
-            .maybeSingle();
-          if (orig) {
-            organization_id = (orig as { organization_id: string }).organization_id;
-            thread_id = (orig as { thread_id: string | null; id: string }).thread_id ?? (orig as { id: string }).id;
-          }
-        }
-        if (!organization_id && inReplyTo) {
-          const { data: orig } = await supabaseAdmin
-            .from("mail_messages")
-            .select("organization_id, thread_id, id")
-            .eq("provider_message_id", inReplyTo)
-            .maybeSingle();
-          if (orig) {
-            organization_id = (orig as { organization_id: string }).organization_id;
-            thread_id = (orig as { thread_id: string | null; id: string }).thread_id ?? (orig as { id: string }).id;
-          }
+        const addrs = normalizeAddresses([...toList, ...ccList]);
+        if (addrs.length) {
+          const list = addrs.map((x) => `"${x}"`).join(",");
+          const { data: ms } = await supabaseAdmin
+            .from("mail_settings")
+            .select("organization_id")
+            .or(`reply_to.in.(${list}),from_email.in.(${list}),ticket_notify_email.in.(${list}),ticket_reply_to.in.(${list})`)
+            .limit(20);
+          const orgs = [...new Set(((ms ?? []) as { organization_id: string }[]).map((r) => r.organization_id))];
+          if (orgs.length === 1) organization_id = orgs[0]!;
+          else if (orgs.length > 1) console.warn("[mail-inbound] ambiguous recipient, ignored", { addrs, count: orgs.length });
         }
         if (!organization_id) {
-          const addrs = [...toList, ...ccList]
-            .map((a) => (/<([^>]+)>/.exec(a)?.[1] ?? a).trim().toLowerCase())
-            .filter(Boolean);
-          if (addrs.length) {
-            const list = addrs.map((a) => `"${a.replace(/"/g, "")}"`).join(",");
-            const { data: ms } = await supabaseAdmin
-              .from("mail_settings")
-              .select("organization_id")
-              .or(`reply_to.in.(${list}),from_email.in.(${list}),ticket_notify_email.in.(${list}),ticket_reply_to.in.(${list})`)
-              .limit(1);
-            organization_id = (ms as { organization_id: string }[] | null)?.[0]?.organization_id ?? null;
-          }
+          console.warn("[mail-inbound] unknown recipient, ignored", { to: addrs, email_id: emailId });
+          return Response.json({ ok: true, ignored: "unknown-recipient" });
         }
-        if (!organization_id) {
-          // Fallback: first org (single-tenant scenario)
-          const { data: org } = await supabaseAdmin
-            .from("organizations")
-            .select("id")
+
+        // Thread matching within this organization: X-header, In-Reply-To, References.
+        const refs = threadReferences(d.headers, inReplyTo);
+        const candidates = [
+          ...(mailHeader && /^[0-9a-f-]{36}$/i.test(mailHeader) ? [{ col: "id", vals: [mailHeader] }] : []),
+          ...(refs.length ? [{ col: "provider_message_id", vals: refs }] : []),
+        ];
+        for (const c of candidates) {
+          const { data: orig } = await supabaseAdmin
+            .from("mail_messages")
+            .select("thread_id, id")
+            .eq("organization_id", organization_id)
+            .in(c.col, c.vals)
             .limit(1)
             .maybeSingle();
-          organization_id = (org as { id: string } | null)?.id ?? null;
+          if (orig) {
+            const o = orig as { thread_id: string | null; id: string };
+            thread_id = o.thread_id ?? o.id;
+            break;
+          }
         }
-        if (!organization_id) return Response.json({ ok: false, reason: "no-org" });
 
-        const providerId = d.email_id ?? d.message_id ?? null;
+        const providerId = d.email_id ?? d.message_id ?? request.headers.get("svix-id");
         if (providerId) {
           const { data: dup } = await supabaseAdmin
-            .from("mail_messages").select("id").eq("provider_message_id", providerId).maybeSingle();
+            .from("mail_messages").select("id").eq("organization_id", organization_id).eq("provider_message_id", providerId).limit(1).maybeSingle();
           if (dup) return Response.json({ ok: true, duplicate: true });
         }
         const { error: insErr } = await supabaseAdmin.from("mail_messages").insert({
@@ -138,7 +130,7 @@ export const Route = createFileRoute("/api/public/hooks/mail-inbound")({
           body_text: d.text ?? null,
           body_html: d.html ?? null,
           in_reply_to: inReplyTo,
-          provider_message_id: d.email_id ?? d.message_id ?? null,
+          provider_message_id: providerId,
           status: "received",
           received_at: new Date().toISOString(),
         } as never);
@@ -186,22 +178,3 @@ export const Route = createFileRoute("/api/public/hooks/mail-inbound")({
     },
   },
 });
-
-async function verifySvix(h: Headers, body: string, secret: string): Promise<boolean> {
-  const id = h.get("svix-id"), ts = h.get("svix-timestamp"), sig = h.get("svix-signature");
-  if (!id || !ts || !sig) return false;
-  if (Math.abs(Date.now() / 1000 - Number(ts)) > 300) return false;
-  const keyB64 = secret.startsWith("whsec_") ? secret.slice(6) : secret;
-  let keyBytes: Uint8Array<ArrayBuffer>;
-  try { keyBytes = Uint8Array.from(atob(keyB64), (c) => c.charCodeAt(0)); } catch { return false; }
-  const key = await crypto.subtle.importKey("raw", keyBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${id}.${ts}.${body}`));
-  const expected = btoa(String.fromCharCode(...new Uint8Array(mac)));
-  return sig.split(" ").some((p) => {
-    const v = p.split(",")[1] ?? "";
-    if (v.length !== expected.length) return false;
-    let diff = 0;
-    for (let i = 0; i < v.length; i++) diff |= v.charCodeAt(i) ^ expected.charCodeAt(i);
-    return diff === 0;
-  });
-}
