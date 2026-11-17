@@ -18,6 +18,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { SafeMailFrame } from "@/components/mail/safe-mail-frame";
 import {
   addTicketMessage, deleteTicket, deleteTicketAttachment, emailTicketHistory, getTicket, getTicketAttachmentUrl,
   listTicketAgents, updateTicket, uploadTicketAttachment,
@@ -384,10 +385,7 @@ function TicketDetailPage() {
                         {(m.to_emails ?? []).join(", ")}
                       </span>
                     </summary>
-                    <div
-                      className="prose prose-sm mt-3 max-w-none text-sm [&_a]:text-primary"
-                      dangerouslySetInnerHTML={{ __html: String(m.body_html ?? "") }}
-                    />
+                    <div className="mt-3"><SafeMailFrame html={String(m.body_html ?? "")} height={420} /></div>
                     {Array.isArray(m.attachments) && m.attachments.length > 0 && (
                       <p className="mt-2 text-xs text-muted-foreground">
                         Bijlagen: {m.attachments.map((a: Any) => a.filename).join(", ")}

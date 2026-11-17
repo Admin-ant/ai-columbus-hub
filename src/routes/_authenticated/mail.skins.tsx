@@ -737,7 +737,7 @@ function MailSkinsPage() {
                   <div className="truncate"><span className="font-medium text-foreground">Onderwerp:</span> {renderTokens(sampleSubject) || "—"}</div>
                 </div>
                 <div dangerouslySetInnerHTML={{ __html: sanitizeSkinHtml(renderTokens(previewHeader)) }} />
-                <div dangerouslySetInnerHTML={{ __html: renderTokens(previewBodyTemplate) }} />
+                <div dangerouslySetInnerHTML={{ __html: sanitizeSkinHtml(renderTokens(previewBodyTemplate)) }} />
                 <div dangerouslySetInnerHTML={{ __html: sanitizeSkinHtml(renderTokens(previewFooter)) }} />
               </div>
             </div>

@@ -43,6 +43,7 @@ import {
   bulkUpdateMail,
 } from "@/lib/mail.functions";
 import { renderTokens } from "@/lib/outreach-templates";
+import { SafeMailFrame } from "@/components/mail/safe-mail-frame";
 import { HtmlMailBody, escapeTokenVars } from "@/components/mail/html-mail-body";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -791,7 +792,7 @@ function MessageCard({
         </div>
       </div>
       {m.body_html ? (
-        <div className="mail-message-body" dangerouslySetInnerHTML={{ __html: m.body_html }} />
+        <SafeMailFrame html={m.body_html} />
       ) : (
         <div className="whitespace-pre-wrap text-foreground">{m.body_text ?? ""}</div>
       )}

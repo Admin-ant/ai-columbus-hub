@@ -31,6 +31,7 @@ export function HtmlMailBody({
         <iframe
           title="Voorbeeld van de opgemaakte mail"
           sandbox=""
+          referrerPolicy="no-referrer"
           srcDoc={sanitizeMailHtml(html)}
           className="w-full bg-background"
           style={{ height }}

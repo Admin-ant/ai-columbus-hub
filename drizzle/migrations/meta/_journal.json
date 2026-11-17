@@ -78,6 +78,13 @@
       "when": 1793532130274,
       "tag": "0010_fix_quarter_guard_record_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794918486302,
+      "tag": "0011_mail_attachment_resolver",
+      "breakpoints": true
     }
   ]
 }

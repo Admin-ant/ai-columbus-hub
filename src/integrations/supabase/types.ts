@@ -5305,6 +5305,15 @@ export type Database = {
             Returns: string
           }
       post_invoice_journal: { Args: { _invoice_id: string }; Returns: string }
+      resolve_mail_attachments: {
+        Args: { _ids: string[] }
+        Returns: {
+          id: string
+          mime: string
+          name: string
+          size: number
+        }[]
+      }
       reverse_expense_journal: {
         Args: { _expense_id: string; _reason?: string }
         Returns: string
